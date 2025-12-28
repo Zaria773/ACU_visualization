@@ -6,15 +6,26 @@
     - don't update field names starts with `_` as they are readonly, such as `_变量`
   format: |-
     <UpdateVariable>
+<<<<<<< HEAD
     </Analysis>$(IN ENGLISH, no more than 80 words)
+=======
+    <Analysis>$(IN ENGLISH, no more than 80 words)
+>>>>>>> 4ac7bf5d47e725f28c4278aa1dbabc21eb9be37e
     - ${calculate time passed: ...}
     - ${decide whether dramatic updates are allowed as it's in a special case or the time passed is more than usual: yes/no}
     - ${analyze every variable based on its corresponding `check`, according only to current reply instead of previous plots: ...}
     </Analysis>
+<<<<<<< HEAD
     </JSONPatch>
     [
       { "op": "replace", "path": "${/path/to/variable}", "value": "${new_value}" },
       { "op": "add", "path": "${/path/to/object/new_key}", "value": "${new_value}" }
+=======
+    <JSONPatch>
+    [
+      { "op": "replace", "path": "${/path/to/variable}", "value": "${new_value}" },
+      { "op": "add", "path": "${/path/to/object/new_key}", "value": "${new_value}" },
+>>>>>>> 4ac7bf5d47e725f28c4278aa1dbabc21eb9be37e
       { "op": "remove", "path": "${/path/to/array/0}" },
       ...
     ]
