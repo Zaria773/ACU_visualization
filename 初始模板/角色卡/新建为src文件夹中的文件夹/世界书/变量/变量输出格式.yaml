@@ -1,20 +1,41 @@
 ---
 变量输出格式:
   rule:
+<<<<<<< HEAD
     - you must output the update analysis and the actual update commands in the end of the next reply
     - 'the update commands must strictly follow the **JSON Patch (RFC 6902)** standard, but can only use the following operations: `replace` (replace the value of existing paths), `add` (insert new items into an object or array, "value" should be the result value instead of the delta value), `remove`; that is, the output must be a valid JSON array containing operation objects'
     - don't update field names starts with `_` as they are readonly, such as `_变量`
   format: |-
     <UpdateVariable>
     </Analysis>$(IN ENGLISH, no more than 80 words)
+=======
+    - you must output the update analysis and the actual update commands at once in the end of the next reply
+    - the update commands works like the **JSON Patch (RFC 6902)** standard, must be a valid JSON array containing operation objects, but supports the following operations instead:
+      - replace: replace the value of existing paths
+      - delta: update the value of existing number paths by a delta value
+      - insert: insert new items into an object or array
+      - remove
+    - don't update field names starts with `_` as they are readonly, such as `_变量`
+  format: |-
+    <UpdateVariable>
+    <Analysis>$(IN ENGLISH, no more than 80 words)
+>>>>>>> 51076cdf0ae6bd538c42ff664a04939d09afd915
     - ${calculate time passed: ...}
     - ${decide whether dramatic updates are allowed as it's in a special case or the time passed is more than usual: yes/no}
     - ${analyze every variable based on its corresponding `check`, according only to current reply instead of previous plots: ...}
     </Analysis>
+<<<<<<< HEAD
     </JSONPatch>
     [
       { "op": "replace", "path": "${/path/to/variable}", "value": "${new_value}" },
       { "op": "add", "path": "${/path/to/object/new_key}", "value": "${new_value}" }
+=======
+    <JSONPatch>
+    [
+      { "op": "replace", "path": "${/path/to/variable}", "value": "${new_value}" },
+      { "op": "delta", "path": "${/path/to/number/variable}", "value": "${positve_or_negative_delta}" },
+      { "op": "insert", "path": "${/path/to/object/new_key}", "value": "${new_value}" }
+>>>>>>> 51076cdf0ae6bd538c42ff664a04939d09afd915
       { "op": "remove", "path": "${/path/to/array/0}" },
       ...
     ]
