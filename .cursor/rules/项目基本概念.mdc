@@ -28,7 +28,11 @@ alwaysApply: true
 - `src/角色卡示例/schema.ts` 中是用 zod 4 库书写的角色卡 MVU 变量结构定义
   - 提供给脚本、前端界面导入使用
   - 会在 `pnpm build` 或 `pnpm watch` 时生成对应的 json schema 文件 `src/角色卡示例/schema.json`, 便于编写变量初始值文件 initvar.yaml `# yaml-language-server: $schema=schema文件路径`
+<<<<<<< HEAD
 - `src/角色卡示例/界面/store.ts` 中是 pinia 预先写好的获取角色卡消息楼层 MVU 变量方式, 提供给所有前端界面导入使用
+=======
+- `src/util/mvu.ts` 中提供了 `defineMvuDataStore` 函数, 它基于 pinia 实现了本项目推荐的前端界面获取、修改 MVU 变量方式, 支持与酒馆实际变量之间的双向同步; `src/角色卡示例/界面/store.ts` 中的 `useDataStore` 就是用它获取和修改界面所在楼层变量的.
+>>>>>>> 514257e2a9529751513707b6ae5efcc984e49328
 
 你同样可以在 `模板/角色卡/新建为src文件夹中的文件夹` 中找到 MVU zod 角色卡的初始模板.
 
@@ -36,7 +40,11 @@ alwaysApply: true
 
 ### 可用的第三方库
 
+<<<<<<< HEAD
 项目使用 pnpm 作为包管理器, 在 `package.json` 的 `dependencies` 部分定义了可用的第三方库 (dedent、gsap、jquery、jquery-ui、lodash、pinia、pixi.js、toastr、yaml、vue、vue-router、@vueuse/core、react、@pixi/react、zod), 你也可以自己通过 `pnpm add` 添加更多第三方库, 如添加 (@vueuse/integrations 等).
+=======
+项目使用 pnpm 作为包管理器, 在 `package.json` 的 `dependencies` 部分定义了可用的第三方库 (dedent、gsap、jquery、jquery-ui、lodash、pinia、pixi.js、toastr、yaml、vue、vue-router、@vueuse/core、react、@pixi/react、async-wait-until、zod), 你也可以自己通过 `pnpm add` 添加更多第三方库, 如添加 (@vueuse/integrations 等).
+>>>>>>> 514257e2a9529751513707b6ae5efcc984e49328
 
 前端界面或脚本都是在浏览器中使用, 因此你不能使用 nodejs 库
 
