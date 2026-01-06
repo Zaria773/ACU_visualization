@@ -1,0 +1,331 @@
+// =========================================
+// Data Table - 数据表格容器
+// 对应 DataTable.vue 组件
+// =========================================
+
+// 数据表格主容器
+.acu-data-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; // 重要：允许 flex 子元素收缩
+  height: 100%; // 确保占满父容器，让 flex 子元素能正确计算高度
+  gap: 0;
+
+  &.acu-table-loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// 工具栏 (固定在顶部，不随卡片滚动)
+.acu-table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--acu-table-head, rgba(0, 0, 0, 0.03));
+  border-bottom: 1px solid var(--acu-border, rgba(0, 0, 0, 0.06));
+  border-radius: 0; // 移除圆角，贴合容器
+  gap: 12px;
+  z-index: 10;
+  flex-shrink: 0; // 不收缩
+}
+
+// 工具栏左侧 (表名 + 条数)
+.acu-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.acu-table-title {
+  font-weight: 600;
+  font-size: calc(var(--acu-font-size, 13px) + 1px);
+  color: var(--acu-title-color, var(--acu-text-main, #333));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acu-table-count {
+  font-size: calc(var(--acu-font-size, 13px) - 2px);
+  color: var(--acu-text-muted, #999);
+  white-space: nowrap;
+}
+
+.acu-table-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+
+  &.acu-badge-changed {
+    background: rgba(102, 126, 234, 0.15);
+    color: var(--acu-highlight, #667eea);
+  }
+
+  &.acu-badge-deleting {
+    background: rgba(231, 76, 60, 0.15);
+    color: var(--acu-danger, #e74c3c);
+  }
+}
+
+// 工具栏右侧 (按钮组)
+.acu-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// 工具栏按钮
+.acu-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--acu-radius-sm, 4px);
+  background: transparent;
+  color: var(--acu-text-sub, #666);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover, rgba(0, 0, 0, 0.06));
+    color: var(--acu-text-main, #333);
+  }
+
+  &.active {
+    background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.15));
+    color: var(--acu-highlight, #667eea);
+  }
+
+  i {
+    font-size: 12px;
+  }
+
+  // 高度拖手样式
+  &.acu-height-handle {
+    cursor: ns-resize;
+    color: var(--acu-text-muted, #999);
+
+    &:hover {
+      color: var(--acu-highlight, #667eea);
+    }
+  }
+
+  // 关闭按钮样式
+  &.acu-close-btn {
+    &:hover {
+      background: rgba(231, 76, 60, 0.1);
+      color: var(--acu-danger, #e74c3c);
+    }
+  }
+}
+
+// 搜索框容器
+.acu-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.acu-search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--acu-text-muted, #999);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.acu-search-input {
+  width: 140px;
+  padding: 5px 28px 5px 28px;
+  border: 1px solid var(--acu-border, rgba(0, 0, 0, 0.1));
+  border-radius: var(--acu-radius-sm, 4px);
+  background: var(--acu-bg-panel, #fff);
+  color: var(--acu-text-main, #333);
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+  outline: none;
+  transition: all 0.2s;
+
+  &:focus {
+    width: 180px;
+    border-color: var(--acu-highlight, #667eea);
+  }
+
+  &::placeholder {
+    color: var(--acu-text-muted, #999);
+  }
+}
+
+.acu-search-clear {
+  position: absolute;
+  right: 8px;
+  color: var(--acu-text-muted, #999);
+  cursor: pointer;
+  font-size: 11px;
+
+  &:hover {
+    color: var(--acu-text-main, #333);
+  }
+}
+
+// 卡片容器 (唯一可滚动区域)
+.acu-cards-container {
+  flex: 1;
+  min-height: 0; // 重要：允许 flex 容器收缩
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain; // 防止滚动穿透
+  padding: 8px; // 减少边距，更紧凑
+
+  // 卡片视图 - 多列网格布局 (固定间距，居中对齐)
+  &.acu-view-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--acu-card-width, 280px), var(--acu-card-width, 280px)));
+    gap: 10px;
+    justify-content: center;
+    align-content: start;
+    grid-auto-rows: min-content;
+  }
+
+  // 列表视图 - 也是多列网格 (卡片更窄)
+  &.acu-view-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 280px));
+    gap: 10px;
+    justify-content: center;
+    align-content: start;
+    grid-auto-rows: min-content;
+  }
+}
+
+// =========================================
+// 横向布局模式 - 对应 config.layout === 'horizontal'
+// =========================================
+
+// 横向布局下的卡片容器 - 唯一滚动区域
+.acu-layout-horizontal .acu-cards-container {
+  // 重置 grid 布局，改为 flex 以支持横向滚动
+  flex: 1; // 占满中间剩余空间
+  min-height: 0; // 允许收缩
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  white-space: nowrap;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  touch-action: pan-x pan-y !important;
+  padding: 12px;
+  padding-bottom: 8px; // 为滚动条留出空间
+  overscroll-behavior-x: contain;
+
+  // 卡片视图和列表视图都使用相同布局
+  &.acu-view-card,
+  &.acu-view-list {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+}
+
+// 横向布局下的数据卡片
+.acu-layout-horizontal .acu-data-card {
+  flex: 0 0 var(--acu-card-width, 280px) !important;
+  width: var(--acu-card-width, 280px) !important;
+  min-width: var(--acu-card-width, 280px); // 防止被压缩
+  max-height: calc(100% - 20px); // 留出滚动条空间
+  overflow-y: auto;
+  white-space: normal;
+  touch-action: pan-x pan-y !important;
+  display: flex !important; // 强制为 flex 而不是 grid item
+}
+
+// 横向布局下的数据表格容器
+.acu-layout-horizontal .acu-data-table {
+  height: 100%;
+  min-height: 200px; // 确保有最小高度
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // 不在这层滚动
+}
+
+// 横向布局下的工具栏 - 固定不随内容滚动
+.acu-layout-horizontal .acu-table-toolbar {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+// 横向布局下的分页器 - 固定不随内容滚动
+.acu-layout-horizontal .acu-pagination-container {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+// 横向布局下的面板内容 - 不要在这层滚动
+.acu-layout-horizontal .acu-panel-content {
+  overflow: hidden !important; // 滚动只在 .acu-cards-container 内
+  min-height: 150px;
+}
+
+// 空状态
+.acu-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--acu-text-muted, #999);
+  grid-column: 1 / -1;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--acu-font-size, 13px);
+  }
+}
+
+// 分页器
+.acu-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  flex-wrap: wrap;
+}
+
+.acu-btn-page {
+  min-width: 32px;
+  padding: 4px 8px;
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+
+  &.active {
+    font-weight: 600;
+  }
+}
+
+.acu-page-ellipsis {
+  padding: 4px 8px;
+  color: var(--acu-text-muted, #999);
+}
+
+.acu-page-info {
+  margin-left: 12px;
+  color: var(--acu-text-muted, #666);
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+}

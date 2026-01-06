@@ -1,0 +1,255 @@
+// =========================================
+// Panel - 数据面板布局
+// 对应 .acu-data-display 及其子元素
+// =========================================
+
+// 数据面板主容器
+.acu-data-display {
+  order: 2;
+  flex: 0 1 auto;
+  max-height: 80vh;
+  margin-bottom: 3px; // 恢复与导航栏之间的间距
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  display: none;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  overscroll-behavior: contain;
+  isolation: isolate;
+  pointer-events: auto !important;
+  overflow: hidden; // 不在这层滚动，滚动在 .acu-cards-container
+
+  &.visible {
+    display: flex;
+  }
+
+  // 横向布局模式 - 滚动在卡片容器
+  &.acu-layout-horizontal {
+    touch-action: pan-x pan-y !important;
+    overflow: hidden;
+  }
+
+  // 纵向布局模式 - 滚动在卡片容器
+  &.acu-layout-vertical {
+    touch-action: pan-y !important;
+    overflow: hidden;
+  }
+}
+
+// 面板内容区 - 让 DataTable 撑满
+// 关键：不在这层滚动，滚动只在 .acu-cards-container 内部
+.acu-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // 关键：允许 flex 子元素收缩，使 overflow 生效
+  overflow: hidden; // 关键：不在这层滚动
+  padding: 0; // 移除内边距，让子元素贴合容器
+
+  // 滚动条样式（用于仪表盘等特殊视图）
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-highlight) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--acu-highlight);
+    border-radius: 3px;
+  }
+}
+
+// 面板头部
+.acu-panel-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--acu-table-head);
+  border-bottom: 1px solid var(--acu-border);
+  border-radius: 12px 12px 0 0;
+}
+
+// 面板标题
+.acu-panel-title {
+  font-weight: bold;
+  color: var(--acu-text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+// 头部操作区
+.acu-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// 高度调节控制
+.acu-height-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+// 高度拖拽把手
+.acu-height-drag-handle {
+  cursor: ns-resize;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: var(--acu-text-sub);
+
+  &:hover,
+  &.active {
+    color: var(--acu-highlight);
+    background: var(--acu-table-hover);
+  }
+}
+
+// 宽度调节把手 (右侧)
+.acu-resize-handle {
+  display: block !important;
+  pointer-events: auto !important;
+  position: absolute;
+  right: -12px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  cursor: ew-resize;
+  z-index: 2147483650;
+  touch-action: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--acu-border);
+    opacity: 0.3;
+    transition: opacity 0.2s;
+  }
+
+  &:hover::after {
+    background: var(--acu-highlight);
+    opacity: 1;
+    width: 4px;
+    left: 0;
+  }
+}
+
+// 关闭按钮
+.acu-close-btn {
+  background: none;
+  border: none;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #e74c3c;
+  }
+}
+
+// 横向布局下的面板内容 - 不在这层滚动
+.acu-layout-horizontal .acu-panel-content {
+  overflow: hidden !important; // 关键：滚动只在 .acu-cards-container 内
+  min-height: 150px;
+}
+
+// 横向布局下的数据面板
+.acu-data-display.acu-layout-horizontal {
+  min-height: 200px; // 确保横向布局有最小高度
+
+  // 重置高度自适应时的样式
+  &.visible {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// =========================================
+// 通用可复用布局模式
+// 用于"固定头尾 + 滚动中间"的布局场景
+// 未来新面板类型可直接使用这些类
+// =========================================
+
+/**
+ * 可滚动布局容器
+ * 使用方式:
+ *   <div class="acu-scrollable-layout">
+ *     <div class="acu-fixed-top">头部固定区</div>
+ *     <div class="acu-scroll-middle">中间滚动区</div>
+ *     <div class="acu-fixed-bottom">底部固定区</div>
+ *   </div>
+ *
+ * 注意: 父容器必须有明确的高度约束，否则布局会被内容撑开
+ */
+.acu-scrollable-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // 关键：允许 flex 子元素收缩
+  height: 100%; // 需要父容器有明确高度
+
+  // 头部固定区 - 不收缩，不参与滚动
+  > .acu-fixed-top {
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  // 中间滚动区 - 占据剩余空间，内容溢出时滚动
+  > .acu-scroll-middle {
+    flex: 1;
+    min-height: 0; // 关键：允许被压缩，使 overflow 生效
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain; // 防止滚动穿透
+
+    // 滚动条样式
+    scrollbar-width: thin;
+    scrollbar-color: var(--acu-highlight, #667eea) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--acu-highlight, #667eea);
+      border-radius: 3px;
+    }
+  }
+
+  // 底部固定区 - 不收缩，不参与滚动
+  > .acu-fixed-bottom {
+    flex-shrink: 0;
+    z-index: 10;
+  }
+}
+
+// 横向滚动变体
+.acu-scrollable-layout.acu-scroll-horizontal {
+  > .acu-scroll-middle {
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}

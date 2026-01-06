@@ -1,0 +1,139 @@
+// =========================================
+// Badges - 徽章样式
+// 对应 Badge.vue 及 .acu-badge-* 徽章组件
+// =========================================
+
+// 基础徽章样式
+.acu-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--acu-radius-sm, 4px);
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+  background: var(--acu-badge-bg, rgba(0, 0, 0, 0.05));
+  color: var(--acu-text-main, #333);
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+// 默认样式 - 透明背景
+.acu-badge-default {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+// 待删除徽章
+.acu-badge-pending {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  width: 80px;
+  height: 80px;
+  border: 4px solid #e74c3c;
+  border-radius: 50%;
+  color: #e74c3c;
+  font-size: 20px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.6;
+  box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+// 状态徽章 - 成功
+.acu-badge-success {
+  background: rgba(46, 204, 113, 0.15);
+  color: #27ae60;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+// 状态徽章 - 警告
+.acu-badge-warning {
+  background: rgba(241, 196, 15, 0.15);
+  color: #f39c12;
+  border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+// 状态徽章 - 危险
+.acu-badge-danger {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+// 状态徽章 - 信息
+.acu-badge-info {
+  background: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+// 等级徽章 - 渐变紫色
+.acu-badge-level {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+// 百分比徽章 - 渐变粉色
+.acu-badge-percent {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  font-weight: 500;
+}
+
+// 性别徽章 - 男 (使用默认样式)
+.acu-badge-male {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+// 性别徽章 - 女 (使用默认样式)
+.acu-badge-female {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+// 数字徽章 - 高亮背景
+.acu-badge-number {
+  background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.1));
+  color: var(--acu-highlight, #667eea);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+// 计数徽章
+.acu-badge-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  background: var(--acu-highlight);
+  color: #fff;
+}
+
+// 标签样式徽章
+.acu-badge-tag {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--acu-btn-bg);
+  color: var(--acu-text-sub);
+  border: 1px solid var(--acu-border);
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-text-main);
+  }
+}

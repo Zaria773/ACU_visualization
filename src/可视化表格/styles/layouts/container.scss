@@ -1,0 +1,74 @@
+// =========================================
+// Container - 全屏穿透容器
+// 对应 #acu-parent-container 及其包裹器
+// =========================================
+
+// 主容器基础样式 (MainPanel)
+.acu-wrapper {
+  position: fixed;
+  left: var(--acu-win-left, 100px);
+  bottom: var(--acu-win-bottom, 100px);
+  width: var(--acu-win-width, 400px);
+  display: flex;
+  flex-direction: column-reverse;
+  z-index: 2147483645;
+  pointer-events: auto !important;
+
+  &.collapsed {
+    display: none;
+  }
+}
+
+// 全屏穿透容器
+#acu-parent-container {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647;
+  pointer-events: none !important;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+}
+
+// 窗口化包裹器
+#acu-parent-container .acu-wrapper {
+  position: relative;
+  max-width: 98vw;
+  pointer-events: auto !important; // 修复：确保面板可以接收点击事件
+  display: flex;
+  flex-direction: column-reverse;
+  transform-origin: bottom center;
+  will-change: transform;
+  transition: none !important;
+}
+
+// 窗口化模式定位 (全平台通用)
+// 使用 min() 和 clamp() 确保面板在窄屏时不会超出屏幕
+#acu-parent-container .acu-wrapper {
+  position: absolute !important;
+  // 宽度取 "存储值" 和 "屏幕宽度-20px" 中的较小值
+  width: min(var(--acu-win-width, 600px), calc(100vw - 20px)) !important;
+  // left 取 "存储值" 和 "屏幕宽度-100px" 中的较小值，确保至少100px在屏幕内
+  left: min(var(--acu-win-left, 50%), calc(100vw - 100px)) !important;
+  bottom: var(--acu-win-bottom, 50%) !important;
+  touch-action: none;
+  // 额外保险：最大宽度不超过屏幕
+  max-width: calc(100vw - 10px);
+}
+
+// 拖拽交互状态
+body.acu-dragging #acu-parent-container,
+body.acu-resizing #acu-parent-container {
+  pointer-events: auto !important;
+  cursor: grabbing;
+}
+
+body.acu-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}

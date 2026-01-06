@@ -1,0 +1,335 @@
+// =========================================
+// Pagination - 分页器
+// 对应 .acu-pagination-* 组件
+// =========================================
+
+// =========================================
+// 分页容器 (原代码结构)
+// 结构: 上一页按钮 | 中间页码数字区 | 下一页按钮
+//
+// 关键 CSS 属性说明:
+// - flex: 0 0 auto: 不收缩、不伸展，高度由内容决定
+// - 这确保分页器始终显示在底部，不会被卡片容器挤出视口
+// =========================================
+
+.acu-pagination-container {
+  flex: 0 0 auto; // 关键：不收缩，确保始终可见
+  flex-shrink: 0; // 额外确保在各种 flex 容器中都不收缩
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px; // 减少左右 padding，更贴合容器
+  background: var(--acu-bg-panel);
+  border-top: 1px solid var(--acu-border);
+  z-index: 10;
+  box-sizing: border-box;
+
+  &.hidden {
+    display: none !important;
+  }
+}
+
+// 分页数字区域（居中）
+.acu-pagination-numbers {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
+// 分页按钮基础样式
+.acu-page-btn {
+  padding: 0;
+  border: 1px solid var(--acu-border);
+  background: var(--acu-btn-bg);
+  color: var(--acu-title-color);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  min-width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  user-select: none;
+  font-weight: 500;
+  flex-shrink: 0;
+
+  &:not(.disabled):not(.active):hover {
+    background: var(--acu-title-color);
+    color: #fff;
+    border-color: var(--acu-title-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &.active {
+    background: var(--acu-title-color);
+    color: #fff;
+    border-color: var(--acu-title-color);
+    font-weight: bold;
+    cursor: default;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--acu-text-sub);
+  }
+}
+
+// 箭头按钮（上一页/下一页）
+.acu-page-arrow {
+  width: 30px;
+  font-size: 12px;
+}
+
+// 分页省略号
+.acu-page-dots {
+  color: var(--acu-text-sub);
+  font-size: 11px;
+  padding: 0 2px;
+  letter-spacing: 1px;
+}
+
+// 分页信息
+.acu-pagination-info {
+  color: var(--acu-text-sub);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+// =========================================
+// Vue 分页器组件 (Pagination.vue & DataTable.vue)
+// =========================================
+
+.acu-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;
+  gap: 5px;
+  flex-wrap: nowrap;
+  font-size: var(--acu-font-size, 13px);
+  background: var(--acu-bg-panel);
+  border-top: 1px solid var(--acu-border);
+  box-sizing: border-box;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+// 页码信息
+.acu-pagination .acu-pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--acu-text-sub, #999);
+  white-space: nowrap;
+
+  strong {
+    color: var(--acu-text-main, #5e4b35);
+    font-weight: 600;
+  }
+
+  .acu-pagination-total {
+    opacity: 0.7;
+    font-size: 0.9em;
+  }
+}
+
+// 分页控制区
+.acu-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// 页码列表
+.acu-page-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// 分页按钮基础样式
+.acu-pagination .acu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--acu-border, #dcd0c0);
+  background: var(--acu-btn-bg, #dcd0c0);
+  color: var(--acu-text-main, #5e4b35);
+  cursor: pointer;
+  transition:
+    background var(--acu-transition-fast, 0.15s),
+    border-color var(--acu-transition-fast, 0.15s),
+    color var(--acu-transition-fast, 0.15s),
+    transform var(--acu-transition-fast, 0.15s);
+  user-select: none;
+  flex-shrink: 0; // 防止按钮被压缩
+
+  &:hover:not(:disabled) {
+    background: var(--acu-title-color, #5e4b35);
+    color: #fff;
+    border-color: var(--acu-title-color, #5e4b35);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  &:disabled,
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--acu-text-sub, #999);
+  }
+}
+
+// 图标按钮
+.acu-pagination .acu-btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--acu-radius-sm, 6px);
+
+  i {
+    font-size: 14px;
+  }
+}
+
+// 页码按钮
+.acu-pagination .acu-btn-page {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0; // 防止按钮被压缩
+
+  &.active {
+    background: var(--acu-title-color, #5e4b35);
+    border-color: var(--acu-title-color, #5e4b35);
+    color: #fff;
+    font-weight: bold;
+    cursor: default;
+
+    &:hover {
+      transform: none; // 当前页不需要悬浮效果
+    }
+  }
+}
+
+// 箭头按钮（首页、末页、上下页）
+.acu-pagination .acu-btn-page i {
+  font-size: 14px;
+}
+
+// 小号按钮
+.acu-pagination .acu-btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: var(--acu-radius-sm, 6px);
+}
+
+// 省略号
+.acu-page-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 32px;
+  color: var(--acu-text-sub, #999);
+  font-size: 12px;
+  padding: 0 2px;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 页码信息 (DataTable.vue 使用)
+.acu-page-info {
+  display: flex;
+  align-items: center;
+  color: var(--acu-text-sub, #999);
+  font-size: 12px;
+  white-space: nowrap;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+// 跳转输入区
+.acu-pagination-jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--acu-text-sub, #999);
+  white-space: nowrap;
+
+  .acu-input-sm {
+    width: 56px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--acu-border, #dcd0c0);
+    border-radius: var(--acu-radius-sm, 6px);
+    background: var(--acu-input-bg, rgba(255, 255, 255, 0.5));
+    color: var(--acu-text-main, #5e4b35);
+    font-size: var(--acu-font-size, 13px);
+    text-align: center;
+    outline: none;
+    transition:
+      border-color var(--acu-transition-fast, 0.15s),
+      box-shadow var(--acu-transition-fast, 0.15s);
+
+    // 隐藏数字输入框的上下箭头
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    &:focus {
+      border-color: var(--acu-highlight, #d35400);
+      box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(211, 84, 0, 0.08));
+    }
+  }
+}
+
+// 分页响应式布局
+@media (max-width: 480px) {
+  .acu-pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .acu-pagination .acu-pagination-info {
+    order: -1;
+  }
+
+  .acu-pagination-jump {
+    font-size: 12px;
+
+    .acu-input-sm {
+      width: 48px;
+      height: 26px;
+    }
+
+    .acu-btn-sm {
+      height: 26px;
+      padding: 0 10px;
+    }
+  }
+}

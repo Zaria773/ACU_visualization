@@ -1,0 +1,288 @@
+// ============================================
+// ACU Visualizer - Base Styles
+// 基础样式与全局重置
+// ============================================
+
+@use 'variables' as *;
+
+// =========================================
+// 1. 全局盒模型 (Box Model Reset)
+// =========================================
+.acu-wrapper,
+.acu-wrapper *,
+.acu-wrapper *::before,
+.acu-wrapper *::after {
+  box-sizing: border-box;
+}
+
+// =========================================
+// 2. 基础容器样式 (Base Container)
+// =========================================
+.acu-wrapper {
+  font-family: var(--acu-font-family, #{$font-stack-default});
+  font-size: var(--acu-font-size, 13px);
+  color: var(--acu-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// =========================================
+// 3. 滚动条样式 (Scrollbar)
+// =========================================
+.acu-wrapper {
+  // Webkit 浏览器
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--acu-text-sub);
+    }
+  }
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-highlight, var(--acu-border)) transparent;
+}
+
+// 面板内容滚动条特化
+.acu-panel-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-highlight) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--acu-highlight);
+    border-radius: 3px;
+  }
+}
+
+// =========================================
+// 4. 选中文本样式 (Selection)
+// =========================================
+.acu-wrapper ::selection {
+  background: var(--acu-highlight);
+  color: #fff;
+}
+
+.acu-wrapper ::-moz-selection {
+  background: var(--acu-highlight);
+  color: #fff;
+}
+
+// =========================================
+// 5. 工具类 (Utilities)
+// =========================================
+
+// 禁用用户选择（用于拖拽等场景）
+.acu-no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+// 允许文本选择（用于可编辑区域）
+.acu-selectable {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+// 可点击元素
+.acu-clickable {
+  cursor: pointer;
+  transition: opacity var(--acu-transition-fast);
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+// =========================================
+// 6. 布局辅助 (Layout Helpers)
+// =========================================
+
+// Flex 居中
+.acu-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Flex 两端对齐
+.acu-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// =========================================
+// 7. 全屏穿透容器 (Parent Container)
+// =========================================
+#acu-parent-container {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--acu-z-overlay);
+  pointer-events: none !important;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+}
+
+// =========================================
+// 8. 窗口化包裹器 (Wrapper)
+// =========================================
+#acu-parent-container .acu-wrapper {
+  position: absolute !important;
+  width: var(--acu-win-width, 600px) !important;
+  left: var(--acu-win-left, 50%) !important;
+  bottom: var(--acu-win-bottom, 50%) !important;
+  max-width: 98vw;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column-reverse;
+  transform-origin: bottom center;
+  will-change: transform;
+  transition: none !important;
+  touch-action: none;
+}
+
+// =========================================
+// 9. 拖拽交互状态 (Drag & Resize States)
+// =========================================
+body.acu-dragging,
+body.acu-resizing {
+  #acu-parent-container {
+    pointer-events: auto !important;
+    cursor: grabbing;
+  }
+}
+
+body.acu-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+}
+
+// =========================================
+// 10. 文本溢出处理 (Text Overflow)
+// =========================================
+.acu-text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acu-text-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// =========================================
+// 11. 隐藏元素 (Visibility)
+// =========================================
+.acu-hidden {
+  display: none !important;
+}
+
+.acu-invisible {
+  visibility: hidden;
+}
+
+// =========================================
+// 12. 响应式断点 (Media Queries Mixins)
+// =========================================
+// 在 SCSS 中使用 @include mobile { ... }
+@mixin mobile {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: 769px) and (max-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1025px) {
+    @content;
+  }
+}
+
+// =========================================
+// 13. 允许文本选择的元素 (PC 端)
+// =========================================
+.acu-grid-value,
+.acu-full-value,
+.acu-card-value,
+.acu-editable-title,
+.acu-grid-label,
+.acu-full-label,
+.acu-card-label {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+// =========================================
+// 14. App 根容器 (App Root)
+// =========================================
+.acu-app {
+  // 字体和主题由 CSS 变量控制
+  font-family: var(--acu-font-family, 'Microsoft YaHei', sans-serif);
+  font-size: var(--acu-font-size, 13px);
+  color: var(--acu-text-main, #333);
+
+  // 确保在父窗口中正常显示
+  position: relative;
+  z-index: 2147483640;
+}
+
+// =========================================
+// 15. 无数据状态 (No Data State)
+// =========================================
+.acu-no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--acu-text-muted, #999);
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--acu-font-size, 13px);
+  }
+}

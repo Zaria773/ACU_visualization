@@ -1,0 +1,204 @@
+// =========================================
+// Buttons - 按钮通用样式
+// 对应 .acu-action-btn 及相关按钮
+// =========================================
+
+// 动作按钮
+.acu-action-btn {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--acu-btn-bg);
+  border-radius: 8px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  font-size: 16px;
+  user-select: none;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-text-main);
+    transform: translateY(-2px);
+    border-color: var(--acu-border);
+  }
+}
+
+// 全局保存按钮
+#acu-btn-save-global {
+  color: var(--acu-title-color);
+
+  &:hover {
+    background: var(--acu-btn-active-bg);
+    color: var(--acu-btn-active-text);
+  }
+}
+
+// 指定保存按钮
+#acu-btn-save-specific {
+  color: #9b59b6;
+  display: none;
+}
+
+// 对话框按钮
+.acu-dialog-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--acu-text-sub);
+  transition: color 0.2s;
+}
+
+// 分页按钮
+.acu-page-btn {
+  padding: 0;
+  border: 1px solid var(--acu-border);
+  background: var(--acu-btn-bg);
+  color: var(--acu-title-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  user-select: none;
+  font-weight: 500;
+  flex-shrink: 0;
+
+  &:not(.disabled):not(.active):hover {
+    background: var(--acu-title-color);
+    color: #fff;
+    border-color: var(--acu-title-color);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  &.active {
+    background: var(--acu-title-color);
+    color: #fff;
+    border-color: var(--acu-title-color);
+    font-weight: bold;
+    cursor: default;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--acu-text-sub);
+  }
+}
+
+// 分页箭头按钮
+.acu-page-arrow {
+  width: 36px;
+  font-size: 14px;
+}
+
+// Tab 按钮
+.acu-tab-btn {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--acu-text-sub);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--acu-text-main);
+    background: var(--acu-table-hover);
+    border-radius: 4px 4px 0 0;
+  }
+
+  &.active {
+    color: var(--acu-highlight);
+    border-bottom-color: var(--acu-highlight);
+  }
+}
+
+// =========================================
+// ActionBar 专用样式
+// 对应 ActionBar.vue 组件
+// =========================================
+
+// ActionBar 容器
+.acu-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+}
+
+// ActionBar 内的紧凑按钮（固定尺寸变体）
+.acu-action-bar .acu-action-btn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(255, 255, 255, 0.1));
+    color: var(--acu-text-main);
+    transform: none;
+    border-color: transparent;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  i {
+    font-size: 14px;
+  }
+}
+
+// 危险按钮样式
+.acu-btn-danger {
+  color: #e74c3c;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.2);
+  }
+}
+
+// 切换按钮样式
+.acu-btn-toggle {
+  &.active {
+    color: var(--acu-primary-color, #3498db);
+    background: rgba(52, 152, 219, 0.2);
+  }
+}
+
+// 保存按钮有更改时的样式
+.has-changes {
+  color: #f39c12;
+  animation: pulse 1.5s infinite;
+}
+
+// 脉冲动画
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

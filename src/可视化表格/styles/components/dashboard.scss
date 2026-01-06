@@ -1,0 +1,481 @@
+// =========================================
+// Dashboard - 仪表盘
+// 对应 .acu-dash-* 组件
+// =========================================
+
+// 仪表盘容器
+.acu-dash-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+// 仪表盘区块
+.acu-dash-section {
+  background: var(--acu-bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--acu-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+// 区块标题
+.acu-dash-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--acu-text-main);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--acu-border);
+
+  i {
+    color: var(--acu-highlight);
+    font-size: 16px;
+  }
+}
+
+// 仪表盘网格布局
+.acu-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+// 仪表盘项目
+.acu-dash-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--acu-btn-bg);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// 仪表盘项标签
+.acu-dash-label {
+  font-size: 11px;
+  color: var(--acu-text-sub);
+  margin-bottom: 4px;
+}
+
+// 仪表盘项值
+.acu-dash-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--acu-text-main);
+  word-break: break-word;
+}
+
+// 仪表盘统计卡片
+.acu-dash-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--acu-highlight) 0%, var(--acu-accent) 100%);
+  border-radius: 12px;
+  color: #fff;
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-size: 24px;
+  }
+
+  .stat-content {
+    flex: 1;
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+  }
+}
+
+// 仪表盘快捷操作区
+.acu-dash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+// 快捷操作按钮
+.acu-dash-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  color: var(--acu-text-main);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    color: var(--acu-highlight);
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-highlight);
+  }
+}
+
+// 仪表盘进度条
+.acu-dash-progress {
+  height: 8px;
+  background: var(--acu-btn-bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--acu-highlight), var(--acu-accent));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+}
+
+// 仪表盘空状态
+.acu-dash-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--acu-text-sub);
+  text-align: center;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .empty-text {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .empty-hint {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+}
+
+// =========================================
+// Dashboard.vue 扩展样式 (Vue 组件)
+// =========================================
+
+// Vue Dashboard 容器
+.acu-dashboard {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.acu-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.acu-dashboard-title {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: 600;
+  color: var(--acu-text-main, #333);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  i {
+    color: var(--acu-highlight, #667eea);
+  }
+}
+
+.acu-dashboard-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// 仪表盘网格
+.acu-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+// 仪表盘卡片
+.acu-dashboard-card {
+  background: var(--acu-bg-elevated, #fff);
+  border-radius: var(--acu-radius-md, 8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  &.acu-card-primary {
+    border: 2px solid var(--acu-highlight, #667eea);
+    grid-column: span 2;
+
+    @media (max-width: 768px) {
+      grid-column: span 1;
+    }
+  }
+
+  &.acu-card-stats {
+    background: linear-gradient(
+      135deg,
+      var(--acu-highlight-bg, rgba(102, 126, 234, 0.1)) 0%,
+      var(--acu-bg-elevated, #fff) 100%
+    );
+  }
+
+  &.acu-card-quick-access {
+    grid-column: 1 / -1;
+  }
+}
+
+// 复用 .acu-card-header 样式 (已在上方定义不同)
+.acu-dashboard-card > .acu-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--acu-bg-header, rgba(0, 0, 0, 0.02));
+  font-weight: 600;
+  font-size: var(--acu-font-size, 13px);
+  border-bottom: 1px solid var(--acu-border, rgba(0, 0, 0, 0.05));
+
+  i:first-child {
+    color: var(--acu-highlight, #667eea);
+  }
+
+  span:first-of-type {
+    flex: 1;
+  }
+
+  .acu-btn-link {
+    padding: 4px;
+    color: var(--acu-text-muted, #999);
+
+    &:hover {
+      color: var(--acu-highlight, #667eea);
+    }
+  }
+}
+
+.acu-dashboard-card > .acu-card-body {
+  padding: 16px;
+
+  &.acu-scroll {
+    max-height: 220px;
+    overflow-y: auto;
+  }
+}
+
+// Mini 卡片（NPC 列表项）
+.acu-mini-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--acu-bg-panel, rgba(0, 0, 0, 0.02));
+  border-radius: var(--acu-radius-sm, 4px);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(0, 0, 0, 0.05));
+    transform: translateX(4px);
+  }
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.acu-mini-name {
+  font-weight: 500;
+  color: var(--acu-text-main, #333);
+}
+
+// 任务项
+.acu-task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--acu-border, rgba(0, 0, 0, 0.05));
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(0, 0, 0, 0.02));
+    padding-left: 8px;
+    margin-left: -8px;
+    padding-right: 8px;
+    margin-right: -8px;
+    border-radius: var(--acu-radius-sm, 4px);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.acu-task-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--acu-text-main, #333);
+  margin-right: 12px;
+}
+
+// 物品网格
+.acu-items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.acu-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--acu-bg-panel, rgba(0, 0, 0, 0.03));
+  border-radius: 16px;
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.1));
+    color: var(--acu-highlight, #667eea);
+  }
+}
+
+.acu-item-count {
+  color: var(--acu-text-muted, #666);
+  font-size: 0.9em;
+}
+
+// 查看更多按钮
+.acu-show-more {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  text-align: center;
+}
+
+// 统计网格
+.acu-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.acu-stat-item {
+  text-align: center;
+  padding: 12px;
+  background: var(--acu-bg-panel, rgba(0, 0, 0, 0.02));
+  border-radius: var(--acu-radius-sm, 4px);
+
+  .acu-stat-value {
+    display: block;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--acu-text-main, #333);
+    line-height: 1.2;
+  }
+
+  .acu-stat-label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--acu-text-muted, #666);
+    margin-top: 4px;
+  }
+
+  &.acu-stat-highlight {
+    .acu-stat-value {
+      color: var(--acu-highlight, #667eea);
+    }
+  }
+
+  &.acu-stat-danger {
+    .acu-stat-value {
+      color: var(--acu-danger, #e74c3c);
+    }
+  }
+}
+
+// 快捷访问网格
+.acu-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.acu-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: var(--acu-bg-panel, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--acu-border, rgba(0, 0, 0, 0.05));
+  border-radius: var(--acu-radius-md, 8px);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.1));
+    border-color: var(--acu-highlight, #667eea);
+    transform: translateY(-2px);
+  }
+
+  i {
+    font-size: 1.5em;
+    color: var(--acu-highlight, #667eea);
+  }
+
+  span {
+    font-size: calc(var(--acu-font-size, 13px) - 1px);
+    color: var(--acu-text-main, #333);
+    text-align: center;
+    word-break: break-all;
+  }
+}

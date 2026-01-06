@@ -1,0 +1,536 @@
+// =========================================
+// Helpers - 辅助类
+// 通用工具类和辅助样式
+// =========================================
+
+// ========================
+// 显示与隐藏
+// ========================
+
+.acu-hidden {
+  display: none !important;
+}
+
+.acu-invisible {
+  visibility: hidden !important;
+}
+
+.acu-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// ========================
+// 文本处理
+// ========================
+
+.acu-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acu-text-wrap {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.acu-text-center {
+  text-align: center;
+}
+
+.acu-text-left {
+  text-align: left;
+}
+
+.acu-text-right {
+  text-align: right;
+}
+
+.acu-text-uppercase {
+  text-transform: uppercase;
+}
+
+.acu-text-lowercase {
+  text-transform: lowercase;
+}
+
+.acu-text-capitalize {
+  text-transform: capitalize;
+}
+
+// 文本颜色
+.acu-text-main {
+  color: var(--acu-text-main);
+}
+
+.acu-text-sub {
+  color: var(--acu-text-sub);
+}
+
+.acu-text-highlight {
+  color: var(--acu-highlight);
+}
+
+.acu-text-success {
+  color: #27ae60;
+}
+
+.acu-text-warning {
+  color: #f39c12;
+}
+
+.acu-text-danger {
+  color: #e74c3c;
+}
+
+.acu-text-info {
+  color: #3498db;
+}
+
+// ========================
+// Flexbox 工具
+// ========================
+
+.acu-flex {
+  display: flex;
+}
+
+.acu-flex-inline {
+  display: inline-flex;
+}
+
+.acu-flex-row {
+  flex-direction: row;
+}
+
+.acu-flex-col {
+  flex-direction: column;
+}
+
+.acu-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.acu-flex-nowrap {
+  flex-wrap: nowrap;
+}
+
+.acu-flex-1 {
+  flex: 1;
+}
+
+.acu-flex-auto {
+  flex: auto;
+}
+
+.acu-flex-none {
+  flex: none;
+}
+
+.acu-items-start {
+  align-items: flex-start;
+}
+
+.acu-items-center {
+  align-items: center;
+}
+
+.acu-items-end {
+  align-items: flex-end;
+}
+
+.acu-items-stretch {
+  align-items: stretch;
+}
+
+.acu-justify-start {
+  justify-content: flex-start;
+}
+
+.acu-justify-center {
+  justify-content: center;
+}
+
+.acu-justify-end {
+  justify-content: flex-end;
+}
+
+.acu-justify-between {
+  justify-content: space-between;
+}
+
+.acu-justify-around {
+  justify-content: space-around;
+}
+
+// ========================
+// 间距工具
+// ========================
+
+@for $i from 0 through 8 {
+  .acu-gap-#{$i} {
+    gap: #{$i * 4}px;
+  }
+
+  .acu-m-#{$i} {
+    margin: #{$i * 4}px;
+  }
+
+  .acu-mt-#{$i} {
+    margin-top: #{$i * 4}px;
+  }
+
+  .acu-mr-#{$i} {
+    margin-right: #{$i * 4}px;
+  }
+
+  .acu-mb-#{$i} {
+    margin-bottom: #{$i * 4}px;
+  }
+
+  .acu-ml-#{$i} {
+    margin-left: #{$i * 4}px;
+  }
+
+  .acu-mx-#{$i} {
+    margin-left: #{$i * 4}px;
+    margin-right: #{$i * 4}px;
+  }
+
+  .acu-my-#{$i} {
+    margin-top: #{$i * 4}px;
+    margin-bottom: #{$i * 4}px;
+  }
+
+  .acu-p-#{$i} {
+    padding: #{$i * 4}px;
+  }
+
+  .acu-pt-#{$i} {
+    padding-top: #{$i * 4}px;
+  }
+
+  .acu-pr-#{$i} {
+    padding-right: #{$i * 4}px;
+  }
+
+  .acu-pb-#{$i} {
+    padding-bottom: #{$i * 4}px;
+  }
+
+  .acu-pl-#{$i} {
+    padding-left: #{$i * 4}px;
+  }
+
+  .acu-px-#{$i} {
+    padding-left: #{$i * 4}px;
+    padding-right: #{$i * 4}px;
+  }
+
+  .acu-py-#{$i} {
+    padding-top: #{$i * 4}px;
+    padding-bottom: #{$i * 4}px;
+  }
+}
+
+// ========================
+// 尺寸工具
+// ========================
+
+.acu-w-full {
+  width: 100%;
+}
+
+.acu-h-full {
+  height: 100%;
+}
+
+.acu-w-auto {
+  width: auto;
+}
+
+.acu-h-auto {
+  height: auto;
+}
+
+.acu-min-w-0 {
+  min-width: 0;
+}
+
+.acu-min-h-0 {
+  min-height: 0;
+}
+
+.acu-max-w-full {
+  max-width: 100%;
+}
+
+.acu-max-h-full {
+  max-height: 100%;
+}
+
+// ========================
+// 定位工具
+// ========================
+
+.acu-relative {
+  position: relative;
+}
+
+.acu-absolute {
+  position: absolute;
+}
+
+.acu-fixed {
+  position: fixed;
+}
+
+.acu-sticky {
+  position: sticky;
+}
+
+.acu-inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+// ========================
+// 溢出处理
+// ========================
+
+.acu-overflow-auto {
+  overflow: auto;
+}
+
+.acu-overflow-hidden {
+  overflow: hidden;
+}
+
+.acu-overflow-scroll {
+  overflow: scroll;
+}
+
+.acu-overflow-x-auto {
+  overflow-x: auto;
+}
+
+.acu-overflow-y-auto {
+  overflow-y: auto;
+}
+
+.acu-overflow-x-hidden {
+  overflow-x: hidden;
+}
+
+.acu-overflow-y-hidden {
+  overflow-y: hidden;
+}
+
+// 自定义滚动条
+.acu-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-scrollbar-thumb) var(--acu-scrollbar-track);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--acu-scrollbar-track);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-scrollbar-thumb);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--acu-scrollbar-thumb-hover);
+    }
+  }
+}
+
+// 隐藏滚动条
+.acu-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// ========================
+// 圆角工具
+// ========================
+
+.acu-rounded-none {
+  border-radius: 0;
+}
+
+.acu-rounded-sm {
+  border-radius: 4px;
+}
+
+.acu-rounded {
+  border-radius: 8px;
+}
+
+.acu-rounded-lg {
+  border-radius: 12px;
+}
+
+.acu-rounded-xl {
+  border-radius: 16px;
+}
+
+.acu-rounded-full {
+  border-radius: 9999px;
+}
+
+// ========================
+// 边框工具
+// ========================
+
+.acu-border {
+  border: 1px solid var(--acu-border);
+}
+
+.acu-border-t {
+  border-top: 1px solid var(--acu-border);
+}
+
+.acu-border-r {
+  border-right: 1px solid var(--acu-border);
+}
+
+.acu-border-b {
+  border-bottom: 1px solid var(--acu-border);
+}
+
+.acu-border-l {
+  border-left: 1px solid var(--acu-border);
+}
+
+.acu-border-none {
+  border: none;
+}
+
+// ========================
+// 阴影工具
+// ========================
+
+.acu-shadow-none {
+  box-shadow: none;
+}
+
+.acu-shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.acu-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.acu-shadow-lg {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.acu-shadow-xl {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+// ========================
+// 交互工具
+// ========================
+
+.acu-pointer-events-none {
+  pointer-events: none;
+}
+
+.acu-pointer-events-auto {
+  pointer-events: auto;
+}
+
+.acu-cursor-pointer {
+  cursor: pointer;
+}
+
+.acu-cursor-default {
+  cursor: default;
+}
+
+.acu-cursor-move {
+  cursor: move;
+}
+
+.acu-cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.acu-select-none {
+  user-select: none;
+}
+
+.acu-select-text {
+  user-select: text;
+}
+
+.acu-select-all {
+  user-select: all;
+}
+
+// ========================
+// 过渡动画
+// ========================
+
+.acu-transition {
+  transition: all 0.2s ease;
+}
+
+.acu-transition-fast {
+  transition: all 0.1s ease;
+}
+
+.acu-transition-slow {
+  transition: all 0.3s ease;
+}
+
+.acu-transition-none {
+  transition: none;
+}
+
+// ========================
+// 透明度工具
+// ========================
+
+.acu-opacity-0 {
+  opacity: 0;
+}
+
+.acu-opacity-25 {
+  opacity: 0.25;
+}
+
+.acu-opacity-50 {
+  opacity: 0.5;
+}
+
+.acu-opacity-75 {
+  opacity: 0.75;
+}
+
+.acu-opacity-100 {
+  opacity: 1;
+}

@@ -1,0 +1,109 @@
+/**
+ * ACU Visualizer Composables
+ * Vue 3 Composition API 函数集合
+ *
+ * 注意：旧的 jQuery composables 已被移除，请使用 Vue 组件替代：
+ * - useCellMenu → ContextMenu.vue
+ * - useFloatingManager → FloatingBall.vue + MainPanel.vue
+ * - useInlineEdit → InlineEditor.vue
+ * - useMobileGestures → useMobileGesturesNew (VueUse 实现)
+ * - useStyles → useParentStyleInjection (SCSS 文件)
+ * - useTableRender → DataTable.vue + DataCard.vue
+ * - useDialogs → dialogs/*.vue 组件
+ * - usePanelEvents → Vue 模板事件
+ */
+
+// ============================================
+// 样式注入（跨 iframe）
+// ============================================
+export { useParentStyleInjection } from './useParentStyleInjection';
+
+// ============================================
+// 触摸滚动修复（跨 iframe，随组件生命周期管理）
+// ============================================
+export { useTouchScrollFix } from './useTouchScrollFix';
+
+// ============================================
+// API 回调管理（随组件生命周期管理）
+// ============================================
+export { useApiCallbacks } from './useApiCallbacks';
+
+// ============================================
+// 数据持久化
+// ============================================
+export { useDataPersistence } from './useDataPersistence';
+
+// ============================================
+// 数据库配置管理
+// ============================================
+export { useDbSettings } from './useDbSettings';
+export type { DbSettings } from './useDbSettings';
+
+// ============================================
+// 核心业务操作
+// ============================================
+export { useCoreActions } from './useCoreActions';
+
+// ============================================
+// 移动端手势系统（VueUse 实现）
+// ============================================
+export {
+  getGestureIndicator,
+  getGestureIndicatorConfig,
+  useCardGestures,
+  useIsMobile,
+  useMobileGestures as useMobileGesturesNew,
+  useSelectionGuardEnhanced,
+} from './useMobileGesturesNew';
+
+// 类型导出 - 手势系统
+export type {
+  CardGestureOptions,
+  GestureIndicatorConfig,
+  GestureState,
+  MobileGestureOptions,
+} from './useMobileGesturesNew';
+
+// ============================================
+// VueUse 集成 - 封装常用功能
+// ============================================
+export {
+  // 重导出的 VueUse 原始功能
+  onClickOutside,
+  useACUStorage,
+  useAutoHeight,
+  useClickOutsideClose,
+  useClipboard,
+  useCopyWithFeedback,
+  useDebouncedSave,
+  useDebounceFn,
+  useDraggable,
+  // 封装的增强功能
+  useDraggableWithSnap,
+  useEventListener,
+  useParentDocumentEventListener,
+  useParentEventListener,
+  useResizeObserver,
+  useSelectionGuard,
+  // 智能高度调整
+  useSmartHeight,
+  useStorage,
+  useTextSelection,
+  useThrottleFn,
+  watchDebounced,
+} from './useVueUseIntegration';
+
+// 类型导出 - VueUse 集成
+export type {
+  AutoHeightOptions,
+  DebouncedSaveOptions,
+  DraggableWithSnapOptions,
+  PanelType,
+  SmartHeightOptions,
+} from './useVueUseIntegration';
+
+// ============================================
+// Toast 通知
+// ============================================
+export { toast, useToast } from './useToast';
+export type { ToastType } from './useToast';

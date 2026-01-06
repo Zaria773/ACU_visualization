@@ -1,0 +1,366 @@
+// =========================================
+// Inputs - 输入框 & 搜索框 & 编辑器
+// 对应 .acu-search-*, .acu-inline-editor 及相关输入组件
+// =========================================
+
+// 搜索框包装器
+.acu-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+// 搜索输入框
+.acu-search-input {
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  color: var(--acu-text-main);
+  padding: 2px 2px 3px 22px;
+  border-radius: 16px;
+  font-size: 12px;
+  width: 100px;
+  transition: all 0.2s;
+
+  &:focus {
+    width: 140px;
+    outline: none;
+    border-color: var(--acu-highlight);
+    background: var(--acu-input-bg);
+  }
+}
+
+// 搜索图标
+.acu-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 10px;
+  color: var(--acu-text-sub);
+  pointer-events: none;
+}
+
+// =========================================
+// 内联编辑器 (InlineEditor.vue)
+// =========================================
+
+// 内联编辑器容器
+.acu-inline-editor {
+  width: 100%;
+  position: relative;
+
+  // 允许触摸事件穿透到卡片
+  touch-action: manipulation;
+}
+
+// 编辑文本区域
+.acu-edit-textarea {
+  width: 100%;
+  min-height: 24px;
+  padding: 6px 8px;
+  border: 2px solid var(--acu-highlight, #667eea);
+  border-radius: var(--acu-radius-sm, 4px);
+  background: var(--acu-input-bg, #fff);
+  color: var(--acu-text-main, #333);
+  font-size: var(--acu-font-size, 13px);
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+
+  // 不使用 textarea 自己的滚动，让用户通过滚动卡片来定位
+  overflow: hidden;
+
+  // 启用文本选择（移动端和PC端）
+  user-select: text !important;
+  -webkit-user-select: text !important;
+
+  // 不拦截触摸事件，让卡片可以滚动
+  touch-action: manipulation;
+
+  // 聚焦效果
+  &:focus {
+    box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(102, 126, 234, 0.2));
+  }
+}
+
+// 内联编辑器容器在编辑锁定状态下
+.acu-editing-lock .acu-inline-editor {
+  // 编辑时允许触摸操作
+  touch-action: manipulation;
+}
+
+// 传统编辑文本区域（设置等弹窗用）
+.acu-edit-textarea-legacy {
+  width: 100%;
+  min-height: 100px;
+  background: var(--acu-input-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--acu-text-main);
+  resize: vertical;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-highlight);
+  }
+}
+
+// 设置项输入框
+.acu-settings-input {
+  background: var(--acu-input-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--acu-text-main);
+  font-size: 14px;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-highlight);
+  }
+}
+
+// 滑块输入
+.acu-range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--acu-border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--acu-highlight);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--acu-highlight);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+}
+
+// 下拉选择框
+.acu-select {
+  background: var(--acu-input-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--acu-text-main);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-highlight);
+  }
+
+  option {
+    background: var(--acu-bg-panel);
+    color: var(--acu-text-main);
+  }
+}
+
+// 复选框样式
+.acu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--acu-highlight);
+    cursor: pointer;
+  }
+
+  label {
+    color: var(--acu-text-main);
+    font-size: 14px;
+    cursor: pointer;
+  }
+}
+
+// =========================================
+// Vue 搜索框组件 (SearchBox.vue)
+// =========================================
+
+.acu-search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// 输入框包装器
+.acu-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 300px;
+  min-width: 180px;
+}
+
+// Vue 搜索图标
+.acu-search-box .acu-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--acu-text-sub, #999);
+  font-size: 14px;
+  pointer-events: none;
+  transition: color var(--acu-transition-fast, 0.15s);
+
+  .focused & {
+    color: var(--acu-highlight, #d35400);
+  }
+}
+
+// Vue 搜索输入框
+.acu-search-box .acu-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 36px;
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: var(--acu-radius-md, 12px);
+  background: var(--acu-input-bg, rgba(255, 255, 255, 0.5));
+  color: var(--acu-text-main, #5e4b35);
+  font-size: var(--acu-font-size, 13px);
+  outline: none;
+  transition:
+    border-color var(--acu-transition-fast, 0.15s),
+    box-shadow var(--acu-transition-fast, 0.15s),
+    background var(--acu-transition-fast, 0.15s);
+
+  &::placeholder {
+    color: var(--acu-text-sub, #999);
+    opacity: 0.7;
+  }
+
+  &:focus {
+    border-color: var(--acu-highlight, #d35400);
+    box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(211, 84, 0, 0.08));
+    background: var(--acu-card-bg, #fffef9);
+  }
+
+  // 有值时的样式
+  .has-value & {
+    padding-right: 40px;
+  }
+}
+
+// 清空按钮
+.acu-search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--acu-badge-bg, #efebe4);
+  color: var(--acu-text-sub, #999);
+  cursor: pointer;
+  transition:
+    background var(--acu-transition-fast, 0.15s),
+    color var(--acu-transition-fast, 0.15s),
+    transform var(--acu-transition-fast, 0.15s);
+
+  i {
+    font-size: 12px;
+  }
+
+  &:hover {
+    background: var(--acu-danger, #e74c3c);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// 搜索结果计数
+.acu-search-result {
+  font-size: 0.85em;
+  color: var(--acu-text-sub, #999);
+  white-space: nowrap;
+
+  strong {
+    color: var(--acu-highlight, #d35400);
+    font-weight: 600;
+  }
+
+  .no-result {
+    color: var(--acu-warning, #f39c12);
+  }
+}
+
+// 搜索框过渡动画
+.acu-fade-enter-active,
+.acu-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.acu-fade-enter-from,
+.acu-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.acu-fade-enter-to,
+.acu-fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+// 搜索框响应式布局
+@media (max-width: 480px) {
+  .acu-search-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .acu-search-input-wrapper {
+    max-width: none;
+    min-width: auto;
+  }
+
+  .acu-search-box .acu-search-input {
+    height: 40px;
+  }
+
+  .acu-search-result {
+    text-align: center;
+    font-size: 0.8em;
+  }
+}

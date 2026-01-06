@@ -1,0 +1,116 @@
+// ============================================
+// ACU Sortable List Component Styles
+// ============================================
+// 可排序列表组件样式
+// 用于表格展示顺序和导航栏按钮排序配置
+
+.acu-sortable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acu-sortable-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--acu-card-bg, rgba(255, 255, 255, 0.05));
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(255, 255, 255, 0.1));
+  }
+
+  &.selected {
+    background: var(--acu-selected-bg, rgba(52, 152, 219, 0.2));
+    border-color: var(--acu-primary-color, #3498db);
+  }
+}
+
+.acu-sort-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acu-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-secondary, #999);
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover:not(:disabled) {
+    color: var(--acu-primary-color, #3498db);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  i {
+    font-size: 10px;
+  }
+}
+
+.acu-item-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; // 允许文本截断
+
+  i {
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    color: var(--acu-text-secondary, #999);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--acu-text-primary, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.acu-remove-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-secondary, #999);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+}
+
+.acu-sortable-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--acu-text-secondary, #999);
+  font-size: 13px;
+}

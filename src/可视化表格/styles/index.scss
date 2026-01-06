@@ -1,0 +1,41 @@
+// ============================================
+// ACU Visualizer - Main Style Entry
+// ============================================
+// 此文件汇总导入所有样式模块
+// 通过 webpack 编译后注入到父窗口
+
+// 1. 核心样式 (按依赖顺序)
+@use 'variables';
+@use 'fonts';
+@use 'base';
+@use 'animations';
+
+// 2. 布局样式
+@use 'layouts/container';
+@use 'layouts/panel';
+@use 'layouts/responsive';
+
+// 3. 组件样式
+@use 'components/floating-ball';
+@use 'components/navigation';
+@use 'components/data-card';
+@use 'components/data-table';
+@use 'components/buttons';
+@use 'components/inputs';
+@use 'components/badges';
+@use 'components/pagination';
+@use 'components/dashboard';
+@use 'components/tabs';
+@use 'components/options-panel';
+@use 'components/sortable-list';
+@use 'components/settings-panel';
+
+// 4. 覆盖层样式
+@use 'overlays/dialogs';
+@use 'overlays/context-menu';
+@use 'overlays/quick-view';
+@use 'overlays/overlays';
+
+// 5. 工具样式
+@use 'utilities/feedback';
+@use 'utilities/helpers';

@@ -1,0 +1,228 @@
+// ============================================
+// ACU Visualizer - Fonts
+// 字体导入与配置
+// ============================================
+
+// =========================================
+// 1. 字体源导入 (Font Imports)
+// 使用 zeoseven.com 字体 API
+// =========================================
+
+// 默认字体：思源黑体 (Source Han Sans SC)
+@import url('https://fontsapi.zeoseven.com/69/main/result.css');
+
+// 寒蝉全圆体 (HanChanQuanYuan)
+@import url('https://fontsapi.zeoseven.com/3/main/result.css');
+
+// Maple Mono
+@import url('https://fontsapi.zeoseven.com/442/main/result.css');
+
+// 汇文明朝 (HuiWenMingChao)
+@import url('https://fontsapi.zeoseven.com/256/main/result.css');
+
+// Cooper 正楷 (Cooper Zhengkai)
+@import url('https://fontsapi.zeoseven.com/482/main/result.css');
+
+// YFFYT
+@import url('https://fontsapi.zeoseven.com/446/main/result.css');
+
+// Fusion Pixel
+@import url('https://fontsapi.zeoseven.com/570/main/result.css');
+
+// 霞鹜文楷 (LXGW WenKai)
+@import url('https://fontsapi.zeoseven.com/292/main/result.css');
+
+// 朱雀仿宋 (Zhuque Fangsong)
+@import url('https://fontsapi.zeoseven.com/7/main/result.css');
+
+// =========================================
+// 2. 字体映射配置 (Font Mapping)
+// =========================================
+
+// 字体 ID 到字体名称的映射
+$font-names: (
+  'hanchan': 'HanChanQuanYuan',
+  'maple': 'Maple Mono',
+  'huiwen': 'HuiWenMingChao',
+  'cooper': 'Cooper Zhengkai',
+  'yffyt': 'YFFYT',
+  'fusion': 'Fusion Pixel',
+  'lxgw': 'LXGW WenKai',
+  'siyuan': 'Source Han Sans SC',
+  'zhuque': 'Zhuque Fangsong',
+);
+
+// 默认字体栈
+$font-stack-default:
+  'Source Han Sans SC',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  Arial,
+  sans-serif;
+
+// =========================================
+// 3. 基础字体样式 (Base Font Styles)
+// =========================================
+.acu-wrapper {
+  --acu-font-family: #{$font-stack-default};
+}
+
+// =========================================
+// 4. 字体切换 (Font Switching)
+// 通过 data-font 属性或类名切换字体
+// =========================================
+
+// 通过 data-font 属性切换
+@each $font-id, $font-name in $font-names {
+  .acu-wrapper[data-font='#{$font-id}'] {
+    --acu-font-family: '#{$font-name}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+// 通过类名切换（备用方案）
+@each $font-id, $font-name in $font-names {
+  .acu-font-#{$font-id} {
+    --acu-font-family: '#{$font-name}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+}
+
+// =========================================
+// 5. 需要应用字体的元素 (Font Targets)
+// =========================================
+.acu-wrapper,
+.acu-edit-dialog,
+.acu-cell-menu,
+.acu-nav-container,
+.acu-data-card,
+.acu-panel-title,
+.acu-settings-label,
+.acu-btn-block,
+.acu-nav-btn,
+.acu-edit-textarea,
+#acu-ghost-preview {
+  font-family: var(--acu-font-family);
+}
+
+// =========================================
+// 6. 字体大小预设 (Font Size Presets)
+// =========================================
+$font-sizes: (
+  'xs': 11px,
+  'sm': 12px,
+  'base': 13px,
+  'md': 14px,
+  'lg': 15px,
+  'xl': 16px,
+  '2xl': 18px,
+  '3xl': 20px,
+);
+
+// 生成字体大小工具类
+@each $size-name, $size-value in $font-sizes {
+  .acu-text-#{$size-name} {
+    font-size: $size-value;
+  }
+}
+
+// =========================================
+// 7. 字体粗细预设 (Font Weight Presets)
+// =========================================
+.acu-font-normal {
+  font-weight: 400;
+}
+
+.acu-font-medium {
+  font-weight: 500;
+}
+
+.acu-font-semibold {
+  font-weight: 600;
+}
+
+.acu-font-bold {
+  font-weight: 700;
+}
+
+.acu-font-extrabold {
+  font-weight: 800;
+}
+
+// =========================================
+// 8. 行高预设 (Line Height Presets)
+// =========================================
+.acu-leading-none {
+  line-height: 1;
+}
+
+.acu-leading-tight {
+  line-height: 1.25;
+}
+
+.acu-leading-snug {
+  line-height: 1.35;
+}
+
+.acu-leading-normal {
+  line-height: 1.5;
+}
+
+.acu-leading-relaxed {
+  line-height: 1.625;
+}
+
+.acu-leading-loose {
+  line-height: 2;
+}
+
+// =========================================
+// 9. 特殊字体样式 (Special Font Styles)
+// =========================================
+
+// 标题样式
+.acu-title {
+  font-weight: 700;
+  color: var(--acu-title-color);
+  line-height: 1.35;
+}
+
+// 副标题样式
+.acu-subtitle {
+  font-weight: 500;
+  color: var(--acu-text-sub);
+  font-size: 0.9em;
+}
+
+// 标签样式
+.acu-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acu-title-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// 数值样式
+.acu-value {
+  font-weight: 500;
+  color: var(--acu-text-main);
+}
+
+// 代码/等宽字体
+.acu-mono {
+  font-family: 'Maple Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+// =========================================
+// 10. 像素字体特殊处理 (Pixel Font Handling)
+// Fusion Pixel 等像素字体需要禁用抗锯齿
+// =========================================
+.acu-wrapper[data-font='fusion'],
+.acu-font-fusion {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+}

@@ -1,0 +1,213 @@
+// =========================================
+// Tabs - Tab 切换组件
+// 对应 .acu-tab-* 组件
+// =========================================
+
+// Tab 容器
+.acu-tab-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// Tab 头部
+.acu-tab-header {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--acu-bg-panel);
+  border-bottom: 1px solid var(--acu-border);
+  flex-shrink: 0;
+}
+
+// Tab 滚动区域
+.acu-tab-scroll {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Tab 按钮
+.acu-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    color: var(--acu-text-main);
+    background: var(--acu-btn-hover);
+  }
+
+  &.active {
+    color: var(--acu-highlight);
+    font-weight: 600;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 3px;
+      background: var(--acu-highlight);
+      border-radius: 3px 3px 0 0;
+    }
+  }
+}
+
+// Tab 内容区
+.acu-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+}
+
+// Tab 内容面板
+.acu-tab-panel {
+  display: none;
+  height: 100%;
+
+  &.active {
+    display: block;
+  }
+}
+
+// Tab 拖拽排序模式
+.acu-tab-sortable {
+  .acu-tab-btn {
+    cursor: move;
+
+    &:hover {
+      background: var(--acu-highlight);
+      color: #fff;
+    }
+
+    &.sortable-ghost {
+      opacity: 0.5;
+      background: var(--acu-highlight);
+    }
+
+    &.sortable-chosen {
+      background: var(--acu-highlight);
+      color: #fff;
+    }
+  }
+}
+
+// Tab 操作按钮组
+.acu-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 8px;
+  border-left: 1px solid var(--acu-border);
+}
+
+// Tab 操作按钮
+.acu-tab-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-text-main);
+  }
+
+  &.active {
+    background: var(--acu-highlight);
+    color: #fff;
+  }
+}
+
+// Tab 计数徽章
+.acu-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--acu-highlight);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+// Tab 关闭按钮
+.acu-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  font-size: 10px;
+  opacity: 0;
+  transition: all 0.2s ease;
+
+  .acu-tab-btn:hover & {
+    opacity: 0.7;
+  }
+
+  &:hover {
+    opacity: 1 !important;
+    background: rgba(231, 76, 60, 0.3);
+    color: #e74c3c;
+  }
+}
+
+// Tab 添加按钮
+.acu-tab-add {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  border: 1px dashed var(--acu-border);
+  border-radius: 6px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-highlight);
+    color: var(--acu-highlight);
+    background: rgba(var(--acu-highlight-rgb), 0.1);
+  }
+}

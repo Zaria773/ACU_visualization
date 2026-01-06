@@ -1,0 +1,323 @@
+// =========================================
+// Context Menu - 右键菜单
+// 对应 .acu-cell-menu, .acu-context-menu 及相关组件
+// =========================================
+
+// 右键菜单容器 (旧版)
+.acu-cell-menu {
+  position: fixed;
+  z-index: 2147483647;
+  min-width: 160px;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  animation: acu-scaleIn 0.15s ease;
+  transform-origin: top left;
+
+  // 如果菜单靠近右边缘，从右侧展开
+  &.from-right {
+    transform-origin: top right;
+  }
+
+  // 如果菜单靠近底部，从底部展开
+  &.from-bottom {
+    transform-origin: bottom left;
+  }
+
+  &.from-right.from-bottom {
+    transform-origin: bottom right;
+  }
+}
+
+// 菜单项
+.acu-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--acu-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  i {
+    width: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--acu-text-sub);
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+
+    i {
+      color: var(--acu-highlight);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  // 危险操作项
+  &.danger {
+    color: #e74c3c;
+
+    i {
+      color: #e74c3c;
+    }
+
+    &:hover {
+      background: rgba(231, 76, 60, 0.15);
+    }
+  }
+
+  // 成功操作项
+  &.success {
+    color: #27ae60;
+
+    i {
+      color: #27ae60;
+    }
+
+    &:hover {
+      background: rgba(46, 204, 113, 0.15);
+    }
+  }
+
+  // 禁用状态
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// 菜单分隔线
+.acu-menu-divider {
+  height: 1px;
+  background: var(--acu-border);
+  margin: 6px 8px;
+}
+
+// 菜单分组标题
+.acu-menu-group-title {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acu-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// 子菜单箭头
+.acu-menu-arrow {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--acu-text-sub);
+}
+
+// 子菜单容器
+.acu-submenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 4px;
+  min-width: 140px;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.15s ease;
+
+  // 从右侧展开时
+  &.from-right {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 4px;
+    transform: translateX(10px);
+  }
+}
+
+// 有子菜单的项
+.acu-menu-item.has-submenu {
+  position: relative;
+
+  &:hover .acu-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+}
+
+// 菜单快捷键提示
+.acu-menu-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--acu-text-sub);
+  opacity: 0.7;
+}
+
+// 菜单复选框/单选框
+.acu-menu-checkbox {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--acu-border);
+  border-radius: 4px;
+  font-size: 10px;
+  color: transparent;
+  transition: all 0.15s ease;
+
+  &.checked {
+    background: var(--acu-highlight);
+    border-color: var(--acu-highlight);
+    color: #fff;
+  }
+}
+
+// 紧凑模式菜单
+.acu-cell-menu.compact {
+  padding: 4px;
+
+  .acu-menu-item {
+    padding: 8px 12px;
+    font-size: 12px;
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+// =========================================
+// Vue 右键菜单组件 (ContextMenu.vue)
+// =========================================
+
+.acu-context-menu {
+  position: fixed;
+  z-index: var(--acu-z-menu, 2147483648);
+  min-width: 160px;
+  max-width: 220px;
+  background: var(--acu-menu-bg, #fff);
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: var(--acu-radius-md, 12px);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    0 0 1px rgba(0, 0, 0, 0.1);
+  padding: 6px 0;
+  outline: none;
+  overflow: hidden;
+
+  // 毛玻璃效果（支持的浏览器）
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  // 确保菜单可以接收点击事件（不被穿透）
+  pointer-events: auto !important;
+}
+
+// Vue 菜单项样式
+.acu-context-menu .acu-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--acu-menu-text, #333);
+  font-size: var(--acu-font-size, 13px);
+  transition:
+    background var(--acu-transition-fast, 0.15s),
+    color var(--acu-transition-fast, 0.15s);
+  user-select: none;
+
+  // 图标
+  i {
+    width: 16px;
+    text-align: center;
+    color: var(--acu-text-sub, #999);
+    font-size: 14px;
+    transition: color var(--acu-transition-fast, 0.15s);
+  }
+
+  // 文本
+  span {
+    flex: 1;
+  }
+
+  // 悬停效果
+  &:hover {
+    background: var(--acu-table-hover, #f0ebe0);
+  }
+
+  // 激活效果
+  &:active {
+    background: var(--acu-btn-hover, #cbbba8);
+  }
+
+  // 危险操作（删除）
+  &.acu-menu-danger {
+    color: var(--acu-danger, #e74c3c);
+
+    i {
+      color: var(--acu-danger, #e74c3c);
+    }
+
+    &:hover {
+      background: rgba(231, 76, 60, 0.1);
+    }
+  }
+
+  // 警告操作（撤销删除）
+  &.acu-menu-warning {
+    color: var(--acu-warning, #f39c12);
+
+    i {
+      color: var(--acu-warning, #f39c12);
+    }
+
+    &:hover {
+      background: rgba(243, 156, 18, 0.1);
+    }
+  }
+}
+
+// Vue 菜单分隔线
+.acu-context-menu .acu-menu-divider {
+  height: 1px;
+  background: var(--acu-border, #dcd0c0);
+  margin: 6px 12px;
+  opacity: 0.6;
+}
+
+// 右键菜单过渡动画
+.acu-menu-fade-enter-active,
+.acu-menu-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.acu-menu-fade-enter-from,
+.acu-menu-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.acu-menu-fade-enter-to,
+.acu-menu-fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}

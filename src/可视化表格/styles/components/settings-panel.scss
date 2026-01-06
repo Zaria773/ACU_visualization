@@ -1,0 +1,214 @@
+// ============================================
+// ACU Settings Panel Component Styles
+// ============================================
+// 设置面板组件样式
+// 包含: TabConfigPanel, NavButtonConfigPanel
+
+// --------------------------------------------
+// 通用配置面板样式
+// --------------------------------------------
+
+.acu-tab-config-panel,
+.acu-button-config-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.acu-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--acu-text-primary, #fff);
+  }
+}
+
+.acu-btn-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-secondary, #999);
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(255, 255, 255, 0.1));
+    color: var(--acu-text-primary, #fff);
+  }
+}
+
+.acu-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--acu-text-secondary, #999);
+  }
+}
+
+.acu-config-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(var(--acu-primary-rgb, 52, 152, 219), 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--acu-text-secondary, #999);
+
+  i {
+    color: var(--acu-primary-color, #3498db);
+  }
+}
+
+// --------------------------------------------
+// Tab 配置面板特有样式
+// --------------------------------------------
+
+.acu-tab-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
+
+  // 移动端调整为 2 列
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.acu-tab-grid-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--acu-border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  background: var(--acu-card-bg, rgba(255, 255, 255, 0.05));
+  color: var(--acu-text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+
+  &:hover {
+    background: var(--acu-hover-bg, rgba(255, 255, 255, 0.1));
+    border-color: var(--acu-primary-color, #3498db);
+  }
+
+  &.selected {
+    background: rgba(var(--acu-primary-rgb, 52, 152, 219), 0.2);
+    border-color: var(--acu-primary-color, #3498db);
+
+    .fa-check {
+      color: var(--acu-primary-color, #3498db);
+    }
+  }
+
+  .tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  i {
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+}
+
+// --------------------------------------------
+// 按钮配置面板特有样式
+// --------------------------------------------
+
+.acu-button-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.acu-button-item {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border: 1px solid var(--acu-border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  background: var(--acu-card-bg, rgba(255, 255, 255, 0.05));
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(.disabled) {
+    background: var(--acu-hover-bg, rgba(255, 255, 255, 0.1));
+    border-color: var(--acu-primary-color, #3498db);
+  }
+
+  &.selected {
+    background: rgba(var(--acu-primary-rgb, 52, 152, 219), 0.15);
+    border-color: var(--acu-primary-color, #3498db);
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    .button-main::after {
+      content: '(必选)';
+      font-size: 10px;
+      color: var(--acu-text-secondary, #999);
+      margin-left: 8px;
+    }
+  }
+
+  .button-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    > i:first-child {
+      width: 20px;
+      text-align: center;
+      color: var(--acu-text-secondary, #999);
+    }
+
+    .button-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--acu-text-primary, #fff);
+    }
+
+    .check-icon {
+      color: var(--acu-primary-color, #3498db);
+      font-size: 12px;
+    }
+  }
+
+  .button-hint {
+    margin-top: 4px;
+    padding-left: 30px;
+    font-size: 11px;
+    color: var(--acu-text-secondary, #999);
+
+    span {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+  }
+}

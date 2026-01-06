@@ -1,0 +1,236 @@
+// =========================================
+// Quick View - 快速预览
+// 对应 .acu-quick-view 及相关组件
+// =========================================
+
+// 快速预览容器
+.acu-quick-view {
+  position: fixed;
+  z-index: 2147483646;
+  min-width: 280px;
+  max-width: 400px;
+  max-height: 60vh;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: acu-fadeIn 0.2s ease;
+
+  // 带箭头指向
+  &::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--acu-bg-panel);
+    border: 1px solid var(--acu-border);
+    border-right: none;
+    border-bottom: none;
+    transform: rotate(45deg);
+  }
+
+  // 箭头在左侧
+  &.arrow-left::before {
+    left: -7px;
+    top: 20px;
+  }
+
+  // 箭头在右侧
+  &.arrow-right::before {
+    right: -7px;
+    top: 20px;
+    transform: rotate(-135deg);
+  }
+
+  // 箭头在顶部
+  &.arrow-top::before {
+    top: -7px;
+    left: 20px;
+  }
+
+  // 箭头在底部
+  &.arrow-bottom::before {
+    bottom: -7px;
+    left: 20px;
+    transform: rotate(-135deg);
+  }
+}
+
+// 快速预览头部
+.acu-quick-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--acu-table-head);
+  border-bottom: 1px solid var(--acu-border);
+
+  .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--acu-text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      color: var(--acu-highlight);
+    }
+  }
+
+  .close-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--acu-text-sub);
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: rgba(231, 76, 60, 0.15);
+      color: #e74c3c;
+    }
+  }
+}
+
+// 快速预览内容
+.acu-quick-view-content {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(60vh - 50px);
+}
+
+// 快速预览项
+.acu-quick-view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--acu-border);
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .value {
+    font-size: 14px;
+    color: var(--acu-text-main);
+    word-break: break-word;
+    line-height: 1.5;
+  }
+}
+
+// 快速预览网格布局
+.acu-quick-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+
+  .acu-quick-view-item {
+    padding: 8px 12px;
+    background: var(--acu-btn-bg);
+    border-radius: 8px;
+    border-bottom: none;
+  }
+}
+
+// 快速预览操作区
+.acu-quick-view-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--acu-border);
+  background: var(--acu-bg-panel);
+}
+
+// 快速预览操作按钮
+.acu-quick-view-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &.primary {
+    background: var(--acu-highlight);
+    color: #fff;
+
+    &:hover {
+      filter: brightness(1.1);
+    }
+  }
+
+  &.secondary {
+    background: var(--acu-btn-bg);
+    color: var(--acu-text-main);
+    border: 1px solid var(--acu-border);
+
+    &:hover {
+      background: var(--acu-btn-hover);
+    }
+  }
+}
+
+// 快速预览加载状态
+.acu-quick-view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--acu-text-sub);
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--acu-border);
+    border-top-color: var(--acu-highlight);
+    border-radius: 50%;
+    animation: acu-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  .text {
+    font-size: 13px;
+  }
+}
+
+// 快速预览空状态
+.acu-quick-view-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  color: var(--acu-text-sub);
+  text-align: center;
+
+  i {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .text {
+    font-size: 13px;
+  }
+}

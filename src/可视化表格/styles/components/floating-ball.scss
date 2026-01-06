@@ -1,0 +1,60 @@
+// =========================================
+// Floating Ball - 悬浮球
+// 对应 .acu-floating-ball-vue
+// =========================================
+
+.acu-floating-ball-vue {
+  position: fixed;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  color: var(--acu-text-main, #333);
+  font-size: 20px;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  pointer-events: auto !important;
+
+  &:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  // 停靠模式
+  &.docked {
+    left: 0 !important;
+    width: 20px !important;
+    height: 50px !important;
+    border-radius: 0 8px 8px 0 !important;
+    opacity: 0.3;
+    background: #000;
+    border: 1px solid #666;
+    border-left: none;
+    font-size: 0 !important;
+    transform: none !important;
+
+    &::after {
+      content: '›';
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      display: block;
+    }
+
+    &:hover,
+    &:active {
+      opacity: 0.8;
+      width: 30px !important;
+    }
+  }
+}
