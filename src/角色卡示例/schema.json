@@ -14,12 +14,21 @@
         "近期事务": {
           "type": "object",
           "propertyNames": {
+<<<<<<< HEAD
             "type": "string",
             "description": "事务名"
           },
           "additionalProperties": {
             "type": "string",
             "description": "事务描述"
+=======
+            "description": "事务名",
+            "type": "string"
+          },
+          "additionalProperties": {
+            "description": "事务描述",
+            "type": "string"
+>>>>>>> a17361edcd8bc72f363b2accf0cd15361ec3f8de
           }
         }
       },
@@ -49,6 +58,7 @@
             ]
           },
           "additionalProperties": {
+<<<<<<< HEAD
             "type": "string",
             "description": "服装描述"
           },
@@ -60,12 +70,22 @@
             "鞋子",
             "饰品"
           ]
+=======
+            "description": "服装描述",
+            "type": "string"
+          }
+>>>>>>> a17361edcd8bc72f363b2accf0cd15361ec3f8de
         },
         "称号": {
           "type": "object",
           "propertyNames": {
+<<<<<<< HEAD
             "type": "string",
             "description": "称号名"
+=======
+            "description": "称号名",
+            "type": "string"
+>>>>>>> a17361edcd8bc72f363b2accf0cd15361ec3f8de
           },
           "additionalProperties": {
             "type": "object",
@@ -96,8 +116,13 @@
         "物品栏": {
           "type": "object",
           "propertyNames": {
+<<<<<<< HEAD
             "type": "string",
             "description": "物品名"
+=======
+            "description": "物品名",
+            "type": "string"
+>>>>>>> a17361edcd8bc72f363b2accf0cd15361ec3f8de
           },
           "additionalProperties": {
             "type": "object",
