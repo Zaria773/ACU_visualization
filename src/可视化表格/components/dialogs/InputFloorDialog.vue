@@ -1,56 +1,54 @@
 <template>
-  <Transition name="modal">
-    <div v-if="visible" class="acu-modal-container" @click.self="handleCancel">
-      <div ref="dialogRef" class="acu-modal acu-input-floor-modal">
-        <!-- 头部 -->
-        <div class="acu-modal-header">
-          <h3>
-            <i class="fas fa-layer-group"></i>
-            指定保存楼层
-          </h3>
-          <button class="acu-modal-close" @click="handleCancel">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleCancel">
+    <div ref="dialogRef" class="acu-modal acu-input-floor-modal">
+      <!-- 头部 -->
+      <div class="acu-modal-header">
+        <h3>
+          <i class="fas fa-layer-group"></i>
+          指定保存楼层
+        </h3>
+        <button class="acu-modal-close" @click="handleCancel">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-        <!-- 内容 -->
-        <div class="acu-modal-body">
-          <div class="floor-input-group">
-            <p class="floor-hint">输入目标楼层索引。正数为从头开始计数，负数为倒数计数（-1 表示最后一楼）。</p>
+      <!-- 内容 -->
+      <div class="acu-modal-body">
+        <div class="floor-input-group">
+          <p class="floor-hint">输入目标楼层索引。正数为从头开始计数，负数为倒数计数（-1 表示最后一楼）。</p>
 
-            <input
-              ref="inputRef"
-              v-model.number="floorIndex"
-              type="number"
-              class="floor-input"
-              placeholder="例如: 5 或 -1"
-              @keydown.enter="handleConfirm"
-              @keydown.escape="handleCancel"
-            />
+          <input
+            ref="inputRef"
+            v-model.number="floorIndex"
+            type="number"
+            class="floor-input"
+            placeholder="例如: 5 或 -1"
+            @keydown.enter="handleConfirm"
+            @keydown.escape="handleCancel"
+          />
 
-            <div v-if="currentFloorInfo" class="floor-info">
-              <i class="fas fa-info-circle"></i>
-              <span>当前自动目标楼层: {{ currentFloorInfo }}</span>
-            </div>
+          <div v-if="currentFloorInfo" class="floor-info">
+            <i class="fas fa-info-circle"></i>
+            <span>当前自动目标楼层: {{ currentFloorInfo }}</span>
+          </div>
 
-            <div v-if="validationError" class="floor-error">
-              <i class="fas fa-exclamation-circle"></i>
-              <span>{{ validationError }}</span>
-            </div>
+          <div v-if="validationError" class="floor-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ validationError }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- 底部 -->
-        <div class="acu-modal-footer">
-          <button class="acu-modal-btn secondary" @click="handleCancel">取消</button>
-          <button class="acu-modal-btn primary" :disabled="!isValidFloor" @click="handleConfirm">
-            <i class="fas fa-save"></i>
-            保存到此楼层
-          </button>
-        </div>
+      <!-- 底部 -->
+      <div class="acu-modal-footer">
+        <button class="acu-modal-btn secondary" @click="handleCancel">取消</button>
+        <button class="acu-modal-btn primary" :disabled="!isValidFloor" @click="handleConfirm">
+          <i class="fas fa-save"></i>
+          保存到此楼层
+        </button>
       </div>
     </div>
-  </Transition>
+  </div>
 </template>
 
 <script setup lang="ts">

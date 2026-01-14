@@ -1,33 +1,113 @@
 <template>
-  <div ref="ballRef" class="acu-floating-ball-vue" :class="{ docked: isDocked }">
-    <i v-if="!isDocked" class="fa-solid fa-layer-group"></i>
+  <div
+    ref="ballRef"
+    class="acu-floating-ball-vue"
+    :class="ballClasses"
+    :style="ballStyle"
+    :title="hasIntegrityIssues ? issueTooltip : '点击打开面板'"
+    @click="handleClick"
+  >
+    <!-- 图标内容 - 根据类型动态渲染 -->
+    <template v-if="!isDocked">
+      <!-- FontAwesome 图标 -->
+      <i v-if="appearance.type === 'icon'" :class="['fa-solid', appearance.content]"></i>
+      <!-- Emoji -->
+      <span v-else-if="appearance.type === 'emoji'" class="ball-emoji">{{ appearance.content }}</span>
+      <!-- 图片 -->
+      <img v-else-if="appearance.type === 'image' && appearance.content" :src="appearance.content" alt="" />
+    </template>
+    <!-- 问题徽章 -->
+    <span v-if="hasIntegrityIssues && !isDocked" class="acu-issue-badge">!</span>
   </div>
 </template>
 
 <script setup lang="ts">
 /**
  * FloatingBall.vue - 悬浮球组件
- * 手动实现拖拽（不使用 VueUse useDraggable）
+ * 使用 VueUse useDraggableWithSnap 实现拖拽
  * 支持跨 iframe 场景（使用 window.parent 尺寸）
- *
- * 注意：跨 iframe + 生产构建场景下：
- * 1. VueUse useDraggable 完全失效 → 使用 jQuery $('body').on() 绑定拖拽事件
- * 2. v-show 和 :style 绑定是可用的
- * 3. 使用 Pinia store 直接调用避免 emit 潜在问题
- *
- * 参考实现：src/手机界面/index.vue 的拖拽逻辑
+ * 支持自定义外观和 AI 填表通知动画
  */
 
-import { useStorage } from '@vueuse/core';
-import { onMounted, onUnmounted, ref, watchEffect } from 'vue';
-import { useUIStore } from '../stores';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useDraggableWithSnap, useParentEventListener } from '../composables';
+import { useBallAppearanceStore, useDataStore, useUIStore } from '../stores';
 import type { BallPosition } from '../types';
+import { hexToRgba } from '../utils';
 
 // ============================================================
-// Store 实例（直接调用，不使用 Vue emit）
+// Store 实例
 // ============================================================
 
 const uiStore = useUIStore();
+const dataStore = useDataStore();
+const ballAppearanceStore = useBallAppearanceStore();
+
+// ============================================================
+// 完整性检测状态
+// ============================================================
+
+/** 是否有完整性问题 */
+const hasIntegrityIssues = computed(() => dataStore.hasIntegrityIssues);
+
+/** 问题提示文本 */
+const issueTooltip = computed(() => {
+  if (!hasIntegrityIssues.value) return '';
+  return dataStore.getIntegritySummary();
+});
+
+// ============================================================
+// 悬浮球外观配置
+// ============================================================
+
+/** 外观配置 */
+const appearance = computed(() => ballAppearanceStore.appearance);
+
+/** AI 填表通知状态 */
+const isAiNotifying = ref(false);
+
+/** 通知动画计时器 */
+let notifyTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * 触发 AI 填表通知动画
+ * @param duration 动画持续时间（毫秒），默认 3000
+ */
+function triggerAiNotify(duration = 3000) {
+  if (notifyTimer) {
+    clearTimeout(notifyTimer);
+  }
+  isAiNotifying.value = true;
+  notifyTimer = setTimeout(() => {
+    isAiNotifying.value = false;
+    notifyTimer = null;
+  }, duration);
+}
+
+/** 计算的 class 列表 */
+const ballClasses = computed(() => ({
+  docked: isDocked.value,
+  'has-issues': hasIntegrityIssues.value,
+  'ai-notify': isAiNotifying.value,
+  'anim-ripple': isAiNotifying.value && appearance.value.notifyAnimation === 'ripple',
+  'anim-arc': isAiNotifying.value && appearance.value.notifyAnimation === 'arc',
+}));
+
+/** 计算的样式（含 CSS 变量和位置） */
+const ballStyle = computed(() => {
+  const app = appearance.value;
+  return {
+    '--ball-size': `${app.size}px`,
+    '--ball-border-color': app.borderColor,
+    '--ball-border-color-rgba': hexToRgba(app.borderColor, app.borderOpacity),
+    '--ball-bg-color': hexToRgba(app.bgColor, app.bgOpacity),
+    ...positionStyle.value,
+  };
+});
+
+// ============================================================
+// 辅助函数
+// ============================================================
 
 /** 获取目标窗口尺寸（支持跨 iframe） */
 function getTargetWindowSize() {
@@ -36,23 +116,6 @@ function getTargetWindowSize() {
     width: targetWindow.innerWidth,
     height: targetWindow.innerHeight,
   };
-}
-
-/** 验证位置是否在屏幕内，如果不在则修正 */
-function validateAndFixPosition(pos: BallPosition): BallPosition {
-  const { width: winWidth, height: winHeight } = getTargetWindowSize();
-  const ballSize = 50; // 悬浮球尺寸
-  const padding = 10; // 边缘间距
-
-  let { x, y } = pos;
-
-  // 边界检查 - 参考原代码 6.4.1.ts 第 143-150 行
-  if (x > winWidth - ballSize) x = winWidth - ballSize - padding;
-  if (y > winHeight - ballSize) y = winHeight - ballSize - padding;
-  if (x < 0) x = padding;
-  if (y < 0) y = padding;
-
-  return { x, y };
 }
 
 /** 获取默认位置 */
@@ -70,17 +133,6 @@ function getDefaultPosition(): BallPosition {
 
 const ballRef = ref<HTMLElement>();
 
-/** 持久化的悬浮球位置（使用 acu_ 前缀） */
-const savedPosition = useStorage<BallPosition>('acu_float_ball_pos', getDefaultPosition());
-
-/** 当前位置 */
-const x = ref(savedPosition.value.x);
-const y = ref(savedPosition.value.y);
-
-/** 拖拽状态 */
-const isDragging = ref(false);
-const wasDragging = ref(false);
-
 /** 停靠状态 */
 const isDocked = ref(false);
 
@@ -88,98 +140,30 @@ const isDocked = ref(false);
 let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ============================================================
-// 跨 iframe 生产构建修复：直接 DOM 操作
-// 问题：Vue 3 响应式绑定 (:style) 在生产构建 + 跨 iframe 场景下失效
-// 解决：使用 watchEffect 直接操作 DOM 元素的 style 属性
+// 使用 VueUse 封装的拖拽功能
 // ============================================================
 
-watchEffect(() => {
-  if (ballRef.value) {
-    ballRef.value.style.left = `${x.value}px`;
-    ballRef.value.style.top = `${y.value}px`;
-    ballRef.value.style.cursor = isDragging.value ? 'grabbing' : 'grab';
-  }
+const defaultPos = getDefaultPosition();
+const {
+  x,
+  y,
+  style: positionStyle,
+  isDragging,
+  wasDragging,
+} = useDraggableWithSnap(ballRef, {
+  initialX: defaultPos.x,
+  initialY: defaultPos.y,
+  edgePadding: 10,
+  elementWidth: computed(() => appearance.value.size).value,
+  useParentWindow: true,
+  onPositionChange: (newX, newY) => {
+    console.info('[ACU FloatingBall] 位置已保存:', newX, newY);
+  },
 });
 
 // ============================================================
-// 手动拖拽实现（使用 jQuery $('body').on() 绑定到父窗口）
-// 参考：src/手机界面/index.vue 的成功实现
-// 关键：脚本项目中 $ 已指向 window.parent.$，所以 $('body') 会选中父窗口的 body
+// 点击处理（区分单击/双击）
 // ============================================================
-
-function handlePointerDown(e: PointerEvent) {
-  // 只响应左键
-  if (e.button !== 0) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const el = ballRef.value;
-  if (!el) return;
-
-  // 记录初始位置
-  const startX = e.clientX;
-  const startY = e.clientY;
-  const initialLeft = x.value;
-  const initialTop = y.value;
-
-  isDragging.value = true;
-  wasDragging.value = false;
-
-  // 拖拽阈值检测
-  let hasMoved = false;
-
-  const handlePointerMove = (moveE: JQuery.TriggeredEvent) => {
-    const originalEvent = moveE.originalEvent as PointerEvent;
-    const dx = originalEvent.clientX - startX;
-    const dy = originalEvent.clientY - startY;
-
-    // 超过 3px 才算移动
-    if (!hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
-      hasMoved = true;
-      wasDragging.value = true;
-    }
-
-    if (hasMoved) {
-      moveE.preventDefault();
-
-      // 计算新位置
-      let newX = initialLeft + dx;
-      let newY = initialTop + dy;
-
-      // 边界限制
-      const { width: winWidth, height: winHeight } = getTargetWindowSize();
-      const ballSize = 50;
-      const padding = 10;
-
-      if (newX < padding) newX = padding;
-      if (newX > winWidth - ballSize - padding) newX = winWidth - ballSize - padding;
-      if (newY < padding) newY = padding;
-      if (newY > winHeight - ballSize - padding) newY = winHeight - ballSize - padding;
-
-      x.value = newX;
-      y.value = newY;
-    }
-  };
-
-  const handlePointerUp = () => {
-    isDragging.value = false;
-
-    // 使用 jQuery 移除事件（关键！$('body') 指向父窗口的 body）
-    $('body').off('pointermove', handlePointerMove);
-    $('body').off('pointerup', handlePointerUp);
-
-    // 如果发生了拖拽，保存位置
-    if (wasDragging.value) {
-      savedPosition.value = { x: x.value, y: y.value };
-      console.info('[ACU FloatingBall] 位置已保存:', x.value, y.value);
-    }
-  };
-
-  // 使用 jQuery 绑定到父窗口 body（关键！脚本项目中 $ 已指向 window.parent.$）
-  $('body').on('pointermove', handlePointerMove);
-  $('body').on('pointerup', handlePointerUp);
-}
 
 function handleClick(e: MouseEvent) {
   // 如果刚刚拖拽结束，忽略这次点击
@@ -202,13 +186,11 @@ function handleClick(e: MouseEvent) {
     clearTimeout(clickTimer);
     clickTimer = null;
     isDocked.value = true;
-    // 直接调用 store，不使用 emit（跨 iframe 生产构建 emit 可能失效）
     console.info('[ACU FloatingBall] 双击 - 进入停靠模式');
   } else {
     // 可能是单击，等待确认
     clickTimer = setTimeout(() => {
       clickTimer = null;
-      // 直接调用 store 打开面板，不使用 emit
       uiStore.openPanel();
       console.info('[ACU FloatingBall] 单击 - 打开面板');
     }, 250);
@@ -216,64 +198,55 @@ function handleClick(e: MouseEvent) {
 }
 
 // ============================================================
-// 生命周期 - 初始化和事件绑定
+// 窗口 resize 处理
+// ============================================================
+
+useParentEventListener('resize', () => {
+  const { width: winWidth, height: winHeight } = getTargetWindowSize();
+  const ballSize = appearance.value.size;
+  const padding = 10;
+
+  let needUpdate = false;
+
+  // 边界检查
+  if (x.value > winWidth - ballSize - padding) {
+    x.value = winWidth - ballSize - padding;
+    needUpdate = true;
+  }
+  if (y.value > winHeight - ballSize - padding) {
+    y.value = winHeight - ballSize - padding;
+    needUpdate = true;
+  }
+  if (x.value < padding) {
+    x.value = padding;
+    needUpdate = true;
+  }
+  if (y.value < padding) {
+    y.value = padding;
+    needUpdate = true;
+  }
+
+  if (needUpdate) {
+    console.info('[ACU FloatingBall] 窗口大小变化，位置已调整');
+  }
+});
+
+// ============================================================
+// 生命周期
 // ============================================================
 
 onMounted(() => {
-  const el = ballRef.value;
-  if (!el) {
-    console.error('[ACU FloatingBall] ballRef 未绑定到 DOM');
-    return;
-  }
-
-  // 验证保存的位置是否在屏幕内
-  const validatedPos = validateAndFixPosition(savedPosition.value);
-  if (validatedPos.x !== savedPosition.value.x || validatedPos.y !== savedPosition.value.y) {
-    console.info('[ACU FloatingBall] 位置越界，已自动修正:', savedPosition.value, '->', validatedPos);
-    savedPosition.value = validatedPos;
-  }
-  x.value = validatedPos.x;
-  y.value = validatedPos.y;
-
-  // 手动绑定 pointerdown 事件（关键！不通过 Vue 模板绑定）
-  el.addEventListener('pointerdown', handlePointerDown);
-  el.addEventListener('click', handleClick);
-
-  console.info('[ACU FloatingBall] 事件已绑定');
-});
-
-// 监听窗口 resize，重新检查位置
-const handleResize = () => {
-  const validatedPos = validateAndFixPosition({ x: x.value, y: y.value });
-
-  if (validatedPos.x !== x.value || validatedPos.y !== y.value) {
-    x.value = validatedPos.x;
-    y.value = validatedPos.y;
-    savedPosition.value = validatedPos;
-    console.info('[ACU FloatingBall] 窗口大小变化，位置已调整');
-  }
-};
-
-onMounted(() => {
-  const targetWindow = window.parent ?? window;
-  targetWindow.addEventListener('resize', handleResize);
+  // 从脚本变量加载外观配置
+  ballAppearanceStore.loadFromScriptVariables();
 });
 
 onUnmounted(() => {
-  // 清理定时器
   if (clickTimer) {
     clearTimeout(clickTimer);
   }
-
-  // 移除事件监听
-  const el = ballRef.value;
-  if (el) {
-    el.removeEventListener('pointerdown', handlePointerDown);
-    el.removeEventListener('click', handleClick);
+  if (notifyTimer) {
+    clearTimeout(notifyTimer);
   }
-
-  const targetWindow = window.parent ?? window;
-  targetWindow.removeEventListener('resize', handleResize);
 });
 
 // ============================================================
@@ -286,12 +259,15 @@ defineExpose({
     const defaultY = (window.parent?.innerHeight ?? window.innerHeight) - 150;
     x.value = 20;
     y.value = defaultY;
-    savedPosition.value = { x: x.value, y: y.value };
   },
   /** 设置停靠状态 */
   setDocked: (docked: boolean) => {
     isDocked.value = docked;
   },
+  /** 触发 AI 填表通知动画 */
+  triggerAiNotify,
+  /** 获取当前外观配置 */
+  getAppearance: () => appearance.value,
 });
 </script>
 

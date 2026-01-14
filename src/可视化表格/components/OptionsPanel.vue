@@ -198,7 +198,7 @@ function handleOptionHover(event: MouseEvent, isHover: boolean): void {
   const target = event.currentTarget as HTMLElement;
   if (isHover) {
     target.style.background = 'var(--acu-table-hover)';
-    target.style.borderColor = 'var(--acu-highlight)';
+    target.style.borderColor = 'var(--acu-title-color)';
   } else {
     target.style.background = 'rgba(255,255,255,0.05)';
     target.style.borderColor = 'var(--acu-border)';

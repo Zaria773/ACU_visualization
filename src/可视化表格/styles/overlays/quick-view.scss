@@ -75,7 +75,7 @@
     gap: 8px;
 
     i {
-      color: var(--acu-highlight);
+      color: var(--acu-title-color);
     }
   }
 
@@ -171,7 +171,7 @@
   transition: all 0.15s ease;
 
   &.primary {
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     color: #fff;
 
     &:hover {
@@ -203,7 +203,7 @@
     width: 32px;
     height: 32px;
     border: 3px solid var(--acu-border);
-    border-top-color: var(--acu-highlight);
+    border-top-color: var(--acu-title-color);
     border-radius: 50%;
     animation: acu-spin 0.8s linear infinite;
     margin-bottom: 12px;

@@ -107,3 +107,68 @@ export type {
 // ============================================
 export { toast, useToast } from './useToast';
 export type { ToastType } from './useToast';
+
+// ============================================
+// 表格完整性检测
+// ============================================
+export {
+  checkTableIntegrity,
+  extractNumber,
+  isSummaryOrOutlineTable,
+  useTableIntegrityCheck,
+} from './useTableIntegrityCheck';
+
+export type {
+  IntegrityCheckConfig,
+  IntegrityIssue,
+  IntegrityIssueType,
+  TableCheckResult,
+} from './useTableIntegrityCheck';
+
+// ============================================
+// 更新预设管理
+// ============================================
+export {
+  AutoTriggerConfigSchema,
+  PresetStorageSchema,
+  UpdatePresetSchema,
+  UpdateSettingsSchema,
+  useUpdatePresets,
+} from './useUpdatePresets';
+
+export type { AutoTriggerConfig, PresetStorage, UpdatePreset, UpdateSettings } from './useUpdatePresets';
+
+// ============================================
+// 历史记录系统（IndexedDB 存储）
+// ============================================
+export { useRowHistory } from './useRowHistory';
+export type { RowSnapshot } from './useRowHistory';
+
+// IndexedDB 底层操作（一般不直接使用，由 useRowHistory 封装）
+export {
+  addSnapshot,
+  clearAll as clearAllSnapshots,
+  deleteByChat,
+  deleteSnapshot,
+  getStats as getDBStats,
+  getSnapshots as getSnapshotsFromDB,
+  initDB,
+} from './useIndexedDB';
+export type { RowSnapshot as IndexedDBRowSnapshot } from './useIndexedDB';
+
+// ============================================
+// Swipe 增强功能
+// ============================================
+export { useSwipeEnhancement } from './useSwipeEnhancement';
+export type { SwipeEnhancementConfig } from './useSwipeEnhancement';
+
+// ============================================
+// 单元格锁定管理
+// ============================================
+export { useCellLock } from './useCellLock';
+
+// ============================================
+// 头像管理（IndexedDB 存储）
+// ============================================
+export { getAvatarManager, useAvatarManager } from './useAvatarManager';
+export type { AvatarRecord, AvatarStats } from './useAvatarManager';

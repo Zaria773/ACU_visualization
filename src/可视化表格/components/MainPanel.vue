@@ -42,22 +42,81 @@
 
       <!-- 动作按钮区（横排） -->
       <div class="acu-nav-actions-area">
-        <button
-          v-for="btn in visibleButtons"
-          :key="btn.id"
-          class="acu-action-btn"
-          :class="getButtonClass(btn.id)"
-          :title="btn.label"
-          :style="getButtonStyle(btn.id)"
-          @click.stop="handleButtonClick(btn.id)"
-          @mousedown.stop="startLongPress(btn.id)"
-          @mouseup.stop="endLongPress"
-          @mouseleave="endLongPress"
-          @touchstart.passive.stop="startLongPress(btn.id)"
-          @touchend.stop="endLongPress"
-        >
-          <i :class="['fa-solid', btn.icon]"></i>
-        </button>
+        <!-- 锁定编辑模式：在最前面添加确认/取消/筛选按钮 -->
+        <div v-if="uiStore.isLockEditMode" class="acu-action-btn-wrapper acu-lock-mode-btns">
+          <button class="acu-action-btn acu-btn-success" title="完成锁定编辑" @click.stop="handleFinishLockEdit">
+            <i class="fas fa-check"></i>
+          </button>
+          <button class="acu-action-btn acu-btn-cancel" title="取消锁定编辑" @click.stop="handleCancelLockEdit">
+            <i class="fas fa-times"></i>
+          </button>
+          <button
+            class="acu-action-btn"
+            :class="{ 'acu-btn-active': uiStore.showLockedOnly }"
+            title="只显示锁定的卡片"
+            @click.stop="toggleShowLockedOnly"
+          >
+            <i class="fas fa-filter"></i>
+          </button>
+          <span v-if="cellLock.pendingLockCount.value > 0" class="acu-lock-count">
+            {{ cellLock.pendingLockCount.value }}
+          </span>
+        </div>
+
+        <!-- 常规按钮（始终显示） -->
+        <div v-for="btn in visibleButtons" :key="btn.id" class="acu-action-btn-wrapper">
+          <button
+            class="acu-action-btn"
+            :class="getButtonClass(btn.id)"
+            :title="getButtonTitle(btn.id)"
+            :style="getButtonStyle(btn.id)"
+            @click.stop="handleButtonClick(btn.id)"
+            @mousedown.stop="startLongPress(btn.id)"
+            @mouseup.stop="endLongPress"
+            @mouseleave="endLongPress"
+            @touchstart.passive.stop="startLongPress(btn.id)"
+            @touchend.stop="endLongPress"
+          >
+            <i :class="['fa-solid', btn.icon]"></i>
+            <!-- 附属按钮指示点 -->
+            <span v-if="hasSecondary(btn.id)" class="secondary-indicator"></span>
+          </button>
+
+          <!-- 长按弹出的附属按钮 -->
+          <transition name="popup">
+            <button
+              v-if="popupButtonId === btn.id && getSecondaryId(btn.id)"
+              class="acu-action-btn acu-popup-btn"
+              :title="getButtonLabel(getSecondaryId(btn.id)!)"
+              @click.stop="handleSecondaryClick(btn.id)"
+            >
+              <i :class="['fa-solid', getButtonIcon(getSecondaryId(btn.id)!)]"></i>
+            </button>
+          </transition>
+        </div>
+
+        <!-- 更多按钮（仅当有隐藏按钮时显示） -->
+        <div v-if="hasHiddenButtons" class="acu-action-btn-wrapper">
+          <button
+            class="acu-action-btn acu-more-btn"
+            :class="{ active: isHiddenPopupVisible }"
+            title="更多按钮"
+            @click.stop="toggleHiddenPopup"
+          >
+            <i class="fa-solid fa-chevron-up"></i>
+          </button>
+        </div>
+
+        <!-- 隐藏按钮浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
+        <HiddenButtonsPopup
+          :visible="isHiddenPopupVisible"
+          :buttons="hiddenButtons"
+          @close="isHiddenPopupVisible = false"
+          @button-click="handleHiddenButtonClick"
+        />
+
+        <!-- Tab浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
+        <slot name="tabs-popup"></slot>
       </div>
     </div>
   </div>
@@ -83,9 +142,10 @@
 import { useEventListener, useStorage } from '@vueuse/core';
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import type { PanelType } from '../composables';
-import { useSmartHeight } from '../composables';
-import { NAV_BUTTONS, useConfigStore } from '../stores';
+import { toast, useCellLock, useSmartHeight } from '../composables';
+import { NAV_BUTTONS, useConfigStore, useUIStore } from '../stores';
 import type { NavButtonConfig, WindowConfig } from '../types';
+import HiddenButtonsPopup from './HiddenButtonsPopup.vue';
 
 // ============================================================
 // Props & Emits
@@ -131,6 +191,8 @@ const emit = defineEmits<{
   save: [];
   /** 另存为（保存到指定楼层） */
   'save-as': [];
+  /** 撤回到上次保存 */
+  undo: [];
   /** 手动更新楼层 */
   'manual-update': [];
   /** 清除数据 */
@@ -151,7 +213,17 @@ const emit = defineEmits<{
   'height-change': [height: number];
   /** 宽度变化 */
   'width-change': [width: number];
+  /** 收纳Tab点击 */
+  'collapse-tab': [];
 }>();
+
+// ============================================================
+// Stores & Composables
+// ============================================================
+
+const uiStore = useUIStore();
+const cellLock = useCellLock();
+const configStore = useConfigStore();
 
 // ============================================================
 // 导航按钮逻辑
@@ -162,12 +234,41 @@ const DEFAULT_VISIBLE_BUTTONS = ['save', 'refresh', 'settings', 'pin', 'toggle']
 
 /** 获取排序后的可见按钮列表 */
 const visibleButtons = computed(() => {
-  const order = configStore.config.buttonOrder || NAV_BUTTONS.map((b: NavButtonConfig) => b.id);
+  let order = configStore.config.buttonOrder || NAV_BUTTONS.map((b: NavButtonConfig) => b.id);
   // 修复：当 visibleButtons 为空数组或未定义时，使用默认值
   const visibleIds =
-    configStore.config.visibleButtons?.length > 0 ? configStore.config.visibleButtons : DEFAULT_VISIBLE_BUTTONS;
+    configStore.config.visibleButtons?.length > 0
+      ? [...configStore.config.visibleButtons]
+      : [...DEFAULT_VISIBLE_BUTTONS];
 
-  console.info('[ACU MainPanel] 计算可见按钮:', { order, visibleIds });
+  // 收纳Tab模式开启时，自动添加 collapseTab 按钮
+  if (configStore.config.collapseTabBar) {
+    if (!visibleIds.includes('collapseTab')) {
+      visibleIds.push('collapseTab');
+    }
+    // 确保 collapseTab 在 order 中（兼容旧配置）
+    if (!order.includes('collapseTab')) {
+      // 添加到 settings 之前
+      const settingsIndex = order.indexOf('settings');
+      if (settingsIndex >= 0) {
+        order = [...order.slice(0, settingsIndex), 'collapseTab', ...order.slice(settingsIndex)];
+      } else {
+        order = [...order, 'collapseTab'];
+      }
+    }
+  } else {
+    // 收纳Tab模式关闭时，移除 collapseTab 按钮（但不要从 order 中移除，以保持配置位置）
+    const collapseIndex = visibleIds.indexOf('collapseTab');
+    if (collapseIndex > -1) {
+      visibleIds.splice(collapseIndex, 1);
+    }
+  }
+
+  console.info('[ACU MainPanel] 计算可见按钮:', {
+    order,
+    visibleIds,
+    collapseTabBar: configStore.config.collapseTabBar,
+  });
 
   return order
     .map((id: string) => NAV_BUTTONS.find((b: NavButtonConfig) => b.id === id))
@@ -177,6 +278,26 @@ const visibleButtons = computed(() => {
       return visibleIds.includes(btn.id);
     });
 });
+
+/** 获取隐藏的按钮列表 */
+const hiddenButtons = computed(() => configStore.hiddenButtons);
+
+/** 是否有隐藏的按钮 */
+const hasHiddenButtons = computed(() => configStore.hasHiddenButtons);
+
+/** 隐藏按钮浮窗是否可见 */
+const isHiddenPopupVisible = ref(false);
+
+/** 切换隐藏按钮浮窗显示状态 */
+const toggleHiddenPopup = () => {
+  isHiddenPopupVisible.value = !isHiddenPopupVisible.value;
+};
+
+/** 处理隐藏按钮点击 */
+const handleHiddenButtonClick = (buttonId: string) => {
+  isHiddenPopupVisible.value = false;
+  emitButtonAction(buttonId);
+};
 
 /** 刷新按钮动画状态 */
 const isRefreshing = ref(false);
@@ -222,8 +343,8 @@ const getButtonStyle = (buttonId: string): Record<string, string> => {
 
   // 固定按钮激活时的样式
   if (buttonId === 'pin' && props.isPinned) {
-    styles.color = 'var(--acu-highlight)';
-    styles.borderColor = 'var(--acu-highlight)';
+    styles.color = 'var(--acu-title-color)';
+    styles.borderColor = 'var(--acu-title-color)';
     styles.background = 'var(--acu-btn-hover)';
   }
 
@@ -231,22 +352,99 @@ const getButtonStyle = (buttonId: string): Record<string, string> => {
 };
 
 // ============================================================
-// 长按检测
+// 长按检测与弹出按钮（与 ActionBar.vue 保持一致）
 // ============================================================
 
 let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 const isLongPress = ref(false);
+const popupButtonId = ref<string | null>(null);
+
+/**
+ * 获取按钮的附属按钮 ID
+ * @param buttonId 主按钮 ID
+ */
+const getSecondaryId = (buttonId: string): string | null => {
+  return configStore.getSecondaryButtonId(buttonId);
+};
+
+/**
+ * 检查按钮是否有附属按钮
+ * @param buttonId 按钮 ID
+ */
+const hasSecondary = (buttonId: string): boolean => {
+  return getSecondaryId(buttonId) !== null;
+};
+
+/**
+ * 获取按钮图标
+ * @param buttonId 按钮 ID
+ */
+const getButtonIcon = (buttonId: string): string => {
+  const btn = NAV_BUTTONS.find((b: NavButtonConfig) => b.id === buttonId);
+  return btn?.icon || 'fa-circle';
+};
+
+/**
+ * 获取按钮标签
+ * @param buttonId 按钮 ID
+ */
+const getButtonLabel = (buttonId: string): string => {
+  const btn = NAV_BUTTONS.find((b: NavButtonConfig) => b.id === buttonId);
+  return btn?.label || buttonId;
+};
+
+/**
+ * 获取按钮 title（含长按提示）
+ * @param buttonId 按钮 ID
+ */
+const getButtonTitle = (buttonId: string): string => {
+  const label = getButtonLabel(buttonId);
+  const secondaryId = getSecondaryId(buttonId);
+  if (secondaryId) {
+    const secondaryLabel = getButtonLabel(secondaryId);
+    return `${label} (长按: ${secondaryLabel})`;
+  }
+  return label;
+};
 
 /** 开始长按计时 */
 const startLongPress = (buttonId: string) => {
-  const btnConfig = NAV_BUTTONS.find((b: NavButtonConfig) => b.id === buttonId);
-  if (!btnConfig?.longPress) return;
+  const secondaryId = getSecondaryId(buttonId);
+  console.log(
+    '[ACU MainPanel] startLongPress:',
+    buttonId,
+    'secondaryId:',
+    secondaryId,
+    'groups:',
+    configStore.buttonGroups,
+  );
+
+  if (!secondaryId) {
+    console.log('[ACU MainPanel] No secondary button for:', buttonId);
+    return;
+  }
 
   isLongPress.value = false;
   longPressTimer = setTimeout(() => {
     isLongPress.value = true;
-    // 触发长按对应的事件
-    emitButtonAction(btnConfig.longPress!);
+    console.log('[ACU MainPanel] Long press triggered for:', buttonId, 'directExec:', configStore.longPressDirectExec);
+
+    // 根据配置决定是弹出按钮还是直接执行
+    if (configStore.longPressDirectExec) {
+      // 直接执行附属功能
+      console.log('[ACU MainPanel] Direct exec:', secondaryId);
+      emitButtonAction(secondaryId);
+    } else {
+      // 弹出附属按钮
+      console.log('[ACU MainPanel] Popup button:', secondaryId);
+      popupButtonId.value = buttonId;
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        if (popupButtonId.value === buttonId) {
+          popupButtonId.value = null;
+        }
+      }, 3000);
+    }
   }, 600);
 };
 
@@ -258,6 +456,18 @@ const endLongPress = () => {
   }
 };
 
+/**
+ * 处理附属按钮点击
+ * @param primaryId 主按钮 ID
+ */
+const handleSecondaryClick = (primaryId: string) => {
+  const secondaryId = getSecondaryId(primaryId);
+  if (secondaryId) {
+    emitButtonAction(secondaryId);
+  }
+  popupButtonId.value = null;
+};
+
 /** 触发按钮动作事件 */
 const emitButtonAction = (actionId: string) => {
   switch (actionId) {
@@ -266,6 +476,9 @@ const emitButtonAction = (actionId: string) => {
       break;
     case 'saveAs':
       emit('save-as');
+      break;
+    case 'undo':
+      emit('undo');
       break;
     case 'refresh':
       emit('refresh');
@@ -287,6 +500,9 @@ const emitButtonAction = (actionId: string) => {
       break;
     case 'openNative':
       emit('open-native');
+      break;
+    case 'collapseTab':
+      emit('collapse-tab');
       break;
     default:
       console.warn(`[MainPanel] 未知的动作 ID: ${actionId}`);
@@ -311,6 +527,31 @@ const handleButtonClick = (buttonId: string) => {
   }
 
   emitButtonAction(buttonId);
+};
+
+// ============================================================
+// 锁定编辑模式处理
+// ============================================================
+
+/** 完成锁定编辑 */
+const handleFinishLockEdit = () => {
+  // 在保存前记录计数（因为保存后 pendingLocks 会被重置）
+  const count = cellLock.pendingLockCount.value;
+  cellLock.savePendingLocks();
+  uiStore.isLockEditMode = false;
+  toast.success(`已保存 ${count} 个单元格锁定`);
+};
+
+/** 取消锁定编辑 */
+const handleCancelLockEdit = () => {
+  cellLock.discardPendingLocks();
+  uiStore.isLockEditMode = false;
+  toast.info('已取消锁定编辑');
+};
+
+/** 切换只显示锁定卡片筛选 */
+const toggleShowLockedOnly = () => {
+  uiStore.showLockedOnly = !uiStore.showLockedOnly;
 };
 
 // ============================================================
@@ -527,9 +768,6 @@ function handleHeaderPointerDown(e: PointerEvent) {
 // ============================================================
 // 高度调节（使用智能高度计算）
 // ============================================================
-
-/** 获取配置 store */
-const configStore = useConfigStore();
 
 /** 内容区域引用（用于自动高度调整监测） */
 const contentInnerRef = ref<HTMLElement>();

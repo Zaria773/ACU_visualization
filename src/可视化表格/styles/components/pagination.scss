@@ -302,8 +302,8 @@
     }
 
     &:focus {
-      border-color: var(--acu-highlight, #d35400);
-      box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(211, 84, 0, 0.08));
+      border-color: var(--acu-title-color, #d35400);
+      box-shadow: 0 0 0 3px var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
     }
   }
 }

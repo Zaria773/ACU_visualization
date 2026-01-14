@@ -22,7 +22,7 @@
  * 用于在单元格内直接编辑内容
  *
  * 功能：
- * - 自动获取焦点并全选内容
+ * - 自动获取焦点并将光标移到末尾
  * - 根据内容自动调整高度（使用 scrollHeight）
  * - Escape 键取消编辑
  * - Enter 键保存（Shift+Enter 换行）
@@ -183,7 +183,7 @@ const handleTouchMove = (e: TouchEvent) => {
 };
 
 /**
- * 组件挂载时自动聚焦并全选
+ * 组件挂载时自动聚焦并将光标移到末尾
  */
 onMounted(() => {
   nextTick(() => {
@@ -196,9 +196,10 @@ onMounted(() => {
     const initialHeight = Math.max(scrollHeight, props.minHeight);
     textarea.style.height = `${initialHeight}px`;
 
-    // 聚焦并全选
+    // 聚焦并将光标移到末尾（而不是全选）
     textarea.focus();
-    textarea.select();
+    const len = textarea.value.length;
+    textarea.setSelectionRange(len, len);
   });
 
   // 监听 selectionchange 事件以检测文本选择状态

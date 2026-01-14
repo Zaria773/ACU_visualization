@@ -17,8 +17,8 @@
     <!-- 横向布局：顶部下拉新增提示（必须在最前面，与原版 prepend 一致） -->
     <!-- 注意：使用 v-show 替代 v-if 保持 DOM 存在，配合 watchEffect 直接操作样式 -->
     <div
-      ref="pullTopRef"
       v-show="layout === 'horizontal' && isMobile && gestureType === 'insert'"
+      ref="pullTopRef"
       class="acu-pull-overlay acu-pull-top"
     >
       <div class="acu-pull-icon">
@@ -32,16 +32,41 @@
       <span v-if="showIndex" class="acu-card-index">#{{ data.index + 1 }}</span>
       <!-- 标题编辑模式 -->
       <InlineEditor
-        v-if="titleCell && editingCell === titleColIndex"
+        v-if="titleCell && editingCell === titleColIndex && !uiStore.isLockEditMode"
         class="acu-title-editor"
         :value="titleCell.value"
         @save="handleCellSave(titleColIndex, $event)"
         @cancel="editingCell = null"
       />
       <!-- 标题显示模式 -->
-      <span v-else-if="titleCell" class="acu-editable-title" @click="handleTitleClick">
+      <span
+        v-else-if="titleCell"
+        class="acu-editable-title"
+        :class="{ 'acu-title-locked': isTitleLocked }"
+        @click="handleTitleClick"
+      >
         {{ titleCell.value || '未命名' }}
+        <i v-if="isTitleLocked" class="fas fa-lock acu-title-lock-icon"></i>
       </span>
+      <!-- 行锁定按钮（仅锁定编辑模式显示） -->
+      <button
+        v-if="uiStore.isLockEditMode"
+        class="acu-row-lock-btn"
+        :class="{ 'acu-row-locked': isCurrentRowLocked }"
+        title="锁定/解锁整行"
+        @click.stop="handleRowLock"
+      >
+        <i :class="isCurrentRowLocked ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+      </button>
+      <!-- 历史记录按钮 -->
+      <button
+        v-if="showHistoryButton && !uiStore.isLockEditMode"
+        class="acu-history-trigger"
+        title="查看历史记录"
+        @click.stop="emit('showHistory')"
+      >
+        <i class="fas fa-search"></i>
+      </button>
     </div>
 
     <!-- 卡片内容区 - Card 布局 -->
@@ -52,19 +77,24 @@
           v-for="cell in gridCells"
           :key="cell.colIndex"
           class="acu-grid-item"
-          :class="getCellChangeClass(cell.colIndex)"
+          :class="[getCellChangeClass(cell.colIndex), getCellLockClass(cell.colIndex)]"
           @click="handleCellClick(cell.colIndex)"
         >
           <label class="acu-grid-label">{{ cell.key }}</label>
           <div class="acu-grid-value">
             <InlineEditor
-              v-if="editingCell === cell.colIndex"
+              v-if="editingCell === cell.colIndex && !uiStore.isLockEditMode"
               :value="cell.value"
               @save="handleCellSave(cell.colIndex, $event)"
               @cancel="editingCell = null"
             />
             <Badge v-else :value="cell.value" />
           </div>
+          <!-- 锁定图标（仅锁定编辑模式下显示） -->
+          <i
+            v-if="uiStore.isLockEditMode && getCellLockClass(cell.colIndex)['acu-cell-locked']"
+            class="fas fa-lock acu-lock-icon"
+          ></i>
         </div>
       </div>
 
@@ -74,13 +104,13 @@
           v-for="cell in fullWidthCells"
           :key="cell.colIndex"
           class="acu-full-item"
-          :class="getCellChangeClass(cell.colIndex)"
+          :class="[getCellChangeClass(cell.colIndex), getCellLockClass(cell.colIndex)]"
           @click="handleCellClick(cell.colIndex)"
         >
           <label class="acu-full-label">{{ cell.key }}</label>
           <div class="acu-full-value">
             <InlineEditor
-              v-if="editingCell === cell.colIndex"
+              v-if="editingCell === cell.colIndex && !uiStore.isLockEditMode"
               :value="cell.value"
               :max-height="300"
               @save="handleCellSave(cell.colIndex, $event)"
@@ -88,6 +118,11 @@
             />
             <span v-else>{{ cell.value || '-' }}</span>
           </div>
+          <!-- 锁定图标（仅锁定编辑模式下显示） -->
+          <i
+            v-if="uiStore.isLockEditMode && getCellLockClass(cell.colIndex)['acu-cell-locked']"
+            class="fas fa-lock acu-lock-icon"
+          ></i>
         </div>
       </div>
     </template>
@@ -99,19 +134,24 @@
           v-for="cell in displayCells"
           :key="cell.colIndex"
           class="acu-card-row"
-          :class="getCellChangeClass(cell.colIndex)"
+          :class="[getCellChangeClass(cell.colIndex), getCellLockClass(cell.colIndex)]"
           @click="handleCellClick(cell.colIndex)"
         >
           <label class="acu-card-label">{{ cell.key }}:</label>
           <div class="acu-card-value">
             <InlineEditor
-              v-if="editingCell === cell.colIndex"
+              v-if="editingCell === cell.colIndex && !uiStore.isLockEditMode"
               :value="cell.value"
               @save="handleCellSave(cell.colIndex, $event)"
               @cancel="editingCell = null"
             />
             <Badge v-else :value="cell.value" />
           </div>
+          <!-- 锁定图标（仅锁定编辑模式下显示） -->
+          <i
+            v-if="uiStore.isLockEditMode && getCellLockClass(cell.colIndex)['acu-cell-locked']"
+            class="fas fa-lock acu-lock-icon"
+          ></i>
         </div>
       </div>
     </template>
@@ -119,8 +159,8 @@
     <!-- 横向布局：底部上划删除提示（在内容区域之后，与原版 append 一致） -->
     <!-- 注意：使用 v-show 替代 v-if 保持 DOM 存在，配合 watchEffect 直接操作样式 -->
     <div
-      ref="pullBottomRef"
       v-show="layout === 'horizontal' && isMobile && gestureType === 'delete'"
+      ref="pullBottomRef"
       class="acu-pull-overlay acu-pull-bottom"
       :class="{ 'acu-pull-restore': isDeleting }"
     >
@@ -138,15 +178,15 @@
     <template v-if="layout === 'vertical' && isMobile">
       <!-- 左侧右滑删除提示 -->
       <div
-        ref="swipeLeftRef"
         v-show="gestureType === 'delete'"
+        ref="swipeLeftRef"
         class="acu-swipe-overlay acu-swipe-left"
         :class="{ 'acu-swipe-restore': isDeleting }"
       >
         <i :class="isDeleting ? 'fa-solid fa-undo' : 'fa-solid fa-trash'"></i>
       </div>
       <!-- 右侧左滑新增提示 -->
-      <div ref="swipeRightRef" v-show="gestureType === 'insert'" class="acu-swipe-overlay acu-swipe-right">
+      <div v-show="gestureType === 'insert'" ref="swipeRightRef" class="acu-swipe-overlay acu-swipe-right">
         <i class="fa-solid fa-plus"></i>
       </div>
     </template>
@@ -168,8 +208,9 @@
  */
 
 import { computed, ref, watch, watchEffect } from 'vue';
-import { useCardGestures, useIsMobile, useSelectionGuardEnhanced } from '../composables';
+import { useCardGestures, useCellLock, useIsMobile, useSelectionGuardEnhanced } from '../composables';
 import { useDataStore } from '../stores/useDataStore';
+import { useUIStore } from '../stores/useUIStore';
 import type { TableCell, TableRow } from '../types';
 import Badge from './Badge.vue';
 import InlineEditor from './InlineEditor.vue';
@@ -193,6 +234,10 @@ interface Props {
   showHeader?: boolean;
   /** 标题列索引（如果设置，该列将显示在头部） */
   titleColIndex?: number;
+  /** 是否显示历史记录按钮 */
+  showHistoryButton?: boolean;
+  /** 自定义高亮列（用于历史对比） */
+  customHighlights?: Set<number>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -202,6 +247,8 @@ const props = withDefaults(defineProps<Props>(), {
   showIndex: true,
   showHeader: true,
   titleColIndex: 1, // Skip first null column (original code uses 1, not 0)
+  showHistoryButton: true,
+  customHighlights: undefined,
 });
 
 const emit = defineEmits<{
@@ -213,6 +260,8 @@ const emit = defineEmits<{
   toggleDelete: [];
   /** 右键菜单事件 */
   contextMenu: [event: MouseEvent, rowIndex: number];
+  /** 显示历史记录事件 */
+  showHistory: [];
 }>();
 
 // ============================================================
@@ -222,6 +271,8 @@ const emit = defineEmits<{
 const cardRef = ref<HTMLElement>();
 const editingCell = ref<number | null>(null);
 const dataStore = useDataStore();
+const uiStore = useUIStore();
+const cellLock = useCellLock();
 
 // 手势指示器 DOM refs（跨 iframe 生产构建修复需要）
 const pullTopRef = ref<HTMLElement>();
@@ -289,6 +340,29 @@ const gridCells = computed(() => displayCells.value.filter(cell => !isFullWidthC
 /** Full-Width 布局单元格（长文本） */
 const fullWidthCells = computed(() => displayCells.value.filter(cell => isFullWidthCell(cell)));
 
+/** 当前行的锁定键（带行索引 fallback） */
+const currentRowLockKey = computed(() => {
+  const headers = props.data.cells.map(c => c.key);
+  const rowData = props.data.cells.map(c => String(c.value ?? ''));
+  return cellLock.getRowKey(props.tableName, rowData, headers, props.data.index);
+});
+
+/** 当前行是否整行锁定 */
+const isCurrentRowLocked = computed(() => {
+  if (!uiStore.isLockEditMode) return false;
+  const key = currentRowLockKey.value;
+  if (!key) return false;
+  return cellLock.isRowLockedPending(props.tableName, key);
+});
+
+/** 标题是否已锁定 */
+const isTitleLocked = computed(() => {
+  if (!uiStore.isLockEditMode || !titleCell.value) return false;
+  const key = currentRowLockKey.value;
+  if (!key) return false;
+  return cellLock.isCellLockedPending(props.tableName, key, titleCell.value.key);
+});
+
 // ============================================================
 // 高亮逻辑
 // ============================================================
@@ -299,6 +373,15 @@ const fullWidthCells = computed(() => displayCells.value.filter(cell => isFullWi
  * @returns CSS class 对象
  */
 function getCellChangeClass(colIndex: number): Record<string, boolean> {
+  // 1. 优先检查自定义高亮（用于历史对比）
+  if (props.customHighlights?.has(colIndex)) {
+    return {
+      'acu-cell-changed': true,
+      'acu-cell-changed-manual': true,
+    };
+  }
+
+  // 2. 使用 store 的变更检测
   const cellId = `${props.tableName}-${props.data.index}-${colIndex}`;
   const changeType = dataStore.getCellChangeType(cellId);
 
@@ -432,7 +515,50 @@ const handleScroll = (e: Event) => {
 };
 
 /**
- * 点击单元格（点按触发编辑，非长按）
+ * 获取单元格锁定状态的 CSS class
+ * @param colIndex 列索引
+ */
+function getCellLockClass(colIndex: number): Record<string, boolean> {
+  // 只在锁定编辑模式下显示锁定状态
+  if (!uiStore.isLockEditMode) {
+    return {};
+  }
+
+  const cell = props.data.cells[colIndex];
+  if (!cell) return {};
+
+  const rowKey = currentRowLockKey.value;
+  if (!rowKey) return {};
+
+  const isLocked = cellLock.isCellLockedPending(props.tableName, rowKey, cell.key);
+  const isRowLocked = cellLock.isRowLockedPending(props.tableName, rowKey);
+
+  return {
+    'acu-cell-locked': isLocked || isRowLocked,
+    'acu-cell-row-locked': isRowLocked,
+  };
+}
+
+// ============================================================
+// 锁定编辑模式：整行锁定（通过按钮触发）
+// ============================================================
+
+/** 切换整行锁定状态（由行锁定按钮调用） */
+const handleRowLock = () => {
+  const rowKey = currentRowLockKey.value;
+  if (!rowKey) {
+    console.warn('[ACU] 无法生成行键，跳过整行锁定');
+    return;
+  }
+
+  const headers = props.data.cells.map(c => c.key);
+  const rowData = props.data.cells.map(c => String(c.value ?? ''));
+  const isNowLocked = cellLock.toggleRowLock(props.tableName, rowKey, headers, rowData);
+  console.info(`[ACU] 整行锁定状态切换: ${rowKey} -> ${isNowLocked ? '锁定' : '解锁'}`);
+};
+
+/**
+ * 点击单元格
  */
 const handleCellClick = (colIndex: number) => {
   // 选词时不触发编辑（包括最近刚结束选词）
@@ -453,23 +579,66 @@ const handleCellClick = (colIndex: number) => {
     return;
   }
 
+  // ========================================
+  // 锁定编辑模式：切换单元格锁定状态
+  // ========================================
+  if (uiStore.isLockEditMode) {
+    const cell = props.data.cells[colIndex];
+    if (!cell) return;
+
+    const rowKey = currentRowLockKey.value;
+    if (!rowKey) {
+      console.warn('[ACU] 无法生成行键，跳过锁定操作');
+      return;
+    }
+
+    // 切换锁定状态
+    const cellValue = String(cell.value ?? '');
+    const isNowLocked = cellLock.toggleCellLock(props.tableName, rowKey, cell.key, cellValue);
+    console.info(`[ACU] 单元格锁定状态切换: ${cell.key} -> ${isNowLocked ? '锁定' : '解锁'}`);
+    return;
+  }
+
+  // ========================================
+  // 正常模式：触发编辑
+  // ========================================
   editingCell.value = colIndex;
   emit('cellClick', props.data.index, colIndex);
 };
 
 /**
- * 点击标题 (直接触发编辑，绕过部分防误触检测)
+ * 点击标题
+ * - 锁定模式：切换标题字段的锁定状态
+ * - 正常模式：触发编辑
  */
 const handleTitleClick = () => {
-  if (props.titleColIndex < 0) return;
+  if (props.titleColIndex < 0 || !titleCell.value) return;
 
-  // 待删除行不能编辑
+  // 待删除行不能操作
   if (isDeleting.value) {
-    console.info('[ACU] 待删除行不能编辑标题');
+    console.info('[ACU] 待删除行不能操作标题');
     return;
   }
 
-  // 直接设置编辑状态，绕过选词和滑动检测（标题编辑是明确意图）
+  // ========================================
+  // 锁定编辑模式：切换标题字段锁定状态
+  // ========================================
+  if (uiStore.isLockEditMode) {
+    const rowKey = currentRowLockKey.value;
+    if (!rowKey) {
+      console.warn('[ACU] 无法生成行键，跳过标题锁定操作');
+      return;
+    }
+
+    const cellValue = String(titleCell.value.value ?? '');
+    const isNowLocked = cellLock.toggleCellLock(props.tableName, rowKey, titleCell.value.key, cellValue);
+    console.info(`[ACU] 标题锁定状态切换: ${titleCell.value.key} -> ${isNowLocked ? '锁定' : '解锁'}`);
+    return;
+  }
+
+  // ========================================
+  // 正常模式：触发编辑
+  // ========================================
   console.info('[ACU DataCard] 标题点击，触发编辑 colIndex:', props.titleColIndex);
   editingCell.value = props.titleColIndex;
   emit('cellClick', props.data.index, props.titleColIndex);
@@ -481,6 +650,18 @@ const handleTitleClick = () => {
 const handleCellSave = (colIndex: number, value: string) => {
   // 调用 store 更新 (使用 tableName 作为 tableId，因为 processToTableData 使用 sheet.name)
   dataStore.updateCell(props.tableName, props.data.index, colIndex, value);
+
+  // 如果该单元格被锁定，同步更新锁定存储的值
+  // 这样用户修改锁定单元格后，新值会被保护，而不是被 applyLocks 回滚
+  const cell = props.data.cells[colIndex];
+  const rowKey = currentRowLockKey.value;
+  if (cell && rowKey) {
+    // 检查是否是锁定的单元格（包括整行锁定和字段锁定）
+    if (cellLock.isCellLocked(props.tableName, rowKey, cell.key)) {
+      cellLock.updateLockedValue(props.tableName, rowKey, cell.key, value);
+      console.info('[ACU] 同步更新锁定值:', cell.key, '->', value);
+    }
+  }
 
   // 关闭编辑器
   editingCell.value = null;

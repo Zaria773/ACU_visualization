@@ -7,7 +7,7 @@
  * - 回退到 localStorage 读写 shujuku_*_allSettings_v2
  */
 
-import { ref, watchEffect } from 'vue';
+import { ref } from 'vue';
 import { getCore } from '../utils';
 
 // ============================================================
@@ -26,6 +26,23 @@ export interface DbSettings {
   skipUpdateFloors?: number;
   /** 其他设置项 */
   [key: string]: unknown;
+}
+
+/** 表格信息接口 (从 API 获取) */
+export interface TableInfo {
+  /** 表格 key (如 sheet_0) */
+  key: string;
+  /** 表格名称 */
+  name: string;
+  /** 是否是总结表/大纲表 */
+  isSummaryOrOutline: boolean;
+}
+
+/** 预设执行结果 */
+export interface PresetExecuteResult {
+  success: boolean;
+  message: string;
+  affectedTables?: string[];
 }
 
 // ============================================================
@@ -211,6 +228,106 @@ export function useDbSettings() {
     }
   }
 
+  /**
+   * 获取所有表格的元信息列表
+   * 用于表格选择器 UI
+   */
+  function getTableList(): TableInfo[] {
+    try {
+      const api = getCore().getDB();
+
+      if (!api) {
+        console.warn('[ACU] 数据库 API 不可用');
+        return [];
+      }
+
+      // 优先使用新 API
+      if (typeof api.getTableList === 'function') {
+        const list = api.getTableList();
+        console.info('[ACU] 获取表格列表成功:', list?.length || 0);
+        return list || [];
+      }
+
+      // 回退：从 exportTableAsJson 解析表格名称
+      if (typeof api.exportTableAsJson === 'function') {
+        const data = api.exportTableAsJson();
+        if (data && typeof data === 'object') {
+          const tables: TableInfo[] = [];
+          Object.keys(data).forEach(key => {
+            if (!key.startsWith('sheet_')) return;
+            const table = data[key];
+            const name = table?.name || key;
+            // 简单判断是否是总结表/大纲表
+            const isSummaryOrOutline =
+              name.includes('总结') ||
+              name.includes('大纲') ||
+              name.toLowerCase().includes('summary') ||
+              name.toLowerCase().includes('outline');
+            tables.push({ key, name, isSummaryOrOutline });
+          });
+          console.info('[ACU] 从 exportTableAsJson 解析表格列表:', tables.length);
+          return tables;
+        }
+      }
+
+      console.warn('[ACU] 无法获取表格列表');
+      return [];
+    } catch (e) {
+      console.error('[ACU] 获取表格列表失败:', e);
+      return [];
+    }
+  }
+
+  /**
+   * 使用预设参数执行更新（调用新 API）
+   * 支持指定表格和四参数，不影响全局设置
+   *
+   * @param presetSettings 四参数设置
+   * @param targetTableNames 要更新的表格名称列表（空数组=更新全部）
+   * @param silent 是否静默模式
+   */
+  async function executeWithPreset(
+    presetSettings: Partial<DbSettings>,
+    targetTableNames: string[] = [],
+    silent = false,
+  ): Promise<PresetExecuteResult> {
+    try {
+      const api = getCore().getDB();
+
+      if (!api) {
+        return { success: false, message: '数据库 API 不可用' };
+      }
+
+      // 优先使用新 API: executeWithPreset
+      if (typeof api.executeWithPreset === 'function') {
+        const result = await api.executeWithPreset({
+          settings: {
+            autoUpdateThreshold: presetSettings.autoUpdateThreshold,
+            updateBatchSize: presetSettings.updateBatchSize,
+            skipUpdateFloors: presetSettings.skipUpdateFloors,
+            autoUpdateFrequency: presetSettings.autoUpdateFrequency,
+          },
+          targetTableNames: targetTableNames.length > 0 ? targetTableNames : null,
+          silent,
+        });
+        console.info('[ACU] executeWithPreset 结果:', result);
+        return result as PresetExecuteResult;
+      }
+
+      // 回退：先保存设置再执行旧方法
+      console.info('[ACU] 回退到旧方式: saveSettings + executeManualUpdate');
+      await saveSettings(presetSettings);
+      const success = await executeManualUpdate();
+      return {
+        success,
+        message: success ? '更新成功' : '更新失败',
+      };
+    } catch (e) {
+      console.error('[ACU] 预设执行失败:', e);
+      return { success: false, message: String(e) };
+    }
+  }
+
   return {
     // 状态
     settings,
@@ -222,6 +339,8 @@ export function useDbSettings() {
     saveSettings,
     updateSetting,
     executeManualUpdate,
+    getTableList,
+    executeWithPreset,
 
     // 工具
     findDatabaseSettingsKey,

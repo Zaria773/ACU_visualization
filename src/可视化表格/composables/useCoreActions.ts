@@ -18,15 +18,27 @@ export function useCoreActions() {
 
   /**
    * 插入新行
-   * @param tableKey 表格 Key
+   * @param tableKey 表格 Key (sheetId，如 'sheet_0')
    * @param rowIdx 行索引 (在此行之后插入)
    */
   const insertRow = async (tableKey: string, rowIdx: number) => {
-    const rawData = getTableData();
-    if (!rawData) return;
+    // 优先使用 stagedData，其次使用 API 获取的数据
+    let rawData = dataStore.getStagedData();
+    if (!rawData) {
+      rawData = getTableData();
+    }
+    if (!rawData) {
+      console.warn('[ACU insertRow] 无法获取数据');
+      toast.error('无法获取数据');
+      return;
+    }
 
     const sheet = rawData[tableKey];
-    if (!sheet?.content) return;
+    if (!sheet?.content) {
+      console.warn('[ACU insertRow] 未找到表格:', tableKey, '可用表格:', Object.keys(rawData));
+      toast.error('未找到目标表格');
+      return;
+    }
 
     const content = sheet.content;
     const colCount = content[0] ? content[0].length : 2;
@@ -36,13 +48,22 @@ export function useCoreActions() {
     // 如果有第一列且看起来像序号，尝试自动填充
     if (colCount > 0) newRow[0] = String(content.length);
 
-    // 插入到当前行之后
+    // 插入到当前行之后（rowIdx 是从 0 开始的数据行索引，content[0] 是表头，所以 +2）
     content.splice(rowIdx + 2, 0, newRow);
 
     toast.info('正在插入新行...');
 
+    // 关键修复：先更新 stagedData，确保 saveToDatabase 使用最新数据
+    dataStore.setStagedData(rawData);
+
+    // 保存当前快照到撤回缓存（在保存操作前执行）
+    dataStore.saveLastState();
+
     // 保存到数据库
-    await saveToDatabase(rawData, false, true);
+    const success = await saveToDatabase(rawData, false, true);
+    if (success) {
+      toast.success('新行已插入');
+    }
   };
 
   /**

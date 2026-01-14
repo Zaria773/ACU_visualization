@@ -85,7 +85,7 @@
   --acu-card-width: 280px;
   --acu-font-size: 13px;
   --acu-highlight: #d35400;
-  --acu-highlight-bg: rgba(211, 84, 0, 0.08);
+  --acu-title-color-bg: rgba(211, 84, 0, 0.08);
   --acu-title-color: #d35400;
   --acu-accent: #d35400;
   --acu-nav-cols: repeat(auto-fill, minmax(90px, 1fr));
@@ -208,24 +208,24 @@
 
 // 紫色主题: Purple
 .acu-theme-purple {
-  --acu-bg-nav: #f3e5f5;
-  --acu-bg-panel: #f3e5f5;
-  --acu-border: #e1bee7;
+  --acu-bg-nav: #ede7f6;
+  --acu-bg-panel: #ede7f6;
+  --acu-border: #d1c4e9;
   --acu-text-main: #4a148c;
-  --acu-text-sub: #8e24aa;
-  --acu-btn-bg: #e1bee7;
-  --acu-btn-hover: #d1c4e9;
+  --acu-text-sub: #7b1fa2;
+  --acu-btn-bg: #d1c4e9;
+  --acu-btn-hover: #b39ddb;
   --acu-btn-active-bg: #7b1fa2;
   --acu-btn-active-text: #fff;
-  --acu-table-head: #f3e5f5;
-  --acu-table-hover: #ede7f6;
-  --acu-shadow: rgba(0, 0, 0, 0.1);
-  --acu-card-bg: #ffffff;
-  --acu-badge-bg: #f3e5f5;
-  --acu-menu-bg: #fff;
+  --acu-table-head: #f5f0fa;
+  --acu-table-hover: #f3e5f5;
+  --acu-shadow: rgba(74, 20, 140, 0.1);
+  --acu-card-bg: #faf8fc;
+  --acu-badge-bg: #f5f0fa;
+  --acu-menu-bg: #faf8fc;
   --acu-menu-text: #4a148c;
-  --acu-input-bg: rgba(255, 255, 255, 0.6);
-  --acu-overlay-bg: rgba(74, 20, 140, 0.25);
+  --acu-input-bg: rgba(255, 255, 255, 0.8);
+  --acu-overlay-bg: rgba(74, 20, 140, 0.3);
 }
 
 // =========================================

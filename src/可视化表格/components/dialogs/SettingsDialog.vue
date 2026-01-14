@@ -1,9 +1,11 @@
 <template>
   <Transition name="modal">
     <div v-if="visible" class="acu-modal-container" @click.self="handleCancel">
-      <div ref="dialogRef" class="acu-modal acu-settings-modal">
+      <div ref="dialogRef" class="acu-modal acu-settings-modal" :class="{ expanded: isExpanded }">
         <!-- 头部 -->
-        <div class="acu-modal-header">
+        <div ref="headerRef" class="acu-modal-header">
+          <!-- 拖动把手区域（点击切换高度） -->
+          <div class="acu-drag-handle" @click="toggleHeight"></div>
           <!-- 返回按钮（仅在子面板时显示） -->
           <button v-if="currentPanel !== 'main'" class="acu-modal-back" @click.stop="goBack">
             <i class="fas fa-arrow-left"></i>
@@ -24,33 +26,21 @@
                 外观与布局
               </div>
               <div class="acu-settings-group">
-                <!-- 主题选择 -->
-                <div class="acu-settings-row">
-                  <div class="acu-settings-label">
-                    主题风格
-                    <span class="hint">选择界面配色方案</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <select v-model="localConfig.theme">
-                      <option v-for="theme in THEMES" :key="theme.id" :value="theme.id">
-                        {{ theme.name }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
                 <!-- 字体选择 -->
                 <div class="acu-settings-row">
                   <div class="acu-settings-label">
                     显示字体
                     <span class="hint">选择界面字体</span>
                   </div>
-                  <div class="acu-settings-control">
+                  <div class="acu-settings-control acu-font-control">
                     <select v-model="localConfig.fontFamily">
-                      <option v-for="font in FONTS" :key="font.id" :value="font.id">
+                      <option v-for="font in allFonts" :key="font.id" :value="font.id">
                         {{ font.name }}
                       </option>
                     </select>
+                    <button class="acu-add-font-btn" title="添加自定义字体" @click.stop="showAddFontDialog = true">
+                      <i class="fas fa-plus"></i>
+                    </button>
                   </div>
                 </div>
 
@@ -116,108 +106,6 @@
               </div>
             </div>
 
-            <!-- 高亮设置 -->
-            <div class="acu-settings-section">
-              <div class="acu-settings-title">
-                <i class="fas fa-highlighter"></i>
-                高亮
-              </div>
-              <div class="acu-settings-group">
-                <!-- 高亮新内容 -->
-                <div class="acu-settings-row">
-                  <div class="acu-settings-label">
-                    高亮变动内容
-                    <span class="hint">突出显示有变化的数据</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <button
-                      class="acu-switch"
-                      :class="{ active: localConfig.highlightNew }"
-                      @click="localConfig.highlightNew = !localConfig.highlightNew"
-                    ></button>
-                  </div>
-                </div>
-
-                <!-- 手动修改高亮颜色 - 圆点选择器 -->
-                <div v-if="localConfig.highlightNew" class="acu-settings-row acu-color-picker-row">
-                  <div class="acu-settings-label">
-                    手动修改高亮
-                    <span class="hint">手动编辑内容的标记颜色</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <div class="acu-color-row">
-                      <div
-                        v-for="(color, key) in HIGHLIGHT_COLORS"
-                        :key="key"
-                        class="acu-color-circle"
-                        :class="{ selected: localConfig.highlightManualColor === key }"
-                        :style="{ backgroundColor: color.main }"
-                        :title="color.name"
-                        @click="localConfig.highlightManualColor = key as string"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- AI填表高亮颜色 - 圆点选择器 -->
-                <div v-if="localConfig.highlightNew" class="acu-settings-row acu-color-picker-row">
-                  <div class="acu-settings-label">
-                    AI填表高亮
-                    <span class="hint">AI自动填写内容的标记颜色</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <div class="acu-color-row">
-                      <div
-                        v-for="(color, key) in HIGHLIGHT_COLORS"
-                        :key="key"
-                        class="acu-color-circle"
-                        :class="{ selected: localConfig.highlightAiColor === key }"
-                        :style="{ backgroundColor: color.main }"
-                        :title="color.name"
-                        @click="localConfig.highlightAiColor = key as string"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 自定义标题颜色 -->
-                <div class="acu-settings-row">
-                  <div class="acu-settings-label">
-                    自定义标题颜色
-                    <span class="hint">使用独立的标题颜色</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <button
-                      class="acu-switch"
-                      :class="{ active: localConfig.customTitleColor }"
-                      @click="localConfig.customTitleColor = !localConfig.customTitleColor"
-                    ></button>
-                  </div>
-                </div>
-
-                <!-- 标题颜色 - 圆点选择器（仅当启用自定义时显示） -->
-                <div v-if="localConfig.customTitleColor" class="acu-settings-row acu-color-picker-row">
-                  <div class="acu-settings-label">
-                    标题颜色
-                    <span class="hint">表格标题的颜色</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <div class="acu-color-row">
-                      <div
-                        v-for="(color, key) in HIGHLIGHT_COLORS"
-                        :key="key"
-                        class="acu-color-circle"
-                        :class="{ selected: localConfig.titleColor === key }"
-                        :style="{ backgroundColor: color.main }"
-                        :title="color.name"
-                        @click="localConfig.titleColor = key as string"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <!-- 界面配置入口（使用圆角容器）-->
             <div class="acu-settings-section">
               <div class="acu-settings-title">
@@ -241,6 +129,28 @@
                   <div class="acu-settings-label">
                     导航栏按钮自定义配置
                     <span class="hint">自定义导航栏显示的按钮</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <i class="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+
+                <!-- 悬浮球外观配置入口 -->
+                <div class="acu-settings-row acu-nav-row" @click="goToPanel('ballAppearance')">
+                  <div class="acu-settings-label">
+                    悬浮球外观
+                    <span class="hint">自定义悬浮球样式和AI填表通知动画</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <i class="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+
+                <!-- 主题美化与高亮配置入口 -->
+                <div class="acu-settings-row acu-nav-row" @click="goToPanel('themeConfig')">
+                  <div class="acu-settings-label">
+                    主题美化与高亮配置
+                    <span class="hint">自定义主题变量、高亮颜色、CSS</span>
                   </div>
                   <div class="acu-settings-control">
                     <i class="fas fa-chevron-right"></i>
@@ -305,13 +215,63 @@
                 <div class="acu-settings-row">
                   <div class="acu-settings-label">
                     清除操作确认
-                    <span class="hint">删除数据前需确认</span>
+                    <span class="hint">删除数据前需确认。关闭后点按默认删除最新一个有数据楼层。</span>
                   </div>
                   <div class="acu-settings-control">
                     <button
                       class="acu-switch"
                       :class="{ active: localConfig.purgeConfirmation }"
                       @click="localConfig.purgeConfirmation = !localConfig.purgeConfirmation"
+                    ></button>
+                  </div>
+                </div>
+
+                <!-- 收纳Tab栏 -->
+                <div class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    收纳Tab栏
+                    <span class="hint">将Tab栏收纳到导航按钮中</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.collapseTabBar }"
+                      @click="localConfig.collapseTabBar = !localConfig.collapseTabBar"
+                    ></button>
+                  </div>
+                </div>
+
+                <!-- 锁定单元格入口 -->
+                <div class="acu-settings-row acu-nav-row" @click="handleEnterLockMode">
+                  <div class="acu-settings-label">
+                    锁定单元格
+                    <span class="hint">保护数据不被 AI 修改</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <i class="fas fa-chevron-right"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Swipe 增强功能 -->
+            <div class="acu-settings-section">
+              <div class="acu-settings-title">
+                <i class="fas fa-hand-pointer"></i>
+                Swipe 增强
+              </div>
+              <div class="acu-settings-group">
+                <!-- Swipe 时清除表格 -->
+                <div class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    Swipe 清除表格
+                    <span class="hint">重 roll 时若最后一楼有表格数据则自动清除</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.clearTableOnSwipe }"
+                      @click="localConfig.clearTableOnSwipe = !localConfig.clearTableOnSwipe"
                     ></button>
                   </div>
                 </div>
@@ -324,10 +284,46 @@
 
           <!-- ============ 导航栏按钮配置面板 ============ -->
           <NavButtonConfigPanel v-else-if="currentPanel === 'buttonConfig'" />
+
+          <!-- ============ 悬浮球外观配置面板 ============ -->
+          <BallAppearancePanel v-else-if="currentPanel === 'ballAppearance'" />
+
+          <!-- ============ 主题美化与高亮配置面板 ============ -->
+          <ThemePanel v-else-if="currentPanel === 'themeConfig'" />
         </div>
 
+        <!-- ============ 添加自定义字体弹窗（直接渲染，不使用 Teleport） ============ -->
+        <Transition name="modal">
+          <div v-if="showAddFontDialog" class="acu-font-dialog-overlay" @click.self="showAddFontDialog = false">
+            <div class="acu-mini-dialog acu-add-font-dialog" @click.stop>
+              <div class="acu-mini-dialog-header">
+                <span>添加自定义字体</span>
+                <button class="acu-mini-close" @click.stop="showAddFontDialog = false">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div class="acu-mini-dialog-body">
+                <div class="acu-font-form">
+                  <div class="acu-form-row">
+                    <label>字体名称</label>
+                    <input v-model="newFontName" type="text" placeholder="例如：霞鹜文楷" />
+                  </div>
+                  <div class="acu-form-row">
+                    <label>字体链接</label>
+                    <input v-model="newFontUrl" type="text" placeholder="@import URL 或 CDN 链接" />
+                  </div>
+                </div>
+              </div>
+              <div class="acu-mini-dialog-footer">
+                <button class="acu-btn-secondary" @click.stop="showAddFontDialog = false">取消</button>
+                <button class="acu-btn-primary" :disabled="!canAddFont" @click.stop="handleAddFont">添加</button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 7.0.9 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.0 ——</div>
       </div>
     </div>
   </Transition>
@@ -336,16 +332,20 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core';
 import { computed, reactive, ref, watch } from 'vue';
-import { FONTS, HIGHLIGHT_COLORS, THEMES, useConfigStore } from '../../stores/useConfigStore';
+import { useCellLock } from '../../composables';
+import { useBallAppearanceStore, useConfigStore } from '../../stores/useConfigStore';
+import { useUIStore } from '../../stores/useUIStore';
 import type { ACUConfig } from '../../types';
+import BallAppearancePanel from '../settings/BallAppearancePanel.vue';
 import NavButtonConfigPanel from '../settings/NavButtonConfigPanel.vue';
 import TabConfigPanel from '../settings/TabConfigPanel.vue';
+import ThemePanel from '../settings/ThemePanel.vue';
 
 // ============================================================
 // 类型定义
 // ============================================================
 
-type PanelType = 'main' | 'tabConfig' | 'buttonConfig';
+type PanelType = 'main' | 'tabConfig' | 'buttonConfig' | 'ballAppearance' | 'themeConfig';
 
 interface Props {
   visible: boolean;
@@ -362,7 +362,19 @@ const emit = defineEmits<{
 // ============================================================
 
 const dialogRef = ref<HTMLElement>();
+const headerRef = ref<HTMLElement>();
 const configStore = useConfigStore();
+const ballStore = useBallAppearanceStore();
+const uiStore = useUIStore();
+const cellLock = useCellLock();
+
+// 高度切换状态
+const isExpanded = ref(false); // false = 60vh, true = 85vh
+
+// 自定义字体弹窗状态
+const showAddFontDialog = ref(false);
+const newFontName = ref('');
+const newFontUrl = ref('');
 
 /** 当前显示的面板 */
 const currentPanel = ref<PanelType>('main');
@@ -390,6 +402,10 @@ const panelTitle = computed(() => {
       return '表格展示选择';
     case 'buttonConfig':
       return '导航栏按钮配置';
+    case 'ballAppearance':
+      return '悬浮球外观';
+    case 'themeConfig':
+      return '主题美化与高亮配置';
     default:
       return '设置';
   }
@@ -402,6 +418,10 @@ const panelIcon = computed(() => {
       return 'fas fa-table';
     case 'buttonConfig':
       return 'fas fa-ellipsis-h';
+    case 'ballAppearance':
+      return 'fas fa-circle';
+    case 'themeConfig':
+      return 'fas fa-palette';
     default:
       return 'fas fa-cog';
   }
@@ -419,6 +439,20 @@ const goToPanel = (panel: PanelType) => {
 /** 返回主面板 */
 const goBack = () => {
   currentPanel.value = 'main';
+};
+
+// ============================================================
+// 锁定模式
+// ============================================================
+
+/** 进入锁定编辑模式 */
+const handleEnterLockMode = () => {
+  // 初始化临时锁定状态
+  cellLock.initPendingLocks();
+  // 设置锁定编辑模式
+  uiStore.isLockEditMode = true;
+  // 关闭设置弹窗
+  emit('update:visible', false);
 };
 
 // ============================================================
@@ -453,6 +487,47 @@ const handleClose = () => {
 // 取消（点击遮罩层）
 const handleCancel = () => {
   emit('update:visible', false);
+};
+
+// ============================================================
+// 高度切换功能
+// ============================================================
+
+/** 切换高度：60vh ↔ 85vh */
+const toggleHeight = () => {
+  isExpanded.value = !isExpanded.value;
+};
+
+// ============================================================
+// 自定义字体功能
+// ============================================================
+
+/** 合并内置字体和自定义字体 */
+const allFonts = computed(() => ballStore.allFonts);
+
+/** 是否可以添加字体 */
+const canAddFont = computed(() => {
+  return newFontName.value.trim() && newFontUrl.value.trim();
+});
+
+/** 添加自定义字体 */
+const handleAddFont = () => {
+  if (!canAddFont.value) return;
+
+  const fontName = newFontName.value.trim();
+  // 使用字体名称作为 CSS font-family 值，加上通用 fallback
+  const fontFamily = `'${fontName}', sans-serif`;
+
+  ballStore.addFont({
+    name: fontName,
+    fontFamily: fontFamily,
+    importUrl: newFontUrl.value.trim(),
+  });
+
+  // 清空表单并关闭弹窗
+  newFontName.value = '';
+  newFontUrl.value = '';
+  showAddFontDialog.value = false;
 };
 </script>
 

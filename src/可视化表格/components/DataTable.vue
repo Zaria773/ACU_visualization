@@ -22,7 +22,12 @@
         </button>
 
         <!-- 倒序按钮 -->
-        <button class="acu-toolbar-btn" :class="{ active: isReversed }" title="倒序显示" @click="toggleReverse">
+        <button
+          class="acu-toolbar-btn"
+          :class="{ active: isReversed }"
+          title="倒序显示"
+          @click="toggleReverse"
+        >
           <i class="fas fa-sort-amount-down-alt"></i>
         </button>
 
@@ -72,10 +77,12 @@
         :show-index="showIndex"
         :show-header="showHeader"
         :title-col-index="titleColIndex"
+        :show-history-button="true"
         @cell-click="handleCellClick"
         @insert-row="handleInsertRow(row.index)"
         @toggle-delete="handleToggleDelete(row.index)"
         @context-menu="handleContextMenu"
+        @show-history="handleShowHistory(row)"
       />
 
       <!-- 空状态 -->
@@ -140,6 +147,7 @@
  */
 
 import { computed, nextTick, ref, watch } from 'vue';
+import { useCellLock } from '../composables';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
@@ -198,6 +206,8 @@ const emit = defineEmits<{
   heightDragStart: [event: PointerEvent, handleEl: HTMLElement];
   /** 高度重置事件 */
   heightReset: [];
+  /** 显示历史记录事件 */
+  showHistory: [tableId: string, tableName: string, rowIndex: number, rowData: TableRow];
 }>();
 
 // ============================================================
@@ -245,10 +255,25 @@ const isReversed = computed(() => uiStore.isTableReversed(props.tableName));
 
 /** 过滤后的数据 */
 const filteredRows = computed(() => {
-  const term = localSearchTerm.value.toLowerCase().trim();
-  if (!term) return props.rows;
+  let rows = props.rows;
 
-  return props.rows.filter(row => row.cells.some(cell => String(cell.value).toLowerCase().includes(term)));
+  // 锁定筛选：只显示有锁定的行
+  if (uiStore.showLockedOnly && uiStore.isLockEditMode) {
+    const cellLock = useCellLock();
+    rows = rows.filter(row => {
+      const headers = row.cells.map(c => c.key);
+      const rowData = row.cells.map(c => String(c.value ?? ''));
+      const rowKey = cellLock.getRowKey(props.tableName, rowData, headers, row.index);
+      if (!rowKey) return false;
+      return cellLock.hasRowAnyLockPending(props.tableName, rowKey);
+    });
+  }
+
+  // 搜索过滤
+  const term = localSearchTerm.value.toLowerCase().trim();
+  if (!term) return rows;
+
+  return rows.filter(row => row.cells.some(cell => String(cell.value).toLowerCase().includes(term)));
 });
 
 /**
@@ -480,6 +505,13 @@ function handleHeightTouchEnd() {
   } else {
     lastHeightTouchTime = now;
   }
+}
+
+/**
+ * 处理显示历史记录
+ */
+function handleShowHistory(row: TableRow) {
+  emit('showHistory', props.tableId, props.tableName, row.index, row);
 }
 
 // ============================================================

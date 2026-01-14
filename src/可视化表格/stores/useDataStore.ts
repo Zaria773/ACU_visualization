@@ -9,7 +9,10 @@
  */
 
 import { klona } from 'klona';
-import type { RawDatabaseData } from '../types/index';
+import { useCellLock } from '../composables/useCellLock';
+import { saveSnapshot as saveRowSnapshot } from '../composables/useRowHistory';
+import { isSummaryOrOutlineTable, useTableIntegrityCheck } from '../composables/useTableIntegrityCheck';
+import type { RawDatabaseData, TableCell, TableRow } from '../types';
 import { getCore, getTableData } from '../utils/index';
 
 // ============================================================
@@ -76,6 +79,24 @@ export interface SaveResult {
 }
 
 // ============================================================
+// 工具函数
+// ============================================================
+
+/**
+ * 标准化单元格值，统一处理各种空值情况
+ * null, undefined, '', 'null', 'undefined' 都视为空字符串
+ * @param value 原始值
+ * @returns 标准化后的字符串
+ */
+function normalizeValue(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  const strValue = String(value).trim();
+  // 'null' 和 'undefined' 字符串也视为空
+  if (strValue === 'null' || strValue === 'undefined') return '';
+  return strValue;
+}
+
+// ============================================================
 // Store 定义
 // ============================================================
 
@@ -92,6 +113,9 @@ export const useDataStore = defineStore('acu-data', () => {
 
   /** 原始快照数据 - 用于差异比对 */
   const snapshot = ref<RawDatabaseData | null>(null);
+
+  /** 上次保存前的数据 - 用于撤回功能 */
+  const lastSavedData = ref<RawDatabaseData | null>(null);
 
   /**
    * AI填表变更追踪 - AI 自动填表产生的变更
@@ -129,6 +153,28 @@ export const useDataStore = defineStore('acu-data', () => {
   const targetFloorInfo = ref<FloorInfo | null>(null);
 
   // ============================================================
+  // 完整性检测
+  // ============================================================
+
+  /** 完整性检测实例 */
+  const integrityChecker = useTableIntegrityCheck();
+
+  /** 单元格锁定管理器 */
+  const cellLock = useCellLock();
+
+  /** 完整性问题映射（表格名 -> 问题列表） */
+  const integrityIssues = integrityChecker.issuesByTable;
+
+  /** 是否有完整性问题 */
+  const hasIntegrityIssues = integrityChecker.hasIssues;
+
+  /** 有问题的表格名称列表 */
+  const problematicTables = integrityChecker.problematicTables;
+
+  /** 问题统计 */
+  const integrityStats = integrityChecker.issueStats;
+
+  // ============================================================
   // Getters
   // ============================================================
 
@@ -140,6 +186,9 @@ export const useDataStore = defineStore('acu-data', () => {
 
   /** 别名 - 与重构策略文档保持一致 */
   const hasChanges = hasUnsavedChanges;
+
+  /** 是否有可撤回的数据 */
+  const hasUndoData = computed(() => lastSavedData.value !== null);
 
   /** 获取暂存数据 (兼容旧 API) */
   function getStagedData(): RawDatabaseData | null {
@@ -163,10 +212,13 @@ export const useDataStore = defineStore('acu-data', () => {
   }
 
   /**
-   * 保存快照
+   * 保存快照（同时更新内存和 localStorage）
    */
   function saveSnapshot(data: RawDatabaseData): void {
     try {
+      // 更新内存中的快照（用于 generateDiffMap 对比）
+      snapshot.value = klona(data);
+      // 持久化到 localStorage
       localStorage.setItem(STORAGE_KEYS.SNAPSHOT, JSON.stringify(data));
     } catch (e) {
       console.error('[ACU] Save snapshot failed:', e);
@@ -182,6 +234,143 @@ export const useDataStore = defineStore('acu-data', () => {
     } catch {
       // ignore
     }
+  }
+
+  // ============================================================
+  // 撤回功能
+  // ============================================================
+
+  /**
+   * 保存当前快照到撤回缓存（在保存操作前调用）
+   * 保存的是 snapshot（保存前的干净数据），而不是 stagedData（已修改的数据）
+   * 这样撤回时可以恢复到保存操作前的数据库状态
+   */
+  function saveLastState(): void {
+    // 优先使用内存中的 snapshot，其次从 localStorage 加载
+    const currentSnapshot = snapshot.value || loadSnapshot();
+    if (currentSnapshot) {
+      lastSavedData.value = klona(currentSnapshot);
+      console.info('[ACU] 已保存当前快照到撤回缓存');
+    } else {
+      console.warn('[ACU] 无快照数据可保存到撤回缓存');
+    }
+  }
+
+  /**
+   * 获取撤回数据（用于 App.vue 中写回数据库）
+   * @returns 撤回数据的深拷贝，或 null
+   */
+  function getUndoData(): RawDatabaseData | null {
+    if (!lastSavedData.value) {
+      return null;
+    }
+    return klona(lastSavedData.value);
+  }
+
+  /**
+   * 撤回到上次保存前的状态（仅更新内存状态）
+   * 注意：撤回后界面数据与数据库不一致，会显示变更标记
+   * @returns 是否成功撤回
+   */
+  function undoToLastSave(): boolean {
+    if (!lastSavedData.value) {
+      console.warn('[ACU] 无可撤回的数据');
+      return false;
+    }
+
+    // 恢复数据到内存
+    const restoredData = klona(lastSavedData.value);
+    stagedData.value = restoredData;
+    const processed = processToTableData(restoredData);
+    tables.value = processed;
+
+    // 注意：不更新 snapshot，因为数据库里还是新数据
+    // 这样用户会看到"有未保存变更"的提示，需要手动保存
+    // 保持 snapshot 不变，让用户明确知道数据与数据库不同
+
+    // 清除 AI 变更标记（因为这不是 AI 产生的变更）
+    aiDiffMap.clear();
+    pendingDeletes.clear();
+
+    // 收集所有差异 key
+    const newDiffKeys: string[] = [];
+
+    // 标记所有差异为手动变更（与当前 snapshot 对比）
+    // 使用与 generateDiffMap 相同的 key 格式（tableName:rowIdx:colIdx）
+    if (snapshot.value) {
+      for (const sheetId in restoredData) {
+        if (sheetId === 'mate' || sheetId === 'updated' || sheetId === 'created' || sheetId.startsWith('_')) {
+          continue;
+        }
+
+        const restoredSheet = restoredData[sheetId];
+        const snapSheet = snapshot.value[sheetId];
+
+        if (!restoredSheet?.content) continue;
+
+        const tableName = restoredSheet.name || sheetId.replace('sheet_', '');
+
+        // 如果快照中没有这个表，所有行都标记为手动变更
+        if (!snapSheet?.content) {
+          for (let rowIdx = 1; rowIdx < restoredSheet.content.length; rowIdx++) {
+            const realRowIdx = rowIdx - 1;
+            const rowKey = getRowKey(tableName, realRowIdx);
+            newDiffKeys.push(rowKey);
+          }
+          continue;
+        }
+
+        // 比较每行每列
+        const maxRows = Math.max(restoredSheet.content.length, snapSheet.content.length);
+        for (let rowIdx = 1; rowIdx < maxRows; rowIdx++) {
+          const restoredRow = restoredSheet.content[rowIdx];
+          const snapRow = snapSheet.content[rowIdx];
+          const realRowIdx = rowIdx - 1;
+
+          // 行不存在于其中一方
+          if (!restoredRow || !snapRow) {
+            const rowKey = getRowKey(tableName, realRowIdx);
+            newDiffKeys.push(rowKey);
+            continue;
+          }
+
+          // 比较每个单元格
+          const maxCols = Math.max(restoredRow.length, snapRow.length);
+          for (let colIdx = 0; colIdx < maxCols; colIdx++) {
+            const restoredVal = String(restoredRow[colIdx] ?? '');
+            const snapVal = String(snapRow[colIdx] ?? '');
+            if (restoredVal !== snapVal) {
+              const cellKey = getCellKey(tableName, realRowIdx, colIdx);
+              newDiffKeys.push(cellKey);
+            }
+          }
+        }
+      }
+    }
+
+    // 清除旧的手动变更，用新计算的差异替换（触发响应式更新）
+    manualDiffMap.clear();
+    newDiffKeys.forEach(key => manualDiffMap.add(key));
+
+    // 强制添加撤回标记，确保触发"有未保存变更"状态
+    // 即使差异计算结果为0（例如刷新后快照被更新），也要提示用户保存
+    manualDiffMap.add('__undo_pending__');
+
+    console.info(`[ACU] 撤回后差异: 手动变更 ${manualDiffMap.size} 项`);
+
+    // 不清除撤回缓存，允许多次撤回
+    // lastSavedData.value = null;
+
+    console.info('[ACU] 已撤回到上次保存前的状态（需手动保存）');
+    return true;
+  }
+
+  /**
+   * 清除撤回缓存
+   */
+  function clearUndoCache(): void {
+    lastSavedData.value = null;
+    console.info('[ACU] 已清除撤回缓存');
   }
 
   // ============================================================
@@ -358,11 +547,21 @@ export const useDataStore = defineStore('acu-data', () => {
         const snapRow = snapSheet.content[rowIdx];
         const realRowIdx = rowIdx - 1;
 
-        // 行不存在于其中一方
+        // 行不存在于其中一方（新增行或删除行）
         if (!currentRow || !snapRow) {
           const rowKey = getRowKey(tableName, realRowIdx);
           if (!manualDiffMap.has(rowKey)) {
             aiDiffMap.add(rowKey);
+          }
+          // 如果是新增的行（currentRow 存在但 snapRow 不存在），为每个单元格添加 cellKey
+          // 这样 getCellChangeClass 才能正确检测到单元格的变更
+          if (currentRow && !snapRow) {
+            for (let colIdx = 0; colIdx < currentRow.length; colIdx++) {
+              const cellKey = getCellKey(tableName, realRowIdx, colIdx);
+              if (!manualDiffMap.has(cellKey)) {
+                aiDiffMap.add(cellKey);
+              }
+            }
           }
           continue;
         }
@@ -370,8 +569,9 @@ export const useDataStore = defineStore('acu-data', () => {
         // 比较每个单元格
         const maxCols = Math.max(currentRow.length, snapRow.length);
         for (let colIdx = 0; colIdx < maxCols; colIdx++) {
-          const currentVal = String(currentRow[colIdx] ?? '');
-          const snapVal = String(snapRow[colIdx] ?? '');
+          // 统一空值处理：null, undefined, '', 'null' 都视为空
+          const currentVal = normalizeValue(currentRow[colIdx]);
+          const snapVal = normalizeValue(snapRow[colIdx]);
           if (currentVal !== snapVal) {
             const cellKey = getCellKey(tableName, realRowIdx, colIdx);
             // 如果不是手动变更，才标记为 AI 变更
@@ -410,14 +610,36 @@ export const useDataStore = defineStore('acu-data', () => {
         return;
       }
 
-      stagedData.value = klona(rawData);
-      const processed = processToTableData(rawData);
+      // 应用单元格锁定 - 恢复被 AI 修改的锁定值
+      const modifiedData = klona(rawData);
+      let totalRestored = 0;
+
+      for (const sheetId in modifiedData) {
+        const sheet = modifiedData[sheetId];
+        if (!sheet?.name || !sheet.content || !Array.isArray(sheet.content)) continue;
+
+        const result = cellLock.applyLocks(sheet.name, sheet.content);
+        if (result.modified) {
+          totalRestored += result.restored.length;
+          console.info(`[ACU] 表 "${sheet.name}" 应用了锁定保护，恢复了 ${result.restored.length} 项`);
+        }
+      }
+
+      if (totalRestored > 0) {
+        console.info(`[ACU] 共恢复 ${totalRestored} 个被 AI 修改的锁定值`);
+      }
+
+      stagedData.value = modifiedData;
+      const processed = processToTableData(modifiedData);
       tables.value = processed;
-      snapshot.value = klona(rawData);
+      snapshot.value = klona(modifiedData);
       aiDiffMap.clear();
       manualDiffMap.clear();
       pendingDeletes.clear();
-      saveSnapshot(rawData);
+      saveSnapshot(modifiedData);
+
+      // 初始加载时清除警告（没有 AI 变更）
+      integrityChecker.checkIntegrity(modifiedData, null, new Set());
 
       console.info('[ACU] 数据加载完成，表格数量:', Object.keys(processed).length);
     } catch (error) {
@@ -810,9 +1032,48 @@ export const useDataStore = defineStore('acu-data', () => {
   }
 
   /**
-   * 更新单元格
+   * 获取当前聊天ID
+   * 用于历史记录存储隔离
    */
-  function updateCell(tableId: string, rowIndex: number, colIndex: number, value: string): void {
+  function getCurrentChatId(): string {
+    const ST = getSillyTavern();
+
+    // 方法1: 调用 API
+    if (ST?.getCurrentChatId) {
+      const id = ST.getCurrentChatId();
+      if (id) return id;
+    }
+
+    // 方法2: 从 chat_metadata 获取
+    if (ST?.chat_metadata?.chat_id) {
+      return String(ST.chat_metadata.chat_id);
+    }
+
+    // 方法3: 从第一条消息获取
+    if (ST?.chat?.length > 0 && ST.chat[0]?.chat_id) {
+      return ST.chat[0].chat_id;
+    }
+
+    // 兜底：返回 'default' 确保数据能保存
+    return 'default';
+  }
+
+  /**
+   * 更新单元格
+   * @param tableId 表格 ID
+   * @param rowIndex 行索引
+   * @param colIndex 列索引
+   * @param value 新值
+   * @param options 可选配置
+   * @param options.skipHistory 是否跳过历史记录保存（用于批量操作）
+   */
+  function updateCell(
+    tableId: string,
+    rowIndex: number,
+    colIndex: number,
+    value: string,
+    options?: { skipHistory?: boolean },
+  ): void {
     const tableRows = tables.value[tableId];
     if (!tableRows || !tableRows[rowIndex]) {
       console.warn(`[ACU] 无效的单元格位置: ${tableId}[${rowIndex}][${colIndex}]`);
@@ -832,6 +1093,46 @@ export const useDataStore = defineStore('acu-data', () => {
         manualDiffMap.add(cellKey);
         // 从 AI 变更中移除（手动变更优先）
         aiDiffMap.delete(cellKey);
+
+        // === 历史记录保存 ===
+        // 仅在非批量操作时保存历史（批量操作由调用方统一保存）
+        if (!options?.skipHistory) {
+          const chatId = getCurrentChatId();
+          console.info('[ACU] 保存历史记录, 参数:', {
+            chatId,
+            tableId,
+            rowIndex,
+            colIndex,
+            oldValue: oldValue.substring(0, 50) + (oldValue.length > 50 ? '...' : ''),
+            newValue: value.substring(0, 50) + (value.length > 50 ? '...' : ''),
+          });
+
+          if (chatId) {
+            // 构建编辑前的行数据（使用旧值）
+            const rowBeforeEdit: TableRow = {
+              index: rowIndex,
+              key: getRowKey(tableId, rowIndex),
+              cells: row.cells.map(
+                (cell: CellData, i: number): TableCell => ({
+                  colIndex: i,
+                  key: cell.key,
+                  value: i === colIndex ? oldValue : cell.value,
+                }),
+              ),
+            };
+            // 异步保存，不阻塞主流程
+            saveRowSnapshot(chatId, tableId, rowBeforeEdit, 'manual')
+              .then(() => {
+                console.info('[ACU] 历史记录保存成功');
+              })
+              .catch((err: unknown) => {
+                console.warn('[ACU] 历史记录保存失败:', err);
+              });
+          } else {
+            console.warn('[ACU] 无法获取 chatId，跳过历史记录保存');
+          }
+        }
+        // === 历史记录保存结束 ===
       } else {
         // 值恢复到快照状态，移除所有变更标记
         manualDiffMap.delete(cellKey);
@@ -890,6 +1191,47 @@ export const useDataStore = defineStore('acu-data', () => {
   function unmarkForDelete(tableId: string, rowIndex: number): void {
     const rowKey = getRowKey(tableId, rowIndex);
     pendingDeletes.delete(rowKey);
+  }
+
+  /**
+   * 检查表格是否有 AI 填表变更
+   * 用于 Tab 高亮显示
+   */
+  function hasTableAiChanges(tableName: string): boolean {
+    // 遍历 aiDiffMap，检查是否有属于该表格的变更
+    for (const key of aiDiffMap) {
+      // key 格式: "表格名-row-行号" 或 "表格名-行号-列号"
+      if (key.startsWith(`${tableName}-`)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 获取有 AI 变更的表格列表
+   */
+  function getTablesWithAiChanges(): string[] {
+    const tablesSet = new Set<string>();
+    for (const key of aiDiffMap) {
+      // 从 key 中提取表格名
+      // key 格式: "表格名-row-行号" 或 "表格名-行号-列号"
+      const parts = key.split('-');
+      if (parts.length >= 2) {
+        // 表格名可能包含连字符，需要找到 "row" 或数字的位置
+        const tableNameParts: string[] = [];
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i] === 'row' || /^\d+$/.test(parts[i])) {
+            break;
+          }
+          tableNameParts.push(parts[i]);
+        }
+        if (tableNameParts.length > 0) {
+          tablesSet.add(tableNameParts.join('-'));
+        }
+      }
+    }
+    return Array.from(tablesSet);
   }
 
   /**
@@ -979,11 +1321,13 @@ export const useDataStore = defineStore('acu-data', () => {
     isSaving,
     isLoading,
     targetFloorInfo,
+    lastSavedData,
 
     // Getters
     hasPendingDeletes,
     hasUnsavedChanges,
     hasChanges,
+    hasUndoData,
     getStagedData,
 
     // 数据加载
@@ -1008,6 +1352,8 @@ export const useDataStore = defineStore('acu-data', () => {
     // 状态检查 (新 API)
     getCellChangeType,
     getRowChangeType,
+    hasTableAiChanges,
+    getTablesWithAiChanges,
     // 状态检查 (兼容旧 API)
     isRowChanged,
     isRowPendingDelete,
@@ -1024,5 +1370,30 @@ export const useDataStore = defineStore('acu-data', () => {
     loadSnapshot,
     saveSnapshot,
     clearSnapshot,
+
+    // 撤回功能
+    saveLastState,
+    undoToLastSave,
+    clearUndoCache,
+    getUndoData,
+
+    // 完整性检测
+    integrityIssues,
+    hasIntegrityIssues,
+    problematicTables,
+    integrityStats,
+    /**
+     * 执行完整性检测（包装函数）
+     * 只检测 AI 填表新增的行
+     */
+    checkIntegrity: (data: RawDatabaseData | null) => {
+      // 传入当前快照和 aiDiffMap
+      integrityChecker.checkIntegrity(data, snapshot.value, aiDiffMap);
+    },
+    hasTableIssues: integrityChecker.hasTableIssues,
+    getTableIssues: integrityChecker.getTableIssues,
+    getIntegritySummary: integrityChecker.getSummaryText,
+    clearIntegrityIssues: integrityChecker.clearIssues,
+    isSummaryOrOutlineTable,
   };
 });

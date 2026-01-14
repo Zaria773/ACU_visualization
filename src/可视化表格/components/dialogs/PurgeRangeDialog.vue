@@ -43,19 +43,34 @@
 
       <!-- 按钮区 -->
       <div class="acu-purge-btns">
-        <button class="acu-purge-btn acu-purge-btn-cancel" @click="handleCancel">取消</button>
-        <button class="acu-purge-btn acu-purge-btn-confirm" :disabled="!canConfirm" @click="handleConfirm">
-          确认清除
+        <button class="acu-purge-btn acu-purge-btn-advanced" @click="handleOpenAdvanced">
+          <i class="fas fa-cogs"></i>
+          高级
         </button>
+        <div class="acu-purge-btns-right">
+          <button class="acu-purge-btn acu-purge-btn-cancel" @click="handleCancel">取消</button>
+          <button class="acu-purge-btn acu-purge-btn-confirm" :disabled="!canConfirm" @click="handleConfirm">
+            确认清除
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- 高级清除弹窗 -->
+  <AdvancedPurgeDialog
+    v-model:visible="showAdvancedDialog"
+    :initial-start-floor="startFloor ?? undefined"
+    :initial-end-floor="endFloor ?? undefined"
+    @confirm="handleAdvancedConfirm"
+  />
 </template>
 
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core';
 import { computed, nextTick, ref, watch } from 'vue';
 import { toast } from '../../composables/useToast';
+import AdvancedPurgeDialog from './AdvancedPurgeDialog.vue';
 
 interface Props {
   visible: boolean;
@@ -77,6 +92,7 @@ const endInputRef = ref<HTMLInputElement>();
 const startFloor = ref<number | null>(null);
 const endFloor = ref<number | null>(null);
 const hasInputError = ref(false);
+const showAdvancedDialog = ref(false);
 
 /**
  * 计算默认清除楼层范围 (与原代码逻辑一致)
@@ -93,12 +109,24 @@ function getDefaultFloorRange(): { start: number; end: number } {
 
   if (ST && ST.chat) {
     lastIdx = Math.max(0, ST.chat.length - 1);
-    // 策略: 优先寻找最近的有数据痕迹的楼层
+    // 策略: 优先寻找最近的有真实数据的楼层（跳过空结构）
     for (let i = ST.chat.length - 1; i >= 0; i--) {
       const msg = ST.chat[i];
       if (!msg.is_user && msg.TavernDB_ACU_IsolatedData) {
-        targetIdx = i;
-        break;
+        // 检查是否真的有数据（不是空结构）
+        const tags = Object.keys(msg.TavernDB_ACU_IsolatedData);
+        let hasRealData = false;
+        for (const tag of tags) {
+          const tagData = msg.TavernDB_ACU_IsolatedData[tag];
+          if (tagData && tagData.independentData && Object.keys(tagData.independentData).length > 0) {
+            hasRealData = true;
+            break;
+          }
+        }
+        if (hasRealData) {
+          targetIdx = i;
+          break;
+        }
       }
     }
   }
@@ -164,6 +192,17 @@ const handleConfirm = () => {
 
 // 取消
 const handleCancel = () => {
+  emit('update:visible', false);
+};
+
+// 打开高级清除弹窗
+const handleOpenAdvanced = () => {
+  showAdvancedDialog.value = true;
+};
+
+// 高级清除完成后的回调
+const handleAdvancedConfirm = () => {
+  // 高级清除完成后关闭当前弹窗
   emit('update:visible', false);
 };
 </script>

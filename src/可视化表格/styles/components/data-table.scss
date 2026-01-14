@@ -16,6 +16,14 @@
     opacity: 0.6;
     pointer-events: none;
   }
+
+  // 显示关系图时，强制最大高度
+  &.acu-show-graph {
+    min-height: 450px;
+    height: auto !important;
+    max-height: none !important;
+    flex: 1 1 auto;
+  }
 }
 
 // 工具栏 (固定在顶部，不随卡片滚动)
@@ -64,7 +72,7 @@
 
   &.acu-badge-changed {
     background: rgba(102, 126, 234, 0.15);
-    color: var(--acu-highlight, #667eea);
+    color: var(--acu-title-color, #667eea);
   }
 
   &.acu-badge-deleting {
@@ -101,8 +109,8 @@
   }
 
   &.active {
-    background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.15));
-    color: var(--acu-highlight, #667eea);
+    background: var(--acu-title-color-bg, rgba(102, 126, 234, 0.15));
+    color: var(--acu-title-color, #667eea);
   }
 
   i {
@@ -115,7 +123,7 @@
     color: var(--acu-text-muted, #999);
 
     &:hover {
-      color: var(--acu-highlight, #667eea);
+      color: var(--acu-title-color, #667eea);
     }
   }
 
@@ -156,7 +164,7 @@
 
   &:focus {
     width: 180px;
-    border-color: var(--acu-highlight, #667eea);
+    border-color: var(--acu-title-color, #667eea);
   }
 
   &::placeholder {
@@ -183,26 +191,36 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain; // 防止滚动穿透
-  padding: 8px; // 减少边距，更紧凑
+  padding: 12px; // 足够容纳卡片阴影和边框
 
-  // 卡片视图 - 多列网格布局 (固定间距，居中对齐)
+  // 卡片视图 - 使用 flexbox 实现固定间距 + 居中对齐
   &.acu-view-card {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--acu-card-width, 280px), var(--acu-card-width, 280px)));
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     align-content: start;
-    grid-auto-rows: min-content;
+
+    // 卡片固定宽度
+    > .acu-data-card {
+      flex: 0 0 var(--acu-card-width, 280px);
+      width: var(--acu-card-width, 280px);
+    }
   }
 
-  // 列表视图 - 也是多列网格 (卡片更窄)
+  // 列表视图 - 也使用 flexbox
   &.acu-view-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 280px));
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
     align-content: start;
-    grid-auto-rows: min-content;
+
+    // 列表模式下卡片稍窄
+    > .acu-data-card {
+      flex: 0 0 var(--acu-card-width, 280px);
+      width: var(--acu-card-width, 280px);
+    }
   }
 }
 
@@ -241,7 +259,7 @@
   flex: 0 0 var(--acu-card-width, 280px) !important;
   width: var(--acu-card-width, 280px) !important;
   min-width: var(--acu-card-width, 280px); // 防止被压缩
-  max-height: calc(100% - 20px); // 留出滚动条空间
+  max-height: calc(100% - 8px); // 留出滚动条空间（实际滚动条约8px）
   overflow-y: auto;
   white-space: normal;
   touch-action: pan-x pan-y !important;

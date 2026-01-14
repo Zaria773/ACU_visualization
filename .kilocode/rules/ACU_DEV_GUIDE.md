@@ -16,7 +16,7 @@
 ## 核心约束
 
 ### 1. 样式规则（最重要）
-
+**禁止使用Teleport渲染到iframe body，本项目ui渲染到父窗口**
 **Vue `<style scoped>` 完全失效**，因为：
 - Vue 将样式注入到 iframe 的 `<head>`
 - 实际 DOM 渲染在 `window.parent.document`
@@ -29,122 +29,52 @@
 通过 useParentStyleInjection 注入到父窗口
 ```
 
-**Vue 其他功能正常**：响应式、组件化、模板语法、Pinia 均不受影响。
-
-### 1.5 Vue 响应式绑定在跨 iframe 生产构建中失效（重要）
-
-**问题**：Vue 3 的响应式绑定（`:style`、`v-show`）在跨 iframe + 生产构建场景下可能无法正确更新 DOM。
-- 脚本在 iframe 中运行
-- Vue 挂载到 `window.parent.document`
-- 生产构建的代码优化可能破坏跨文档的 DOM 更新调度
-
-**症状**：
-- 热重载时功能正常
-- 完全刷新后响应式绑定控制的样式不响应状态变化
-- 事件触发正常（有日志），但 DOM 样式属性不更新
-- 拖拽、滑动等需要实时更新位置/尺寸的功能失效
-
-**Vue 功能可用性表**（2025-01-06 更新，参考 src/手机界面 验证）：
-| 绑定类型 | 状态 | 说明 |
-|----------|------|------|
-| `v-show` | ✅ 可用 | 正常工作 |
-| `:style` | ✅ 可用 | 正常工作 |
-| `:class` | ✅ 可用 | 正常工作 |
-| `@click` | ✅ 可用 | 正常工作 |
-| `@pointerdown` | ✅ 可用 | 启动拖拽可用 |
-| `emit()` | ✅ 可用 | 子→父通信正常 |
-| 响应式数据 | ✅ 可用 | Pinia Store、ref 正常 |
-| VueUse `useDraggable` | ❌ 失效 | 完全不工作，必须手动实现 |
-| `parentDoc.addEventListener` | ⚠️ 不推荐 | 可能失效，使用 jQuery 替代 |
-
-**关键发现**：真正的问题不是 Vue 响应式失效，而是 **VueUse useDraggable** 和 **原生 addEventListener 绑定到 parentDoc** 失效！
-
-**解决方案：使用 jQuery $('body').on() 绑定拖拽事件**
-
-参考实现：[`src/手机界面/index.vue:462-466`](src/手机界面/index.vue:462-466)
-
-```vue
-<script setup>
-import { ref } from 'vue';
-
-const ballRef = ref<HTMLElement>();
-const x = ref(100);
-const y = ref(100);
-
-// 关键：脚本项目中 $ 已指向 window.parent.$
-// 所以 $('body') 会选中父窗口的 body
-
-function handlePointerDown(e: PointerEvent) {
-  if (e.button !== 0) return;
-
-  const startX = e.clientX;
-  const startY = e.clientY;
-  const initialLeft = x.value;
-  const initialTop = y.value;
-
-  const handlePointerMove = (moveE: JQuery.TriggeredEvent) => {
-    const originalEvent = moveE.originalEvent as PointerEvent;
-    const dx = originalEvent.clientX - startX;
-    const dy = originalEvent.clientY - startY;
-
-    x.value = initialLeft + dx;
-    y.value = initialTop + dy;
-  };
-
-  const handlePointerUp = () => {
-    // 关键：使用 jQuery 移除事件
-    $('body').off('pointermove', handlePointerMove);
-    $('body').off('pointerup', handlePointerUp);
-  };
-
-  // 关键：使用 jQuery 绑定到父窗口 body
-  // 脚本项目中 $ 已指向 window.parent.$
-  $('body').on('pointermove', handlePointerMove);
-  $('body').on('pointerup', handlePointerUp);
-}
-</script>
-
-<template>
-  <!-- @pointerdown 可以正常使用 -->
-  <div ref="ballRef" class="floating-ball" @pointerdown="handlePointerDown"></div>
-</template>
-```
-
-**禁止使用 VueUse useDraggable**：在跨 iframe 生产构建中完全失效，必须手动实现拖拽逻辑。
-
-**已修复的组件**（2025-01-06）：
-- `FloatingBall.vue` - 使用 jQuery $('body').on() 绑定拖拽事件
-- `MainPanel.vue` - 使用 jQuery $('body').on() 绑定面板拖拽和宽度调节事件
+**Vue 其他功能正常**：响应式、组件化、模板语法、Pinia、VueUse 均不受影响。
 
 ---
 
 ### 2. 文件结构
 
+> **架构评级**: ⭐⭐⭐⭐ (4/5) — 逻辑剥离和样式管理优秀，结构分层合理
+
 ```
 src/可视化表格/
-├── index.ts                 # 入口文件：等待 API、挂载 Vue
+├── index.ts                 # 入口：等待 API → 挂载 Vue
 ├── App.vue                  # 根组件：组装所有子组件
 ├── types.ts                 # TypeScript 类型定义
 │
-├── components/              # Vue 单文件组件
-│   ├── FloatingBall.vue     # 悬浮球：拖拽、点击展开
-│   ├── MainPanel.vue        # 主面板：包含 Header 和内容区
-│   ├── TabBar.vue           # 标签栏：Tab 切换、排序
-│   ├── DataTable.vue        # 数据表：搜索、分页、卡片列表
-│   ├── DataCard.vue         # 数据卡片：单行数据的展示与编辑
-│   ├── Dashboard.vue        # 仪表盘：聚合视图
-│   ├── OptionsPanel.vue     # 选项面板：矩阵式选项展示
+├── components/              # Vue 单文件组件 (17 个 + 子目录)
+│   ├── index.ts             # 统一导出
+│   │
+│   │  # 核心交互
+│   ├── FloatingBall.vue     # 悬浮球：拖拽、吸附、点击展开
+│   ├── MainPanel.vue        # 主面板：Header + 内容区
+│   ├── TabBar.vue           # 标签栏：Tab 切换、拖拽排序
 │   ├── ActionBar.vue        # 操作栏：刷新、保存等按钮
-│   ├── InlineEditor.vue     # 原地编辑器：textarea 编辑框
+│   │
+│   │  # 数据展示
+│   ├── DataTable.vue        # 数据表：搜索、排序、分页、视图切换
+│   ├── DataCard.vue         # 数据卡片：单行数据展示与编辑
+│   ├── Dashboard.vue        # 仪表盘：聚合视图（主角/NPC/任务/物品）
+│   ├── OptionsPanel.vue     # 选项面板：矩阵式选项展示
+│   ├── RelationshipGraph.vue # 关系图：Cytoscape 可视化
+│   │
+│   │  # UI 辅助
+│   ├── InlineEditor.vue     # 原地编辑器：textarea 编辑
 │   ├── Badge.vue            # 徽章：值的样式化展示
 │   ├── ContextMenu.vue      # 右键菜单
 │   ├── Pagination.vue       # 分页器
 │   ├── SearchBox.vue        # 搜索框
+│   ├── Toast.vue            # 通知提示
 │   │
 │   ├── dialogs/             # 弹窗组件
-│   │   ├── SettingsDialog.vue       # 设置弹窗
+│   │   ├── index.ts
+│   │   ├── SettingsDialog.vue       # 设置弹窗（主题/字体/布局/行为）
 │   │   ├── InputFloorDialog.vue     # 输入楼层弹窗
-│   │   └── PurgeRangeDialog.vue     # 清除范围弹窗
+│   │   ├── PurgeRangeDialog.vue     # 清除范围弹窗
+│   │   ├── AdvancedPurgeDialog.vue  # 高级清除弹窗
+│   │   ├── HistoryDialog.vue        # 历史记录弹窗
+│   │   └── ManualUpdateDialog.vue   # 手动更新弹窗
 │   │
 │   ├── settings/            # 设置面板子组件
 │   │   ├── TabConfigPanel.vue       # Tab 配置面板
@@ -153,51 +83,256 @@ src/可视化表格/
 │   └── ui/                  # 通用 UI 组件
 │       └── SortableList.vue # 可排序列表
 │
-├── composables/             # 组合式函数（可复用逻辑）
+├── composables/             # 组合式函数（15 个，逻辑剥离层）
+│   ├── index.ts             # 统一导出 + 迁移说明
+│   │
+│   │  # 跨 iframe 基础设施
 │   ├── useParentStyleInjection.ts  # 样式注入到父窗口
-│   ├── useVueUseIntegration.ts     # VueUse 封装
-│   ├── useMobileGesturesNew.ts     # 移动端手势
-│   ├── useDataPersistence.ts       # 数据保存逻辑
-│   └── useCoreActions.ts           # 核心操作（插入/删除行等）
+│   ├── useTouchScrollFix.ts        # 触摸滚动穿透修复
+│   ├── useVueUseIntegration.ts     # VueUse 封装（拖拽/事件/防抖等）
+│   │
+│   │  # 移动端适配
+│   ├── useMobileGesturesNew.ts     # 移动端手势系统
+│   │
+│   │  # 核心业务逻辑
+│   ├── useCoreActions.ts           # 核心操作（插入/删除/复制行）
+│   ├── useDataPersistence.ts       # 数据保存到数据库
+│   ├── useDbSettings.ts            # 数据库配置管理
+│   ├── useApiCallbacks.ts          # API 回调管理
+│   │
+│   │  # 数据增强
+│   ├── useTableIntegrityCheck.ts   # 表格完整性检测
+│   ├── useRowHistory.ts            # 行历史记录（IndexedDB）
+│   ├── useIndexedDB.ts             # IndexedDB 底层操作
+│   ├── useSwipeEnhancement.ts      # Swipe 增强功能
+│   ├── useUpdatePresets.ts         # 更新预设管理
+│   │
+│   │  # UI 辅助
+│   └── useToast.ts                 # Toast 通知
 │
-├── stores/                  # Pinia 状态管理
-│   ├── useConfigStore.ts    # 配置状态（主题、字体等）
-│   ├── useDataStore.ts      # 数据状态（表格数据、diff 等）
-│   └── useUIStore.ts        # UI 状态（折叠、当前 Tab 等）
+├── stores/                  # Pinia 状态管理（3 个领域 Store）
+│   ├── index.ts
+│   ├── useConfigStore.ts    # 配置状态：主题、字体、布局偏好
+│   ├── useDataStore.ts      # 数据状态：表格数据、diff、pendingDeletes
+│   └── useUIStore.ts        # UI 状态：折叠、activeTab、弹窗可见性
 │
-└── styles/                  # SCSS 样式文件
-    ├── index.scss           # 入口：导入所有子模块
-    ├── variables.scss       # CSS 变量定义
-    ├── base.scss            # 基础样式
-    ├── components/          # 组件样式
-    │   ├── buttons.scss
-    │   ├── sortable-list.scss
-    │   └── settings-panel.scss
-    └── overlays/            # 弹窗样式
-        └── dialogs.scss
+├── styles/                  # SCSS 样式文件（Design Tokens 架构）
+│   ├── index.scss           # 入口：导入所有子模块
+│   ├── variables.scss       # CSS 变量定义（Design Tokens）
+│   ├── base.scss            # 基础样式
+│   ├── animations.scss      # 动画定义
+│   ├── fonts.scss           # 字体加载
+│   │
+│   ├── components/          # 组件样式（与 components/ 一一对应）
+│   │   ├── badges.scss
+│   │   ├── buttons.scss
+│   │   ├── dashboard.scss
+│   │   ├── data-card.scss
+│   │   ├── data-table.scss
+│   │   ├── floating-ball.scss
+│   │   ├── inputs.scss
+│   │   ├── navigation.scss
+│   │   ├── options-panel.scss
+│   │   ├── pagination.scss
+│   │   ├── relationship-graph.scss
+│   │   ├── settings-panel.scss
+│   │   ├── sortable-list.scss
+│   │   ├── table-selector.scss
+│   │   └── tabs.scss
+│   │
+│   ├── layouts/             # 布局样式
+│   │   ├── container.scss
+│   │   ├── panel.scss
+│   │   └── responsive.scss
+│   │
+│   ├── overlays/            # 覆盖层样式
+│   │   ├── context-menu.scss
+│   │   ├── dialogs.scss
+│   │   ├── overlays.scss
+│   │   └── quick-view.scss
+│   │
+│   └── utilities/           # 工具样式
+│       ├── feedback.scss
+│       └── helpers.scss
+│
+└── utils/                   # 纯函数工具
+    ├── index.ts             # getCore, getTableData 等
+    ├── relationshipColors.ts
+    └── relationshipParser.ts
 ```
 
+#### 架构设计说明
+
+**分层策略**（传统技术分层，当前规模适用）：
+| 层级 | 职责 | 依赖规则 |
+|------|------|---------|
+| `components/` | UI 渲染 | 可调用 composables、stores |
+| `composables/` | 可复用逻辑 | 可调用 stores、utils |
+| `stores/` | 状态管理 | 可调用 utils |
+| `utils/` | 纯函数 | 无依赖 |
+| `styles/` | 样式 | 独立于代码 |
+
+**逻辑剥离原则**：
+- Vue 组件只负责模板和基础交互
+- 复杂逻辑（保存、手势、历史）全部抽到 composables
+- 共享状态统一由 Pinia stores 管理
+
+**样式隔离**：
+- 所有样式在 `styles/` 目录，通过 `useParentStyleInjection` 注入父窗口
+- CSS 变量作为 Design Tokens，支持主题切换
+
 
 ---
 
-### 3. 交互规格
+### 3. UI 样式规范（必读）
 
-| 操作 | 移动端横向 | 移动端竖向 | PC端 |
-|------|-----------|-----------|------|
-| **新增行** | 下拉超阈值 | 右滑超阈值 | 右键菜单 |
-| **删除行** | 上划到底后继续拉 | 左滑到边缘后继续滑 | 右键菜单 |
-| **编辑** | 点按单元格 | 点按单元格 | 点击单元格 |
-| **复制** | 长按（系统原生） | 长按（系统原生） | 右键菜单 |
+**核心原则**：
+1.**风格统一**：所有新增 UI 必须使用项目已定义的 CSS 变量和现有组件样式，禁止硬编码颜色/字体/尺寸。关于新增的开关、行布局等必须参照设置面板ui的行设计。颜色使用主题样式。
+2.**控件在右**：没有特殊说明的话所有输入框、选择器、拖动条、按钮等等控件全部在行右侧
+
+
+#### 3.1 必须使用的 CSS 变量
+
+所有颜色、背景、边框必须使用 `variables.scss` 中定义的变量：
+
+| 用途 | 变量名 | 说明 |
+|------|--------|------|
+| **背景** | `--acu-bg-panel` | 面板/弹窗背景 |
+| | `--acu-card-bg` | 卡片背景 |
+| | `--acu-table-head` | 表头/分组背景 |
+| | `--acu-table-hover` | 悬浮状态背景 |
+| **文本** | `--acu-text-main` | 主要文本 |
+| | `--acu-text-sub` | 次要文本/提示 |
+| **边框** | `--acu-border` | 通用边框 |
+| **按钮** | `--acu-btn-bg` | 按钮默认背景 |
+| | `--acu-btn-hover` | 按钮悬浮背景 |
+| **强调色** | `--acu-title-color` | 标题/主题色 |
+| | `--acu-title-color-bg` | 主题色浅背景 |
+
+#### 3.2 禁止的写法
+
+```scss
+// ❌ 禁止：硬编码颜色
+color: #333;
+background: white;
+border: 1px solid #ccc;
+
+// ✅ 正确：使用变量
+color: var(--acu-text-main);
+background: var(--acu-card-bg);
+border: 1px solid var(--acu-border);
+```
+
+#### 3.3 复用现有样式类
+
+| 组件类型 | 现有样式类 | 所在文件 |
+|----------|-----------|----------|
+| **按钮** | `.acu-nav-btn`, `.acu-action-btn`, `.acu-modal-btn` | `buttons.scss` |
+| **开关** | `.acu-switch` | `dialogs.scss` |
+| **输入框** | `.acu-settings-control input/select` | `dialogs.scss` |
+| **设置行** | `.acu-settings-row`, `.acu-settings-label` | `dialogs.scss` |
+| **分组容器** | `.acu-settings-group`, `.acu-config-section` | `dialogs.scss`, `settings-panel.scss` |
+| **弹窗** | `.acu-modal`, `.acu-modal-header`, `.acu-modal-body` | `dialogs.scss` |
+| **空状态** | `.acu-empty-hint` | `settings-panel.scss` |
+| **提示栏** | `.acu-config-hint`, `.acu-config-hint-fixed` | `settings-panel.scss` |
+
+#### 3.4 设计规范速查
+
+| 属性 | 规范值 |
+|------|--------|
+| **圆角** | 小: 6px, 中: 12px, 大: 16px |
+| **间距** | 紧凑: 8px, 标准: 12px, 宽松: 16px |
+| **字号** | 标题: 16px, 正文: 13px, 提示: 11-12px |
+| **过渡** | 快: 0.15s, 标准: 0.2s, 慢: 0.3s |
+| **阴影** | 小: `0 2px 8px rgba(0,0,0,0.1)`, 大: `0 15px 50px rgba(0,0,0,0.3)` |
+
+#### 3.5 新增弹窗/面板的标准模板
+
+```vue
+<template>
+  <div class="acu-modal-container" @click.self="handleClose">
+    <div class="acu-modal acu-xxx-modal">
+      <!-- 头部 -->
+      <div class="acu-modal-header">
+        <span class="acu-modal-title">标题</span>
+        <button class="acu-close-pill" @click="handleClose">完成</button>
+      </div>
+
+      <!-- 内容 -->
+      <div class="acu-modal-body">
+        <div class="acu-settings-section">
+          <div class="acu-settings-title">
+            <i class="fas fa-xxx"></i>
+            分组标题
+          </div>
+          <div class="acu-settings-group">
+            <!-- 设置行 -->
+            <div class="acu-settings-row">
+              <div class="acu-settings-label">
+                标签
+                <span class="hint">提示文字</span>
+              </div>
+              <div class="acu-settings-control">
+                <!-- 控件 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+```scss
+// styles/overlays/dialogs.scss 中添加
+.acu-xxx-modal {
+  max-width: 400px; // 根据内容调整
+
+  // 移动端适配已由 .acu-modal 通用样式处理
+}
+```
+#### 3.6 响应式布局切换
+使用 CSS @media (max-width: 768px) 媒体查询来实现响应式布局切换，不用v-if
+#### 3.7 按钮事件处理（重要）
+
+**问题**：弹窗内的按钮点击事件可能冒泡到 Cytoscape 等 Canvas 组件，导致意外行为（如界面变成球形）。
+
+**解决方案**：所有弹窗、覆盖层内的按钮必须使用 `@click.stop` 阻止事件冒泡：
+
+```vue
+<!-- ✅ 正确：使用 .stop 阻止冒泡 -->
+<button @click.stop="handleClose">关闭</button>
+<button @click.stop="handleConfirm">确定</button>
+
+<!-- ❌ 错误：没有阻止冒泡 -->
+<button @click="handleClose">关闭</button>
+```
+
+**适用场景**：
+- 弹窗/对话框中的所有按钮
+- 覆盖层中的交互元素
+- 与 Canvas/WebGL 组件共存的 UI
+
+#### 3.8 检查清单
+
+新增 UI 前请确认：
+- [ ] 所有颜色使用 `var(--acu-xxx)` 变量
+- [ ] 复用了现有的组件样式类
+- [ ] 样式写在 `styles/` 目录而非 `<style scoped>`
+- [ ] 移动端适配
+- [ ] 支持主题切换（不同 `.acu-theme-xxx` 下样式正确，主题 class是在 .acu-wrapper 容器）
+- [ ] 弹窗按钮使用 `@click.stop` 阻止冒泡
 
 ---
+
 
 ### 4. 开发规范
 
 1. **新增组件时**：样式写在 `styles/` 目录，不要写 `<style scoped>`
-2. **使用 VueUse**：优先使用 `useVueUseIntegration.ts` 中封装的函数
+2. **使用 VueUse**：优先使用 `useVueUseIntegration.ts` 中封装的函数，如 `useDraggableWithSnap`（支持跨 iframe 拖拽）
 3. **状态管理**：通过 Pinia stores 管理，避免组件间直接传递复杂状态
-4. **jQuery 残留**：`useUIStore.ts` 和 `useCoreActions.ts` 仍有少量 jQuery 操作待清理
-5. **状态初始化必须有默认值**：任何控制 UI 显示的函数（如 `openPanel()`）必须确保依赖的状态有值。例如 `isPanelVisible` 依赖 `activeTab !== null`，则 `openPanel()` 必须确保 `activeTab` 有值
+4. **状态初始化必须有默认值**：任何控制 UI 显示的函数（如 `openPanel()`）必须确保依赖的状态有值。例如 `isPanelVisible` 依赖 `activeTab !== null`，则 `openPanel()` 必须确保 `activeTab` 有值
 
 ---
 
@@ -205,51 +340,13 @@ src/可视化表格/
 
 ### 5. 层级与 ID 规范
 
-1. **Z-Index 策略**：悬浮球 (9999) < 弹窗 (10000) < 右键菜单 (10001)
+1. **Z-Index 策略**：悬浮球 (9999) < 弹窗 (10000) < 右键菜单 (10001)<toast
 2. **排序列表**：使用稳定 ID（如 `tableId`、`tabId`），不要依赖数组索引
 
----
-
-### 6. 热重载 vs 生产构建差异（调试陷阱）
-
-**关键区别**：
-| 场景 | Pinia Store 状态 | localStorage | DOM 更新 |
-|------|------------------|--------------|----------|
-| 热重载 | 保留内存中的状态 | 保持不变 | 正常 |
-| 完全刷新 | 从 localStorage 重新读取 | 重新解析 | 可能异常 |
-
-**调试建议**：
-1. 修复 BUG 后，必须**完全刷新页面**测试，不能只靠热重载
-2. 清除 localStorage 测试初始化逻辑：
-   ```javascript
-   Object.keys(localStorage).filter(k => k.startsWith('acu_')).forEach(k => localStorage.removeItem(k));
-   location.reload();
-   ```
-3. 使用 `cdn.jsdelivr.net`（主服务器）测试，而非 `testingcf.jsdelivr.net`（镜像服务器，purge 不会刷新它）
-
----
-
-### 7. CDN 缓存刷新
-
-| 域名 | 类型 | purge 是否生效 |
-|------|------|---------------|
-| `cdn.jsdelivr.net` | 主服务器 | ✅ 生效 |
-| `testingcf.jsdelivr.net` | 镜像服务器 | ❌ 不生效（需等待自动同步） |
-
-**开发时使用主服务器链接**，发布后再切换到镜像服务器。
 
 ---
 
 ## 待办功能
 
-### P0 - 紧急
-- [ ] 原地编辑框滚动问题
-- [ ] 导航栏按钮自选配置
-
-### P1 - 短期
-- [ ] 表格展示与顺序调整（设置面板内）
-- [ ] 行动选项直接发送开关
-
 ### P2 - 长期
 - [ ] 仪表盘自由配置
-- [ ] 清理所有 jQuery 残留

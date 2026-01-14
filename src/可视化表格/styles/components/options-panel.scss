@@ -28,7 +28,7 @@
   gap: 8px;
 
   i {
-    color: var(--acu-highlight, #667eea);
+    color: var(--acu-title-color, #667eea);
   }
 }
 
@@ -90,7 +90,7 @@
 
   &:hover {
     background: var(--acu-table-hover, rgba(255, 255, 255, 0.1));
-    border-color: var(--acu-highlight, #667eea);
+    border-color: var(--acu-title-color, #667eea);
   }
 
   &:active {
@@ -181,7 +181,7 @@
     color: var(--acu-text-muted, #999);
 
     &:hover {
-      color: var(--acu-highlight, #667eea);
+      color: var(--acu-title-color, #667eea);
     }
   }
 }
@@ -216,16 +216,16 @@
   }
 
   &.active {
-    background: var(--acu-highlight-bg, rgba(102, 126, 234, 0.15));
-    border-color: var(--acu-highlight, #667eea);
+    background: var(--acu-title-color-bg, rgba(102, 126, 234, 0.15));
+    border-color: var(--acu-title-color, #667eea);
 
     .acu-matrix-label {
-      color: var(--acu-highlight, #667eea);
+      color: var(--acu-title-color, #667eea);
       font-weight: 600;
     }
 
     i {
-      color: var(--acu-highlight, #667eea);
+      color: var(--acu-title-color, #667eea);
     }
   }
 

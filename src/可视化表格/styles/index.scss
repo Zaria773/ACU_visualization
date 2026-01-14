@@ -29,12 +29,16 @@
 @use 'components/options-panel';
 @use 'components/sortable-list';
 @use 'components/settings-panel';
+@use 'components/table-selector';
+@use 'components/relationship-graph';
 
 // 4. 覆盖层样式
 @use 'overlays/dialogs';
 @use 'overlays/context-menu';
 @use 'overlays/quick-view';
 @use 'overlays/overlays';
+@use 'overlays/avatar-dialogs';
+@use 'overlays/dashboard-dialogs';
 
 // 5. 工具样式
 @use 'utilities/feedback';

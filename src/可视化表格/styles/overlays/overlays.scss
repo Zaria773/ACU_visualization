@@ -59,7 +59,7 @@
     width: 40px;
     height: 40px;
     border: 4px solid var(--acu-border);
-    border-top-color: var(--acu-highlight);
+    border-top-color: var(--acu-title-color);
     border-radius: 50%;
     animation: acu-spin 0.8s linear infinite;
     margin-bottom: 16px;
@@ -80,7 +80,7 @@
 
     .bar {
       height: 100%;
-      background: var(--acu-highlight);
+      background: var(--acu-title-color);
       border-radius: 2px;
       transition: width 0.3s ease;
     }
@@ -114,7 +114,7 @@
       width: 48px;
       height: 48px;
       border: 4px solid var(--acu-border);
-      border-top-color: var(--acu-highlight);
+      border-top-color: var(--acu-title-color);
       border-radius: 50%;
       animation: acu-spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -196,6 +196,146 @@
 
     i {
       color: #3498db;
+    }
+  }
+}
+
+// =========================================
+// Hidden Buttons Popup - 隐藏按钮浮窗
+// =========================================
+.acu-hidden-buttons-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着 action 按钮区域上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100; // 在 actions-area 内，高于其他元素
+  pointer-events: auto;
+
+  .popup-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .popup-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--acu-btn-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 8px;
+    color: var(--acu-text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--acu-btn-hover);
+      border-color: var(--acu-title-color);
+    }
+
+    &.btn-danger {
+      color: #e74c3c;
+    }
+  }
+}
+
+// Hidden popup 动画
+.hidden-popup-enter-active,
+.hidden-popup-leave-active {
+  transition: all 0.2s ease;
+}
+
+.hidden-popup-enter-from,
+.hidden-popup-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+// =========================================
+// Tabs Popup - Tab 收纳浮窗
+// =========================================
+.acu-tabs-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着导航容器上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  pointer-events: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+
+  .popup-tabs-grid {
+    display: grid;
+    grid-template-columns: var(--acu-nav-cols, repeat(auto-fill, minmax(90px, 1fr)));
+    gap: 6px;
+
+    // 复用 TabBar 的按钮样式
+    .acu-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--acu-btn-bg);
+      border: 1px solid var(--acu-border);
+      border-radius: 8px;
+      color: var(--acu-text-main);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      i {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &:hover {
+        background: var(--acu-btn-hover);
+        border-color: var(--acu-title-color);
+      }
+
+      &.active {
+        background: var(--acu-title-color-bg);
+        border-color: var(--acu-title-color);
+        color: var(--acu-title-color);
+        font-weight: 500;
+      }
+
+      &.has-issues {
+        border-color: #e74c3c;
+        box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+      }
+
+      &.has-ai-changes {
+        border-color: var(--acu-highlight-ai-color, #3498db);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
+      &.acu-nav-btn-special {
+        background: var(--acu-table-head);
+        font-weight: 500;
+      }
     }
   }
 }
@@ -291,10 +431,10 @@
       }
 
       &:last-child {
-        color: var(--acu-highlight);
+        color: var(--acu-title-color);
 
         &:hover {
-          background: rgba(var(--acu-highlight-rgb), 0.1);
+          background: rgba(var(--acu-title-color-rgb), 0.1);
         }
 
         &.danger {
@@ -307,4 +447,99 @@
       }
     }
   }
+}
+
+// =========================================
+// 隐藏按钮浮窗
+// 对应 HiddenButtonsPopup.vue 组件
+// =========================================
+
+.acu-hidden-buttons-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着 action 按钮区域上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100; // 在 actions-area 内，高于其他元素
+  pointer-events: auto;
+
+  // 按钮网格
+  .popup-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  // 浮窗内按钮
+  .popup-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--acu-btn-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    color: var(--acu-text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--acu-btn-hover);
+      border-color: var(--acu-title-color);
+      color: var(--acu-title-color);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    i {
+      font-size: 14px;
+    }
+
+    // 危险按钮样式
+    &.btn-danger {
+      color: #e74c3c;
+
+      &:hover {
+        border-color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+      }
+    }
+  }
+}
+
+// "更多"按钮样式
+.acu-more-btn {
+  &.active {
+    color: var(--acu-title-color);
+    background: var(--acu-btn-hover);
+
+    i {
+      transform: rotate(180deg);
+    }
+  }
+
+  i {
+    transition: transform 0.2s ease;
+  }
+}
+
+// 弹出动画
+.hidden-popup-enter-active,
+.hidden-popup-leave-active {
+  transition: all 0.2s ease;
+}
+
+.hidden-popup-enter-from,
+.hidden-popup-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }

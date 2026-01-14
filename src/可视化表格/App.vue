@@ -20,6 +20,7 @@
       @refresh="handleRefresh"
       @save="handleSave"
       @save-as="showInputFloorDialog = true"
+      @undo="handleUndo"
       @manual-update="handleManualUpdate"
       @purge="showPurgeRangeDialog = true"
       @open-native="handleOpenNative"
@@ -28,19 +29,37 @@
       @toggle="handleToggle"
       @close="handlePanelClose"
       @hide-content="handleHideContent"
+      @collapse-tab="handleCollapseTabClick"
     >
-      <!-- 标签栏插槽 -->
+      <!-- 标签栏插槽（收纳模式时隐藏） -->
       <template #tabs>
         <TabBar
+          v-if="!isTabBarCollapsed"
           :tabs="tabList"
           :active-tab="uiStore.activeTab"
           :show-dashboard="true"
           :has-options-tabs="hasOptionsTabs"
+          :has-relationship-graph="hasRelationshipData"
           :is-editing-order="uiStore.isEditingOrder"
           :grid-columns="configStore.gridColumnsCss"
           @tab-change="handleTabChange"
           @order-change="handleTabsReorder"
           @exit-editing="uiStore.setEditingOrder(false)"
+        />
+      </template>
+
+      <!-- Tab浮窗插槽 -->
+      <template #tabs-popup>
+        <TabsPopup
+          :visible="showTabsPopup"
+          :tabs="tabList"
+          :active-tab="uiStore.activeTab"
+          :grid-columns="configStore.gridColumnsCss"
+          :show-dashboard="true"
+          :show-options-panel="hasOptionsTabs"
+          :show-relationship-graph="hasRelationshipData"
+          @tab-click="handleTabsPopupClick"
+          @close="showTabsPopup = false"
         />
       </template>
 
@@ -52,10 +71,10 @@
         <Dashboard
           v-if="uiStore.activeTab === TAB_DASHBOARD"
           :tables="processedTables"
-          @refresh="handleRefresh"
           @navigate="handleNavigateToTable"
-          @cell-click="handleCellClick"
           @row-click="handleRowClick"
+          @show-relationship-graph="handleShowRelationshipGraph"
+          @action="handleDashboardAction"
         />
 
         <!-- 选项面板视图 -->
@@ -66,10 +85,19 @@
           @toggle-delete="handleToggleDelete"
         />
 
+        <!-- 关系图视图 -->
+        <RelationshipGraph
+          v-else-if="uiStore.activeTab === TAB_RELATIONSHIP_GRAPH"
+          :relationship-table="relationshipTableData"
+          :character-tables="characterTablesData"
+          :faction-table="factionTableData"
+          :show-legend="true"
+        />
+
         <!-- 普通表格视图 -->
         <DataTable
           v-else-if="currentTable"
-          :key="uiStore.activeTab"
+          :key="currentTable.id"
           :table-id="currentTable.id"
           :table-name="currentTable.name"
           :rows="currentTable.rows"
@@ -83,6 +111,7 @@
           @close="handleTableClose"
           @height-drag-start="handleHeightDragStart"
           @height-reset="handleHeightReset"
+          @show-history="handleShowHistory"
         />
 
         <!-- 无数据状态 -->
@@ -123,6 +152,17 @@
     <!-- 手动更新配置弹窗 -->
     <ManualUpdateDialog v-model:visible="showManualUpdateDialog" />
 
+    <!-- 历史记录弹窗 -->
+    <HistoryDialog
+      v-model:visible="showHistoryDialog"
+      :table-name="historyDialogData.tableName"
+      :table-id="historyDialogData.tableId"
+      :row-index="historyDialogData.rowIndex"
+      :current-row-data="historyDialogData.currentRowData"
+      :title-col-index="historyDialogData.titleColIndex"
+      @apply="handleHistoryApply"
+    />
+
     <!-- 全局 Toast 通知 -->
     <Toast :visible="toastState.visible" :message="toastState.message" :type="toastState.type" />
   </div>
@@ -135,27 +175,46 @@
  * 集成所有子组件，管理全局状态和事件通信
  */
 
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
 
 // 组件导入
-import { ContextMenu, Dashboard, DataTable, FloatingBall, MainPanel, OptionsPanel, TabBar, Toast } from './components';
-import { InputFloorDialog, ManualUpdateDialog, PurgeRangeDialog, SettingsDialog } from './components/dialogs';
+import {
+  ContextMenu,
+  Dashboard,
+  DataTable,
+  FloatingBall,
+  MainPanel,
+  OptionsPanel,
+  RelationshipGraph,
+  TabBar,
+  TabsPopup,
+  Toast,
+} from './components';
+import {
+  HistoryDialog,
+  InputFloorDialog,
+  ManualUpdateDialog,
+  PurgeRangeDialog,
+  SettingsDialog,
+} from './components/dialogs';
 
 // Store 导入
 import { useConfigStore } from './stores/useConfigStore';
 import { useDataStore } from './stores/useDataStore';
-import { TAB_DASHBOARD, TAB_OPTIONS, useUIStore } from './stores/useUIStore';
+import { TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from './stores/useUIStore';
 
 // Composables 导入
 import { useApiCallbacks } from './composables/useApiCallbacks';
 import { useCoreActions } from './composables/useCoreActions';
 import { useDataPersistence } from './composables/useDataPersistence';
 import { useParentStyleInjection } from './composables/useParentStyleInjection';
-import { useToast } from './composables/useToast';
+import { useRowHistory } from './composables/useRowHistory';
+import { useSwipeEnhancement } from './composables/useSwipeEnhancement';
+import { toast, useToast } from './composables/useToast';
 import { useTouchScrollFix } from './composables/useTouchScrollFix';
 
 // 工具函数导入
-import { processJsonData } from './utils';
+import { isCharacterTable, processJsonData } from './utils';
 
 // 类型导入
 import type { ProcessedTable, TabItem, TableRow } from './types';
@@ -182,12 +241,23 @@ useTouchScrollFix();
 // API 回调注册（表格更新、快照管理）- 随组件生命周期自动管理
 useApiCallbacks();
 
+// Swipe 增强功能（清除表格、重新触发剧情推进）- 在 onMounted 中初始化
+const swipeEnhancement = useSwipeEnhancement();
+// 注意：init() 移到 onMounted 中执行，确保父窗口 DOM 已就绪
+
 // ============================================================
 // Refs
 // ============================================================
 
 const floatingBallRef = ref<InstanceType<typeof FloatingBall>>();
 const mainPanelRef = ref<InstanceType<typeof MainPanel>>();
+
+// ============================================================
+// Provide (向子组件提供数据)
+// ============================================================
+
+// 向 DataTable 提供所有表格数据（用于关系图）
+provide('allTables', () => processedTables.value);
 
 // ============================================================
 // 响应式状态
@@ -204,6 +274,17 @@ const showSettingsDialog = ref(false);
 const showInputFloorDialog = ref(false);
 const showPurgeRangeDialog = ref(false);
 const showManualUpdateDialog = ref(false);
+const showHistoryDialog = ref(false);
+const showTabsPopup = ref(false);
+
+/** 历史记录弹窗数据 */
+const historyDialogData = reactive({
+  tableName: '',
+  tableId: '',
+  rowIndex: 0,
+  currentRowData: null as TableRow | null,
+  titleColIndex: 1, // 标题列索引
+});
 
 /** 右键菜单状态 */
 const contextMenuState = reactive({
@@ -291,9 +372,53 @@ const hasOptionsTabs = computed(() => {
   return processedTables.value.some(t => t.name.includes('选项') || t.name.toLowerCase().includes('option'));
 });
 
+/** 是否收纳Tab栏 */
+const isTabBarCollapsed = computed(() => {
+  return configStore.config.collapseTabBar === true;
+});
+
 /** 选项类表格 */
 const optionsTables = computed(() => {
   return processedTables.value.filter(t => t.name.includes('选项') || t.name.toLowerCase().includes('option'));
+});
+
+/** 是否有关系图相关数据（用于控制关系图 Tab 显示） */
+const hasRelationshipData = computed(() => {
+  return processedTables.value.some(t => isCharacterTable(t.name, t.id));
+});
+
+/**
+ * 获取关系表数据（用于关系图）
+ */
+const relationshipTableData = computed<ProcessedTable | null>(() => {
+  return (
+    processedTables.value.find(t => {
+      const name = t.name.toLowerCase();
+      const id = t.id.toLowerCase();
+      return name.includes('关系') || id.includes('relationship') || id.includes('relation');
+    }) || null
+  );
+});
+
+/**
+ * 获取角色表列表（用于关系图）
+ */
+const characterTablesData = computed<ProcessedTable[]>(() => {
+  return processedTables.value.filter(t => isCharacterTable(t.name, t.id));
+});
+
+/**
+ * 获取势力表数据（用于关系图）
+ */
+const factionTableData = computed<ProcessedTable | null>(() => {
+  const keywords = ['势力', 'faction', '组织', 'organization', '阵营'];
+  return (
+    processedTables.value.find(t => {
+      const name = t.name.toLowerCase();
+      const id = t.id.toLowerCase();
+      return keywords.some(kw => name.includes(kw) || id.includes(kw));
+    }) || null
+  );
 });
 
 /** 当前选中的表格 */
@@ -380,6 +505,8 @@ function handleToggle() {
 function handleTabChange(tabId: string) {
   uiStore.setActiveTab(tabId);
   searchTerm.value = '';
+  // Bug2副作用修复: 切换tab时恢复内容区域显示
+  isContentHidden.value = false;
   console.info(`[ACU] 切换到 Tab: ${tabId}`);
 
   // 恢复该表的记忆高度（需要等待 DOM 更新）
@@ -414,6 +541,18 @@ function handleTabsReorder(newOrder: string[]) {
   console.info('[ACU] Tab 顺序已更新');
 }
 
+/** 收纳Tab按钮点击 - 显示/隐藏Tab浮窗 */
+function handleCollapseTabClick() {
+  showTabsPopup.value = !showTabsPopup.value;
+  console.info(`[ACU] Tab浮窗: ${showTabsPopup.value ? '显示' : '隐藏'}`);
+}
+
+/** Tab浮窗点击 - 切换Tab并关闭浮窗 */
+function handleTabsPopupClick(tabId: string) {
+  showTabsPopup.value = false;
+  handleTabChange(tabId);
+}
+
 // ============================================================
 // 事件处理 - 导航
 // ============================================================
@@ -429,15 +568,40 @@ function handleNavigateToTable(tableId: string) {
   });
 }
 
-/** 关闭当前表格，返回仪表盘 */
-function handleTableClose() {
-  uiStore.setActiveTab(TAB_DASHBOARD);
-  console.info('[ACU] 关闭表格，返回仪表盘');
+/** 从仪表盘显示人物关系图 - 直接导航到关系图 Tab */
+function handleShowRelationshipGraph() {
+  if (hasRelationshipData.value) {
+    uiStore.setActiveTab(TAB_RELATIONSHIP_GRAPH);
+    console.info('[ACU] 导航到关系图 Tab');
+  } else {
+    toast.warning('未找到人物关系数据');
+  }
+}
 
-  // 恢复仪表盘的高度
-  nextTick(() => {
-    restoreTableHeight(TAB_DASHBOARD);
-  });
+/** 处理仪表盘快捷按钮动作 */
+function handleDashboardAction(actionId: string, tableId: string) {
+  switch (actionId) {
+    case 'clear':
+      // 打开清除弹窗
+      showPurgeRangeDialog.value = true;
+      break;
+    case 'undo':
+      // 撤回操作
+      handleUndo();
+      break;
+    case 'manualUpdate':
+      // 手动更新
+      handleManualUpdate();
+      break;
+    default:
+      console.log('[ACU Dashboard] 未处理的动作:', actionId, tableId);
+  }
+}
+
+/** 关闭当前表格，隐藏数据区域 */
+function handleTableClose() {
+  isContentHidden.value = true;
+  console.info('[ACU] 数据区已隐藏');
 }
 
 /** 高度拖拽开始 - 调用 MainPanel 的高度拖拽逻辑 */
@@ -512,6 +676,11 @@ async function loadData(): Promise<void> {
   if (data) {
     dataStore.setStagedData(data);
     dataStore.saveSnapshot(data);
+
+    // 同步新表格到可见列表（确保新模板的表格能显示）
+    const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
+    uiStore.syncNewTablesToVisibleTabs(allTableIds);
+
     // 刷新后清除所有高亮标记（手动和AI）
     dataStore.clearChanges(true);
   }
@@ -530,7 +699,11 @@ async function handleRefresh() {
 /** 保存数据 */
 async function handleSave() {
   try {
-    const success = await saveToDatabase();
+    // 保存当前状态到撤回缓存（在保存操作前执行）
+    dataStore.saveLastState();
+
+    // 第三个参数 commitDeletes = true，确保删除操作被提交
+    const success = await saveToDatabase(null, false, true);
     if (success) {
       console.info('[ACU] 数据已保存');
       // 刷新界面以显示最新数据
@@ -538,6 +711,24 @@ async function handleSave() {
     }
   } catch (error) {
     console.error('[ACU] 保存失败:', error);
+  }
+}
+
+/** 撤回到上次保存 */
+function handleUndo() {
+  if (!dataStore.hasUndoData) {
+    toast.warning('没有可撤回的数据');
+    return;
+  }
+
+  // 恢复内存状态（不写数据库，快速恢复）
+  // 撤回后 manualDiffMap 会被填充，hasUnsavedChanges 变为 true
+  const success = dataStore.undoToLastSave();
+  if (success) {
+    toast.success('已撤回到上次保存前的状态（需手动保存）');
+    console.info('[ACU] 已撤回到上次保存前的状态, hasUnsavedChanges:', dataStore.hasUnsavedChanges);
+  } else {
+    toast.error('撤回失败');
   }
 }
 
@@ -631,6 +822,65 @@ function handleContextUndoDelete() {
 }
 
 // ============================================================
+// 事件处理 - 历史记录
+// ============================================================
+
+/** 显示历史记录弹窗 */
+function handleShowHistory(tableId: string, tableName: string, rowIndex: number, rowData: TableRow) {
+  historyDialogData.tableId = tableId;
+  historyDialogData.tableName = tableName;
+  historyDialogData.rowIndex = rowIndex;
+  historyDialogData.currentRowData = rowData;
+
+  // 计算 titleColIndex（与 DataTable.vue 逻辑一致）
+  const table = processedTables.value.find(t => t.id === tableId);
+  if (table && (tableName.includes('总结') || tableName.includes('大纲'))) {
+    const idx = table.headers.findIndex(h => h && (h.includes('索引') || h.includes('编号') || h.includes('代码')));
+    historyDialogData.titleColIndex = idx > 0 ? idx : 1;
+  } else {
+    historyDialogData.titleColIndex = 1;
+  }
+
+  showHistoryDialog.value = true;
+  console.info(`[ACU] 打开历史记录: ${tableName}[${rowIndex}], titleColIndex=${historyDialogData.titleColIndex}`);
+}
+
+/** 应用历史记录更改 */
+async function handleHistoryApply(changes: Map<number, string>) {
+  const { tableId, tableName, rowIndex, currentRowData } = historyDialogData;
+
+  if (!currentRowData || changes.size === 0) {
+    showHistoryDialog.value = false;
+    return;
+  }
+
+  // 先保存编辑前的行状态作为历史记录
+  const { saveSnapshot, getCurrentChatId } = useRowHistory();
+  const chatId = getCurrentChatId();
+  if (chatId) {
+    await saveSnapshot(tableName, rowIndex, tableRowToCells(currentRowData), 'manual');
+    console.info('[ACU] 已保存历史记录（批量操作前）');
+  }
+
+  // 批量应用每个单元格的更改，跳过单独的历史记录保存
+  for (const [colIndex, value] of changes) {
+    dataStore.updateCell(tableName, rowIndex, colIndex, value, { skipHistory: true });
+  }
+
+  console.info(`[ACU] 应用历史更改: ${changes.size} 个单元格`);
+  showHistoryDialog.value = false;
+}
+
+/** 将 TableRow 转换为 cells 格式 */
+function tableRowToCells(row: TableRow): Record<number, string> {
+  const cells: Record<number, string> = {};
+  row.cells.forEach((cell, index) => {
+    cells[index] = String(cell.value);
+  });
+  return cells;
+}
+
+// ============================================================
 // 事件处理 - 弹窗
 // ============================================================
 
@@ -693,6 +943,14 @@ onMounted(async () => {
 
   // 初始化样式注入
   initStyles();
+
+  // 初始化 Swipe 增强功能（必须在 onMounted 中执行，确保父窗口 DOM 已就绪）
+  try {
+    swipeEnhancement.init();
+    console.info('[ACU] Swipe 增强功能初始化成功');
+  } catch (error) {
+    console.error('[ACU] Swipe 增强功能初始化失败:', error);
+  }
 
   // 检测移动端
   uiStore.setMobile(window.innerWidth <= 768);
@@ -760,6 +1018,17 @@ function isInsideACU(target: Element): boolean {
     }
   }
 
+  // 检查是否有任何弹窗正在显示
+  if (
+    showSettingsDialog.value ||
+    showInputFloorDialog.value ||
+    showPurgeRangeDialog.value ||
+    showManualUpdateDialog.value ||
+    showHistoryDialog.value
+  ) {
+    return true;
+  }
+
   // 检查是否在以下任一元素内
   return !!(
     target.closest('.acu-wrapper') || // 主面板容器
@@ -767,6 +1036,8 @@ function isInsideACU(target: Element): boolean {
     target.closest('.acu-context-menu') || // 右键菜单
     target.closest('.acu-modal-overlay') || // 弹窗遮罩层
     target.closest('.acu-modal') || // 弹窗
+    target.closest('.acu-modal-container') || // 弹窗容器
+    target.closest('.acu-history-modal') || // 历史记录弹窗
     target.closest('.acu-dialog') || // 对话框
     target.closest('[class*="acu-settings"]') || // 设置相关
     target.closest('#acu_visualizer_vue-root') || // Vue 根容器

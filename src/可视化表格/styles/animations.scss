@@ -21,7 +21,7 @@
 // @keyframes acu-pulse-shadow_title {
 //   0%,
 //   100% {
-//     box-shadow: 0 0 0 0 var(--acu-highlight-bg);
+//     box-shadow: 0 0 0 0 var(--acu-title-color-bg);
 //   }
 //   50% {
 //     box-shadow: 0 0 0 8px transparent;
@@ -257,7 +257,7 @@
 // 卡片组件的高亮样式在 data-card.scss 中定义
 // 已移除背景色和动画效果
 .acu-highlight-changed:not(.acu-data-card) {
-  color: var(--acu-highlight) !important;
+  color: var(--acu-title-color) !important;
   font-weight: bold;
   // 不再使用背景色和动画
 }

@@ -1,183 +1,145 @@
 <template>
-  <div class="acu-dashboard">
-    <!-- 仪表盘网格 -->
-    <div class="acu-dashboard-grid">
-      <!-- 主角信息卡片 -->
-      <div v-if="mainCharacter" class="acu-dashboard-card acu-card-primary">
-        <div class="acu-card-header">
-          <i class="fas fa-user"></i>
-          <span>主角</span>
-          <button class="acu-btn acu-btn-link" @click="navigateToTable('主角')">
-            <i class="fas fa-external-link-alt"></i>
-          </button>
-        </div>
-        <div class="acu-card-body">
-          <DataCard
-            :data="mainCharacter"
-            table-id="主角"
-            table-name="主角"
-            view-mode="list"
-            :show-index="false"
-            :show-header="false"
-            @cell-click="(rowIndex, colIndex) => handleCellClick('主角', rowIndex, colIndex)"
-          />
-        </div>
+  <div class="acu-dash-container-new">
+    <!-- 顶栏 -->
+    <div class="acu-dash-header">
+      <div class="acu-dash-header-left">
+        <span class="acu-dash-header-title">
+          <i class="fas fa-th-large"></i>
+          仪表盘
+        </span>
       </div>
 
-      <!-- NPC 快捷面板 -->
-      <div v-if="npcList.length > 0" class="acu-dashboard-card">
-        <div class="acu-card-header">
-          <i class="fas fa-users"></i>
-          <span>NPC</span>
-          <Badge :value="`${npcList.length}`" type="number" />
-          <button class="acu-btn acu-btn-link" @click="navigateToTable('NPC')">
-            <i class="fas fa-external-link-alt"></i>
-          </button>
+      <div class="acu-dash-header-actions">
+        <!-- 搜索框 -->
+        <div class="acu-search-box">
+          <i class="fas fa-search acu-search-icon"></i>
+          <input v-model="searchTerm" type="text" class="acu-search-input" placeholder="搜索..." />
+          <i v-if="searchTerm" class="fas fa-times acu-search-clear" @click="searchTerm = ''"></i>
         </div>
-        <div class="acu-card-body acu-scroll">
-          <div v-for="npc in displayedNpcs" :key="npc.index" class="acu-mini-card" @click="handleNpcClick(npc)">
-            <span class="acu-mini-name">{{ getNpcName(npc) }}</span>
-            <Badge :value="getNpcStatus(npc)" />
-          </div>
-          <button
-            v-if="npcList.length > maxDisplayItems"
-            class="acu-btn acu-btn-link acu-show-more"
-            @click="navigateToTable('NPC')"
-          >
-            查看全部 ({{ npcList.length }})
-          </button>
-        </div>
-      </div>
 
-      <!-- 任务面板 -->
-      <div v-if="taskList.length > 0" class="acu-dashboard-card">
-        <div class="acu-card-header">
-          <i class="fas fa-tasks"></i>
-          <span>任务</span>
-          <Badge :value="`${taskList.length}`" type="number" />
-          <button class="acu-btn acu-btn-link" @click="navigateToTable(taskTableName)">
-            <i class="fas fa-external-link-alt"></i>
+        <template v-if="isEditing">
+          <button class="acu-dash-add-widget-btn" title="添加看板" @click.stop="showAddWidgetDialog = true">
+            <i class="fas fa-plus"></i>
           </button>
-        </div>
-        <div class="acu-card-body acu-scroll">
-          <div v-for="task in displayedTasks" :key="task.index" class="acu-task-item" @click="handleTaskClick(task)">
-            <span class="acu-task-name">{{ getTaskName(task) }}</span>
-            <Badge :value="getTaskType(task)" />
-          </div>
-          <button
-            v-if="taskList.length > maxTaskItems"
-            class="acu-btn acu-btn-link acu-show-more"
-            @click="navigateToTable(taskTableName)"
-          >
-            查看全部 ({{ taskList.length }})
+          <button class="acu-dash-sort-btn" title="调整顺序" @click.stop="showSortDialog = true">
+            <i class="fas fa-sort"></i>
           </button>
-        </div>
+          <button class="acu-dash-done-btn" @click.stop="exitEditMode">完成</button>
+        </template>
+        <template v-else>
+          <button class="acu-dash-edit-btn" title="编辑仪表盘" @click.stop="enterEditMode">
+            <i class="fas fa-edit"></i>
+          </button>
+        </template>
       </div>
+    </div>
 
-      <!-- 物品/道具面板 -->
-      <div v-if="itemList.length > 0" class="acu-dashboard-card">
-        <div class="acu-card-header">
-          <i class="fas fa-box-open"></i>
-          <span>物品</span>
-          <Badge :value="`${itemList.length}`" type="number" />
-          <button class="acu-btn acu-btn-link" @click="navigateToTable(itemTableName)">
-            <i class="fas fa-external-link-alt"></i>
-          </button>
+    <!-- 组件网格 -->
+    <div ref="gridRef" class="acu-dash-grid">
+      <!-- 动态配置的看板 -->
+      <DashboardWidget
+        v-for="widget in enabledWidgets"
+        :key="widget.id"
+        :config="widget"
+        :table-data="getTableById(widget.tableId)"
+        :is-editing="isEditing"
+        :diff-map="diffMap"
+        :class="{
+          'acu-dash-widget-dragging': draggingWidgetId === widget.id,
+          'acu-dash-widget-drop-target': dropTargetId === widget.id,
+        }"
+        @navigate="handleNavigate"
+        @row-click="handleRowClick"
+        @action="handleWidgetAction"
+        @remove="handleRemoveWidget"
+        @resize="handleResizeWidget"
+        @config-actions="handleConfigActions"
+        @drag-start="handleDragStart"
+        @drag-end="handleDragEnd"
+        @drop="handleDrop"
+      />
+
+      <!-- 空状态 - 没有配置任何看板 -->
+      <div v-if="enabledWidgets.length === 0" class="acu-dash-empty-state">
+        <i class="fas fa-layer-group"></i>
+        <p>还没有配置任何看板</p>
+        <button class="acu-dash-add-first-btn" @click.stop="showAddWidgetDialog = true">
+          <i class="fas fa-plus"></i>
+          添加第一个看板
+        </button>
+      </div>
+    </div>
+
+    <!-- 添加组件弹窗 (不使用 Teleport，因为 Vue 应用已挂载到父窗口) -->
+    <div v-if="showAddWidgetDialog" class="acu-modal-container" @click.self="showAddWidgetDialog = false">
+      <div class="acu-modal acu-add-widget-modal">
+        <div class="acu-modal-header">
+          <span class="acu-modal-title">添加看板</span>
+          <button class="acu-close-pill" @click.stop="showAddWidgetDialog = false">关闭</button>
         </div>
-        <div class="acu-card-body acu-scroll">
-          <div class="acu-items-grid">
+        <div class="acu-modal-body">
+          <div class="acu-add-widget-hint">选择要添加到仪表盘的表格：</div>
+          <div class="acu-add-widget-list">
             <div
-              v-for="item in displayedItems"
-              :key="item.index"
-              class="acu-item-chip"
-              :title="getItemDesc(item)"
-              @click="handleItemClick(item)"
-            >
-              {{ getItemName(item) }}
-              <span v-if="getItemCount(item)" class="acu-item-count"> ×{{ getItemCount(item) }} </span>
-            </div>
-          </div>
-          <button
-            v-if="itemList.length > maxItemChips"
-            class="acu-btn acu-btn-link acu-show-more"
-            @click="navigateToTable(itemTableName)"
-          >
-            查看全部 ({{ itemList.length }})
-          </button>
-        </div>
-      </div>
-
-      <!-- 统计概览 -->
-      <div class="acu-dashboard-card acu-card-stats">
-        <div class="acu-card-header">
-          <i class="fas fa-chart-bar"></i>
-          <span>数据统计</span>
-        </div>
-        <div class="acu-card-body">
-          <div class="acu-stats-grid">
-            <div class="acu-stat-item">
-              <span class="acu-stat-value">{{ totalTables }}</span>
-              <span class="acu-stat-label">表格</span>
-            </div>
-            <div class="acu-stat-item">
-              <span class="acu-stat-value">{{ totalRows }}</span>
-              <span class="acu-stat-label">记录</span>
-            </div>
-            <div class="acu-stat-item" :class="{ 'acu-stat-highlight': changedCount > 0 }">
-              <span class="acu-stat-value">{{ changedCount }}</span>
-              <span class="acu-stat-label">变更</span>
-            </div>
-            <div class="acu-stat-item" :class="{ 'acu-stat-danger': pendingDeleteCount > 0 }">
-              <span class="acu-stat-value">{{ pendingDeleteCount }}</span>
-              <span class="acu-stat-label">待删除</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 快捷表格入口 -->
-      <div v-if="otherTables.length > 0" class="acu-dashboard-card acu-card-quick-access">
-        <div class="acu-card-header">
-          <i class="fas fa-th"></i>
-          <span>快捷访问</span>
-        </div>
-        <div class="acu-card-body">
-          <div class="acu-quick-grid">
-            <button
-              v-for="table in otherTables"
+              v-for="table in availableTables"
               :key="table.id"
-              class="acu-quick-btn"
-              @click="navigateToTable(table.id)"
+              class="acu-add-widget-item"
+              :class="{ 'acu-add-widget-item-added': isTableAdded(table.id) }"
+              @click.stop="handleAddWidget(table.id)"
             >
-              <i :class="getTableIcon(table.id)"></i>
-              <span>{{ table.name }}</span>
-              <Badge v-if="table.count > 0" :value="`${table.count}`" type="number" />
-            </button>
+              <i :class="['fas', getTableIcon(table.id)]"></i>
+              <span class="acu-add-widget-name">{{ table.name }}</span>
+              <span v-if="isTableAdded(table.id)" class="acu-add-widget-badge">已添加</span>
+              <span v-else class="acu-add-widget-count">{{ table.rows.length }} 行</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 快捷按钮配置弹窗 (不使用 Teleport，因为 Vue 应用已挂载到父窗口) -->
+    <div v-if="editingActionsWidgetId" class="acu-modal-container" @click.self="editingActionsWidgetId = null">
+      <div class="acu-modal acu-actions-config-modal">
+        <div class="acu-modal-header">
+          <span class="acu-modal-title">配置快捷按钮</span>
+          <button class="acu-close-pill" @click.stop="editingActionsWidgetId = null">完成</button>
+        </div>
+        <div class="acu-modal-body">
+          <div class="acu-actions-list">
+            <label
+              v-for="action in allActions"
+              :key="action.id"
+              class="acu-action-checkbox"
+              :class="{ active: isActionEnabled(action.id) }"
+            >
+              <input type="checkbox" :checked="isActionEnabled(action.id)" @change="toggleAction(action.id)" />
+              <i :class="['fas', action.icon]"></i>
+              <span>{{ action.label }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 排序弹窗 -->
+    <DashboardSortDialog v-if="showSortDialog" :tables="tables" @close="showSortDialog = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * Dashboard 仪表盘视图组件
- *
- * 聚合展示多个关键表格的摘要信息：
- * - 主角信息
- * - NPC 列表
- * - 任务列表
- * - 物品/道具
- * - 数据统计
- * - 快捷表格入口
+ * Dashboard 仪表盘视图组件 (动态配置版)
+ * 使用 useDashboardStore 管理配置
  */
 
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useDashboardStore } from '../stores/useDashboardStore';
 import { useDataStore } from '../stores/useDataStore';
-import type { ProcessedTable, TableRow } from '../types';
-import Badge from './Badge.vue';
-import DataCard from './DataCard.vue';
+import type { ProcessedTable, TableRow, WidgetActionId } from '../types';
+import { TABLE_KEYWORD_RULES, WIDGET_ACTIONS } from '../types';
+import { getCore } from '../utils/index';
+import { DashboardWidget } from './dashboard';
+import DashboardSortDialog from './dialogs/DashboardSortDialog.vue';
 
 interface Props {
   /** 所有表格数据 */
@@ -187,201 +149,258 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  /** 刷新事件 */
-  refresh: [];
-  /** 导航到表格事件 */
   navigate: [tableId: string];
-  /** 单元格点击事件 */
-  cellClick: [tableId: string, rowIndex: number, colIndex: number];
-  /** 行点击事件（用于快速预览等） */
   rowClick: [tableId: string, row: TableRow];
+  showRelationshipGraph: [];
+  action: [actionId: WidgetActionId, tableId: string];
 }>();
+
+// ============================================================
+// Stores
+// ============================================================
+
+const dataStore = useDataStore();
+const dashboardStore = useDashboardStore();
 
 // ============================================================
 // 状态
 // ============================================================
 
-const dataStore = useDataStore();
-const isRefreshing = ref(false);
+/** 是否处于编辑模式 */
+const isEditing = ref(false);
 
-// 显示数量限制
-const maxDisplayItems = 5;
-const maxTaskItems = 3;
-const maxItemChips = 12;
+/** 是否显示添加组件弹窗 */
+const showAddWidgetDialog = ref(false);
+
+/** 是否显示排序弹窗 */
+const showSortDialog = ref(false);
+
+/** 搜索关键词 */
+const searchTerm = ref('');
+
+/** 正在编辑快捷按钮的组件 ID */
+const editingActionsWidgetId = ref<string | null>(null);
+
+/** 拖拽中的组件 ID */
+const draggingWidgetId = ref<string | null>(null);
+
+/** 放置目标组件 ID */
+const dropTargetId = ref<string | null>(null);
+
+/** Grid 容器引用 */
+const gridRef = ref<HTMLElement | null>(null);
 
 // ============================================================
-// 计算属性 - 表格数据获取
+// Computed
 // ============================================================
 
-/** 根据表格名称获取表格数据 */
-function getTableByName(name: string): ProcessedTable | undefined {
-  return props.tables.find(t => t.name === name || t.id === name);
-}
+/** 启用的看板列表 */
+const enabledWidgets = computed(() => dashboardStore.enabledWidgets);
 
-/** 根据关键词模糊匹配表格 */
-function getTableByKeyword(...keywords: string[]): ProcessedTable | undefined {
-  return props.tables.find(t => keywords.some(k => t.name.includes(k) || t.id.includes(k)));
-}
+/** 差异映射 */
+const diffMap = computed(() => dataStore.diffMap);
 
-/** 主角数据 */
-const mainCharacterTable = computed(() => getTableByKeyword('主角', '玩家', 'Player', 'protagonist'));
-const mainCharacter = computed(() => mainCharacterTable.value?.rows[0] || null);
+/** 可用的表格列表（用于添加弹窗） */
+const availableTables = computed(() => props.tables);
 
-/** NPC 列表 */
-const npcTable = computed(() => getTableByKeyword('NPC', 'npc', '角色'));
-const npcList = computed(() => npcTable.value?.rows || []);
-const displayedNpcs = computed(() => npcList.value.slice(0, maxDisplayItems));
+/** 所有快捷按钮选项 */
+const allActions = computed(() => Object.values(WIDGET_ACTIONS));
 
-/** 任务列表 */
-const taskTable = computed(() => getTableByKeyword('任务', 'Task', 'Quest', 'quest'));
-const taskTableName = computed(() => taskTable.value?.name || '任务');
-const taskList = computed(() => taskTable.value?.rows || []);
-const displayedTasks = computed(() => taskList.value.slice(0, maxTaskItems));
-
-/** 物品列表 */
-const itemTable = computed(() => getTableByKeyword('物品', '道具', 'Item', 'item', '背包', '库存'));
-const itemTableName = computed(() => itemTable.value?.name || '物品');
-const itemList = computed(() => itemTable.value?.rows || []);
-const displayedItems = computed(() => itemList.value.slice(0, maxItemChips));
-
-/** 其他表格（排除已展示的） */
-const otherTables = computed(() => {
-  const excludeIds = new Set(
-    [mainCharacterTable.value?.id, npcTable.value?.id, taskTable.value?.id, itemTable.value?.id].filter(Boolean),
-  );
-
-  return props.tables
-    .filter(t => !excludeIds.has(t.id))
-    .map(t => ({
-      id: t.id,
-      name: t.name,
-      count: t.rows.length,
-    }))
-    .slice(0, 8); // 最多显示 8 个快捷入口
+/** 当前编辑的组件配置 */
+const editingWidgetConfig = computed(() => {
+  if (!editingActionsWidgetId.value) return null;
+  return dashboardStore.config.widgets.find(w => w.id === editingActionsWidgetId.value);
 });
 
 // ============================================================
-// 计算属性 - 统计数据
+// Modal 层级管理
 // ============================================================
 
-/** 总表格数 */
-const totalTables = computed(() => props.tables.length);
+/** 是否有弹窗打开 */
+const hasActiveModal = computed(() => {
+  return showAddWidgetDialog.value || showSortDialog.value || editingActionsWidgetId.value !== null;
+});
 
-/** 总行数 */
-const totalRows = computed(() => props.tables.reduce((sum, table) => sum + table.rows.length, 0));
-
-/** 变更数 */
-const changedCount = computed(() => dataStore.diffMap.size);
-
-/** 待删除数 */
-const pendingDeleteCount = computed(() => dataStore.pendingDeletes.size);
-
-// ============================================================
-// 辅助方法 - 数据提取
-// ============================================================
-
-/** 获取 NPC 名称 */
-function getNpcName(npc: TableRow): string {
-  const nameCell = npc.cells.find(c => ['名称', '姓名', 'name', 'Name', '角色名'].includes(c.key));
-  return String(nameCell?.value || `NPC #${npc.index + 1}`);
-}
-
-/** 获取 NPC 状态 */
-function getNpcStatus(npc: TableRow): string {
-  const statusCell = npc.cells.find(c => ['状态', '好感度', 'status', 'Status', '关系'].includes(c.key));
-  return String(statusCell?.value || '-');
-}
-
-/** 获取任务名称 */
-function getTaskName(task: TableRow): string {
-  const nameCell = task.cells.find(c => ['名称', '任务名', 'name', 'Name', '标题'].includes(c.key));
-  return String(nameCell?.value || `任务 #${task.index + 1}`);
-}
-
-/** 获取任务类型 */
-function getTaskType(task: TableRow): string {
-  const typeCell = task.cells.find(c => ['类型', 'type', 'Type', '分类'].includes(c.key));
-  return String(typeCell?.value || '主线');
-}
-
-/** 获取物品名称 */
-function getItemName(item: TableRow): string {
-  const nameCell = item.cells.find(c => ['名称', '物品名', 'name', 'Name', '道具名'].includes(c.key));
-  return String(nameCell?.value || `物品 #${item.index + 1}`);
-}
-
-/** 获取物品数量 */
-function getItemCount(item: TableRow): string {
-  const countCell = item.cells.find(c => ['数量', 'count', 'Count', '个数', 'amount'].includes(c.key));
-  const value = countCell?.value;
-  if (value && Number(value) > 1) {
-    return String(value);
+/** 监听弹窗状态，切换父容器类名以提升层级 */
+watch(hasActiveModal, isActive => {
+  const { $ } = getCore();
+  if (isActive) {
+    $('.acu-data-display').addClass('has-modal');
+  } else {
+    $('.acu-data-display').removeClass('has-modal');
   }
-  return '';
+});
+
+// ============================================================
+// 生命周期
+// ============================================================
+
+onMounted(async () => {
+  // 加载仪表盘配置
+  await dashboardStore.loadConfig();
+
+  // 如果没有配置任何看板，自动添加匹配的表格
+  if (dashboardStore.config.widgets.length === 0) {
+    autoAddDefaultWidgets();
+  }
+});
+
+// 监听表格变化，可能需要更新看板
+watch(
+  () => props.tables,
+  () => {
+    // 可以在这里添加自动更新逻辑
+  },
+);
+
+// ============================================================
+// 方法 - 表格相关
+// ============================================================
+
+/** 根据 ID 获取表格 */
+function getTableById(tableId: string | undefined): ProcessedTable | null {
+  if (!tableId) return null;
+  return props.tables.find(t => t.id === tableId) ?? null;
 }
 
-/** 获取物品描述 */
-function getItemDesc(item: TableRow): string {
-  const descCell = item.cells.find(c => ['描述', '说明', 'desc', 'description', 'Description'].includes(c.key));
-  return String(descCell?.value || '');
+/** 检查表格是否已添加 */
+function isTableAdded(tableId: string): boolean {
+  return dashboardStore.hasWidget(tableId);
 }
 
 /** 获取表格图标 */
 function getTableIcon(tableId: string): string {
-  const id = tableId.toLowerCase();
-  if (id.includes('技能') || id.includes('skill')) return 'fas fa-magic';
-  if (id.includes('装备') || id.includes('equip')) return 'fas fa-shield-alt';
-  if (id.includes('状态') || id.includes('status')) return 'fas fa-heart';
-  if (id.includes('事件') || id.includes('event')) return 'fas fa-calendar-alt';
-  if (id.includes('日志') || id.includes('log')) return 'fas fa-scroll';
-  if (id.includes('地点') || id.includes('location')) return 'fas fa-map-marker-alt';
-  if (id.includes('关系') || id.includes('relation')) return 'fas fa-link';
-  if (id.includes('设置') || id.includes('setting')) return 'fas fa-cog';
-  return 'fas fa-table';
+  for (const [key, keywords] of Object.entries(TABLE_KEYWORD_RULES)) {
+    if (keywords.some(k => tableId.toLowerCase().includes(k.toLowerCase()))) {
+      const template = dashboardStore.config.widgets.find(w => w.tableId === tableId);
+      return template?.icon ?? 'fa-table';
+    }
+  }
+  return 'fa-table';
+}
+
+/** 自动添加默认看板 */
+function autoAddDefaultWidgets(): void {
+  for (const table of props.tables) {
+    // 尝试匹配模板
+    for (const [, keywords] of Object.entries(TABLE_KEYWORD_RULES)) {
+      if (keywords.some(k => table.id.toLowerCase().includes(k.toLowerCase()) || table.name.includes(k))) {
+        dashboardStore.addWidget(table.id);
+        break;
+      }
+    }
+  }
 }
 
 // ============================================================
-// 事件处理
+// 方法 - 编辑模式
 // ============================================================
 
-/** 刷新 */
-async function handleRefresh() {
-  isRefreshing.value = true;
-  emit('refresh');
-  // 模拟刷新动画
-  setTimeout(() => {
-    isRefreshing.value = false;
-  }, 1000);
+function enterEditMode(): void {
+  isEditing.value = true;
 }
 
-/** 导航到表格 */
-function navigateToTable(tableId: string) {
+function exitEditMode(): void {
+  isEditing.value = false;
+  draggingWidgetId.value = null;
+  dropTargetId.value = null;
+}
+
+// ============================================================
+// 方法 - 组件操作
+// ============================================================
+
+/** 添加组件 */
+function handleAddWidget(tableId: string): void {
+  if (isTableAdded(tableId)) return;
+  dashboardStore.addWidget(tableId);
+}
+
+/** 移除组件 */
+function handleRemoveWidget(widgetId: string): void {
+  dashboardStore.removeWidget(widgetId);
+}
+
+/** 调整组件大小 */
+function handleResizeWidget(widgetId: string, colSpan: 1 | 2): void {
+  dashboardStore.updateWidget(widgetId, { colSpan });
+}
+
+/** 配置快捷按钮 */
+function handleConfigActions(widgetId: string): void {
+  editingActionsWidgetId.value = widgetId;
+}
+
+/** 检查快捷按钮是否启用 */
+function isActionEnabled(actionId: WidgetActionId): boolean {
+  return editingWidgetConfig.value?.actions.includes(actionId) ?? false;
+}
+
+/** 切换快捷按钮 */
+function toggleAction(actionId: WidgetActionId): void {
+  if (!editingActionsWidgetId.value || !editingWidgetConfig.value) return;
+
+  const currentActions = [...editingWidgetConfig.value.actions];
+  const index = currentActions.indexOf(actionId);
+
+  if (index >= 0) {
+    currentActions.splice(index, 1);
+  } else {
+    currentActions.push(actionId);
+  }
+
+  dashboardStore.setWidgetActions(editingActionsWidgetId.value, currentActions);
+}
+
+// ============================================================
+// 方法 - 拖拽排序
+// ============================================================
+
+function handleDragStart(widgetId: string): void {
+  draggingWidgetId.value = widgetId;
+}
+
+function handleDragEnd(): void {
+  draggingWidgetId.value = null;
+  dropTargetId.value = null;
+}
+
+function handleDrop(targetWidgetId: string): void {
+  if (!draggingWidgetId.value || draggingWidgetId.value === targetWidgetId) return;
+
+  // 找到目标位置
+  const targetWidget = dashboardStore.config.widgets.find(w => w.id === targetWidgetId);
+  if (targetWidget) {
+    dashboardStore.moveWidget(draggingWidgetId.value, targetWidget.order);
+  }
+
+  draggingWidgetId.value = null;
+  dropTargetId.value = null;
+}
+
+// ============================================================
+// 方法 - 事件处理
+// ============================================================
+
+function handleNavigate(tableId: string): void {
   emit('navigate', tableId);
 }
 
-/** 单元格点击 */
-function handleCellClick(tableId: string, rowIndex: number, colIndex: number) {
-  emit('cellClick', tableId, rowIndex, colIndex);
+function handleRowClick(tableId: string, row: TableRow): void {
+  emit('rowClick', tableId, row);
 }
 
-/** NPC 点击 */
-function handleNpcClick(npc: TableRow) {
-  if (npcTable.value) {
-    emit('rowClick', npcTable.value.id, npc);
-  }
-}
-
-/** 任务点击 */
-function handleTaskClick(task: TableRow) {
-  if (taskTable.value) {
-    emit('rowClick', taskTable.value.id, task);
-  }
-}
-
-/** 物品点击 */
-function handleItemClick(item: TableRow) {
-  if (itemTable.value) {
-    emit('rowClick', itemTable.value.id, item);
+function handleWidgetAction(actionId: WidgetActionId, tableId: string): void {
+  switch (actionId) {
+    case 'goToTable':
+      emit('navigate', tableId);
+      break;
+    case 'relationshipGraph':
+      emit('showRelationshipGraph');
+      break;
+    default:
+      emit('action', actionId, tableId);
+      break;
   }
 }
 </script>

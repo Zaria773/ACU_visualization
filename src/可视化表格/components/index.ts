@@ -49,6 +49,7 @@ export { default as SearchBox } from './SearchBox.vue';
 
 // 第5批组件 - 弹窗组件
 export * from './dialogs';
+export { default as DashboardSortDialog } from './dialogs/DashboardSortDialog.vue';
 
 // 第6批组件 - UI基础组件
 export { default as ActionBar } from './ActionBar.vue';
@@ -60,3 +61,12 @@ export { default as TabConfigPanel } from './settings/TabConfigPanel.vue';
 
 // 第8批组件 - 通知组件
 export { default as Toast } from './Toast.vue';
+
+// 第9批组件 - 关系图组件
+export { default as RelationshipGraph } from './RelationshipGraph.vue';
+
+// 第10批组件 - 隐藏按钮浮窗
+export { default as HiddenButtonsPopup } from './HiddenButtonsPopup.vue';
+
+// 第11批组件 - Tab 收纳浮窗
+export { default as TabsPopup } from './TabsPopup.vue';

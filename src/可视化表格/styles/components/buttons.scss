@@ -122,8 +122,8 @@
   }
 
   &.active {
-    color: var(--acu-highlight);
-    border-bottom-color: var(--acu-highlight);
+    color: var(--acu-title-color);
+    border-bottom-color: var(--acu-title-color);
   }
 }
 
@@ -164,6 +164,13 @@
     transform: scale(0.95);
   }
 
+  // 激活状态
+  &.acu-btn-active {
+    background: var(--acu-title-color-bg, rgba(52, 152, 219, 0.2));
+    color: var(--acu-title-color, #3498db);
+    border-color: var(--acu-title-color);
+  }
+
   i {
     font-size: 14px;
   }
@@ -201,4 +208,129 @@
   50% {
     opacity: 0.6;
   }
+}
+
+// =========================================
+// 按钮收纳组相关样式
+// =========================================
+
+// 按钮包装器（支持弹出按钮定位）
+.acu-action-btn-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1; // 继承父容器的 flex 扩展行为，保持按钮自适应宽度
+}
+
+// ActionBar 内的包装器使用固定尺寸（与其内部按钮一致）
+.acu-action-bar .acu-action-btn-wrapper {
+  flex: none;
+}
+
+// 有附属按钮的按钮样式
+.has-secondary {
+  position: relative;
+}
+
+// 附属按钮指示点
+.secondary-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--acu-primary-color, #3498db);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+// 弹出的附属按钮
+.acu-popup-btn {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  z-index: 100;
+  background: var(--acu-panel-bg, #2a2a2a) !important;
+  border: 1px solid var(--acu-primary-color, #3498db) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    background: var(--acu-primary-color, #3498db) !important;
+    color: #fff !important;
+  }
+}
+
+// 弹出动画
+.popup-enter-active,
+.popup-leave-active {
+  transition: all 0.2s ease;
+}
+
+.popup-enter-from,
+.popup-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+.popup-enter-to,
+.popup-leave-from {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+// =========================================
+// 锁定编辑模式专用按钮
+// =========================================
+
+// 锁定模式按钮容器
+.acu-lock-mode-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-right: 8px;
+  padding-right: 8px;
+  border-right: 1px solid var(--acu-border);
+}
+
+// 成功按钮（完成锁定）
+.acu-btn-success {
+  color: #27ae60 !important;
+  background: rgba(39, 174, 96, 0.15) !important;
+  border: 1px solid rgba(39, 174, 96, 0.3) !important;
+
+  &:hover {
+    background: rgba(39, 174, 96, 0.25) !important;
+    color: #2ecc71 !important;
+  }
+}
+
+// 取消按钮
+.acu-btn-cancel {
+  color: #e74c3c !important;
+  background: rgba(231, 76, 60, 0.15) !important;
+  border: 1px solid rgba(231, 76, 60, 0.3) !important;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.25) !important;
+    color: #ff6b6b !important;
+  }
+}
+
+// 锁定计数徽章
+.acu-lock-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--acu-title-color);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
 }

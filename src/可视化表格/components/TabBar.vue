@@ -11,26 +11,19 @@
 
     <!-- Tab 网格区域 -->
     <div class="acu-nav-tabs-area" :style="{ '--acu-nav-cols': gridColumns }">
-      <!-- 仪表盘 Tab (如果显示) -->
+      <!-- 统一 Tab 列表（包含仪表盘、普通表格、选项面板） -->
       <button
-        v-if="showDashboard"
-        class="acu-nav-btn acu-nav-btn-special"
-        :class="{ active: activeTab === TAB_DASHBOARD }"
-        @click.stop="selectTab(TAB_DASHBOARD)"
-      >
-        <i class="fas fa-home"></i>
-        <span>仪表盘</span>
-      </button>
-
-      <!-- 动态 Tab 列表（根据可见性配置过滤） -->
-      <button
-        v-for="tab in filteredTabs"
+        v-for="tab in allVisibleTabs"
         :key="tab.id"
         class="acu-nav-btn"
         :class="{
+          'acu-nav-btn-special': isSpecialTab(tab.id),
           active: activeTab === tab.id,
           'drag-handle': isEditingOrder,
+          'has-issues': !isSpecialTab(tab.id) && hasTabIssues(tab.name),
+          'has-ai-changes': !isSpecialTab(tab.id) && !hasTabIssues(tab.name) && hasTabAiChanges(tab.name),
         }"
+        :title="getTabTooltip(tab)"
         :draggable="isEditingOrder"
         @click.stop="selectTab(tab.id)"
         @dragstart="handleDragStart($event, tab)"
@@ -40,17 +33,6 @@
       >
         <i v-if="tab.icon" :class="tab.icon"></i>
         <span>{{ tab.name }}</span>
-      </button>
-
-      <!-- 选项面板 Tab (如果有选项类表格) -->
-      <button
-        v-if="hasOptionsTabs"
-        class="acu-nav-btn acu-nav-btn-special"
-        :class="{ active: activeTab === TAB_OPTIONS }"
-        @click.stop="selectTab(TAB_OPTIONS)"
-      >
-        <i class="fas fa-sliders-h"></i>
-        <span>选项</span>
       </button>
     </div>
   </div>
@@ -67,7 +49,8 @@
  */
 
 import { computed, ref, watch } from 'vue';
-import { TAB_DASHBOARD, TAB_OPTIONS, useUIStore } from '../stores/useUIStore';
+import { useDataStore } from '../stores/useDataStore';
+import { TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from '../stores/useUIStore';
 import type { TabItem } from '../types';
 
 // ============================================================
@@ -83,6 +66,8 @@ interface Props {
   showDashboard?: boolean;
   /** 是否有选项类 Tab */
   hasOptionsTabs?: boolean;
+  /** 是否有关系图数据 */
+  hasRelationshipGraph?: boolean;
   /** 是否处于排序编辑模式 */
   isEditingOrder?: boolean;
   /** 网格列数 CSS */
@@ -92,6 +77,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showDashboard: true,
   hasOptionsTabs: false,
+  hasRelationshipGraph: false,
   isEditingOrder: false,
   gridColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
 });
@@ -110,6 +96,7 @@ const emit = defineEmits<{
 // ============================================================
 
 const uiStore = useUIStore();
+const dataStore = useDataStore();
 
 // ============================================================
 // 状态
@@ -119,23 +106,105 @@ const uiStore = useUIStore();
 const sortedTabs = ref<TabItem[]>([]);
 
 /**
- * 根据 visibleTabs 配置过滤后的 Tab 列表
- * - 如果 visibleTabs 为空数组，显示全部 Tab
- * - 否则按照 visibleTabs 中的顺序过滤显示
+ * 是否为特殊 Tab (仪表盘/选项面板/关系图)
  */
-const filteredTabs = computed(() => {
+function isSpecialTab(tabId: string): boolean {
+  return tabId === TAB_DASHBOARD || tabId === TAB_OPTIONS || tabId === TAB_RELATIONSHIP_GRAPH;
+}
+
+/**
+ * 构建完整的 Tab 对象（包括仪表盘、关系图和选项面板）
+ */
+function createTabObject(tabId: string): TabItem | undefined {
+  if (tabId === TAB_DASHBOARD) {
+    return { id: TAB_DASHBOARD, name: '仪表盘', icon: 'fas fa-home' };
+  }
+  if (tabId === TAB_RELATIONSHIP_GRAPH) {
+    return { id: TAB_RELATIONSHIP_GRAPH, name: '关系图', icon: 'fas fa-project-diagram' };
+  }
+  if (tabId === TAB_OPTIONS) {
+    return { id: TAB_OPTIONS, name: '选项', icon: 'fas fa-sliders-h' };
+  }
+  return sortedTabs.value.find(t => t.id === tabId);
+}
+
+/**
+ * 获取最终显示的 Tab 列表（统一排序）
+ * - 如果 visibleTabs 为空数组，使用默认顺序：仪表盘 -> 所有普通表格 -> 选项面板
+ * - 否则严格按照 visibleTabs 中的顺序显示
+ */
+const allVisibleTabs = computed<TabItem[]>(() => {
   const visibleTabs = uiStore.visibleTabs;
 
-  // 空数组表示显示全部
+  // 1. 如果配置为空（显示全部模式），使用默认顺序
   if (!visibleTabs || visibleTabs.length === 0) {
-    return sortedTabs.value;
+    const tabs: TabItem[] = [];
+
+    // 仪表盘
+    if (props.showDashboard) {
+      tabs.push({ id: TAB_DASHBOARD, name: '仪表盘', icon: 'fas fa-home' });
+    }
+
+    // 普通表格
+    tabs.push(...sortedTabs.value);
+
+    // 关系图（在选项面板之前）
+    if (props.hasRelationshipGraph) {
+      tabs.push({ id: TAB_RELATIONSHIP_GRAPH, name: '关系图', icon: 'fas fa-project-diagram' });
+    }
+
+    // 选项面板
+    if (props.hasOptionsTabs) {
+      tabs.push({ id: TAB_OPTIONS, name: '选项', icon: 'fas fa-sliders-h' });
+    }
+
+    return tabs;
   }
 
-  // 根据配置顺序过滤
+  // 2. 如果有配置，严格按照配置顺序显示
   return visibleTabs
-    .map(tabId => sortedTabs.value.find(t => t.id === tabId))
-    .filter((tab): tab is TabItem => tab !== undefined);
+    .map(tabId => createTabObject(tabId))
+    .filter((tab): tab is TabItem => {
+      // 过滤掉 undefined 以及不应该显示的特殊 Tab（双重校验）
+      if (!tab) return false;
+      if (tab.id === TAB_DASHBOARD && !props.showDashboard) return false;
+      if (tab.id === TAB_RELATIONSHIP_GRAPH && !props.hasRelationshipGraph) return false;
+      if (tab.id === TAB_OPTIONS && !props.hasOptionsTabs) return false;
+      return true;
+    });
 });
+
+// ============================================================
+// 完整性检测
+// ============================================================
+
+/**
+ * 检查指定 Tab 是否有完整性问题
+ * @param tabName Tab 名称（表格名称）
+ */
+function hasTabIssues(tabName: string): boolean {
+  return dataStore.hasTableIssues(tabName);
+}
+
+/**
+ * 检查指定 Tab 是否有 AI 填表变更
+ * @param tabName Tab 名称（表格名称）
+ */
+function hasTabAiChanges(tabName: string): boolean {
+  return dataStore.hasTableAiChanges(tabName);
+}
+
+/**
+ * 获取 Tab 的 tooltip
+ * @param tab Tab 配置
+ */
+function getTabTooltip(tab: TabItem): string {
+  if (hasTabIssues(tab.name)) {
+    const issues = dataStore.getTableIssues(tab.name);
+    return `⚠️ 发现 ${issues.length} 个问题`;
+  }
+  return tab.name;
+}
 
 /** 当前拖拽的 Tab */
 let draggedTab: TabItem | null = null;
@@ -236,7 +305,7 @@ defineExpose({
   /** 获取当前排序 */
   getCurrentOrder: () => sortedTabs.value.map(t => t.id),
   /** 获取当前过滤后显示的 Tab */
-  getVisibleTabs: () => filteredTabs.value.map(t => t.id),
+  getVisibleTabs: () => allVisibleTabs.value.map(t => t.id),
 });
 </script>
 

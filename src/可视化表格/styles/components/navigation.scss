@@ -10,6 +10,7 @@
 
 // 导航容器
 .acu-nav-container {
+  position: relative; // 关键：确保浮窗相对于此容器定位
   order: 1;
   flex: 0 0 auto;
   display: flex;
@@ -26,6 +27,7 @@
   width: 100%;
   pointer-events: auto !important;
   cursor: move;
+  z-index: 10; // 确保导航栏在数据面板之上，用于浮窗显示
 
   &.lock-mode {
     cursor: default !important;
@@ -95,6 +97,7 @@
 
 // 底部操作区 - 大按钮模式
 .acu-nav-actions-area {
+  position: relative; // 关键：确保浮窗相对于此区域定位
   display: flex;
   width: 100%;
   justify-content: space-between;
@@ -160,7 +163,62 @@
 
   &.dragging {
     opacity: 0.5;
-    border: 2px solid var(--acu-highlight);
+    border: 2px solid var(--acu-title-color);
+  }
+
+  // 有 AI 填表变更的 Tab 样式（优先级低于警告）
+  // 使用用户在设置面板自定义的 AI 填表高亮色
+  &.has-ai-changes {
+    border: 2px solid var(--acu-highlight-ai, #3498db);
+
+    &:hover {
+      border-color: var(--acu-highlight-ai, #3498db);
+    }
+
+    &.active {
+      border-color: var(--acu-highlight-ai, #3498db);
+    }
+  }
+
+  // 有完整性问题的 Tab 样式（优先级高于 AI 变更）
+  &.has-issues {
+    border: 2px solid #f56c6c;
+    animation: tab-issue-pulse 2s ease-in-out infinite;
+    position: relative;
+
+    // 问题指示器小点
+    &::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 8px;
+      height: 8px;
+      background: #f56c6c;
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(245, 108, 108, 0.6);
+    }
+
+    &:hover {
+      border-color: #f56c6c;
+      box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
+    }
+
+    &.active {
+      border-color: #f56c6c;
+      box-shadow: 0 2px 10px rgba(245, 108, 108, 0.4);
+    }
+  }
+}
+
+// Tab 问题脉冲动画
+@keyframes tab-issue-pulse {
+  0%,
+  100% {
+    border-color: #f56c6c;
+  }
+  50% {
+    border-color: rgba(245, 108, 108, 0.4);
   }
 }
 
@@ -200,8 +258,8 @@
   // 保存按钮有更改时的脉冲动画
   &.has-changes {
     animation: acu-pulse 1.5s ease-in-out infinite;
-    border-color: var(--acu-highlight);
-    color: var(--acu-highlight);
+    border-color: var(--acu-title-color);
+    color: var(--acu-title-color);
   }
 
   // 危险按钮样式
@@ -217,8 +275,8 @@
   // 切换按钮激活状态
   &.acu-btn-toggle.active {
     background: var(--acu-btn-hover);
-    color: var(--acu-highlight);
-    border-color: var(--acu-highlight);
+    color: var(--acu-title-color);
+    border-color: var(--acu-title-color);
   }
 }
 
@@ -236,9 +294,9 @@
 @keyframes acu-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(var(--acu-highlight-rgb, 211, 84, 0), 0.4);
+    box-shadow: 0 0 0 0 rgba(var(--acu-title-color-rgb, 211, 84, 0), 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(var(--acu-highlight-rgb, 211, 84, 0), 0);
+    box-shadow: 0 0 0 8px rgba(var(--acu-title-color-rgb, 211, 84, 0), 0);
   }
 }

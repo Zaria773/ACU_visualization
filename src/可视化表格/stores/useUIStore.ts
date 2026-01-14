@@ -19,22 +19,13 @@ export const STORAGE_KEYS = {
   BALL_POSITION: 'acu_float_ball_pos',
   LAYOUT: 'acu_layout',
   VISIBLE_TABS: 'acu_visible_tabs',
+  TAB_ORDER: 'acu_tab_order',
 } as const;
-
-const STORAGE_KEY_UI_COLLAPSE = STORAGE_KEYS.UI_COLLAPSE;
-const STORAGE_KEY_PIN = STORAGE_KEYS.PIN;
-const STORAGE_KEY_ACTIVE_TAB = STORAGE_KEYS.ACTIVE_TAB;
-const STORAGE_KEY_TABLE_ORDER = STORAGE_KEYS.TABLE_ORDER;
-const STORAGE_KEY_TABLE_HEIGHTS = STORAGE_KEYS.TABLE_HEIGHTS;
-const STORAGE_KEY_TABLE_STYLES = STORAGE_KEYS.TABLE_STYLES;
-const STORAGE_KEY_REVERSE_TABLES = STORAGE_KEYS.REVERSE_TABLES;
-const STORAGE_KEY_BALL_POSITION = STORAGE_KEYS.BALL_POSITION;
-const STORAGE_KEY_LAYOUT = STORAGE_KEYS.LAYOUT;
-const STORAGE_KEY_VISIBLE_TABS = STORAGE_KEYS.VISIBLE_TABS;
 
 /** 特殊 Tab 常量 */
 export const TAB_DASHBOARD = 'acu_tab_dashboard_home';
 export const TAB_OPTIONS = 'acu_tab_options_panel';
+export const TAB_RELATIONSHIP_GRAPH = 'acu_tab_relationship_graph';
 
 export const useUIStore = defineStore('acu-ui', () => {
   // ============================================================
@@ -42,37 +33,40 @@ export const useUIStore = defineStore('acu-ui', () => {
   // ============================================================
 
   /** 面板折叠状态 - 对应原代码 isCollapsed */
-  const isCollapsed = useStorage(STORAGE_KEY_UI_COLLAPSE, false);
+  const isCollapsed = useStorage(STORAGE_KEYS.UI_COLLAPSE, false);
 
   /** 面板固定状态 - 对应原代码 isPinned */
-  const isPinned = useStorage(STORAGE_KEY_PIN, false);
+  const isPinned = useStorage(STORAGE_KEYS.PIN, false);
 
   /** 当前活跃 Tab - 对应原代码 getActiveTabState/saveActiveTabState */
-  const activeTab = useStorage<string | null>(STORAGE_KEY_ACTIVE_TAB, null);
+  const activeTab = useStorage<string | null>(STORAGE_KEYS.ACTIVE_TAB, null);
 
   /** 表格排序 - 对应原代码 getSavedTableOrder/saveTableOrder */
-  const tableOrder = useStorage<string[]>(STORAGE_KEY_TABLE_ORDER, []);
+  const tableOrder = useStorage<string[]>(STORAGE_KEYS.TABLE_ORDER, []);
 
   /** 表格高度 - 对应原代码 getTableHeights/saveTableHeights */
-  const tableHeights = useStorage<Record<string, number>>(STORAGE_KEY_TABLE_HEIGHTS, {});
+  const tableHeights = useStorage<Record<string, number>>(STORAGE_KEYS.TABLE_HEIGHTS, {});
 
   /** 表格样式 - 对应原代码 getTableStyles/saveTableStyles */
-  const tableStyles = useStorage<Record<string, 'list' | 'card'>>(STORAGE_KEY_TABLE_STYLES, {});
+  const tableStyles = useStorage<Record<string, 'list' | 'card'>>(STORAGE_KEYS.TABLE_STYLES, {});
 
   /** 倒序显示的表格列表 - 对应原代码 getReverseOrderTables/saveReverseOrderTables */
-  const reverseTables = useStorage<string[]>(STORAGE_KEY_REVERSE_TABLES, []);
+  const reverseTables = useStorage<string[]>(STORAGE_KEYS.REVERSE_TABLES, []);
 
   /** 悬浮球位置 */
-  const ballPosition = useStorage<BallPosition>(STORAGE_KEY_BALL_POSITION, {
+  const ballPosition = useStorage<BallPosition>(STORAGE_KEYS.BALL_POSITION, {
     x: 20,
     y: typeof window !== 'undefined' ? window.innerHeight - 150 : 500,
   });
 
   /** 布局方向 - 横向(horizontal)或竖向(vertical) */
-  const layout = useStorage<'horizontal' | 'vertical'>(STORAGE_KEY_LAYOUT, 'horizontal');
+  const layout = useStorage<'horizontal' | 'vertical'>(STORAGE_KEYS.LAYOUT, 'horizontal');
 
   /** 可见的 Tab ID 列表 - 空数组表示全部显示 */
-  const visibleTabs = useStorage<string[]>(STORAGE_KEY_VISIBLE_TABS, []);
+  const visibleTabs = useStorage<string[]>(STORAGE_KEYS.VISIBLE_TABS, []);
+
+  /** Tab 排序顺序 - 空数组表示使用默认顺序 */
+  const tabOrder = useStorage<string[]>(STORAGE_KEYS.TAB_ORDER, []);
 
   // ============================================================
   // 非持久化状态 - 仅在运行时存在
@@ -98,6 +92,12 @@ export const useUIStore = defineStore('acu-ui', () => {
 
   /** 是否为移动端 */
   const isMobile = ref(false);
+
+  /** 单元格锁定编辑模式 */
+  const isLockEditMode = ref(false);
+
+  /** 只显示锁定的卡片 */
+  const showLockedOnly = ref(false);
 
   // ============================================================
   // Getters
@@ -429,6 +429,96 @@ export const useUIStore = defineStore('acu-ui', () => {
     visibleTabs.value = [];
   }
 
+  /**
+   * 设置 Tab 排序顺序
+   * @param order Tab ID 顺序列表
+   */
+  function setTabOrder(order: string[]) {
+    tabOrder.value = order;
+  }
+
+  /**
+   * 获取排序后的 Tab ID 列表
+   * @param allTabIds 所有可用的 Tab ID 列表
+   * @returns 按用户配置排序后的 Tab ID 列表
+   */
+  function getSortedTabIds(allTabIds: string[]): string[] {
+    if (!tabOrder.value || tabOrder.value.length === 0) {
+      return allTabIds;
+    }
+    // 按照 tabOrder 排序，未在 tabOrder 中的放到最后
+    const orderedIds = tabOrder.value.filter(id => allTabIds.includes(id));
+    const unorderedIds = allTabIds.filter(id => !tabOrder.value.includes(id));
+    return [...orderedIds, ...unorderedIds];
+  }
+
+  /**
+   * 移动 Tab 到指定位置
+   * @param tabId 要移动的 Tab ID
+   * @param newIndex 新的位置索引
+   * @param allTabIds 所有可用的 Tab ID 列表
+   */
+  function moveTab(tabId: string, newIndex: number, allTabIds: string[]) {
+    const currentOrder = getSortedTabIds(allTabIds);
+    const currentIndex = currentOrder.indexOf(tabId);
+    if (currentIndex === -1) return;
+
+    const newOrder = [...currentOrder];
+    newOrder.splice(currentIndex, 1);
+    newOrder.splice(newIndex, 0, tabId);
+    tabOrder.value = newOrder;
+  }
+
+  /**
+   * 将 Tab 添加到可见列表（从隐藏区移到展示区）
+   * @param tabId Tab ID
+   */
+  function showTab(tabId: string) {
+    if (!visibleTabs.value.includes(tabId)) {
+      visibleTabs.value = [...visibleTabs.value, tabId];
+    }
+  }
+
+  /**
+   * 将 Tab 从可见列表移除（从展示区移到隐藏区）
+   * @param tabId Tab ID
+   */
+  function hideTab(tabId: string) {
+    visibleTabs.value = visibleTabs.value.filter(id => id !== tabId);
+  }
+
+  /**
+   * 重置 Tab 配置为默认（全部显示，默认顺序）
+   */
+  function resetTabConfig() {
+    visibleTabs.value = [];
+    tabOrder.value = [];
+  }
+
+  /**
+   * 同步新表格到可见列表
+   * 当 visibleTabs 非空时，检测新增的表格并自动添加到可见列表末尾
+   * @param allTableIds 当前所有表格的 ID 列表
+   * @returns 新增的表格 ID 数组
+   */
+  function syncNewTablesToVisibleTabs(allTableIds: string[]): string[] {
+    // 如果 visibleTabs 为空（全部显示模式），无需同步
+    if (visibleTabs.value.length === 0) {
+      return [];
+    }
+
+    // 找出不在 visibleTabs 中的新表格
+    const newTabIds = allTableIds.filter(id => !visibleTabs.value.includes(id));
+
+    // 如果有新表格，添加到可见列表末尾
+    if (newTabIds.length > 0) {
+      visibleTabs.value = [...visibleTabs.value, ...newTabIds];
+      console.info(`[ACU] 检测到 ${newTabIds.length} 个新表格，已自动添加到可见列表:`, newTabIds);
+    }
+
+    return newTabIds;
+  }
+
   // ============================================================
   // 其他 Actions
   // ============================================================
@@ -480,6 +570,8 @@ export const useUIStore = defineStore('acu-ui', () => {
     isInitialized,
     isContentHidden,
     isMobile,
+    isLockEditMode,
+    showLockedOnly,
 
     // Getters
     isPanelVisible,
@@ -523,5 +615,13 @@ export const useUIStore = defineStore('acu-ui', () => {
     isTabVisible,
     toggleTabVisibility,
     resetVisibleTabs,
+    tabOrder,
+    setTabOrder,
+    getSortedTabIds,
+    moveTab,
+    showTab,
+    hideTab,
+    resetTabConfig,
+    syncNewTablesToVisibleTabs,
   };
 });

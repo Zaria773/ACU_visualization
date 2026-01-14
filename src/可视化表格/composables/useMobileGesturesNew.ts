@@ -240,9 +240,9 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
   const { text } = useTextSelection();
   const isSelectingVueUse = computed(() => text.value.length > 0);
 
-  // 边缘状态
+  // 边缘状态（初始化为 false，在 touchstart 时通过 checkScrollEdge 更新）
   const scrolledToEdge = ref(false);
-  const atStart = ref(true); // 初始化为顶部/左边
+  const atStart = ref(false);
   const atEnd = ref(false);
 
   // 手势类型（用于显示提示）
@@ -261,6 +261,12 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
   // ============================================================
   const directionLocked = ref<'horizontal' | 'vertical' | null>(null);
   const DIRECTION_LOCK_THRESHOLD = 10; // 移动超过 10px 锁定方向
+
+  // ============================================================
+  // 【手势锁定机制】：解决短卡片视觉反馈抽搐问题
+  // 一旦进入手势状态，就锁定该手势，直到用户松手
+  // ============================================================
+  const gestureLocked = ref(false);
 
   // 【横向布局横滑】：父容器滚动支持
   const parentScrollStart = ref(0); // touchstart 时父容器的 scrollLeft
@@ -323,6 +329,7 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
     isSelectionMode.value = false;
     gestureType.value = null;
     directionLocked.value = null; // 重置方向锁定
+    gestureLocked.value = false; // 重置手势锁定
 
     // 清除之前的长按计时器
     if (longPressTimer.value) {
@@ -349,15 +356,16 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       parentScrollStart.value = scrollContainer?.scrollLeft ?? 0;
     }
 
+    // 【关键修复】：先初始化边缘检测，确保 atStart/atEnd 在 touchmove 前有正确的初始值
+    // 这解决了"下拉删除视觉反馈抽搐"问题：因为 atStart 初始为 true，导致第一次 touchmove 就认为在顶部
+    checkScrollEdge();
+
     // 【原版逻辑】：开启长按计时（400ms）
     longPressTimer.value = setTimeout(() => {
       isSelectionMode.value = true;
       // 长按触发瞬间，就把锁加上
       shouldBlockClick.value = true;
     }, longPressDelay);
-
-    // 初始化边缘检测
-    checkScrollEdge();
   };
 
   /**
@@ -406,10 +414,63 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
     }
 
     if (layout === 'horizontal') {
+      const scrollTop = el.scrollTop;
+      const scrollHeight = el.scrollHeight;
+      const clientHeight = el.clientHeight;
+
+      // 检测是否是短卡片（内容不超过容器高度）
+      const isShortCard = scrollHeight <= clientHeight + 2;
+
+      // ============================================================
+      // 【修复1】短卡片特殊处理：无需方向锁定，只要纵向意图明显就检测手势
+      // 短卡片没有内部滚动冲突，可以直接判断手势意图
+      // ============================================================
+      if (isShortCard) {
+        // 短卡片：只要纵向滑动意图明显（|deltaY| >= |deltaX|）就检测手势
+        const isVerticalIntent = Math.abs(deltaY) >= Math.abs(deltaX);
+
+        if (isVerticalIntent && Math.abs(deltaY) > 5) {
+          // 阻止默认行为
+          if (e.cancelable) e.preventDefault();
+          e.stopPropagation();
+
+          // 【原版系数】：deltaY * 0.6，预览阈值约 30px
+          const displayHeight = Math.abs(deltaY) * 0.6;
+          const newGestureType = deltaY > 0 ? 'insert' : 'delete';
+
+          // 【修复2】手势锁定：一旦进入手势状态就锁定，防止抽搐
+          if (displayHeight > 30) {
+            if (!gestureLocked.value) {
+              gestureType.value = newGestureType;
+              gestureLocked.value = true;
+            }
+            // 如果已锁定，保持当前手势状态，不切换
+          } else if (!gestureLocked.value) {
+            // 未达到阈值且未锁定，清空
+            gestureType.value = null;
+          }
+          // 如果已锁定但高度降低，保持手势状态（视觉反馈高度会自然变化）
+        } else if (!gestureLocked.value) {
+          // 横向滑动意图，且未锁定手势
+          gestureType.value = null;
+          // 手动滚动父容器
+          if (parentScrollContainer.value && Math.abs(deltaX) > Math.abs(deltaY)) {
+            parentScrollContainer.value.scrollLeft = parentScrollStart.value - deltaX;
+          }
+        }
+        return; // 短卡片处理完毕，不再执行后续逻辑
+      }
+
+      // ============================================================
+      // 长卡片：保持原有的方向锁定逻辑
+      // ============================================================
+
       // 【修复】横向布局下，如果方向锁定为横向，手动滚动父容器
       // 浏览器不会自动将卡片上的触摸事件传递给父容器处理滚动
       if (directionLocked.value === 'horizontal') {
-        gestureType.value = null;
+        if (!gestureLocked.value) {
+          gestureType.value = null;
+        }
 
         // 手动滚动父容器
         if (parentScrollContainer.value) {
@@ -420,15 +481,8 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
 
       // 横向布局：检测上下拉动（只有方向锁定为纵向时才会执行到这里）
       if (directionLocked.value === 'vertical') {
-        const scrollTop = el.scrollTop;
-        const scrollHeight = el.scrollHeight;
-        const clientHeight = el.clientHeight;
-
-        // 检测是否是短卡片（内容不超过容器高度）
-        const isShortCard = scrollHeight <= clientHeight + 2;
-
-        // 下拉条件：向下拉且已在顶部（或是短卡片）
-        const isPullDown = deltaY > 0 && (scrollTop <= 0 || isShortCard);
+        // 下拉条件：向下拉且已在顶部
+        const isPullDown = deltaY > 0 && scrollTop <= 0;
         // 上划条件：向上拉且已在底部
         const isPullUp = deltaY < 0 && scrollTop + clientHeight >= scrollHeight - 1;
 
@@ -437,16 +491,20 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
           if (e.cancelable) e.preventDefault();
           e.stopPropagation();
 
-          // 【原版系数】：deltaY * 0.6，预览阈值约 40px (对应实际 66px 左右)
+          // 【原版系数】：deltaY * 0.6，预览阈值约 30px
           const displayHeight = Math.abs(deltaY) * 0.6;
-          if (isPullDown && displayHeight > 30) {
-            gestureType.value = 'insert';
-          } else if (isPullUp && displayHeight > 30) {
-            gestureType.value = 'delete';
-          } else {
+          const newGestureType = isPullDown ? 'insert' : 'delete';
+
+          // 【修复2】手势锁定
+          if (displayHeight > 30) {
+            if (!gestureLocked.value) {
+              gestureType.value = newGestureType;
+              gestureLocked.value = true;
+            }
+          } else if (!gestureLocked.value) {
             gestureType.value = null;
           }
-        } else {
+        } else if (!gestureLocked.value) {
           gestureType.value = null;
         }
       }
@@ -512,7 +570,8 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       const isShortCard = scrollHeight <= clientHeight + 2;
 
       const isPullDown = deltaY > 0 && (scrollTop <= 0 || isShortCard);
-      const isPullUp = deltaY < 0 && scrollTop + clientHeight >= scrollHeight - 1;
+      // 【修复】短卡片也需要容错，与 handleTouchMove 保持一致
+      const isPullUp = deltaY < 0 && (scrollTop + clientHeight >= scrollHeight - 1 || isShortCard);
 
       // 【原版阈值】：横向布局 > 50px (实际检测的是 indicator height > 50)
       // 由于原版用 deltaY * 0.6 计算 height，所以实际 deltaY > 83.3 才触发
@@ -540,6 +599,7 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
     // 延迟重置
     setTimeout(() => {
       gestureType.value = null;
+      gestureLocked.value = false; // 重置手势锁定
     }, 300);
 
     isSwiping.value = false;
@@ -685,16 +745,30 @@ export function useSelectionGuardEnhanced() {
 const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
 /**
+ * 检测是否为移动端布局
+ * 优先判断屏幕宽度，其次判断 UA
+ */
+function checkIsMobileLayout(): boolean {
+  // 优先使用宽度判断（支持 F12 模拟器切换）
+  if (typeof window !== 'undefined') {
+    if (window.innerWidth <= 768) return true;
+    if (window.innerWidth > 1024) return false;
+  }
+  // 中间宽度时使用 UA 判断
+  return MOBILE_REGEX.test(navigator.userAgent);
+}
+
+/**
  * 移动端设备检测
+ * 响应式：当窗口宽度变化时自动更新（支持 F12 模拟器切换）
  */
 export function useIsMobile() {
-  const isMobile = ref(MOBILE_REGEX.test(navigator.userAgent));
+  const isMobile = ref(checkIsMobileLayout());
 
-  // 监听屏幕尺寸变化（可能是模拟器切换）
+  // 监听屏幕尺寸变化（支持 F12 模拟器切换）
   if (typeof window !== 'undefined') {
     const checkMobile = () => {
-      // 同时检测 UA 和触摸能力
-      isMobile.value = MOBILE_REGEX.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 768);
+      isMobile.value = checkIsMobileLayout();
     };
 
     window.addEventListener('resize', checkMobile);

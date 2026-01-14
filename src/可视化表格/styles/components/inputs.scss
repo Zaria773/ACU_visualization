@@ -24,7 +24,7 @@
   &:focus {
     width: 140px;
     outline: none;
-    border-color: var(--acu-highlight);
+    border-color: var(--acu-title-color);
     background: var(--acu-input-bg);
   }
 }
@@ -56,7 +56,7 @@
   width: 100%;
   min-height: 24px;
   padding: 6px 8px;
-  border: 2px solid var(--acu-highlight, #667eea);
+  border: 2px solid var(--acu-title-color, #667eea);
   border-radius: var(--acu-radius-sm, 4px);
   background: var(--acu-input-bg, #fff);
   color: var(--acu-text-main, #333);
@@ -79,7 +79,7 @@
 
   // 聚焦效果
   &:focus {
-    box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(102, 126, 234, 0.2));
+    box-shadow: 0 0 0 3px var(--acu-title-color-bg, rgba(102, 126, 234, 0.2));
   }
 }
 
@@ -105,7 +105,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--acu-highlight);
+    border-color: var(--acu-title-color);
   }
 }
 
@@ -121,7 +121,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--acu-highlight);
+    border-color: var(--acu-title-color);
   }
 }
 
@@ -141,7 +141,7 @@
     appearance: none;
     width: 16px;
     height: 16px;
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.2s;
@@ -154,7 +154,7 @@
   &::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     border-radius: 50%;
     border: none;
     cursor: pointer;
@@ -174,7 +174,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--acu-highlight);
+    border-color: var(--acu-title-color);
   }
 
   option {
@@ -194,7 +194,7 @@
   input[type='checkbox'] {
     width: 18px;
     height: 18px;
-    accent-color: var(--acu-highlight);
+    accent-color: var(--acu-title-color);
     cursor: pointer;
   }
 
@@ -229,13 +229,16 @@
 .acu-search-box .acu-search-icon {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--acu-text-sub, #999);
   font-size: 14px;
   pointer-events: none;
   transition: color var(--acu-transition-fast, 0.15s);
+  z-index: 1;
 
   .focused & {
-    color: var(--acu-highlight, #d35400);
+    color: var(--acu-title-color, #d35400);
   }
 }
 
@@ -261,8 +264,8 @@
   }
 
   &:focus {
-    border-color: var(--acu-highlight, #d35400);
-    box-shadow: 0 0 0 3px var(--acu-highlight-bg, rgba(211, 84, 0, 0.08));
+    border-color: var(--acu-title-color, #d35400);
+    box-shadow: 0 0 0 3px var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
     background: var(--acu-card-bg, #fffef9);
   }
 
@@ -313,7 +316,7 @@
   white-space: nowrap;
 
   strong {
-    color: var(--acu-highlight, #d35400);
+    color: var(--acu-title-color, #d35400);
     font-weight: 600;
   }
 

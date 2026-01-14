@@ -26,6 +26,15 @@
     display: flex;
   }
 
+  // 当内部有弹窗时：
+  // 1. 提升整个容器的层级，使弹窗能够覆盖导航栏
+  // 2. 移除 overflow: hidden 限制，使 position: fixed 能正常工作
+  // 使用 JS 类名控制，比 :has() 选择器兼容性更好
+  &.has-modal {
+    z-index: 100;
+    overflow: visible !important;
+  }
+
   // 横向布局模式 - 滚动在卡片容器
   &.acu-layout-horizontal {
     touch-action: pan-x pan-y !important;
@@ -51,7 +60,7 @@
 
   // 滚动条样式（用于仪表盘等特殊视图）
   scrollbar-width: thin;
-  scrollbar-color: var(--acu-highlight) transparent;
+  scrollbar-color: var(--acu-title-color) transparent;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -59,7 +68,7 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: var(--acu-highlight);
+    background-color: var(--acu-title-color);
     border-radius: 3px;
   }
 }
@@ -114,7 +123,7 @@
 
   &:hover,
   &.active {
-    color: var(--acu-highlight);
+    color: var(--acu-title-color);
     background: var(--acu-table-hover);
   }
 }
@@ -145,7 +154,7 @@
   }
 
   &:hover::after {
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     opacity: 1;
     width: 4px;
     left: 0;
@@ -223,7 +232,7 @@
 
     // 滚动条样式
     scrollbar-width: thin;
-    scrollbar-color: var(--acu-highlight, #667eea) transparent;
+    scrollbar-color: var(--acu-title-color, #667eea) transparent;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -231,7 +240,7 @@
     }
 
     &::-webkit-scrollbar-thumb {
-      background-color: var(--acu-highlight, #667eea);
+      background-color: var(--acu-title-color, #667eea);
       border-radius: 3px;
     }
   }

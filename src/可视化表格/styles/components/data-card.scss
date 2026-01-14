@@ -45,8 +45,8 @@
 
   // 编辑状态锁定
   &.acu-editing-lock {
-    border-color: var(--acu-highlight) !important;
-    box-shadow: 0 0 0 1px var(--acu-highlight) !important;
+    border-color: var(--acu-title-color) !important;
+    box-shadow: 0 0 0 1px var(--acu-title-color) !important;
     z-index: 5;
     -webkit-user-select: text !important;
     user-select: text !important;
@@ -160,11 +160,28 @@
   width: 100%;
   padding: 2px 5px;
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 
   &:hover {
     background: var(--acu-table-hover);
     color: var(--acu-title-color);
   }
+
+  // 标题已锁定状态
+  &.acu-title-locked {
+    background: var(--acu-title-color-bg);
+    border: 1px solid var(--acu-title-color);
+  }
+}
+
+// 标题锁定图标
+.acu-title-lock-icon {
+  font-size: 10px;
+  opacity: 0.8;
+  flex-shrink: 0;
 }
 
 // 标题编辑器
@@ -179,14 +196,14 @@
     font-weight: 800;
     text-align: center;
     background: rgba(255, 255, 255, 0.15);
-    border: 1px solid var(--acu-highlight, #667eea);
+    border: 1px solid var(--acu-title-color, #667eea);
     border-radius: 4px;
     padding: 4px 8px;
     color: var(--acu-title-color);
 
     &:focus {
       outline: none;
-      box-shadow: 0 0 0 2px var(--acu-highlight-bg, rgba(102, 126, 234, 0.2));
+      box-shadow: 0 0 0 2px var(--acu-title-color-bg, rgba(102, 126, 234, 0.2));
     }
   }
 }
@@ -204,6 +221,44 @@
   padding: 1px 6px;
   border-radius: 8px;
   opacity: 0.8;
+}
+
+// 行锁定按钮（锁定编辑模式下显示在卡片头部右侧）
+.acu-row-lock-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 50%;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+    border-color: var(--acu-title-color);
+  }
+
+  // 已锁定状态
+  &.acu-row-locked {
+    background: var(--acu-title-color);
+    color: #fff;
+    border-color: var(--acu-title-color);
+
+    &:hover {
+      background: var(--acu-title-color);
+      filter: brightness(1.1);
+    }
+  }
 }
 
 // 卡片内容区
@@ -448,6 +503,130 @@
   .acu-card-value {
     color: var(--acu-highlight-ai, #3498db) !important;
     font-weight: 600;
+  }
+}
+
+// =========================================
+// 单元格锁定样式
+// =========================================
+
+// 锁定模式下的单元格基础样式
+.acu-lock-mode {
+  // 所有单元格在锁定模式下可点击
+  .acu-grid-cell,
+  .acu-full-row,
+  .acu-card-row {
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover {
+      background: rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.08);
+    }
+  }
+}
+
+// 已锁定的单元格样式
+.acu-cell-locked {
+  position: relative;
+  background: rgba(231, 76, 60, 0.08) !important;
+  border-left: 3px solid #e74c3c !important;
+
+  // 锁定图标
+  &::after {
+    content: '\f023'; // FontAwesome lock icon
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome;
+    font-weight: 900;
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 10px;
+    color: #e74c3c;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  // 值文本样式
+  .acu-grid-value,
+  .acu-full-value,
+  .acu-card-value {
+    color: #c0392b !important;
+  }
+
+  // 标签样式
+  .acu-grid-label,
+  .acu-full-label,
+  .acu-card-label {
+    color: #e74c3c;
+    font-weight: 600;
+  }
+}
+
+// 待锁定（编辑模式下临时选中）的单元格样式
+.acu-cell-pending-lock {
+  position: relative;
+  background: rgba(46, 204, 113, 0.12) !important;
+  border-left: 3px solid #27ae60 !important;
+
+  // 待锁定图标（开锁状态）
+  &::after {
+    content: '\f3c1'; // FontAwesome lock-open icon
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome;
+    font-weight: 900;
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 10px;
+    color: #27ae60;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  .acu-grid-value,
+  .acu-full-value,
+  .acu-card-value {
+    color: #27ae60 !important;
+  }
+}
+
+// 整行锁定样式
+.acu-row-locked {
+  background: rgba(231, 76, 60, 0.05) !important;
+  border: 1px solid rgba(231, 76, 60, 0.3) !important;
+
+  .acu-card-header {
+    background: rgba(231, 76, 60, 0.1);
+    color: #c0392b;
+
+    &::after {
+      content: '\f023 已锁定';
+      font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome, inherit;
+      font-weight: 600;
+      font-size: 11px;
+      color: #e74c3c;
+      margin-left: 8px;
+      opacity: 0.8;
+    }
+  }
+}
+
+// 锁定模式提示条
+.acu-lock-mode-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(192, 57, 43, 0.05));
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 8px;
+  margin: 8px 12px;
+  font-size: 12px;
+  color: #c0392b;
+
+  i {
+    font-size: 14px;
   }
 }
 

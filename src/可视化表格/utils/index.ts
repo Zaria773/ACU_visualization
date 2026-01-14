@@ -1,8 +1,15 @@
 /**
  * 工具函数统一导出
+ * 工具函数导出索引
  */
-
 import type { RawDatabaseData } from '../types';
+
+// 关系图相关导出
+export * from './relationshipColors';
+export * from './relationshipParser';
+
+// 图片上传和颜色工具
+export * from './imageUpload';
 
 /**
  * 获取核心依赖 (jQuery 和数据库 API)
@@ -35,9 +42,7 @@ export function getTableData(): RawDatabaseData | null {
  */
 export function processJsonData(data: any): Record<string, { key: string; headers: any[]; rows: any[][] }> | null {
   if (!data || typeof data !== 'object') return {};
-
   const tables: Record<string, { key: string; headers: any[]; rows: any[][] }> = {};
-
   for (const sheetId in data) {
     // 原代码逻辑：仅处理有 name 属性的 sheet
     if (data[sheetId]?.name) {
@@ -49,7 +54,6 @@ export function processJsonData(data: any): Record<string, { key: string; header
       };
     }
   }
-
   // 原代码逻辑：如果没有有效表格则返回 null
   return Object.keys(tables).length > 0 ? tables : null;
 }

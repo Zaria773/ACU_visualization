@@ -6,6 +6,296 @@
 @use 'variables' as *;
 
 // =========================================
+// 0. CSS 隔离层 - 防止酒馆主题污染
+// 必须放在最前面，重置所有继承样式
+// =========================================
+
+// 表单元素完全重置 - 使用 !important 确保优先级
+.acu-wrapper,
+.acu-modal-container {
+  // 重置所有 input、select、textarea 的酒馆主题样式
+  input,
+  select,
+  textarea {
+    // 重置背景
+    background: var(--acu-card-bg) !important;
+    background-color: var(--acu-card-bg) !important;
+    background-image: none !important;
+
+    // 重置边框
+    border: 1px solid var(--acu-border) !important;
+    border-radius: 6px !important;
+
+    // 重置字体
+    font-family: inherit !important;
+    font-size: inherit !important;
+    color: var(--acu-text-main) !important;
+    text-shadow: none !important;
+
+    // 重置阴影
+    box-shadow: none !important;
+
+    // 重置其他
+    backdrop-filter: none !important;
+    filter: none !important;
+    transition: border-color 0.2s ease !important;
+
+    &:hover,
+    &:focus {
+      background: var(--acu-card-bg) !important;
+      background-color: var(--acu-card-bg) !important;
+      background-image: none !important;
+      border-color: var(--acu-title-color) !important;
+      box-shadow: 0 0 0 2px rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.15) !important;
+      outline: none !important;
+    }
+  }
+
+  // 滑块 (Range Input) 完全重置
+  input[type='range'] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    height: 20px !important;
+
+    // Webkit 滑块圆点
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      width: 16px !important;
+      height: 16px !important;
+      background: var(--acu-title-color) !important;
+      background-color: var(--acu-title-color) !important;
+      background-image: none !important;
+      border-radius: 50% !important;
+      border: none !important;
+      margin-top: -5px !important;
+      cursor: pointer !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    // Webkit 轨道
+    &::-webkit-slider-runnable-track {
+      -webkit-appearance: none !important;
+      width: 100% !important;
+      height: 6px !important;
+      background: var(--acu-border) !important;
+      background-color: var(--acu-border) !important;
+      background-image: none !important;
+      border-radius: 3px !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: none !important;
+    }
+
+    // Firefox 滑块圆点
+    &::-moz-range-thumb {
+      -moz-appearance: none !important;
+      width: 16px !important;
+      height: 16px !important;
+      background: var(--acu-title-color) !important;
+      background-color: var(--acu-title-color) !important;
+      background-image: none !important;
+      border-radius: 50% !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    // Firefox 轨道
+    &::-moz-range-track {
+      -moz-appearance: none !important;
+      width: 100% !important;
+      height: 6px !important;
+      background: var(--acu-border) !important;
+      background-color: var(--acu-border) !important;
+      background-image: none !important;
+      border-radius: 3px !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: none !important;
+    }
+  }
+
+  // 选择框额外样式
+  select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    padding-right: 30px !important;
+    // 使用内联 SVG 箭头，避免被酒馆主题覆盖
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 16px !important;
+  }
+
+  // 文本元素重置 - 防止酒馆主题的全局 p, div, span 样式
+  // 重要：必须同时重置 font-family，否则会被酒馆主题覆盖
+  &,
+  p,
+  div,
+  span,
+  label,
+  li,
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  th,
+  td {
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    font-size: var(--acu-font-size, 13px) !important;
+    text-shadow: none !important;
+    line-height: 1.5 !important;
+  }
+
+  // 普通文本 - 使用 --acu-text-main
+  // 只在没有其他颜色类的情况下应用
+  > p,
+  > div:not([class*='title']):not([class*='Title']),
+  > span:not([class*='title']):not([class*='Title']),
+  .acu-settings-label,
+  .acu-card-label,
+  .acu-grid-label,
+  .acu-full-label {
+    color: var(--acu-text-main) !important;
+    font-size: var(--acu-font-size, 13px) !important;
+  }
+
+  // 次要文本颜色
+  .hint,
+  .acu-text-sub,
+  .acu-settings-label .hint {
+    color: var(--acu-text-sub) !important;
+    font-size: 11px !important;
+  }
+
+  // 标题元素 - 使用用户选择的 --acu-title-color 防止酒馆污染
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--acu-title-color) !important;
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    text-shadow: none !important;
+    font-weight: 600 !important;
+  }
+
+  // 特定标题组件 - 使用对应的颜色变量
+  .acu-modal-title,
+  .acu-settings-title {
+    color: var(--acu-text-main) !important;
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    text-shadow: none !important;
+    font-weight: 600 !important;
+  }
+
+  // 面板标题、卡片标题、列名 - 使用 --acu-title-color
+  .acu-panel-title,
+  .acu-editable-title,
+  .acu-card-label,
+  .acu-grid-label,
+  .acu-full-label {
+    color: var(--acu-title-color) !important;
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    text-shadow: none !important;
+    font-weight: 600 !important;
+  }
+
+  // Tab 按钮、导航按钮
+  .acu-tab-btn,
+  .acu-tab-btn span,
+  .acu-nav-btn,
+  .acu-action-btn {
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    font-size: var(--acu-font-size, 13px) !important;
+    text-shadow: none !important;
+  }
+
+  // Toast 消息
+  .acu-toast,
+  .acu-toast-message,
+  .acu-toast span {
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    font-size: var(--acu-font-size, 13px) !important;
+    text-shadow: none !important;
+    color: #fff !important;
+  }
+
+  // 折叠栏标题、设置分组标题
+  .acu-settings-section .acu-settings-title,
+  .acu-config-section h4,
+  .acu-collapse-header,
+  .acu-collapse-title,
+  summary {
+    font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    font-size: var(--acu-font-size, 13px) !important;
+    color: var(--acu-text-main) !important;
+    text-shadow: none !important;
+  }
+
+  // 图标字体保护 - Font Awesome 不应被覆盖
+  i.fa,
+  i.fas,
+  i.far,
+  i.fab,
+  .fa,
+  .fas,
+  .far,
+  .fab {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome !important;
+  }
+}
+
+// 滚动条隔离 - 使用高优先级选择器
+.acu-wrapper,
+.acu-modal-container,
+.acu-wrapper *,
+.acu-modal-container * {
+  // Firefox
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--acu-border) transparent !important;
+
+  // Webkit
+  &::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border) !important;
+    background-color: var(--acu-border) !important;
+    background-image: none !important;
+    border-radius: 3px !important;
+    border: none !important;
+    box-shadow: none !important;
+
+    &:hover {
+      background: var(--acu-text-sub) !important;
+      background-color: var(--acu-text-sub) !important;
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
+}
+
+// =========================================
 // 1. 全局盒模型 (Box Model Reset)
 // =========================================
 .acu-wrapper,
@@ -28,46 +318,107 @@
 }
 
 // =========================================
-// 3. 滚动条样式 (Scrollbar)
+// 3. 滚动条样式 (Scrollbar) - 防御酒馆主题污染
 // =========================================
 .acu-wrapper {
-  // Webkit 浏览器
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  // Firefox
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--acu-title-color, var(--acu-border)) transparent !important;
+
+  // Webkit 浏览器 - 所有子元素
+  &::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
   }
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
+  &::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-track {
+    background: transparent !important;
   }
 
-  ::-webkit-scrollbar-thumb {
-    background: var(--acu-border);
-    border-radius: 3px;
+  &::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-thumb {
+    background: var(--acu-border) !important;
+    border-radius: 3px !important;
 
     &:hover {
-      background: var(--acu-text-sub);
+      background: var(--acu-text-sub) !important;
     }
   }
 
-  // Firefox
-  scrollbar-width: thin;
-  scrollbar-color: var(--acu-highlight, var(--acu-border)) transparent;
+  &::-webkit-scrollbar-corner,
+  *::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
+
+  // 所有子元素的 Firefox 滚动条
+  * {
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--acu-border) transparent !important;
+  }
 }
 
 // 面板内容滚动条特化
 .acu-panel-content {
-  scrollbar-width: thin;
-  scrollbar-color: var(--acu-highlight) transparent;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--acu-title-color) transparent !important;
 
   &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent !important;
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: var(--acu-highlight);
-    border-radius: 3px;
+    background-color: var(--acu-title-color) !important;
+    border-radius: 3px !important;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
+}
+
+// 弹窗容器滚动条 - 防御酒馆主题污染
+.acu-modal-container {
+  // Firefox
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--acu-border) transparent !important;
+
+  // Webkit - 容器本身和所有子元素
+  &::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  &::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  &::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-thumb {
+    background: var(--acu-border) !important;
+    border-radius: 3px !important;
+
+    &:hover {
+      background: var(--acu-text-sub) !important;
+    }
+  }
+
+  &::-webkit-scrollbar-corner,
+  *::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
+
+  * {
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--acu-border) transparent !important;
   }
 }
 
@@ -75,12 +426,12 @@
 // 4. 选中文本样式 (Selection)
 // =========================================
 .acu-wrapper ::selection {
-  background: var(--acu-highlight);
+  background: var(--acu-title-color);
   color: #fff;
 }
 
 .acu-wrapper ::-moz-selection {
-  background: var(--acu-highlight);
+  background: var(--acu-title-color);
   color: #fff;
 }
 
@@ -286,3 +637,5 @@ body.acu-resizing * {
     font-size: var(--acu-font-size, 13px);
   }
 }
+
+// 注意：滑块样式已在文件开头的 "CSS 隔离层" 中定义

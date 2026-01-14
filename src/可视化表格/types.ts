@@ -3,40 +3,9 @@
  */
 
 // ============================================================
-// 存储键常量 (保持与原代码兼容)
-// ============================================================
-
-/** 存储键名常量 - 兼容旧版本 */
-export const STORAGE_KEYS = {
-  /** 数据快照 */
-  SNAPSHOT: 'acu_data_snapshot_v18_5',
-  /** 表格顺序 */
-  TABLE_ORDER: 'acu_table_order',
-  /** 当前活跃标签页 */
-  ACTIVE_TAB: 'acu_active_tab',
-  /** UI 配置 */
-  UI_CONFIG: 'acu_ui_config_v18',
-  /** 折叠状态 */
-  UI_COLLAPSE: 'acu_ui_collapse',
-  /** 表格高度 */
-  TABLE_HEIGHTS: 'acu_table_heights',
-  /** 倒序表格列表 */
-  REVERSE_TABLES: 'acu_reverse_tables',
-  /** 固定状态 */
-  PIN: 'acu_pin',
-  /** 表格样式 */
-  TABLE_STYLES: 'acu_table_styles',
-  /** 窗口配置 */
-  WINDOW_CONFIG: 'acu_win_config',
-  /** V5 隔离设置 */
-  V5_SETTINGS: 'shujuku_v34_allSettings_v2',
-} as const;
-
-// ============================================================
 // 配置相关类型
 // ============================================================
 
-/** ACU 配置对象类型 */
 /** 变更类型 - 用于区分手动修改和AI填表 */
 export type ChangeType = 'manual' | 'ai' | null;
 
@@ -63,6 +32,12 @@ export interface ACUConfig {
   customTitleColor: boolean;
   /** 标题颜色 key */
   titleColor: string;
+  /** 自定义手动修改高亮色 (hex) */
+  customHighlightManualHex?: string;
+  /** 自定义 AI 填表高亮色 (hex) */
+  customHighlightAiHex?: string;
+  /** 自定义标题色 (hex) */
+  customTitleHex?: string;
   /** 布局模式 */
   layout: 'vertical' | 'horizontal';
   /** 是否限制长文本 */
@@ -85,6 +60,14 @@ export interface ACUConfig {
   visibleButtons: string[];
   /** 导航栏按钮顺序 */
   buttonOrder: string[];
+  /** 按钮收纳组配置 */
+  buttonGroups: ButtonGroup[];
+  /** 长按是否直接执行附属功能（跳过弹出按钮） */
+  longPressDirectExec: boolean;
+  /** Swipe 时自动清除表格数据 */
+  clearTableOnSwipe?: boolean;
+  /** 是否收纳Tab栏（隐藏Tab栏，通过导航按钮弹出浮窗） */
+  collapseTabBar?: boolean;
 }
 
 /** 导航栏按钮配置 */
@@ -95,10 +78,37 @@ export interface NavButtonConfig {
   icon: string;
   /** 显示标签 */
   label: string;
-  /** 长按触发的按钮 ID */
-  longPress?: string;
   /** 是否默认隐藏 (仅通过长按触发) */
   hidden?: boolean;
+}
+
+/**
+ * 按钮收纳组配置
+ * 用于将两个按钮组合：主按钮正常点击，附属按钮通过长按触发
+ */
+export interface ButtonGroup {
+  /** 主按钮 ID */
+  primaryId: string;
+  /** 附属按钮 ID（长按触发） */
+  secondaryId: string | null;
+}
+
+/**
+ * Tab 配置项（用于 Tab 自定义面板）
+ */
+export interface TabConfigEntry {
+  /** Tab ID */
+  id: string;
+  /** Tab 名称 */
+  name: string;
+  /** Tab 图标 (可选) */
+  icon?: string;
+  /** Tab 类型 */
+  type: 'normal' | 'dashboard' | 'options' | 'special';
+  /** 是否可见 */
+  visible: boolean;
+  /** 排序索引 */
+  order: number;
 }
 
 /** Tab 配置项 */
@@ -310,3 +320,409 @@ export interface SaveResult {
   /** 错误信息 */
   error?: string;
 }
+
+// ============================================================
+// 悬浮球外观配置
+// ============================================================
+
+/** 悬浮球动画类型 */
+export type FloatingBallAnimation = 'ripple' | 'arc';
+
+/** 悬浮球图标类型 */
+export type FloatingBallIconType = 'icon' | 'emoji' | 'image';
+
+/**
+ * 悬浮球外观配置
+ * 存储于脚本变量中，随酒馆同步
+ */
+export interface FloatingBallAppearance {
+  /** 图标类型: FontAwesome图标 / Emoji / 自定义图片 */
+  type: FloatingBallIconType;
+  /**
+   * 图标内容:
+   * - type='icon': FA class (如 'fa-layer-group')
+   * - type='emoji': Emoji字符 (如 '🎭')
+   * - type='image': Base64 图片数据
+   */
+  content: string;
+  /** 球体尺寸 (40-100px) */
+  size: number;
+  /** AI填表通知动画类型 */
+  notifyAnimation: FloatingBallAnimation;
+  /** 边框颜色 (hex 格式，如 '#90cdf4') */
+  borderColor: string;
+  /** 边框透明度 (0-100) */
+  borderOpacity: number;
+  /** 背景颜色 (hex 格式，如 '#2b2b2b') */
+  bgColor: string;
+  /** 背景透明度 (0-100) */
+  bgOpacity: number;
+}
+
+// ============================================================
+// 自定义字体配置
+// ============================================================
+
+/**
+ * 自定义字体项
+ * 用于用户添加的在线字体
+ */
+export interface CustomFont {
+  /** 唯一 ID (自动生成) */
+  id: string;
+  /** 显示名称 */
+  name: string;
+  /** font-family 值 (如 '"Noto Sans SC", sans-serif') */
+  fontFamily: string;
+  /** @import URL (如 Google Fonts 链接), 可选 */
+  importUrl?: string;
+}
+
+// ============================================================
+// 脚本变量存储结构
+// ============================================================
+
+/**
+ * ACU 脚本变量存储结构
+ * 使用 getVariables({type: 'script', script_id}) 存取
+ */
+export interface ACUScriptVariables {
+  /** 配置版本号 (用于迁移) */
+  configVersion?: number;
+  /** 悬浮球外观配置 */
+  ballAppearance?: FloatingBallAppearance;
+  /** 自定义字体列表 */
+  customFonts?: CustomFont[];
+  /**
+   * 图片存储 (键: 存储键, 值: Base64)
+   * 用于悬浮球图标、人际关系图头像等
+   */
+  images?: Record<string, string>;
+  /**
+   * 主题预设列表
+   */
+  themePresets?: ThemePreset[];
+  /**
+   * 当前激活的预设 ID (为空表示使用默认配置)
+   */
+  activePresetId?: string;
+}
+
+// ============================================================
+// 主题美化与高亮配置
+// ============================================================
+
+/**
+ * 主题 CSS 变量配置
+ * 对应 variables.scss 中的 18 个主题变量
+ */
+export interface ThemeVariables {
+  // 背景色系列 (9个)
+  /** 导航栏背景 */
+  bgNav?: string;
+  /** 面板背景 */
+  bgPanel?: string;
+  /** 卡片背景 */
+  cardBg?: string;
+  /** 表头背景 */
+  tableHead?: string;
+  /** 悬浮背景 */
+  tableHover?: string;
+  /** 徽章背景 */
+  badgeBg?: string;
+  /** 输入框背景 */
+  inputBg?: string;
+  /** 菜单背景 */
+  menuBg?: string;
+  /** 遮罩背景 */
+  overlayBg?: string;
+
+  // 文本色系列 (3个)
+  /** 主文本色 */
+  textMain?: string;
+  /** 次要文本色 */
+  textSub?: string;
+  /** 菜单文本色 */
+  menuText?: string;
+
+  // 边框与按钮 (5个)
+  /** 边框色 */
+  border?: string;
+  /** 按钮背景 */
+  btnBg?: string;
+  /** 按钮悬浮 */
+  btnHover?: string;
+  /** 按钮激活背景 */
+  btnActiveBg?: string;
+  /** 按钮激活文本 */
+  btnActiveText?: string;
+
+  // 效果 (1个)
+  /** 阴影色 */
+  shadow?: string;
+}
+
+/**
+ * 高亮颜色配置
+ */
+export interface HighlightConfig {
+  /** 手动修改高亮颜色 key (预设颜色 ID) */
+  manualColor: string;
+  /** 自定义手动修改高亮色 (hex) */
+  manualHex?: string;
+  /** AI 填表高亮颜色 key (预设颜色 ID) */
+  aiColor: string;
+  /** 自定义 AI 填表高亮色 (hex) */
+  aiHex?: string;
+  /** 标题颜色 key (预设颜色 ID) */
+  titleColor: string;
+  /** 自定义标题色 (hex) */
+  titleHex?: string;
+}
+
+/**
+ * 主题预设配置
+ * 保存用户自定义的主题+高亮配置组合
+ */
+export interface ThemePreset {
+  /** 预设唯一 ID */
+  id: string;
+  /** 预设名称 */
+  name: string;
+  /** 创建时间 (ISO 字符串) */
+  createdAt: string;
+  /** 基础主题 ID (如 'retro', 'dark', 'modern' 等) */
+  baseTheme: string;
+  /**
+   * 主题变量覆盖 (自定义的 CSS 变量值)
+   * 只保存用户修改过的变量，未修改的使用基础主题值
+   */
+  themeVars?: Partial<ThemeVariables>;
+  /** 高亮颜色配置 */
+  highlight: HighlightConfig;
+  /** 自定义 CSS 代码 */
+  customCSS?: string;
+}
+
+/**
+ * CSS 变量名称与键名映射
+ * 用于在 ThemeVariables 接口和 CSS 变量之间转换
+ */
+export const THEME_VAR_CSS_MAP: Record<keyof ThemeVariables, string> = {
+  bgNav: '--acu-bg-nav',
+  bgPanel: '--acu-bg-panel',
+  cardBg: '--acu-card-bg',
+  tableHead: '--acu-table-head',
+  tableHover: '--acu-table-hover',
+  badgeBg: '--acu-badge-bg',
+  inputBg: '--acu-input-bg',
+  menuBg: '--acu-menu-bg',
+  overlayBg: '--acu-overlay-bg',
+  textMain: '--acu-text-main',
+  textSub: '--acu-text-sub',
+  menuText: '--acu-menu-text',
+  border: '--acu-border',
+  btnBg: '--acu-btn-bg',
+  btnHover: '--acu-btn-hover',
+  btnActiveBg: '--acu-btn-active-bg',
+  btnActiveText: '--acu-btn-active-text',
+  shadow: '--acu-shadow',
+};
+
+/**
+ * 主题变量分组定义
+ * 用于 UI 中分组显示 18 个变量
+ */
+export const THEME_VAR_GROUPS: Array<{
+  id: string;
+  name: string;
+  icon: string;
+  vars: Array<{ key: keyof ThemeVariables; label: string }>;
+}> = [
+  {
+    id: 'background',
+    name: '背景色',
+    icon: 'fa-fill-drip',
+    vars: [
+      { key: 'bgNav', label: '导航栏背景' },
+      { key: 'bgPanel', label: '面板背景' },
+      { key: 'cardBg', label: '卡片背景' },
+      { key: 'tableHead', label: '表头背景' },
+      { key: 'tableHover', label: '悬浮背景' },
+      { key: 'badgeBg', label: '徽章背景' },
+      { key: 'inputBg', label: '输入框背景' },
+      { key: 'menuBg', label: '菜单背景' },
+      { key: 'overlayBg', label: '遮罩背景' },
+    ],
+  },
+  {
+    id: 'text',
+    name: '文本色',
+    icon: 'fa-font',
+    vars: [
+      { key: 'textMain', label: '主文本色' },
+      { key: 'textSub', label: '次要文本色' },
+      { key: 'menuText', label: '菜单文本色' },
+    ],
+  },
+  {
+    id: 'button',
+    name: '边框与按钮',
+    icon: 'fa-square',
+    vars: [
+      { key: 'border', label: '边框色' },
+      { key: 'btnBg', label: '按钮背景' },
+      { key: 'btnHover', label: '按钮悬浮' },
+      { key: 'btnActiveBg', label: '按钮激活背景' },
+      { key: 'btnActiveText', label: '按钮激活文本' },
+    ],
+  },
+  {
+    id: 'effect',
+    name: '效果',
+    icon: 'fa-magic',
+    vars: [{ key: 'shadow', label: '阴影色' }],
+  },
+];
+
+// ============================================================
+// 仪表盘相关类型定义
+// ============================================================
+
+/** 看板快捷按钮 ID 类型 */
+export type WidgetActionId =
+  | 'goToTable' // 跳转到表格
+  | 'clear' // 清除表格
+  | 'undo' // 撤回
+  | 'manualUpdate' // 手动更新
+  | 'relationshipGraph' // 人物关系图
+  | 'settings'; // 设置
+
+/** 看板快捷按钮配置 */
+export interface WidgetAction {
+  id: WidgetActionId;
+  icon: string; // FA 图标 class
+  label: string; // 显示标签
+  tooltip?: string; // 悬浮提示
+}
+
+/** 看板显示风格 */
+export type WidgetDisplayStyle = 'grid' | 'list' | 'compact';
+
+/** 单个看板配置 */
+export interface DashboardWidgetConfig {
+  /** 唯一 ID */
+  id: string;
+  /** 看板类型 */
+  type: 'table' | 'stats' | 'custom';
+  /** 关联的表格 ID (type='table' 时必填) */
+  tableId?: string;
+  /** 显示标题 */
+  title: string;
+  /** 图标 (FA class) */
+  icon: string;
+  /** 提取的列名列表 (空=显示全部) */
+  displayColumns: string[];
+  /** 最大显示行数 */
+  maxRows: number;
+  /** 快捷按钮列表 */
+  actions: WidgetActionId[];
+  /** 排序索引 */
+  order: number;
+  /** 是否启用 */
+  enabled: boolean;
+  /** 宽度权重 (1=单格, 2=双格) */
+  colSpan: 1 | 2;
+  /** 显示风格 */
+  displayStyle: WidgetDisplayStyle;
+}
+
+/** 仪表盘配置 */
+export interface DashboardConfig {
+  /** 看板列表 */
+  widgets: DashboardWidgetConfig[];
+  /** 布局模式 */
+  layout: 'grid' | 'list';
+  /** 列数 (grid 模式) */
+  columns: number;
+  /** 是否显示统计卡片 */
+  showStats: boolean;
+}
+
+/** 预设快捷按钮配置 */
+export const WIDGET_ACTIONS: Record<WidgetActionId, WidgetAction> = {
+  goToTable: { id: 'goToTable', icon: 'fa-external-link-alt', label: '跳转', tooltip: '跳转到表格' },
+  clear: { id: 'clear', icon: 'fa-eraser', label: '清除', tooltip: '清除表格数据' },
+  undo: { id: 'undo', icon: 'fa-undo', label: '撤回', tooltip: '撤回上次修改' },
+  manualUpdate: { id: 'manualUpdate', icon: 'fa-hand-sparkles', label: '更新', tooltip: '手动更新' },
+  relationshipGraph: {
+    id: 'relationshipGraph',
+    icon: 'fa-project-diagram',
+    label: '关系图',
+    tooltip: '人物关系图',
+  },
+  settings: { id: 'settings', icon: 'fa-cog', label: '设置', tooltip: '看板设置' },
+};
+
+/** 看板模板 - 用于快速添加 */
+export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = {
+  npc: {
+    type: 'table',
+    title: 'NPC',
+    icon: 'fa-users',
+    displayColumns: ['名称', '姓名', 'name', 'Name', '状态', '好感度'],
+    maxRows: 8,
+    actions: ['goToTable', 'relationshipGraph'],
+    colSpan: 1,
+    displayStyle: 'grid',
+  },
+  task: {
+    type: 'table',
+    title: '任务',
+    icon: 'fa-tasks',
+    displayColumns: ['名称', '任务名', 'name', 'Name', '类型', '状态'],
+    maxRows: 5,
+    actions: ['goToTable'],
+    colSpan: 1,
+    displayStyle: 'list',
+  },
+  item: {
+    type: 'table',
+    title: '物品',
+    icon: 'fa-box-open',
+    displayColumns: ['名称', '物品名', 'name', 'Name', '数量'],
+    maxRows: 12,
+    actions: ['goToTable', 'clear'],
+    colSpan: 1,
+    displayStyle: 'grid',
+  },
+  character: {
+    type: 'table',
+    title: '主角',
+    icon: 'fa-user',
+    displayColumns: [],
+    maxRows: 1,
+    actions: ['goToTable'],
+    colSpan: 2,
+    displayStyle: 'list',
+  },
+  location: {
+    type: 'table',
+    title: '地点',
+    icon: 'fa-map-marker-alt',
+    displayColumns: ['名称', '地点', 'name', 'Name', '描述'],
+    maxRows: 5,
+    actions: ['goToTable'],
+    colSpan: 1,
+    displayStyle: 'list',
+  },
+};
+
+/** 表格名称关键词匹配规则 */
+export const TABLE_KEYWORD_RULES: Record<string, string[]> = {
+  npc: ['NPC', 'npc', '人物', '角色', '关系', '好感', '重要人物'],
+  task: ['任务', 'Task', 'task', 'Quest', 'quest', '日程'],
+  item: ['物品', '道具', 'Item', 'item', '背包', '库存', '装备'],
+  character: ['主角', '玩家', 'Player', 'player', '属性', 'protagonist'],
+  location: ['地点', '位置', 'Location', 'location', '场景'],
+};

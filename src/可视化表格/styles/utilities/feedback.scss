@@ -93,8 +93,8 @@
 
 // 拖拽目标区域
 .acu-drag-over {
-  background: rgba(var(--acu-highlight-rgb), 0.1);
-  border: 2px dashed var(--acu-highlight);
+  background: rgba(var(--acu-title-color-rgb), 0.1);
+  border: 2px dashed var(--acu-title-color);
 }
 
 // 正在保存状态
@@ -125,7 +125,7 @@
     right: 4px;
     width: 8px;
     height: 8px;
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     border-radius: 50%;
     animation: acu-pulse 1.5s infinite;
   }
@@ -138,7 +138,7 @@
 
 @keyframes acu-new-highlight {
   0% {
-    background: rgba(var(--acu-highlight-rgb), 0.3);
+    background: rgba(var(--acu-title-color-rgb), 0.3);
   }
   100% {
     background: transparent;
@@ -153,16 +153,16 @@
 
 // 选中状态
 .acu-selected {
-  background: rgba(var(--acu-highlight-rgb), 0.1);
-  border-color: var(--acu-highlight);
-  box-shadow: 0 0 0 2px rgba(var(--acu-highlight-rgb), 0.2);
+  background: rgba(var(--acu-title-color-rgb), 0.1);
+  border-color: var(--acu-title-color);
+  box-shadow: 0 0 0 2px rgba(var(--acu-title-color-rgb), 0.2);
 }
 
 // 聚焦状态
 .acu-focused {
   outline: none;
-  border-color: var(--acu-highlight);
-  box-shadow: 0 0 0 3px rgba(var(--acu-highlight-rgb), 0.15);
+  border-color: var(--acu-title-color);
+  box-shadow: 0 0 0 3px rgba(var(--acu-title-color-rgb), 0.15);
 }
 
 // 禁用状态
@@ -211,7 +211,7 @@
     background: transparent;
   }
   30% {
-    background: rgba(var(--acu-highlight-rgb), 0.3);
+    background: rgba(var(--acu-title-color-rgb), 0.3);
   }
 }
 
@@ -256,7 +256,7 @@
     bottom: 0;
     left: 0;
     height: 3px;
-    background: var(--acu-highlight);
+    background: var(--acu-title-color);
     width: var(--progress, 0%);
     transition: width 0.3s ease;
   }
