@@ -389,9 +389,7 @@ export function useAvatarManager() {
   /**
    * 获取头像显示配置（裁剪参数）
    */
-  async function getAvatarDisplayConfig(
-    name: string
-  ): Promise<{ offsetX: number; offsetY: number; scale: number }> {
+  async function getAvatarDisplayConfig(name: string): Promise<{ offsetX: number; offsetY: number; scale: number }> {
     const record = await getAvatar(name);
 
     if (record) {

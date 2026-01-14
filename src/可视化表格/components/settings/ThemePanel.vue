@@ -145,7 +145,12 @@
 
         <!-- 连续的可折叠组 -->
         <div class="acu-var-groups-container">
-          <div v-for="(group, index) in THEME_VAR_GROUPS" :key="group.id" class="acu-var-group" :class="{ first: index === 0, last: index === THEME_VAR_GROUPS.length - 1 }">
+          <div
+            v-for="(group, index) in THEME_VAR_GROUPS"
+            :key="group.id"
+            class="acu-var-group"
+            :class="{ first: index === 0, last: index === THEME_VAR_GROUPS.length - 1 }"
+          >
             <div class="acu-var-group-header" @click.stop="toggleGroup(group.id)">
               <i :class="['fas', group.icon]"></i>
               <span>{{ group.name }}</span>
@@ -172,13 +177,13 @@
                     type="text"
                     class="acu-color-input"
                     placeholder="使用主题默认值"
-                    @change="(e) => setVar(v.key, (e.target as HTMLInputElement).value)"
+                    @change="e => setVar(v.key, (e.target as HTMLInputElement).value)"
                   />
                   <input
                     :value="getVarColorValue(v.key)"
                     type="color"
                     class="acu-color-swatch"
-                    @change="(e) => setVar(v.key, (e.target as HTMLInputElement).value)"
+                    @change="e => setVar(v.key, (e.target as HTMLInputElement).value)"
                   />
                 </div>
               </div>

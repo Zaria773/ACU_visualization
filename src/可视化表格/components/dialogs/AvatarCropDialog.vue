@@ -91,24 +91,14 @@
           <button class="acu-modal-btn secondary" @click.stop="triggerUpload">
             <i class="fas fa-upload"></i> 上传新图片
           </button>
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept="image/*"
-            style="display: none"
-            @change="handleFileSelect"
-          />
+          <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelect" />
         </div>
       </div>
 
       <!-- 底部按钮 -->
       <div class="acu-modal-footer">
-        <button class="acu-modal-btn secondary" @click.stop="resetValues">
-          重置
-        </button>
-        <button class="acu-modal-btn primary" @click.stop="applyAndClose">
-          确定
-        </button>
+        <button class="acu-modal-btn secondary" @click.stop="resetValues">重置</button>
+        <button class="acu-modal-btn primary" @click.stop="applyAndClose">确定</button>
       </div>
     </div>
   </div>
@@ -339,6 +329,6 @@ watch(
       offsetY.value = props.initialOffsetY;
       scale.value = props.initialScale;
     }
-  }
+  },
 );
 </script>

@@ -22,12 +22,7 @@
         </button>
 
         <!-- 倒序按钮 -->
-        <button
-          class="acu-toolbar-btn"
-          :class="{ active: isReversed }"
-          title="倒序显示"
-          @click="toggleReverse"
-        >
+        <button class="acu-toolbar-btn" :class="{ active: isReversed }" title="倒序显示" @click="toggleReverse">
           <i class="fas fa-sort-amount-down-alt"></i>
         </button>
 
