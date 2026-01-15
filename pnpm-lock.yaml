@@ -35,6 +35,9 @@ importers:
       cytoscape-fcose:
         specifier: ^2.2.0
         version: 2.2.0(cytoscape@3.33.1)
+      cytoscape-node-html-label:
+        specifier: ^1.2.2
+        version: 1.2.2(cytoscape@3.33.1)
       dedent:
         specifier: ^1.7.1
         version: 1.7.1
@@ -1583,6 +1586,15 @@ packages:
     resolution: {integrity: sha512-ki1/VuRIHFCzxWNrsshHYPs6L7TvLu3DL+TyIGEsRcvVERmxokbf5Gdk7mFxZnTdiGtnA4cfSmjZJMviqSuZrQ==}
     peerDependencies:
       cytoscape: ^3.2.0
+
+  cytoscape-node-html-label@1.2.2:
+    resolution: {integrity: sha512-oUVwrlsIlaJJ8QrQFSMdv3uXVXPg6tMH/Tfofr8JuZIovqI4fPqBi6sQgCMcVpS6k9Td0TTjowBsNRw32CESWg==}
+    peerDependencies:
+      '@types/cytoscape': ^3.1.0
+      cytoscape: ^3.0.0
+    peerDependenciesMeta:
+      '@types/cytoscape':
+        optional: true
 
   cytoscape@3.33.1:
     resolution: {integrity: sha512-iJc4TwyANnOGR1OmWhsS9ayRS3s+XQ185FmuHObThD+5AeJCakAAbWv8KimMTt08xCCLNgneQwFp+JRJOr9qGQ==}
@@ -5415,6 +5427,10 @@ snapshots:
   cytoscape-fcose@2.2.0(cytoscape@3.33.1):
     dependencies:
       cose-base: 2.2.0
+      cytoscape: 3.33.1
+
+  cytoscape-node-html-label@1.2.2(cytoscape@3.33.1):
+    dependencies:
       cytoscape: 3.33.1
 
   cytoscape@3.33.1: {}

@@ -215,7 +215,7 @@
                 <div class="acu-settings-row">
                   <div class="acu-settings-label">
                     清除操作确认
-                    <span class="hint">删除数据前需确认。关闭后点按默认删除最新一个有数据楼层。</span>
+                    <span class="hint">删除数据前需确认。关闭后点按默认删除最新有数据楼层的数据</span>
                   </div>
                   <div class="acu-settings-control">
                     <button
@@ -245,7 +245,7 @@
                 <div class="acu-settings-row acu-nav-row" @click="handleEnterLockMode">
                   <div class="acu-settings-label">
                     锁定单元格
-                    <span class="hint">保护数据不被 AI 修改</span>
+                    <span class="hint">点击单元格，保护数据不被 AI 修改</span>
                   </div>
                   <div class="acu-settings-control">
                     <i class="fas fa-chevron-right"></i>
@@ -323,7 +323,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.0 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.1 ——</div>
       </div>
     </div>
   </Transition>

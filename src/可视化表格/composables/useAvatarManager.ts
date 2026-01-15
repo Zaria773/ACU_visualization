@@ -389,9 +389,7 @@ export function useAvatarManager() {
   /**
    * 获取头像显示配置（裁剪参数）
    */
-  async function getAvatarDisplayConfig(
-    name: string
-  ): Promise<{ offsetX: number; offsetY: number; scale: number }> {
+  async function getAvatarDisplayConfig(name: string): Promise<{ offsetX: number; offsetY: number; scale: number }> {
     const record = await getAvatar(name);
 
     if (record) {
@@ -556,6 +554,56 @@ export function useAvatarManager() {
   }
 
   /**
+   * 获取所有别名到主名称的映射表
+   * @returns Map<别名, 主名称>
+   */
+  async function getAliasMap(): Promise<Map<string, string>> {
+    const all = await getAllAvatars();
+    const map = new Map<string, string>();
+
+    for (const record of all) {
+      if (record.aliases?.length) {
+        for (const alias of record.aliases) {
+          map.set(alias, record.name);
+        }
+      }
+    }
+
+    return map;
+  }
+
+  /**
+   * 获取指定角色的别名列表
+   */
+  async function getAliases(name: string): Promise<string[]> {
+    const record = await getAvatar(name);
+    return record?.aliases || [];
+  }
+
+  /**
+   * 设置别名列表（替换现有）
+   */
+  async function setAliases(name: string, aliases: string[]): Promise<void> {
+    let record = await getAvatar(name);
+
+    if (!record) {
+      // 创建新记录
+      record = {
+        name,
+        offsetX: 50,
+        offsetY: 50,
+        scale: 150,
+        aliases,
+        updatedAt: Date.now(),
+      };
+    } else {
+      record = { ...record, aliases, updatedAt: Date.now() };
+    }
+
+    await saveAvatar(record);
+  }
+
+  /**
    * 添加别名
    */
   async function addAlias(name: string, alias: string): Promise<void> {
@@ -688,6 +736,9 @@ export function useAvatarManager() {
     resolvePrimaryName,
     addAlias,
     removeAlias,
+    getAliasMap,
+    getAliases,
+    setAliases,
 
     // 显示标签
     getDisplayLabel,

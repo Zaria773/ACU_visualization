@@ -122,6 +122,8 @@
 import type { Core, LayoutOptions } from 'cytoscape';
 import cytoscape from 'cytoscape';
 import fcose from 'cytoscape-fcose';
+// @ts-expect-error - cytoscape-node-html-label 没有类型定义
+import nodeHtmlLabel from 'cytoscape-node-html-label';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { useAvatarManager } from '../composables/useAvatarManager';
@@ -133,13 +135,28 @@ import { AvatarManagerDialog } from './dialogs';
 // 注册 fcose 布局扩展
 cytoscape.use(fcose);
 
+// 注册 node-html-label 扩展（用于 HTML 渲染节点头像）
+nodeHtmlLabel(cytoscape);
+
 // 配置 Store
 const configStore = useConfigStore();
 
 // 头像管理
 const avatarManager = useAvatarManager();
-/** 头像 URL 缓存：nodeName -> URL */
-const avatarCache = ref<Map<string, string>>(new Map());
+
+/** 头像缓存数据类型 */
+interface AvatarCacheData {
+  url: string;
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+}
+
+/** 头像缓存：nodeName -> { url, offsetX, offsetY, scale } */
+const avatarCache = ref<Map<string, AvatarCacheData>>(new Map());
+
+/** 别名映射：别名 -> 主名称 */
+const aliasMap = ref<Map<string, string>>(new Map());
 
 // ============================================================
 // Props & Emits
@@ -338,10 +355,16 @@ const parsedData = computed(() => {
     characterTablesCount: props.characterTables?.length,
     characterTablesNames: props.characterTables?.map(t => t.name),
     factionTable: props.factionTable?.name,
+    aliasMapSize: aliasMap.value.size,
   });
 
-  // 优先使用专用关系表
-  const result = parseRelationshipTable(props.relationshipTable, props.characterTables, props.factionTable);
+  // 优先使用专用关系表，传入别名映射
+  const result = parseRelationshipTable(
+    props.relationshipTable,
+    props.characterTables,
+    props.factionTable,
+    aliasMap.value,
+  );
 
   console.info('[RelationshipGraph] 专用关系表解析结果:', {
     nodeCount: result.nodeCount,
@@ -352,7 +375,7 @@ const parsedData = computed(() => {
   // 如果没有数据且有角色表，尝试从角色表的内嵌字段解析
   if (result.nodeCount === 0 && props.characterTables && props.characterTables.length > 0) {
     console.info('[RelationshipGraph] 无专用关系表，尝试从角色表内嵌字段解析');
-    const embeddedResult = parseEmbeddedRelationships(props.characterTables, props.factionTable);
+    const embeddedResult = parseEmbeddedRelationships(props.characterTables, props.factionTable, aliasMap.value);
     console.info('[RelationshipGraph] 内嵌字段解析结果:', {
       nodeCount: embeddedResult.nodeCount,
       edgeCount: embeddedResult.edgeCount,
@@ -471,8 +494,8 @@ function initCytoscape() {
     const isNode = nodeId && !el.data?.source;
 
     if (isNode) {
-      // 附加头像 URL
-      const avatarUrl = avatarCache.value.get(nodeId);
+      // 附加头像数据（包括 URL 和裁剪参数）
+      const avatarData = avatarCache.value.get(nodeId);
 
       // 计算位置
       let position = undefined;
@@ -497,7 +520,10 @@ function initCytoscape() {
         ...el,
         data: {
           ...el.data,
-          avatarUrl: avatarUrl || undefined,
+          avatarUrl: avatarData?.url || undefined,
+          avatarOffsetX: avatarData?.offsetX ?? 50,
+          avatarOffsetY: avatarData?.offsetY ?? 50,
+          avatarScale: avatarData?.scale ?? 150,
           fullName: fullName, // 确保 fullName 存在
         },
         ...(position ? { position } : {}),
@@ -580,27 +606,21 @@ function initCytoscape() {
           'border-color': colors.textMain,
         },
       },
-      // 有头像的节点 - 使用头像作为背景，标签显示在下方
+      // 有头像的节点 - 使用 nodeHtmlLabel 扩展渲染 HTML 头像
+      // Cytoscape 节点本身设为透明，只保留交互区域
       // 放在最后以确保覆盖角色类型样式（如主角的样式）
       {
         selector: 'node[avatarUrl]',
         style: {
-          'background-image': 'data(avatarUrl)',
-          'background-fit': 'cover',
-          'background-clip': 'node',
-          // 统一节点大小（与无头像节点一致）
+          // 节点透明，头像由 HTML label 渲染
+          'background-color': 'transparent',
+          'background-opacity': 0,
+          'border-width': 0,
+          // 保留节点大小用于交互和布局
           width: 50,
           height: 50,
-          // 使用全名作为标签，显示在头像下方
-          label: 'data(fullName)',
-          'text-valign': 'bottom',
-          'text-margin-y': 5, // 与节点下边缘的距离
-          'font-size': '14px',
-          'font-weight': 'bold', // 粗体
-          'font-family': colors.fontFamily, // 使用配置的字体
-          color: colors.textMain, // 使用主文本颜色
-          'text-outline-width': 1, // 使用描边代替背景框，更简洁
-          'text-outline-color': colors.cardBg,
+          // 隐藏 Canvas 渲染的标签（由 HTML label 渲染）
+          label: '',
         },
       },
       // 边样式 - 实线
@@ -715,6 +735,38 @@ function initCytoscape() {
 
   // 应用保存的标签配置
   applyLabelConfig();
+
+  // 使用 nodeHtmlLabel 扩展为有头像的节点渲染 HTML 头像
+  // 这样可以使用真正的 CSS 渲染，与头像预览完全一致
+  (cy as any).nodeHtmlLabel([
+    {
+      query: 'node[avatarUrl]',
+      halign: 'center',
+      valign: 'center',
+      halignBox: 'center',
+      valignBox: 'center',
+      tpl: (data: any) => {
+        const avatarUrl = data.avatarUrl || '';
+        const offsetX = data.avatarOffsetX ?? 50;
+        const offsetY = data.avatarOffsetY ?? 50;
+        const scale = data.avatarScale ?? 150;
+        const fullName = data.fullName || data.id || '';
+
+        // 使用与头像预览完全相同的 CSS
+        return `
+          <div class="acu-graph-avatar-wrapper">
+            <div class="acu-graph-avatar" style="
+              background-image: url('${avatarUrl}');
+              background-position: ${offsetX}% ${offsetY}%;
+              background-size: ${scale}%;
+              background-repeat: no-repeat;
+            "></div>
+            <div class="acu-graph-avatar-name">${fullName}</div>
+          </div>
+        `;
+      },
+    },
+  ]);
 }
 
 /**
@@ -1148,10 +1200,21 @@ function closeAvatarManager() {
   $('.acu-data-display').removeClass('has-modal');
 }
 
-/** 预加载所有节点的头像 */
+/** 加载别名映射 */
+async function loadAliasMap() {
+  try {
+    const map = await avatarManager.getAliasMap();
+    aliasMap.value = map;
+    console.info(`[RelationshipGraph] 别名映射加载完成: ${map.size} 个别名`);
+  } catch (e) {
+    console.warn('[RelationshipGraph] 加载别名映射失败:', e);
+  }
+}
+
+/** 预加载所有节点的头像（包括裁剪参数） */
 async function preloadAvatars() {
   const nodes = parsedData.value.elements.filter(el => !el.data.source && !el.data.target);
-  const cache = new Map<string, string>();
+  const cache = new Map<string, AvatarCacheData>();
 
   for (const node of nodes) {
     const nodeName = node.data.id as string;
@@ -1160,7 +1223,14 @@ async function preloadAvatars() {
     try {
       const url = await avatarManager.getAvatarUrl(nodeName);
       if (url) {
-        cache.set(nodeName, url);
+        // 同时获取裁剪参数
+        const displayConfig = await avatarManager.getAvatarDisplayConfig(nodeName);
+        cache.set(nodeName, {
+          url,
+          offsetX: displayConfig.offsetX,
+          offsetY: displayConfig.offsetY,
+          scale: displayConfig.scale,
+        });
       }
     } catch (e) {
       console.warn(`[RelationshipGraph] 获取头像失败: ${nodeName}`, e);
@@ -1173,17 +1243,24 @@ async function preloadAvatars() {
 
 /** 头像更新后刷新图形 */
 async function handleAvatarUpdate() {
-  // 重新预加载头像并刷新图形
+  // 重新加载别名映射和头像
+  await loadAliasMap();
   await preloadAvatars();
   if (cy) {
-    // 更新节点的头像数据
+    // 更新节点的头像数据（包括裁剪参数）
     cy.nodes().forEach(node => {
       const nodeName = node.id();
-      const avatarUrl = avatarCache.value.get(nodeName);
-      if (avatarUrl) {
-        node.data('avatarUrl', avatarUrl);
+      const avatarData = avatarCache.value.get(nodeName);
+      if (avatarData) {
+        node.data('avatarUrl', avatarData.url);
+        node.data('avatarOffsetX', avatarData.offsetX);
+        node.data('avatarOffsetY', avatarData.offsetY);
+        node.data('avatarScale', avatarData.scale);
       } else {
         node.removeData('avatarUrl');
+        node.removeData('avatarOffsetX');
+        node.removeData('avatarOffsetY');
+        node.removeData('avatarScale');
       }
     });
     // 触发样式重新计算
@@ -1199,6 +1276,9 @@ async function handleAvatarUpdate() {
 const isInitialized = ref(false);
 
 onMounted(async () => {
+  // 先加载别名映射
+  await loadAliasMap();
+
   // 如果数据已准备好，预加载头像后再初始化
   if (hasData.value) {
     await preloadAvatars();

@@ -6,7 +6,9 @@
 .acu-relationship-graph {
   position: relative;
   width: 100%;
-  height: 100%;
+  // 使用 flex: 1 让关系图撑满父容器的剩余空间
+  flex: 1 1 auto;
+  // 使用 min-height 而不是 height，允许自动扩展
   min-height: 400px;
   background: var(--acu-bg-panel);
   border-radius: 12px;
@@ -15,8 +17,13 @@
 
 // 当显示关系图时，面板内容区域高度最大化
 .acu-panel-content:has(.acu-relationship-graph) {
+  // 使用 flex 布局让关系图能够撑满
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 450px;
+  // 关键：移除 overflow: hidden，让关系图可以扩展
+  overflow: visible;
 }
 
 // 当 DataTable 显示关系图时，容器高度最大化
@@ -315,6 +322,32 @@
 
 // 移动端适配
 @media (max-width: 768px) {
+  // 移动端关系图：撑满整个可用空间
+  .acu-relationship-graph {
+    // 使用 calc 计算可用高度：视口高度 - 底部导航栏预留空间
+    // 导航栏约 80px + 底部间距
+    min-height: calc(100vh - var(--acu-win-bottom, 100px) - 120px);
+    // 同时限制最大高度防止超出
+    max-height: calc(100vh - var(--acu-win-bottom, 100px) - 80px);
+  }
+
+  // 移动端：当数据面板显示关系图时，撑满高度
+  .acu-data-display:has(.acu-relationship-graph) {
+    // 使用 flex: 1 自动撑满剩余空间
+    flex: 1 1 auto;
+    // 关键：设置最小高度为可用视口高度
+    min-height: calc(100vh - var(--acu-win-bottom, 100px) - 80px);
+    // 移除 max-height 限制，让 Flexbox 自动控制
+    max-height: none;
+  }
+
+  .acu-panel-content:has(.acu-relationship-graph) {
+    // 移动端面板内容区撑满
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+
   .acu-graph-toolbar {
     top: 8px;
     right: 8px;
@@ -340,4 +373,43 @@
     width: 8px;
     height: 8px;
   }
+}
+
+// ============================================================
+// nodeHtmlLabel 扩展 - HTML 头像渲染
+// 使用真正的 CSS 渲染，与头像预览完全一致
+// ============================================================
+
+.acu-graph-avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none; // 让点击事件穿透到下面的 Cytoscape 节点
+}
+
+.acu-graph-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--acu-text-main, #333);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  // 与头像预览完全一致的 CSS
+  background-color: var(--acu-card-bg, #fff);
+}
+
+.acu-graph-avatar-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--acu-text-main, #333);
+  text-shadow:
+    -1px -1px 0 var(--acu-card-bg, #fff),
+    1px -1px 0 var(--acu-card-bg, #fff),
+    -1px 1px 0 var(--acu-card-bg, #fff),
+    1px 1px 0 var(--acu-card-bg, #fff);
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

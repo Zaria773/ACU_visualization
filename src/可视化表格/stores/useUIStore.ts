@@ -4,8 +4,29 @@
  */
 
 import { useStorage } from '@vueuse/core';
-import type { BallPosition } from '../types';
+import type { BallPosition, TableRow } from '../types';
 import { useDataStore } from './useDataStore';
+
+// ============================================================
+// 弹窗 Props 类型定义
+// ============================================================
+
+/** 行编辑弹窗 Props */
+export interface RowEditDialogProps {
+  tableName: string;
+  tableId: string;
+  rowIndex: number;
+  currentRowData: TableRow | null;
+}
+
+/** 历史记录弹窗 Props */
+export interface HistoryDialogProps {
+  tableName: string;
+  tableId: string;
+  rowIndex: number;
+  currentRowData: TableRow | null;
+  titleColIndex?: number;
+}
 
 /** 存储键常量 (保持与原代码兼容) */
 export const STORAGE_KEYS = {
@@ -98,6 +119,39 @@ export const useUIStore = defineStore('acu-ui', () => {
 
   /** 只显示锁定的卡片 */
   const showLockedOnly = ref(false);
+
+  // ============================================================
+  // 弹窗状态 - 统一管理
+  // ============================================================
+
+  /** 行编辑弹窗状态 */
+  const rowEditDialog = reactive<{
+    visible: boolean;
+    props: RowEditDialogProps;
+  }>({
+    visible: false,
+    props: {
+      tableName: '',
+      tableId: '',
+      rowIndex: 0,
+      currentRowData: null,
+    },
+  });
+
+  /** 历史记录弹窗状态（Dashboard 专用） */
+  const dashboardHistoryDialog = reactive<{
+    visible: boolean;
+    props: HistoryDialogProps;
+  }>({
+    visible: false,
+    props: {
+      tableName: '',
+      tableId: '',
+      rowIndex: 0,
+      currentRowData: null,
+      titleColIndex: 0,
+    },
+  });
 
   // ============================================================
   // Getters
@@ -495,6 +549,59 @@ export const useUIStore = defineStore('acu-ui', () => {
     tabOrder.value = [];
   }
 
+  // ============================================================
+  // 弹窗 Actions
+  // ============================================================
+
+  /**
+   * 打开行编辑弹窗
+   * @param props 弹窗参数
+   */
+  function openRowEditDialog(props: RowEditDialogProps): void {
+    rowEditDialog.props = { ...props };
+    rowEditDialog.visible = true;
+  }
+
+  /**
+   * 关闭行编辑弹窗
+   */
+  function closeRowEditDialog(): void {
+    rowEditDialog.visible = false;
+  }
+
+  /**
+   * 打开历史记录弹窗（Dashboard 专用）
+   * @param props 弹窗参数
+   */
+  function openDashboardHistoryDialog(props: HistoryDialogProps): void {
+    dashboardHistoryDialog.props = { ...props };
+    dashboardHistoryDialog.visible = true;
+  }
+
+  /**
+   * 关闭历史记录弹窗（Dashboard 专用）
+   */
+  function closeDashboardHistoryDialog(): void {
+    dashboardHistoryDialog.visible = false;
+  }
+
+  /**
+   * 从行编辑弹窗切换到历史记录弹窗
+   */
+  function switchFromRowEditToHistory(): void {
+    // 复制当前行编辑弹窗的参数到历史记录弹窗
+    dashboardHistoryDialog.props = {
+      tableName: rowEditDialog.props.tableName,
+      tableId: rowEditDialog.props.tableId,
+      rowIndex: rowEditDialog.props.rowIndex,
+      currentRowData: rowEditDialog.props.currentRowData,
+      titleColIndex: 0,
+    };
+    // 关闭行编辑弹窗，打开历史记录弹窗
+    rowEditDialog.visible = false;
+    dashboardHistoryDialog.visible = true;
+  }
+
   /**
    * 同步新表格到可见列表
    * 当 visibleTabs 非空时，检测新增的表格并自动添加到可见列表末尾
@@ -623,5 +730,16 @@ export const useUIStore = defineStore('acu-ui', () => {
     hideTab,
     resetTabConfig,
     syncNewTablesToVisibleTabs,
+
+    // 弹窗状态
+    rowEditDialog,
+    dashboardHistoryDialog,
+
+    // 弹窗 Actions
+    openRowEditDialog,
+    closeRowEditDialog,
+    openDashboardHistoryDialog,
+    closeDashboardHistoryDialog,
+    switchFromRowEditToHistory,
   };
 });

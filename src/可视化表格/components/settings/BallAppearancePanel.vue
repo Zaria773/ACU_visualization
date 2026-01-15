@@ -169,17 +169,35 @@
             <span class="acu-input-hint">输入 Emoji 表情</span>
           </div>
         </div>
-        <!-- 图片模式：已上传时显示清除按钮 -->
+        <!-- 图片模式：已上传时显示调整和清除按钮 -->
         <div v-else-if="localAppearance.type === 'image' && localAppearance.content" class="acu-icon-input-area">
           <div class="acu-image-preview-row">
-            <img :src="localAppearance.content" alt="" class="acu-preview-thumb" />
-            <button class="acu-clear-btn" @click.stop="localAppearance.content = ''">
-              <i class="fas fa-times"></i> 清除
-            </button>
+            <div class="acu-preview-thumb-wrapper" :style="imagePreviewStyle" @click.stop="openCropDialog">
+              <span class="acu-edit-hint"><i class="fas fa-crop-simple"></i></span>
+            </div>
+            <div class="acu-image-actions">
+              <button class="acu-adjust-btn" @click.stop="openCropDialog">
+                <i class="fas fa-crop-simple"></i> 调整
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 图片裁剪弹窗 -->
+    <AvatarCropDialog
+      v-if="showCropDialog"
+      :visible="showCropDialog"
+      :image-url="localAppearance.content || ''"
+      name="悬浮球图片"
+      :initial-offset-x="localAppearance.imageOffsetX ?? 50"
+      :initial-offset-y="localAppearance.imageOffsetY ?? 50"
+      :initial-scale="localAppearance.imageScale ?? 150"
+      @close="closeCropDialog"
+      @apply="applyCrop"
+      @upload="handleCropUpload"
+    />
   </div>
 </template>
 
@@ -188,6 +206,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import { DEFAULT_BALL_APPEARANCE, useBallAppearanceStore } from '../../stores';
 import type { FloatingBallAppearance } from '../../types';
 import { compressImage, fileToBase64, hexToRgba } from '../../utils';
+import AvatarCropDialog from '../dialogs/AvatarCropDialog.vue';
 
 // ============================================================
 // Store
@@ -207,6 +226,9 @@ const isPreviewNotify = ref(false);
 
 /** 图片上传 input ref */
 const imageInputRef = ref<HTMLInputElement>();
+
+/** 裁剪弹窗状态 */
+const showCropDialog = ref(false);
 
 // ============================================================
 // 同步到 Store
@@ -236,6 +258,17 @@ const previewStyle = computed(() => ({
   '--ball-border-color-rgba': hexToRgba(localAppearance.borderColor, localAppearance.borderOpacity),
   '--ball-bg-color': hexToRgba(localAppearance.bgColor, localAppearance.bgOpacity),
 }));
+
+/** 图片预览样式（应用裁剪参数） */
+const imagePreviewStyle = computed(() => {
+  if (!localAppearance.content) return {};
+  return {
+    backgroundImage: `url('${localAppearance.content}')`,
+    backgroundPosition: `${localAppearance.imageOffsetX ?? 50}% ${localAppearance.imageOffsetY ?? 50}%`,
+    backgroundSize: `${localAppearance.imageScale ?? 150}%`,
+    backgroundRepeat: 'no-repeat',
+  };
+});
 
 // ============================================================
 // 预览功能
@@ -277,12 +310,65 @@ async function handleImageUpload(event: Event) {
     // 压缩到 100x100 以内
     base64 = await compressImage(base64, 100, 0.8);
     localAppearance.content = base64;
+    // 重置裁剪参数为默认值
+    localAppearance.imageOffsetX = 50;
+    localAppearance.imageOffsetY = 50;
+    localAppearance.imageScale = 150;
+    // 上传后自动打开裁剪弹窗
+    showCropDialog.value = true;
   } catch (e) {
     console.error('[ACU] 图片上传失败:', e);
   }
 
   // 清空 input，允许重复选择同一文件
   input.value = '';
+}
+
+// ============================================================
+// 裁剪弹窗
+// ============================================================
+
+/** 打开裁剪弹窗 */
+function openCropDialog() {
+  if (localAppearance.content) {
+    showCropDialog.value = true;
+  }
+}
+
+/** 关闭裁剪弹窗 */
+function closeCropDialog() {
+  showCropDialog.value = false;
+}
+
+/** 应用裁剪参数 */
+function applyCrop(data: { offsetX: number; offsetY: number; scale: number }) {
+  localAppearance.imageOffsetX = data.offsetX;
+  localAppearance.imageOffsetY = data.offsetY;
+  localAppearance.imageScale = data.scale;
+  closeCropDialog();
+}
+
+/** 从裁剪弹窗上传新图片 */
+async function handleCropUpload(file: File) {
+  try {
+    let base64 = await fileToBase64(file);
+    base64 = await compressImage(base64, 100, 0.8);
+    localAppearance.content = base64;
+    // 重置裁剪参数
+    localAppearance.imageOffsetX = 50;
+    localAppearance.imageOffsetY = 50;
+    localAppearance.imageScale = 150;
+  } catch (e) {
+    console.error('[ACU] 图片上传失败:', e);
+  }
+}
+
+/** 清除图片 */
+function clearImage() {
+  localAppearance.content = '';
+  localAppearance.imageOffsetX = 50;
+  localAppearance.imageOffsetY = 50;
+  localAppearance.imageScale = 150;
 }
 
 // ============================================================

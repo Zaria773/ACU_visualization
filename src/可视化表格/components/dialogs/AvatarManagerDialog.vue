@@ -10,6 +10,15 @@
         <button class="acu-close-pill" @click.stop="handleClose">完成</button>
       </div>
 
+      <!-- 搜索框 -->
+      <div class="acu-avatar-search-bar">
+        <i class="fas fa-search"></i>
+        <input v-model="searchQuery" type="text" class="acu-avatar-search-input" placeholder="搜索角色名称或别名..." />
+        <button v-if="searchQuery" class="acu-search-clear" @click.stop="searchQuery = ''">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
       <!-- 内容区 - 可滚动 -->
       <div class="acu-modal-body acu-avatar-list">
         <!-- 加载中 -->
@@ -19,15 +28,15 @@
         </div>
 
         <!-- 空状态 -->
-        <div v-else-if="avatarList.length === 0" class="acu-avatar-empty">
+        <div v-else-if="filteredAvatarList.length === 0" class="acu-avatar-empty">
           <i class="fas fa-user-slash"></i>
-          <p>暂无角色数据</p>
+          <p>{{ searchQuery ? '未找到匹配的角色' : '暂无角色数据' }}</p>
         </div>
 
         <!-- 头像列表 -->
         <div v-else class="acu-avatar-items">
           <div
-            v-for="item in avatarList"
+            v-for="item in filteredAvatarList"
             :key="item.id"
             class="acu-avatar-item"
             :class="{ selected: selectedForDelete.has(item.id) }"
@@ -103,6 +112,19 @@
                   @blur="updateUrl(item, ($event.target as HTMLInputElement).value)"
                 />
               </div>
+
+              <!-- 别名输入 -->
+              <div class="acu-avatar-alias-row">
+                <span class="acu-alias-label">别名:</span>
+                <input
+                  type="text"
+                  class="acu-avatar-alias-input"
+                  placeholder="输入别名，用逗号分隔..."
+                  :value="item.aliasesText || ''"
+                  @change="updateAliases(item, ($event.target as HTMLInputElement).value)"
+                  @blur="updateAliases(item, ($event.target as HTMLInputElement).value)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -171,9 +193,11 @@
  * - 导入下拉菜单（本地/酒馆）
  */
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, toRaw, watch } from 'vue';
 
 import { type AvatarRecord, useAvatarManager } from '../../composables/useAvatarManager';
+import { useToast } from '../../composables/useToast';
+import { compressImageSquare, fileToBase64 } from '../../utils';
 import AvatarCropDialog from './AvatarCropDialog.vue';
 import NodeLabelDialog from './NodeLabelDialog.vue';
 
@@ -252,14 +276,40 @@ interface AvatarListItem {
   displayLabel?: string;
   source: 'local' | 'url' | 'auto' | null;
   hasLocalBlob: boolean;
+  /** 别名列表 */
+  aliases: string[];
+  /** 别名文本（逗号分隔，用于显示） */
+  aliasesText: string;
 }
 
 const avatarManager = useAvatarManager();
+const toast = useToast();
 
 const isLoading = ref(true);
 const avatarList = ref<AvatarListItem[]>([]);
 const pendingChanges = ref<Map<string, Partial<AvatarRecord>>>(new Map());
 const hasChanges = computed(() => pendingChanges.value.size > 0);
+
+// 搜索
+const searchQuery = ref('');
+
+/** 过滤后的头像列表 */
+const filteredAvatarList = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return avatarList.value;
+  }
+
+  const query = searchQuery.value.toLowerCase().trim();
+  return avatarList.value.filter(item => {
+    // 匹配名称
+    if (item.name.toLowerCase().includes(query)) return true;
+    // 匹配别名
+    if (item.aliases.some(alias => alias.toLowerCase().includes(query))) return true;
+    // 匹配显示标签
+    if (item.displayLabel?.toLowerCase().includes(query)) return true;
+    return false;
+  });
+});
 
 // 删除模式
 const isDeleteMode = ref(false);
@@ -306,6 +356,9 @@ async function loadAvatarList() {
       // 获取显示标签
       const displayLabel = await avatarManager.getDisplayLabel(node.name);
 
+      // 获取别名列表
+      const aliases = record?.aliases || [];
+
       list.push({
         id: node.id,
         name: node.name,
@@ -321,6 +374,8 @@ async function loadAvatarList() {
         displayLabel: displayLabel !== node.name ? displayLabel : undefined,
         source,
         hasLocalBlob,
+        aliases,
+        aliasesText: aliases.join(', '),
       });
     }
 
@@ -443,10 +498,18 @@ async function handleFileSelect(event: Event) {
   const item = currentUploadItem.value;
 
   try {
+    // 将图片预处理为正方形（解决 Cytoscape 比例失调问题）
+    const base64 = await fileToBase64(file);
+    const squareBase64 = await compressImageSquare(base64, 150, 0.85);
+
+    // 将 base64 转换回 Blob
+    const response = await fetch(squareBase64);
+    const squareBlob = await response.blob();
+
     // 保存到 IndexedDB
     await avatarManager.saveAvatar({
       name: item.name,
-      blob: file,
+      blob: squareBlob,
       offsetX: item.offsetX,
       offsetY: item.offsetY,
       scale: item.scale,
@@ -485,6 +548,31 @@ function updateUrl(item: AvatarListItem, url: string) {
       url: trimmedUrl || undefined,
       avatarUrl: trimmedUrl || avatarList.value[idx].avatarUrl,
       source: trimmedUrl ? 'url' : avatarList.value[idx].source,
+    };
+  }
+}
+
+// ============================================================
+// 别名输入
+// ============================================================
+
+function updateAliases(item: AvatarListItem, aliasesText: string) {
+  // 解析别名列表（逗号、顿号、空格分隔）
+  const aliases = aliasesText
+    .split(/[,，、\s]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // 更新到 pending changes
+  addPendingChange(item.name, { aliases });
+
+  // 更新列表项
+  const idx = avatarList.value.findIndex(i => i.id === item.id);
+  if (idx !== -1) {
+    avatarList.value[idx] = {
+      ...avatarList.value[idx],
+      aliases,
+      aliasesText: aliases.join(', '),
     };
   }
 }
@@ -613,9 +701,17 @@ async function handleCropUpload(file: File) {
   const item = currentCropItem.value;
 
   try {
+    // 将图片预处理为正方形（解决 Cytoscape 比例失调问题）
+    const base64 = await fileToBase64(file);
+    const squareBase64 = await compressImageSquare(base64, 150, 0.85);
+
+    // 将 base64 转换回 Blob
+    const response = await fetch(squareBase64);
+    const squareBlob = await response.blob();
+
     await avatarManager.saveAvatar({
       name: item.name,
-      blob: file,
+      blob: squareBlob,
       offsetX: 50,
       offsetY: 50,
       scale: 150,
@@ -693,6 +789,15 @@ async function saveAll() {
     for (const [name, changes] of pendingChanges.value) {
       const existing = await avatarManager.getAvatar(name);
 
+      // 安全获取别名：优先使用 changes 中的，否则使用 existing 中的
+      // 使用 toRaw 和展开运算符确保是普通数组，避免 Vue 代理导致 IndexedDB 无法克隆
+      let aliases: string[] = [];
+      if (changes.aliases !== undefined) {
+        aliases = [...toRaw(changes.aliases)];
+      } else if (existing?.aliases) {
+        aliases = [...existing.aliases];
+      }
+
       const record: AvatarRecord = {
         name,
         blob: existing?.blob,
@@ -700,8 +805,8 @@ async function saveAll() {
         offsetX: changes.offsetX ?? existing?.offsetX ?? 50,
         offsetY: changes.offsetY ?? existing?.offsetY ?? 50,
         scale: changes.scale ?? existing?.scale ?? 150,
-        aliases: existing?.aliases || [],
-        labelIndices: changes.labelIndices !== undefined ? changes.labelIndices : existing?.labelIndices,
+        aliases,
+        labelIndices: changes.labelIndices !== undefined ? [...toRaw(changes.labelIndices)] : existing?.labelIndices ? [...existing.labelIndices] : undefined,
         updatedAt: Date.now(),
       };
 
@@ -709,10 +814,11 @@ async function saveAll() {
     }
 
     pendingChanges.value.clear();
+    toast.success('头像配置已保存');
     emit('update');
   } catch (e) {
     console.error('[AvatarManager] 保存失败:', e);
-    alert('保存失败');
+    toast.error('保存失败: ' + (e instanceof Error ? e.message : String(e)));
   }
 }
 

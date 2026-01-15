@@ -56,7 +56,14 @@
             :class="{ 'acu-highlight-changed': isRowChanged(row) }"
             @click.stop="handleRowClick(row)"
           >
-            {{ getDisplayValue(row) }}
+            <span class="acu-dash-npc-text">{{ getDisplayValue(row) }}</span>
+            <button
+              class="acu-dash-row-edit-btn"
+              title="编辑"
+              @click.stop="handleEditRow(row)"
+            >
+              <i class="fas fa-pen"></i>
+            </button>
           </div>
         </div>
 
@@ -74,6 +81,13 @@
             <span v-if="getSecondaryValue(row)" class="acu-dash-list-badge">
               {{ getSecondaryValue(row) }}
             </span>
+            <button
+              class="acu-dash-row-edit-btn"
+              title="编辑"
+              @click.stop="handleEditRow(row)"
+            >
+              <i class="fas fa-pen"></i>
+            </button>
           </div>
         </div>
 
@@ -116,6 +130,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   navigate: [tableId: string];
   'row-click': [tableId: string, row: TableRow];
+  'row-edit': [tableId: string, row: TableRow];
   action: [actionId: WidgetActionId, tableId: string];
   remove: [widgetId: string];
   resize: [widgetId: string, colSpan: 1 | 2];
@@ -262,6 +277,12 @@ function handleNavigate(): void {
 function handleRowClick(row: TableRow): void {
   if (props.config.tableId) {
     emit('row-click', props.config.tableId, row);
+  }
+}
+
+function handleEditRow(row: TableRow): void {
+  if (props.config.tableId) {
+    emit('row-edit', props.config.tableId, row);
   }
 }
 

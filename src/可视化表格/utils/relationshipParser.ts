@@ -74,6 +74,17 @@ function getCellValue(row: TableRow, colIndex: number): string {
 }
 
 /**
+ * 解析别名，返回主名称
+ * @param name 原始名称（可能是别名）
+ * @param aliasMap 别名到主名称的映射表
+ * @returns 主名称（如果找到映射）或原名称
+ */
+function resolveAlias(name: string, aliasMap?: Map<string, string>): string {
+  if (!aliasMap || !name) return name;
+  return aliasMap.get(name) || name;
+}
+
+/**
  * 查找列索引（支持多个可能的列名）
  */
 function findColumnIndex(headers: string[], possibleNames: string[]): number {
@@ -141,12 +152,14 @@ function getDefaultLabel(fullName: string): string {
  * @param relationshipTable 关系表数据
  * @param characterTables 角色表列表（用于确定节点类型）
  * @param factionTable 势力表（可选）
+ * @param aliasMap 别名到主名称的映射表（可选）
  * @returns 解析结果
  */
 export function parseRelationshipTable(
   relationshipTable: ProcessedTable | null | undefined,
   characterTables: ProcessedTable[] = [],
   factionTable?: ProcessedTable | null,
+  aliasMap?: Map<string, string>,
 ): ParseResult {
   const warnings: string[] = [];
   const nodes: ElementDefinition[] = [];
@@ -247,18 +260,22 @@ export function parseRelationshipTable(
 
   // 遍历关系表，构建边和节点
   relationshipTable.rows.forEach((row, rowIndex) => {
-    const source = getCellValue(row, sourceIdx);
-    const target = getCellValue(row, targetIdx);
+    const rawSource = getCellValue(row, sourceIdx);
+    const rawTarget = getCellValue(row, targetIdx);
     const relation = relationIdx !== -1 ? getCellValue(row, relationIdx) : '';
     const note = noteIdx !== -1 ? getCellValue(row, noteIdx) : '';
 
     // 跳过空行
-    if (!source || !target) {
-      if (source || target) {
-        warnings.push(`第 ${rowIndex + 1} 行数据不完整（source: "${source}", target: "${target}"）`);
+    if (!rawSource || !rawTarget) {
+      if (rawSource || rawTarget) {
+        warnings.push(`第 ${rowIndex + 1} 行数据不完整（source: "${rawSource}", target: "${rawTarget}"）`);
       }
       return;
     }
+
+    // 解析别名，获取主名称
+    const source = resolveAlias(rawSource, aliasMap);
+    const target = resolveAlias(rawTarget, aliasMap);
 
     // 添加节点
     addNode(source);
@@ -393,7 +410,42 @@ export function parseEmbeddedRelationship(text: string, knownNames: Set<string> 
       continue;
     }
 
-    // 尝试匹配模式2: {目标}的{关系}
+    // 尝试匹配模式2: {目标A}、{目标B}...的{关系}（顿号分隔多目标）
+    // 如 "小明、小红的朋友" → targets: [小明, 小红], relation: 朋友
+    const commaMultiTargetMatch = cleanSegment.match(/^(.+?[、,，].+?)的(.+)$/);
+    if (commaMultiTargetMatch) {
+      const targetsText = commaMultiTargetMatch[1];
+      const relationsText = commaMultiTargetMatch[2];
+
+      // 分割多个目标（使用顿号、逗号分隔）
+      const targets = targetsText
+        .split(/[、,，]/)
+        .map(t => t.trim())
+        .filter(Boolean);
+
+      // 如果确实有多个目标，则按多目标处理
+      if (targets.length > 1) {
+        // 关系也可能有多个（用顿号分隔）
+        const relations = relationsText
+          .split(/[、,，]/)
+          .map(r => r.trim())
+          .filter(Boolean);
+
+        for (const relation of relations) {
+          const cleanedRelation = cleanRelationText(relation);
+          if (cleanedRelation) {
+            results.push({
+              targets,
+              relation: cleanedRelation,
+              note,
+            });
+          }
+        }
+        continue;
+      }
+    }
+
+    // 尝试匹配模式3: {目标}的{关系}
     const singleTargetMatch = cleanSegment.match(/^(.+?)的(.+)$/);
     if (singleTargetMatch) {
       const target = singleTargetMatch[1].trim();
@@ -430,6 +482,32 @@ export function parseEmbeddedRelationship(text: string, knownNames: Set<string> 
       continue;
     }
 
+    // 尝试匹配模式4: {目标}：{关系} 或 {目标}:{关系}（冒号格式）
+    // 如 "小明：朋友" 或 "小明:朋友、同事"
+    const colonMatch = cleanSegment.match(/^(.+?)[：:](.+)$/);
+    if (colonMatch) {
+      const target = colonMatch[1].trim();
+      const relationsText = colonMatch[2].trim();
+
+      // 关系可能有多个（用顿号、逗号分隔）
+      const relations = relationsText
+        .split(/[、,，]/)
+        .map(r => r.trim())
+        .filter(Boolean);
+
+      for (const relation of relations) {
+        const cleanedRelation = cleanRelationText(relation);
+        if (cleanedRelation) {
+          results.push({
+            targets: [target],
+            relation: cleanedRelation,
+            note,
+          });
+        }
+      }
+      continue;
+    }
+
     // 无法匹配的段落，跳过
     console.info(`[RelationshipParser] 无法解析: "${segment}"`);
   }
@@ -442,11 +520,13 @@ export function parseEmbeddedRelationship(text: string, knownNames: Set<string> 
  *
  * @param characterTables 角色表列表（包含人际关系列）
  * @param factionTable 势力表（可选）
+ * @param aliasMap 别名到主名称的映射表（可选）
  * @returns 解析结果
  */
 export function parseEmbeddedRelationships(
   characterTables: ProcessedTable[] = [],
   factionTable?: ProcessedTable | null,
+  aliasMap?: Map<string, string>,
 ): ParseResult {
   const warnings: string[] = [];
   const nodes: ElementDefinition[] = [];
@@ -551,7 +631,10 @@ export function parseEmbeddedRelationships(
         const cleanedRelation = cleanRelationText(parsed.relation);
         if (!cleanedRelation) continue;
 
-        for (const target of parsed.targets) {
+        for (const rawTarget of parsed.targets) {
+          // 解析别名，获取主名称
+          const target = resolveAlias(rawTarget, aliasMap);
+
           // 添加目标节点
           addNode(target);
 

@@ -24,3 +24,52 @@
   border-bottom: 1px solid var(--acu-border);
   background: var(--acu-bg-panel);
 }
+
+// ============================================
+// 移动端适配 - 仪表盘弹窗放在上部
+// ============================================
+
+@media (max-width: 768px) {
+  // 添加看板弹窗 - 放在上部
+  .acu-modal-container:has(.acu-add-widget-modal),
+  .acu-modal-container:has(.acu-dashboard-sort-modal),
+  .acu-modal-container:has(.acu-actions-config-modal) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding-top: 10vh;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .acu-add-widget-modal,
+  .acu-dashboard-sort-modal,
+  .acu-actions-config-modal {
+    width: 95%;
+    max-width: 400px;
+    max-height: 55vh; // 限制最大高度，确保不超出底部
+    border-radius: 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+
+    .acu-modal-body {
+      flex: 1;
+      max-height: calc(55vh - 100px); // 减去头部和底部
+      overflow-y: auto;
+    }
+  }
+
+  // 隐藏拖动把手（这些弹窗不需要）
+  .acu-add-widget-modal .acu-drag-handle,
+  .acu-dashboard-sort-modal .acu-drag-handle,
+  .acu-actions-config-modal .acu-drag-handle {
+    display: none;
+  }
+
+  // 重置头部 padding（移除拖动把手预留的空间）
+  .acu-add-widget-modal .acu-modal-header,
+  .acu-dashboard-sort-modal .acu-modal-header,
+  .acu-actions-config-modal .acu-modal-header {
+    padding-top: 16px;
+  }
+}

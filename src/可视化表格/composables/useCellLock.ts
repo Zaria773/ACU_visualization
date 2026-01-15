@@ -509,14 +509,16 @@ export function useCellLock() {
     let modified = false;
 
     // 建立现有行的索引
-    const rowIndex: Record<string, number> = {};
+    // 关键修复：传入行索引 (i-1)，确保与锁定时生成的 key 一致
+    const rowIndexMap: Record<string, number> = {};
     for (let i = 1; i < tableContent.length; i++) {
-      const key = getRowKey(tableName, tableContent[i], headers);
-      if (key) rowIndex[key] = i;
+      // 修复：传入 i-1 作为行索引（与 DataCard.vue 中 data.index 一致）
+      const key = getRowKey(tableName, tableContent[i] as (string | null)[], headers, i - 1);
+      if (key) rowIndexMap[key] = i;
     }
 
     for (const [rowKey, lock] of Object.entries(tableLocks)) {
-      const idx = rowIndex[rowKey];
+      const idx = rowIndexMap[rowKey];
 
       if (idx === undefined) {
         // 行不存在，尝试重建
@@ -525,6 +527,7 @@ export function useCellLock() {
           tableContent.push(newRow);
           restored.push(rowKey);
           modified = true;
+          console.info(`[CellLock] 恢复被删除的锁定行: ${rowKey}`);
         }
         continue;
       }
@@ -536,6 +539,7 @@ export function useCellLock() {
         for (const [field, value] of Object.entries(fields)) {
           const colIdx = headers.indexOf(field);
           if (colIdx !== -1 && row[colIdx] !== value) {
+            console.info(`[CellLock] 恢复锁定值: ${tableName}[${rowKey}].${field} = "${value}" (原值: "${row[colIdx]}")`);
             row[colIdx] = value;
             modified = true;
           }

@@ -2087,19 +2087,20 @@ details[open] > .acu-history-summary::before {
   flex-direction: column;
   height: calc(100vh - 60px);
   overflow: hidden;
-  position: relative;
 
   // 列表视图（非编辑模式）
   .acu-history-mobile-list {
     flex: 1;
+    min-height: 0; // 允许 flex 子元素收缩
     overflow-y: auto;
     padding: 12px;
-    // 底部按钮空间 + 安全区（确保不被浏览器底栏遮挡）
-    padding-bottom: calc(120px + env(safe-area-inset-bottom, 20px));
   }
 
   // 编辑模式：上下分屏布局
   &.acu-mobile-edit-mode {
+    display: flex !important;
+    flex-direction: column !important;
+
     // 上半部分：历史记录
     .acu-mobile-history-section {
       flex: 1;
@@ -2161,31 +2162,26 @@ details[open] > .acu-history-summary::before {
 
       .acu-current-scroll {
         flex: 1;
+        min-height: 0; // 允许 flex 子元素收缩
         overflow-y: auto;
         padding: 8px;
-        // 底部按钮空间 + 安全区（确保不被浏览器底栏遮挡）
-        padding-bottom: calc(120px + env(safe-area-inset-bottom, 20px));
       }
     }
   }
 
-  // 底部悬浮按钮栏
+  // 底部按钮栏
+  // 使用 flex 布局而非 position: fixed/absolute，避免被 backdrop-filter 影响
   .acu-mobile-actions {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    flex-shrink: 0; // 不压缩，保持固定高度
     padding: 10px 12px;
     // 底部安全区：确保不被浏览器底栏遮挡
-    // 使用固定值 + CSS env变量双保险（env需要viewport-fit=cover才生效）
-    padding-bottom: 36px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 20px));
+    // 使用 max() 确保至少有 50px 的底部内边距
+    padding-bottom: max(50px, calc(24px + env(safe-area-inset-bottom, 30px)));
     background: var(--acu-bg-panel);
     border-top: 1px solid var(--acu-border);
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    z-index: 2147483640;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 
     button {
@@ -2308,16 +2304,87 @@ details[open] > .acu-history-summary::before {
 
     .acu-history-layout.acu-mobile-layout {
       display: flex !important;
+      flex-direction: column !important;
+      height: calc(100vh - 60px) !important;
 
-      // 底部按钮栏安全区（强制覆盖，确保不被浏览器底栏遮挡）
-      .acu-mobile-actions {
-        padding-bottom: 40px !important;
+      // 非编辑模式：列表视图
+      .acu-history-mobile-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        padding-bottom: calc(120px + env(safe-area-inset-bottom, 20px));
       }
 
-      // 支持 safe-area-inset 的设备上自动适应
-      @supports (padding-bottom: env(safe-area-inset-bottom)) {
-        .acu-mobile-actions {
-          padding-bottom: calc(16px + env(safe-area-inset-bottom, 24px)) !important;
+      // 编辑模式：上下分屏布局
+      &.acu-mobile-edit-mode {
+        display: flex !important;
+        flex-direction: column !important;
+
+        // 上半部分：历史记录
+        .acu-mobile-history-section {
+          flex: 1;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0;
+          border-bottom: 1px solid var(--acu-border);
+
+          .acu-section-label {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--acu-text-sub);
+            background: var(--acu-table-head);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+
+            i {
+              color: var(--acu-title-color);
+            }
+          }
+
+          .acu-history-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+          }
+        }
+
+        // 下半部分：当前版本
+        .acu-mobile-current-section {
+          flex: 1.5;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0;
+
+          .acu-section-label {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--acu-text-sub);
+            background: var(--acu-table-head);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+
+            i {
+              color: var(--acu-title-color);
+            }
+
+            .acu-changes-count {
+              color: var(--acu-title-color);
+              font-weight: normal;
+            }
+          }
+
+          .acu-current-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px;
+          }
         }
       }
     }
@@ -2902,6 +2969,74 @@ details[open] > .acu-history-summary::before {
   border: 2px solid var(--acu-border);
 }
 
+// 图片预览容器 - 支持裁剪参数
+.acu-preview-thumb-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--acu-border);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-title-color);
+
+    .acu-edit-hint {
+      opacity: 1;
+    }
+  }
+
+  .acu-edit-hint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}
+
+// 图片操作按钮组
+.acu-image-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// 调整按钮
+.acu-adjust-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 6px;
+  color: var(--acu-title-color);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-title-color);
+    color: #fff;
+  }
+
+  i {
+    font-size: 10px;
+  }
+}
+
 // 清除按钮（带文字）
 .acu-clear-btn {
   display: flex;
@@ -3202,10 +3337,6 @@ details[open] > .acu-history-summary::before {
 // =========================================
 // ThemePanel 主题美化与高亮配置面板
 // =========================================
-
-.acu-theme-panel {
-  // 无需特殊样式，内容直接在 modal-body 中滚动
-}
 
 // 固定头部区域：预设管理（使用 position: sticky）
 .acu-preset-header {
@@ -3822,20 +3953,27 @@ details[open] > .acu-history-summary::before {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10002;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2147483647;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .acu-preset-save-dialog {
   width: 90%;
   max-width: 320px;
+  max-height: calc(100vh - 100px);
   padding: 20px;
   background: var(--acu-bg-panel);
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
 
   .dialog-title {
     font-size: 15px;
@@ -4418,17 +4556,35 @@ details[open] > .acu-history-summary::before {
 
 // 字体弹窗覆盖层（在 settings modal 内部）
 .acu-font-dialog-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 100;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+// 移动端字体弹窗适配
+@media (max-width: 768px) {
+  .acu-font-dialog-overlay {
+    padding: 16px;
+
+    .acu-mini-dialog {
+      width: 100%;
+      max-width: 340px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+  }
 }
 
 // 添加字体按钮

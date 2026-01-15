@@ -6,7 +6,11 @@
 // 数据面板主容器
 .acu-data-display {
   order: 2;
-  flex: 0 1 auto;
+  // 关键：flex: 1 1 auto 使数据区域占据剩余空间，同时允许收缩
+  flex: 1 1 auto;
+  // 使用 min-height 确保最小可用空间
+  min-height: 150px;
+  // max-height 使用 80vh 作为上限，但实际高度受父容器 flex 限制
   max-height: 80vh;
   margin-bottom: 3px; // 恢复与导航栏之间的间距
   background: var(--acu-bg-panel);

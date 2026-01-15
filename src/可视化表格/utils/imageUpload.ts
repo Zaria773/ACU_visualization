@@ -52,6 +52,47 @@ export function compressImage(base64: string, maxWidth = 100, quality = 0.8): Pr
 }
 
 /**
+ * 压缩图片并裁剪为正方形
+ * 以图片短边为边长，居中裁剪
+ * @param base64 原始 Base64 字符串
+ * @param size 输出正方形的边长 (默认 100)
+ * @param quality 压缩质量 0-1 (默认 0.8)
+ * @returns 压缩后的正方形 Base64 字符串
+ */
+export function compressImageSquare(base64: string, size = 100, quality = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('无法创建 canvas context'));
+          return;
+        }
+
+        // 计算裁剪区域：以短边为边长，居中裁剪
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+
+        // 从原图的 (sx, sy) 位置裁剪 minDim x minDim 的区域
+        // 绘制到 canvas 的 (0, 0) 位置，大小为 size x size
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error('图片加载失败'));
+    img.src = base64;
+  });
+}
+
+/**
  * 获取 Base64 图片的大小（字节）
  * @param base64 Base64 字符串
  * @returns 大小（字节）

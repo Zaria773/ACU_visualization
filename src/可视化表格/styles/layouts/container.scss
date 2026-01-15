@@ -13,6 +13,10 @@
   flex-direction: column-reverse;
   z-index: 2147483645;
   pointer-events: auto !important;
+  // 关键：限制整个面板容器最大高度为视口高度
+  max-height: 100vh;
+  // 确保不超出屏幕底部
+  max-height: calc(100vh - var(--acu-win-bottom, 100px));
 
   &.collapsed {
     display: none;
@@ -59,6 +63,9 @@
   touch-action: none;
   // 额外保险：最大宽度不超过屏幕
   max-width: calc(100vw - 10px);
+  // 关键：动态计算最大高度 = 视口高度 - bottom位置
+  // 确保面板不会超出屏幕顶部
+  max-height: calc(100vh - var(--acu-win-bottom, 50%)) !important;
 }
 
 // 拖拽交互状态

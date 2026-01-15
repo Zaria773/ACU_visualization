@@ -13,8 +13,8 @@
       <i v-if="appearance.type === 'icon'" :class="['fa-solid', appearance.content]"></i>
       <!-- Emoji -->
       <span v-else-if="appearance.type === 'emoji'" class="ball-emoji">{{ appearance.content }}</span>
-      <!-- 图片 -->
-      <img v-else-if="appearance.type === 'image' && appearance.content" :src="appearance.content" alt="" />
+      <!-- 图片 - 使用 div + background-image 支持裁剪参数 -->
+      <div v-else-if="appearance.type === 'image' && appearance.content" class="ball-image" :style="imageStyle"></div>
     </template>
     <!-- 问题徽章 -->
     <span v-if="hasIntegrityIssues && !isDocked" class="acu-issue-badge">!</span>
@@ -62,6 +62,18 @@ const issueTooltip = computed(() => {
 
 /** 外观配置 */
 const appearance = computed(() => ballAppearanceStore.appearance);
+
+/** 图片样式（应用裁剪参数） */
+const imageStyle = computed(() => {
+  const app = appearance.value;
+  if (app.type !== 'image' || !app.content) return {};
+  return {
+    backgroundImage: `url('${app.content}')`,
+    backgroundPosition: `${app.imageOffsetX ?? 50}% ${app.imageOffsetY ?? 50}%`,
+    backgroundSize: `${app.imageScale ?? 150}%`,
+    backgroundRepeat: 'no-repeat',
+  };
+});
 
 /** AI 填表通知状态 */
 const isAiNotifying = ref(false);
@@ -166,10 +178,13 @@ const {
 // ============================================================
 
 function handleClick(e: MouseEvent) {
+  console.log('[ACU FloatingBall] handleClick, wasDragging:', wasDragging.value, 'isDragging:', isDragging.value);
+
   // 如果刚刚拖拽结束，忽略这次点击
   if (wasDragging.value) {
     wasDragging.value = false;
     e.stopPropagation();
+    console.log('[ACU FloatingBall] 忽略拖拽后的点击');
     return;
   }
 

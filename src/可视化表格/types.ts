@@ -357,6 +357,12 @@ export interface FloatingBallAppearance {
   bgColor: string;
   /** 背景透明度 (0-100) */
   bgOpacity: number;
+  /** 图片 X 偏移 (0-100)，仅 type='image' 时有效 */
+  imageOffsetX?: number;
+  /** 图片 Y 偏移 (0-100)，仅 type='image' 时有效 */
+  imageOffsetY?: number;
+  /** 图片缩放比例 (100-300)，仅 type='image' 时有效 */
+  imageScale?: number;
 }
 
 // ============================================================

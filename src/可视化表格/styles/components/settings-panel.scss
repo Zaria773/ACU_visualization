@@ -431,20 +431,26 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--acu-overlay-bg, rgba(0, 0, 0, 0.5));
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10002;
+  z-index: 2147483647;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .acu-attachment-picker {
   width: 90%;
   max-width: 300px;
+  max-height: calc(100vh - 100px);
   background: var(--acu-bg-panel, #e6e2d3);
   border: 1px solid var(--acu-border, #dcd0c0);
   border-radius: 12px;
-  box-shadow: 0 8px 32px var(--acu-shadow, rgba(0, 0, 0, 0.2));
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 
   .picker-header {
@@ -536,6 +542,25 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       max-width: 100%;
+    }
+  }
+}
+
+// --------------------------------------------
+// 移动端适配
+// --------------------------------------------
+
+@media (max-width: 768px) {
+  .acu-attachment-picker-overlay {
+    padding: 16px;
+  }
+
+  .acu-attachment-picker {
+    width: 100%;
+    max-width: 320px;
+
+    .picker-options {
+      max-height: 250px;
     }
   }
 }

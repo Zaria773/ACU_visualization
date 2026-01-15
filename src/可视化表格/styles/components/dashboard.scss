@@ -120,21 +120,32 @@
   padding: 10px;
   border-radius: 8px;
   cursor: default;
-  text-align: center;
   border: 1px solid transparent;
   transition: all 0.2s;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--acu-text-main);
   font-size: 1em;
+  // 改为 flex 布局以支持编辑按钮
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
   &:hover {
     border-color: var(--acu-highlight);
     color: var(--acu-highlight);
     background: var(--acu-btn-bg);
   }
+}
+
+// NPC 项文本（溢出省略只作用于文本部分）
+.acu-dash-npc-text {
+  flex: 1;
+  min-width: 0; // 重要：允许 flex 子元素收缩
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 
 // 子网格布局
@@ -324,6 +335,8 @@
   gap: 12px;
   box-shadow: 0 4px 12px var(--acu-shadow);
   transition: all 0.2s ease;
+  // 修复：允许 flex 子元素收缩（不使用 overflow: hidden，避免截断内容）
+  min-width: 0;
 
   &.acu-dash-widget-wide {
     grid-column: span 2;
@@ -503,18 +516,52 @@
   flex-shrink: 0;
 }
 
+.acu-dash-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .acu-dash-header-title {
   font-size: 1.1em;
   font-weight: 600;
   color: var(--acu-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  i {
+    color: var(--acu-title-color);
+  }
+}
+
+// 弹性空间
+.acu-dash-header-spacer {
+  flex: 1;
+  min-width: 16px;
 }
 
 .acu-dash-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  flex-shrink: 0;
 }
 
+// 仪表盘顶栏使用统一的 .acu-toolbar-btn 样式 (复用 DataTable)
+// 主题色按钮
+.acu-dash-header-actions .acu-btn-primary {
+  background: var(--acu-title-color) !important;
+  color: white !important;
+  border-color: var(--acu-title-color) !important;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// 保留旧按钮样式用于兼容
 .acu-dash-sort-btn {
   padding: 6px 12px;
   border-radius: 6px;
@@ -858,5 +905,108 @@
   .acu-dash-config-actions {
     display: flex;
     gap: 8px;
+  }
+}
+
+// =========================================
+// 行编辑按钮
+// =========================================
+
+// 行末编辑按钮
+.acu-dash-row-edit-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  i {
+    font-size: 11px;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-title-color);
+  }
+}
+
+// NPC 网格项悬浮时显示编辑按钮
+// 注意：不要覆盖原有的 .acu-dash-npc-item 样式，只添加编辑按钮相关的规则
+.acu-dash-npc-item {
+  &:hover .acu-dash-row-edit-btn {
+    opacity: 1;
+  }
+}
+
+// 列表项悬浮时显示编辑按钮
+.acu-dash-list-item {
+  &:hover .acu-dash-row-edit-btn {
+    opacity: 1;
+  }
+}
+
+// 移动端始终显示编辑按钮
+@media (max-width: 768px) {
+  .acu-dash-row-edit-btn {
+    opacity: 0.6;
+  }
+}
+
+// =========================================
+// 行编辑弹窗
+// =========================================
+
+// 行编辑弹窗容器 - 移动端需要上部放置策略
+.acu-row-edit-modal-container {
+  // 继承 .acu-modal-container 的样式，但移动端使用上部放置
+  @media (max-width: 768px) {
+    align-items: flex-start !important;
+    padding-top: 8vh;
+    padding-bottom: 0;
+  }
+}
+
+.acu-row-edit-modal {
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+    max-height: 60vh; // 移动端限制高度，避免遮挡过多
+    border-radius: 16px 16px 0 0;
+    margin-bottom: auto; // 配合上部放置
+  }
+
+  .acu-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+}
+
+.acu-row-edit-content {
+  .acu-data-card {
+    background: var(--acu-card-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 12px;
+    padding: 12px;
+    // 修复：强制使用 100% 宽度，防止卡片右侧被截断
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
   }
 }

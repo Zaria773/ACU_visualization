@@ -155,6 +155,11 @@ export function useDraggableWithSnap(target: Ref<HTMLElement | undefined>, optio
   // 记录拖拽状态
   const wasDragging = ref(false);
 
+  // 记录拖拽起始位置（用于判断是否真正拖拽）
+  let dragStartX = 0;
+  let dragStartY = 0;
+  const DRAG_THRESHOLD = 5; // 移动超过 5 像素才算拖拽
+
   // 使用父窗口文档作为拖拽容器（解决跨 iframe 问题）
   const draggingElement = computed(() => {
     if (useParentWindow) {
@@ -174,11 +179,21 @@ export function useDraggableWithSnap(target: Ref<HTMLElement | undefined>, optio
     },
     // 关键：在父窗口文档上监听拖拽事件
     draggingElement,
-    onStart() {
+    onStart(_position, event) {
       wasDragging.value = false;
+      // 使用鼠标位置而非元素位置，避免跨 iframe 坐标问题
+      dragStartX = (event as PointerEvent).clientX;
+      dragStartY = (event as PointerEvent).clientY;
     },
-    onMove() {
-      wasDragging.value = true;
+    onMove(_position, event) {
+      // 只有鼠标移动距离超过阈值才认为是拖拽
+      const mouseX = (event as PointerEvent).clientX;
+      const mouseY = (event as PointerEvent).clientY;
+      const dx = Math.abs(mouseX - dragStartX);
+      const dy = Math.abs(mouseY - dragStartY);
+      if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+        wasDragging.value = true;
+      }
     },
     onEnd() {
       if (wasDragging.value) {

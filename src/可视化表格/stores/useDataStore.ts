@@ -493,12 +493,36 @@ export const useDataStore = defineStore('acu-data', () => {
 
   /**
    * 设置暂存数据 (用于外部加载数据)
+   * 自动应用单元格锁定保护，并返回处理后的数据
+   * @returns 应用锁定后的数据（用于保存快照）
    */
-  function setStagedData(data: RawDatabaseData): void {
-    stagedData.value = klona(data);
-    const processed = processToTableData(data);
+  function setStagedData(data: RawDatabaseData): RawDatabaseData {
+    // 应用单元格锁定 - 恢复被 AI 修改的锁定值
+    const modifiedData = klona(data);
+    let totalRestored = 0;
+
+    for (const sheetId in modifiedData) {
+      const sheet = modifiedData[sheetId];
+      if (!sheet?.name || !sheet.content || !Array.isArray(sheet.content)) continue;
+
+      const result = cellLock.applyLocks(sheet.name, sheet.content);
+      if (result.modified) {
+        totalRestored += result.restored.length;
+        console.info(`[ACU] 表 "${sheet.name}" 应用了锁定保护`);
+      }
+    }
+
+    if (totalRestored > 0) {
+      console.info(`[ACU] 共恢复 ${totalRestored} 个被 AI 修改的锁定值`);
+    }
+
+    stagedData.value = modifiedData;
+    const processed = processToTableData(modifiedData);
     tables.value = processed;
     console.info('[ACU] 暂存数据已设置');
+
+    // 返回处理后的数据，供外部保存快照使用
+    return modifiedData;
   }
 
   /**

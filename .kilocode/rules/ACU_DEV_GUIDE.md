@@ -292,9 +292,221 @@ border: 1px solid var(--acu-border);
   // 移动端适配已由 .acu-modal 通用样式处理
 }
 ```
-#### 3.6 响应式布局切换
+#### 3.6 全局弹窗开发规范（重要）
+
+**核心原则**：所有弹窗都必须在 `App.vue` 中统一渲染，通过 `useUIStore` 管理状态。**禁止在子组件中使用嵌套弹窗或 Teleport**。
+
+---
+
+##### 3.6.1 新增弹窗的完整步骤
+
+**步骤 1：在 useUIStore.ts 中定义弹窗状态**
+
+```typescript
+// 1. 定义弹窗 Props 类型
+export interface MyDialogProps {
+  title: string;
+  data: SomeData | null;
+}
+
+// 2. 在 store 中添加状态
+const myDialog = reactive<{
+  visible: boolean;
+  props: MyDialogProps;
+}>({
+  visible: false,
+  props: {
+    title: '',
+    data: null,
+  },
+});
+
+// 3. 添加打开/关闭方法
+function openMyDialog(props: MyDialogProps): void {
+  myDialog.props = { ...props };
+  myDialog.visible = true;
+}
+
+function closeMyDialog(): void {
+  myDialog.visible = false;
+}
+
+// 4. 在 return 中导出
+return {
+  // ...其他
+  myDialog,
+  openMyDialog,
+  closeMyDialog,
+};
+```
+
+**步骤 2：在 App.vue 中添加弹窗组件**
+
+```vue
+<template>
+  <!-- 其他内容... -->
+
+  <!-- 新弹窗 -->
+  <MyDialog
+    v-model:visible="uiStore.myDialog.visible"
+    :title="uiStore.myDialog.props.title"
+    :data="uiStore.myDialog.props.data"
+    @close="uiStore.closeMyDialog"
+  />
+</template>
+
+<script setup lang="ts">
+import { MyDialog } from './components/dialogs';
+</script>
+```
+
+**步骤 3：在子组件中调用弹窗**
+
+```typescript
+// 在任意组件中
+const uiStore = useUIStore();
+
+function handleOpenDialog() {
+  uiStore.openMyDialog({
+    title: '标题',
+    data: someData,
+  });
+}
+```
+
+---
+
+##### 3.6.2 弹窗样式规范
+
+弹窗样式写在 `styles/overlays/dialogs.scss` 中，所有弹窗居中显示：
+
+```scss
+// 标准弹窗容器样式
+.acu-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;       // 居中
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.acu-modal {
+  background: var(--acu-bg-panel);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+```
+
+---
+
+##### 3.6.3 禁止的做法
+
+```vue
+<!-- ❌ 禁止：在子组件中直接渲染弹窗 -->
+<template>
+  <div class="my-component">
+    <MyDialog v-if="showDialog" />  <!-- 错误！ -->
+  </div>
+</template>
+
+<!-- ❌ 禁止：使用 Teleport 字符串选择器（只搜索 iframe 内部） -->
+<template>
+  <Teleport to="body">
+    <MyDialog />  <!-- 错误！to="body" 只搜索 iframe 的 body -->
+  </Teleport>
+</template>
+
+<!-- ❌ 禁止：在弹窗内部再打开另一个弹窗组件 -->
+<template>
+  <div class="acu-modal">
+    <NestedDialog v-if="showNested" />  <!-- 错误！ -->
+  </div>
+</template>
+```
+
+---
+
+##### 3.6.4 跨 iframe Teleport 正确写法（如确实需要）
+
+**问题**：本项目 Vue 运行在 iframe 内，但 UI 渲染到父窗口。`<Teleport to="body">` 传入字符串时，Vue 会在**当前 document（即 iframe）**中搜索 `body`，而不是父窗口。
+
+**解决方案**：传入实际 DOM 对象而非字符串选择器。
+
+```vue
+<script setup lang="ts">
+// ✅ 正确：获取父窗口 body 的 DOM 对象
+const parentBody = window.parent.document.body;
+</script>
+
+<template>
+  <!-- ✅ 正确：使用 :to 绑定 DOM 对象 -->
+  <Teleport :to="parentBody">
+    <div class="my-overlay">...</div>
+  </Teleport>
+</template>
+```
+
+**注意事项**：
+- 必须使用 `:to="parentBody"`（v-bind），不能用 `to="parentBody"`（字符串）
+- Teleport 内容脱离 `.acu-wrapper`，**不会继承主题类**
+- 需要手动添加主题类包裹：
+
+```vue
+<Teleport :to="parentBody">
+  <div :class="`acu-theme-${configStore.config.theme}`">
+    <MyDialog />
+  </div>
+</Teleport>
+```
+
+**推荐做法**：对于弹窗，优先使用全局弹窗管理（3.6.1），而非 Teleport。Teleport 适合非弹窗场景，如向父窗口插入悬浮工具栏。
+
+---
+
+##### 3.6.5 弹窗间切换
+
+如需从一个弹窗切换到另一个弹窗，在 store 中添加切换方法：
+
+```typescript
+function switchFromDialogAToDialogB(): void {
+  // 复制需要的参数
+  dialogB.props = {
+    ...dialogA.props,
+    // 额外参数
+  };
+  // 关闭 A，打开 B
+  dialogA.visible = false;
+  dialogB.visible = true;
+}
+```
+
+---
+
+##### 3.6.6 现有全局弹窗列表
+
+| 弹窗 | Store 状态 | 用途 |
+|------|------------|------|
+| SettingsDialog | `showSettingsDialog` (ref) | 设置 |
+| InputFloorDialog | `showInputFloorDialog` (ref) | 输入楼层 |
+| PurgeRangeDialog | `showPurgeRangeDialog` (ref) | 清除范围 |
+| ManualUpdateDialog | `showManualUpdateDialog` (ref) | 手动更新 |
+| HistoryDialog | `showHistoryDialog` (ref) | 历史记录 (DataTable) |
+| RowEditDialog | `uiStore.rowEditDialog` | 行编辑 (Dashboard) |
+| HistoryDialog | `uiStore.dashboardHistoryDialog` | 历史记录 (Dashboard) |
+
+#### 3.7 响应式布局切换
 使用 CSS @media (max-width: 768px) 媒体查询来实现响应式布局切换，不用v-if
-#### 3.7 按钮事件处理（重要）
+#### 3.8 按钮事件处理（重要）
 
 **问题**：弹窗内的按钮点击事件可能冒泡到 Cytoscape 等 Canvas 组件，导致意外行为（如界面变成球形）。
 
@@ -314,7 +526,7 @@ border: 1px solid var(--acu-border);
 - 覆盖层中的交互元素
 - 与 Canvas/WebGL 组件共存的 UI
 
-#### 3.8 检查清单
+#### 3.9 检查清单
 
 新增 UI 前请确认：
 - [ ] 所有颜色使用 `var(--acu-xxx)` 变量
@@ -323,6 +535,7 @@ border: 1px solid var(--acu-border);
 - [ ] 移动端适配
 - [ ] 支持主题切换（不同 `.acu-theme-xxx` 下样式正确，主题 class是在 .acu-wrapper 容器）
 - [ ] 弹窗按钮使用 `@click.stop` 阻止冒泡
+- [ ] **弹窗在 App.vue 中渲染，通过 useUIStore 管理状态**
 
 ---
 

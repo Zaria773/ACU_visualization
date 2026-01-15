@@ -8,6 +8,7 @@
  * - AdvancedPurgeDialog: 高级清除弹窗，支持按表格+楼层范围精确清除数据
  * - ManualUpdateDialog: 手动更新配置弹窗，用于配置和执行手动更新
  * - HistoryDialog: 历史记录弹窗，用于查看和恢复单元格历史值
+ * - RowEditDialog: 行编辑弹窗，用于在仪表盘中快速编辑单行数据
  * - NodeLabelDialog: 节点标签选择弹窗，用于选择显示的字符（复用于关系图和头像管理）
  * - AvatarManagerDialog: 头像管理弹窗，用于管理节点头像配置
  * - AvatarCropDialog: 头像裁剪弹窗，用于调整头像显示效果
@@ -21,4 +22,5 @@ export { default as InputFloorDialog } from './InputFloorDialog.vue';
 export { default as ManualUpdateDialog } from './ManualUpdateDialog.vue';
 export { default as NodeLabelDialog } from './NodeLabelDialog.vue';
 export { default as PurgeRangeDialog } from './PurgeRangeDialog.vue';
+export { default as RowEditDialog } from './RowEditDialog.vue';
 export { default as SettingsDialog } from './SettingsDialog.vue';

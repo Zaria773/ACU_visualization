@@ -75,6 +75,8 @@
           @row-click="handleRowClick"
           @show-relationship-graph="handleShowRelationshipGraph"
           @action="handleDashboardAction"
+          @height-drag-start="handleHeightDragStart"
+          @height-reset="handleHeightReset"
         />
 
         <!-- 选项面板视图 -->
@@ -152,7 +154,7 @@
     <!-- 手动更新配置弹窗 -->
     <ManualUpdateDialog v-model:visible="showManualUpdateDialog" />
 
-    <!-- 历史记录弹窗 -->
+    <!-- 历史记录弹窗 (DataTable 使用) -->
     <HistoryDialog
       v-model:visible="showHistoryDialog"
       :table-name="historyDialogData.tableName"
@@ -161,6 +163,28 @@
       :current-row-data="historyDialogData.currentRowData"
       :title-col-index="historyDialogData.titleColIndex"
       @apply="handleHistoryApply"
+    />
+
+    <!-- 行编辑弹窗 (Dashboard 使用) -->
+    <RowEditDialog
+      v-model:visible="uiStore.rowEditDialog.visible"
+      :table-name="uiStore.rowEditDialog.props.tableName"
+      :table-id="uiStore.rowEditDialog.props.tableId"
+      :row-index="uiStore.rowEditDialog.props.rowIndex"
+      :current-row-data="uiStore.rowEditDialog.props.currentRowData"
+      @close="uiStore.closeRowEditDialog"
+      @show-history="uiStore.switchFromRowEditToHistory"
+    />
+
+    <!-- 历史记录弹窗 (Dashboard 使用) -->
+    <HistoryDialog
+      v-model:visible="uiStore.dashboardHistoryDialog.visible"
+      :table-name="uiStore.dashboardHistoryDialog.props.tableName"
+      :table-id="uiStore.dashboardHistoryDialog.props.tableId"
+      :row-index="uiStore.dashboardHistoryDialog.props.rowIndex"
+      :current-row-data="uiStore.dashboardHistoryDialog.props.currentRowData"
+      :title-col-index="uiStore.dashboardHistoryDialog.props.titleColIndex"
+      @close="uiStore.closeDashboardHistoryDialog"
     />
 
     <!-- 全局 Toast 通知 -->
@@ -195,6 +219,7 @@ import {
   InputFloorDialog,
   ManualUpdateDialog,
   PurgeRangeDialog,
+  RowEditDialog,
   SettingsDialog,
 } from './components/dialogs';
 
@@ -674,8 +699,10 @@ function handleHeightReset() {
 async function loadData(): Promise<void> {
   const data = getTableData();
   if (data) {
-    dataStore.setStagedData(data);
-    dataStore.saveSnapshot(data);
+    // setStagedData 内部应用锁定保护并返回处理后的数据
+    const processedData = dataStore.setStagedData(data);
+    // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
+    dataStore.saveSnapshot(processedData);
 
     // 同步新表格到可见列表（确保新模板的表格能显示）
     const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
