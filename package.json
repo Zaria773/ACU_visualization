@@ -73,7 +73,12 @@
     "vue-style-loader": "^4.1.3",
     "webpack": "^5.104.1",
     "webpack-cli": "^6.0.1",
+<<<<<<< HEAD
     "webpack-obfuscator": "^3.6.0"
+=======
+    "webpack-obfuscator": "^3.6.0",
+    "yaml-loader": "^0.9.0"
+>>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   },
   "dependencies": {
     "@pixi/react": "8.0.0-beta.25",
@@ -83,8 +88,11 @@
     "@vueuse/shared": "^13.9.0",
     "async-wait-until": "^2.0.31",
     "compare-versions": "^6.1.1",
+<<<<<<< HEAD
     "cytoscape": "^3.33.1",
     "cytoscape-fcose": "^2.2.0",
+=======
+>>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
     "dedent": "^1.7.1",
     "gsap": "^3.14.2",
     "jquery": "^3.7.1",
