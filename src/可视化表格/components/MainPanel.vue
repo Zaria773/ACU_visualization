@@ -578,6 +578,45 @@ const windowConfig = useStorage<WindowConfig>('acu_win_config', {
 // 辅助函数 - 边界检测
 // ============================================================
 
+/** 检测是否为移动端/触摸设备 */
+function isMobileDevice(): boolean {
+  // 检测触摸能力
+  const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  // 检测用户代理
+  const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // 检测屏幕宽度（小于 768px 视为移动端）
+  const isSmallScreen = window.innerWidth < 768;
+
+  return hasTouch && (mobileUA || isSmallScreen);
+}
+
+/**
+ * 获取移动端安全底部边距
+ * 在移动端（特别是 iOS），屏幕底部区域容易触发原生手势（返回、Home 指示条等）
+ * 返回一个安全边距，防止导航栏被拖到这些区域
+ */
+function getMobileSafeBottomMargin(): number {
+  if (!isMobileDevice()) {
+    return 0;
+  }
+
+  // 检测 iOS 设备（有 Home 指示条的设备需要更大边距）
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // 检测是否是刘海屏/全面屏 iOS 设备（通过 CSS 环境变量）
+  const safeAreaBottom = parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || '0',
+    10,
+  );
+
+  if (isIOS) {
+    // iOS 设备：至少 60px，如果有安全区则使用安全区 + 额外边距
+    return Math.max(60, safeAreaBottom + 20);
+  }
+
+  // 其他移动设备：50px 安全边距
+  return 50;
+}
+
 /** 获取父窗口尺寸 */
 function getParentWindowSize() {
   return {
@@ -610,14 +649,18 @@ function validateAndFixWindowPosition() {
     }
   }
 
-  // 验证 bottom 位置
+  // 验证 bottom 位置（考虑移动端安全区域）
   if (typeof config.bottom === 'number') {
+    const safeBottomMargin = getMobileSafeBottomMargin();
+    const minBottom = safeBottomMargin; // 移动端不能低于安全边距
     const maxBottom = parentHeight - 50;
-    if (config.bottom < 0) {
-      newBottom = 0;
+
+    if (config.bottom < minBottom) {
+      newBottom = minBottom;
       needUpdate = true;
+      console.info(`[ACU MainPanel] 底部位置过低，已修正到安全区域: ${minBottom}px`);
     } else if (config.bottom > maxBottom) {
-      newBottom = Math.max(0, maxBottom);
+      newBottom = Math.max(minBottom, maxBottom);
       needUpdate = true;
     }
   }
@@ -729,13 +772,16 @@ function handleHeaderPointerDown(e: PointerEvent) {
       let newLeft = startLeft + dx;
       let newBottom = startBottom - dy;
 
-      // 边界限制
+      // 边界限制（考虑移动端安全区域）
       const parentWidth = window.parent?.innerWidth ?? window.innerWidth;
+      const safeBottomMargin = getMobileSafeBottomMargin();
       const maxLeft = parentWidth - 50;
+      const minBottom = safeBottomMargin; // 移动端底部安全边距
       const maxBottom = winH - 50;
+
       if (newLeft < -200) newLeft = -200;
       if (newLeft > maxLeft) newLeft = maxLeft;
-      if (newBottom < 0) newBottom = 0;
+      if (newBottom < minBottom) newBottom = minBottom;
       if (newBottom > maxBottom) newBottom = maxBottom;
 
       windowConfig.value.left = newLeft;
@@ -895,6 +941,7 @@ const startHeightDrag = (e: PointerEvent, handleEl: HTMLElement) => {
  * 重置高度为自适应
  *
  * 简洁方案：临时移除高度限制，让浏览器自然布局，然后获取 scrollHeight 作为理想高度。
+ * 关键：使用 requestAnimationFrame 确保移动端浏览器完成 DOM 重排后再读取 scrollHeight。
  */
 const resetHeight = () => {
   if (!dataAreaRef.value) return;
@@ -902,29 +949,36 @@ const resetHeight = () => {
   // 1. 恢复自动高度模式
   isManualHeight.value = false;
 
-  // 2. 计算最大允许高度
-  const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
-  const maxAllowed = parentHeight * 0.8;
-  const minHeight = 200;
-
-  // 3. 临时移除高度限制，让内容自然撑开
-  const originalHeight = dataAreaRef.value.style.height;
+  // 2. 临时移除高度限制，让内容自然撑开
   dataAreaRef.value.style.height = 'auto';
   dataAreaRef.value.style.maxHeight = 'none';
 
-  // 4. 获取自然高度（浏览器自动计算的完整高度）
-  const naturalHeight = dataAreaRef.value.scrollHeight;
+  // 3. 使用双重 requestAnimationFrame 确保浏览器完成布局重排
+  // 这在移动端尤为重要，因为单次 rAF 可能不足以等待完整渲染
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!dataAreaRef.value) return;
 
-  // 5. 计算最终高度：clamp(naturalHeight, minHeight, maxAllowed)
-  const finalHeight = Math.max(minHeight, Math.min(naturalHeight, maxAllowed));
+      // 4. 计算最大允许高度
+      const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
+      const maxAllowed = parentHeight * 0.8;
+      const minHeight = 200;
 
-  // 6. 应用高度
-  dataAreaRef.value.style.height = `${finalHeight}px`;
-  dataAreaRef.value.style.maxHeight = '';
-  panelHeight.value = finalHeight;
+      // 5. 获取自然高度（浏览器自动计算的完整高度）
+      const naturalHeight = dataAreaRef.value.scrollHeight;
 
-  console.info(`[ACU] 高度已重置: natural=${naturalHeight}, final=${finalHeight}, max=${maxAllowed}`);
-  emit('height-change', finalHeight);
+      // 6. 计算最终高度：clamp(naturalHeight, minHeight, maxAllowed)
+      const finalHeight = Math.max(minHeight, Math.min(naturalHeight, maxAllowed));
+
+      // 7. 应用高度
+      dataAreaRef.value.style.height = `${finalHeight}px`;
+      dataAreaRef.value.style.maxHeight = '';
+      panelHeight.value = finalHeight;
+
+      console.info(`[ACU] 高度已重置: natural=${naturalHeight}, final=${finalHeight}, max=${maxAllowed}`);
+      emit('height-change', finalHeight);
+    });
+  });
 };
 
 // ============================================================

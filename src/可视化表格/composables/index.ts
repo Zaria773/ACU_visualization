@@ -172,3 +172,9 @@ export { useCellLock } from './useCellLock';
 // ============================================
 export { getAvatarManager, useAvatarManager } from './useAvatarManager';
 export type { AvatarRecord, AvatarStats } from './useAvatarManager';
+
+// ============================================
+// 表格更新状态（仪表盘看板）
+// ============================================
+export { useTableUpdateStatus } from './useTableUpdateStatus';
+export type { DbGlobalSettings, TableUpdateStatus } from './useTableUpdateStatus';

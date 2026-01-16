@@ -16,7 +16,6 @@
 ## 核心约束
 
 ### 1. 样式规则（最重要）
-**禁止使用Teleport渲染到iframe body，本项目ui渲染到父窗口**
 **Vue `<style scoped>` 完全失效**，因为：
 - Vue 将样式注入到 iframe 的 `<head>`
 - 实际 DOM 渲染在 `window.parent.document`

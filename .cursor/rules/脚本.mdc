@@ -16,25 +16,6 @@ alwaysApply: false
 
 由于脚本运行在 iframe 中, 当需要在脚本中向酒馆页面挂载 vue 组件时, 你应该使用 jquery 来创建一个要挂载的位置, 将其添加到酒馆网页上, 并使用 `app.mount($app[0])` 来挂载.
 
-<<<<<<< HEAD
-## 脚本 iframe 样式与酒馆网页样式的区别
-
-由于脚本运行在 iframe 中, 项目中所使用的 style 仅会应用于 iframe 内而不会应用到整个酒馆网页. 因此, 当通过脚本向酒馆网页添加 DOM 时 (无论是通过 jquery 添加, 还是通过 vue 挂载), 你都需要将样式复制到酒馆网页的 `<head>` 中. 为此, 你可以用 `src/util/script.ts` 中定义好了的工具函数:
-
-```typescript
-export function teleport_style() {
-  $(`<div>`)
-    .attr('script_id', getScriptId())
-    .append($(`head > style`, document).clone())
-    .appendTo('head');
-}
-
-export function deteleport_style() {
-  $(`head > div[script_id="${getScriptId()}"]`).remove();
-}
-```
-
-=======
 ## 向酒馆网页挂载 vue 组件时的样式问题
 
 由于脚本运行在 iframe 中, 脚本所设置的 style (包括 tailwindcss 产生的) 仅会在 iframe 内生效而不会应用到整个酒馆网页; 也就是说, 当我们用 jquery 创建了挂载位置, 并想将 vue 组件挂载到酒馆网页上时, 组件所需要的样式、所填写的 tailwindcss class 都无法生效.
@@ -97,7 +78,6 @@ $(() => {
 
 这种情况应该**优先使用无须自行复制样式的 tailwindcss class**; 否则, 如果有需要复制的样式, 则需要使用 `teleportStyle($app[0].contentDocument!.head)` 函数来复制样式.
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 ## 脚本设置
 
 如果需要为用户提供自定义设置, 可以使用脚本变量, 并用 `zod` 来定义设置的类型和默认值.

@@ -184,35 +184,21 @@
         </div>
       </div>
     </div>
-
-    <!-- 图片裁剪弹窗 -->
-    <AvatarCropDialog
-      v-if="showCropDialog"
-      :visible="showCropDialog"
-      :image-url="localAppearance.content || ''"
-      name="悬浮球图片"
-      :initial-offset-x="localAppearance.imageOffsetX ?? 50"
-      :initial-offset-y="localAppearance.imageOffsetY ?? 50"
-      :initial-scale="localAppearance.imageScale ?? 150"
-      @close="closeCropDialog"
-      @apply="applyCrop"
-      @upload="handleCropUpload"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
-import { DEFAULT_BALL_APPEARANCE, useBallAppearanceStore } from '../../stores';
+import { DEFAULT_BALL_APPEARANCE, useBallAppearanceStore, useUIStore } from '../../stores';
 import type { FloatingBallAppearance } from '../../types';
 import { compressImage, fileToBase64, hexToRgba } from '../../utils';
-import AvatarCropDialog from '../dialogs/AvatarCropDialog.vue';
 
 // ============================================================
 // Store
 // ============================================================
 
 const ballStore = useBallAppearanceStore();
+const uiStore = useUIStore();
 
 // ============================================================
 // 本地状态
@@ -226,9 +212,6 @@ const isPreviewNotify = ref(false);
 
 /** 图片上传 input ref */
 const imageInputRef = ref<HTMLInputElement>();
-
-/** 裁剪弹窗状态 */
-const showCropDialog = ref(false);
 
 // ============================================================
 // 同步到 Store
@@ -314,8 +297,8 @@ async function handleImageUpload(event: Event) {
     localAppearance.imageOffsetX = 50;
     localAppearance.imageOffsetY = 50;
     localAppearance.imageScale = 150;
-    // 上传后自动打开裁剪弹窗
-    showCropDialog.value = true;
+    // 上传后自动打开全局裁剪弹窗
+    openCropDialog();
   } catch (e) {
     console.error('[ACU] 图片上传失败:', e);
   }
@@ -325,41 +308,41 @@ async function handleImageUpload(event: Event) {
 }
 
 // ============================================================
-// 裁剪弹窗
+// 裁剪弹窗（使用全局弹窗）
 // ============================================================
 
 /** 打开裁剪弹窗 */
 function openCropDialog() {
   if (localAppearance.content) {
-    showCropDialog.value = true;
-  }
-}
-
-/** 关闭裁剪弹窗 */
-function closeCropDialog() {
-  showCropDialog.value = false;
-}
-
-/** 应用裁剪参数 */
-function applyCrop(data: { offsetX: number; offsetY: number; scale: number }) {
-  localAppearance.imageOffsetX = data.offsetX;
-  localAppearance.imageOffsetY = data.offsetY;
-  localAppearance.imageScale = data.scale;
-  closeCropDialog();
-}
-
-/** 从裁剪弹窗上传新图片 */
-async function handleCropUpload(file: File) {
-  try {
-    let base64 = await fileToBase64(file);
-    base64 = await compressImage(base64, 100, 0.8);
-    localAppearance.content = base64;
-    // 重置裁剪参数
-    localAppearance.imageOffsetX = 50;
-    localAppearance.imageOffsetY = 50;
-    localAppearance.imageScale = 150;
-  } catch (e) {
-    console.error('[ACU] 图片上传失败:', e);
+    uiStore.openAvatarCropDialog(
+      {
+        imageUrl: localAppearance.content,
+        name: '悬浮球图片',
+        initialOffsetX: localAppearance.imageOffsetX ?? 50,
+        initialOffsetY: localAppearance.imageOffsetY ?? 50,
+        initialScale: localAppearance.imageScale ?? 150,
+      },
+      {
+        onApply: (data: { offsetX: number; offsetY: number; scale: number }) => {
+          localAppearance.imageOffsetX = data.offsetX;
+          localAppearance.imageOffsetY = data.offsetY;
+          localAppearance.imageScale = data.scale;
+        },
+        onUpload: async (file: File) => {
+          try {
+            let base64 = await fileToBase64(file);
+            base64 = await compressImage(base64, 100, 0.8);
+            localAppearance.content = base64;
+            // 重置裁剪参数
+            localAppearance.imageOffsetX = 50;
+            localAppearance.imageOffsetY = 50;
+            localAppearance.imageScale = 150;
+          } catch (e) {
+            console.error('[ACU] 图片上传失败:', e);
+          }
+        },
+      },
+    );
   }
 }
 

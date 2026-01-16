@@ -4,8 +4,9 @@
  */
 
 import { useStorage } from '@vueuse/core';
-import type { BallPosition, TableRow } from '../types';
+import type { BallPosition, TableRow, DashboardWidgetConfig } from '../types';
 import { useDataStore } from './useDataStore';
+import { shallowRef } from 'vue';
 
 // ============================================================
 // 弹窗 Props 类型定义
@@ -27,6 +28,36 @@ export interface HistoryDialogProps {
   currentRowData: TableRow | null;
   titleColIndex?: number;
 }
+
+/** 头像裁剪弹窗 Props */
+export interface AvatarCropDialogProps {
+  imageUrl: string;
+  name: string;
+  initialOffsetX?: number;
+  initialOffsetY?: number;
+  initialScale?: number;
+}
+
+/** 头像裁剪弹窗回调 */
+export interface AvatarCropDialogCallbacks {
+  onApply: (data: { offsetX: number; offsetY: number; scale: number }) => void;
+  onUpload?: (file: File) => void;
+}
+
+/** 组件设置弹窗 Props */
+export interface WidgetSettingsDialogProps {
+  widgetId: string;
+  widgetConfig: DashboardWidgetConfig | null;
+  tableHeaders: string[];
+}
+
+/** 快捷按钮配置弹窗 Props */
+export interface WidgetActionsDialogProps {
+  widgetId: string;
+  currentActions: string[];
+}
+
+// 注意：看板管理弹窗直接通过组件 props 传递 tables 数据，不需要在 store 中定义 Props 接口
 
 /** 存储键常量 (保持与原代码兼容) */
 export const STORAGE_KEYS = {
@@ -138,6 +169,19 @@ export const useUIStore = defineStore('acu-ui', () => {
     },
   });
 
+  /** 组件设置弹窗状态 */
+  const widgetSettingsDialog = reactive<{
+    visible: boolean;
+    props: WidgetSettingsDialogProps;
+  }>({
+    visible: false,
+    props: {
+      widgetId: '',
+      widgetConfig: null,
+      tableHeaders: [],
+    },
+  });
+
   /** 历史记录弹窗状态（Dashboard 专用） */
   const dashboardHistoryDialog = reactive<{
     visible: boolean;
@@ -150,6 +194,46 @@ export const useUIStore = defineStore('acu-ui', () => {
       rowIndex: 0,
       currentRowData: null,
       titleColIndex: 0,
+    },
+  });
+
+  /** 头像裁剪弹窗状态 */
+  const avatarCropDialog = reactive<{
+    visible: boolean;
+    props: AvatarCropDialogProps;
+  }>({
+    visible: false,
+    props: {
+      imageUrl: '',
+      name: '',
+      initialOffsetX: 50,
+      initialOffsetY: 50,
+      initialScale: 150,
+    },
+  });
+
+  /** 头像裁剪弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const avatarCropOnApply = shallowRef<((data: { offsetX: number; offsetY: number; scale: number }) => void) | null>(
+    null,
+  );
+  const avatarCropOnUpload = shallowRef<((file: File) => void) | null>(null);
+
+  /** 看板管理弹窗状态 */
+  const widgetManagerDialog = reactive<{
+    visible: boolean;
+  }>({
+    visible: false,
+  });
+
+  /** 快捷按钮配置弹窗状态 */
+  const widgetActionsDialog = reactive<{
+    visible: boolean;
+    props: WidgetActionsDialogProps;
+  }>({
+    visible: false,
+    props: {
+      widgetId: '',
+      currentActions: [],
     },
   });
 
@@ -570,6 +654,22 @@ export const useUIStore = defineStore('acu-ui', () => {
   }
 
   /**
+   * 打开组件设置弹窗
+   * @param props 弹窗参数
+   */
+  function openWidgetSettingsDialog(props: WidgetSettingsDialogProps): void {
+    widgetSettingsDialog.props = { ...props };
+    widgetSettingsDialog.visible = true;
+  }
+
+  /**
+   * 关闭组件设置弹窗
+   */
+  function closeWidgetSettingsDialog(): void {
+    widgetSettingsDialog.visible = false;
+  }
+
+  /**
    * 打开历史记录弹窗（Dashboard 专用）
    * @param props 弹窗参数
    */
@@ -600,6 +700,85 @@ export const useUIStore = defineStore('acu-ui', () => {
     // 关闭行编辑弹窗，打开历史记录弹窗
     rowEditDialog.visible = false;
     dashboardHistoryDialog.visible = true;
+  }
+
+  /**
+   * 打开头像裁剪弹窗
+   * @param props 弹窗参数
+   * @param callbacks 回调函数
+   */
+  function openAvatarCropDialog(props: AvatarCropDialogProps, callbacks: AvatarCropDialogCallbacks): void {
+    avatarCropDialog.props = {
+      imageUrl: props.imageUrl,
+      name: props.name,
+      initialOffsetX: props.initialOffsetX ?? 50,
+      initialOffsetY: props.initialOffsetY ?? 50,
+      initialScale: props.initialScale ?? 150,
+    };
+    avatarCropOnApply.value = callbacks.onApply;
+    avatarCropOnUpload.value = callbacks.onUpload ?? null;
+    avatarCropDialog.visible = true;
+  }
+
+  /**
+   * 关闭头像裁剪弹窗
+   */
+  function closeAvatarCropDialog(): void {
+    avatarCropDialog.visible = false;
+    // 清理回调
+    avatarCropOnApply.value = null;
+    avatarCropOnUpload.value = null;
+  }
+
+  /**
+   * 处理头像裁剪应用
+   * @param data 裁剪参数
+   */
+  function handleAvatarCropApply(data: { offsetX: number; offsetY: number; scale: number }): void {
+    if (avatarCropOnApply.value) {
+      avatarCropOnApply.value(data);
+    }
+    closeAvatarCropDialog();
+  }
+
+  /**
+   * 处理头像裁剪上传
+   * @param file 上传的文件
+   */
+  function handleAvatarCropUpload(file: File): void {
+    if (avatarCropOnUpload.value) {
+      avatarCropOnUpload.value(file);
+    }
+  }
+
+  /**
+   * 打开看板管理弹窗
+   */
+  function openWidgetManagerDialog(): void {
+    widgetManagerDialog.visible = true;
+  }
+
+  /**
+   * 关闭看板管理弹窗
+   */
+  function closeWidgetManagerDialog(): void {
+    widgetManagerDialog.visible = false;
+  }
+
+  /**
+   * 打开快捷按钮配置弹窗
+   * @param props 弹窗参数
+   */
+  function openWidgetActionsDialog(props: WidgetActionsDialogProps): void {
+    widgetActionsDialog.props = { ...props };
+    widgetActionsDialog.visible = true;
+  }
+
+  /**
+   * 关闭快捷按钮配置弹窗
+   */
+  function closeWidgetActionsDialog(): void {
+    widgetActionsDialog.visible = false;
   }
 
   /**
@@ -733,13 +912,27 @@ export const useUIStore = defineStore('acu-ui', () => {
 
     // 弹窗状态
     rowEditDialog,
+    widgetSettingsDialog,
     dashboardHistoryDialog,
+    avatarCropDialog,
+    widgetManagerDialog,
+    widgetActionsDialog,
 
     // 弹窗 Actions
     openRowEditDialog,
     closeRowEditDialog,
+    openWidgetSettingsDialog,
+    closeWidgetSettingsDialog,
     openDashboardHistoryDialog,
     closeDashboardHistoryDialog,
     switchFromRowEditToHistory,
+    openAvatarCropDialog,
+    closeAvatarCropDialog,
+    handleAvatarCropApply,
+    handleAvatarCropUpload,
+    openWidgetManagerDialog,
+    closeWidgetManagerDialog,
+    openWidgetActionsDialog,
+    closeWidgetActionsDialog,
   };
 });

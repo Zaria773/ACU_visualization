@@ -8,6 +8,9 @@
       </div>
       <div class="acu-header-actions">
         <span class="acu-options-count">{{ optionTables.length }} 个选项表</span>
+        <button class="acu-toolbar-btn acu-close-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
 
@@ -64,6 +67,7 @@
 import { computed } from 'vue';
 import { useCoreActions } from '../composables/useCoreActions';
 import { toast } from '../composables/useToast';
+import { TAB_DASHBOARD, useUIStore } from '../stores';
 import type { ProcessedTable } from '../types';
 
 interface OptionItem {
@@ -86,10 +90,11 @@ const emit = defineEmits<{
 }>();
 
 // ============================================================
-// Composables
+// Composables & Stores
 // ============================================================
 
 const { setInput } = useCoreActions();
+const uiStore = useUIStore();
 
 // ============================================================
 // 计算属性
@@ -215,5 +220,10 @@ function handleOptionMouseDown(event: MouseEvent): void {
 function handleOptionMouseUp(event: MouseEvent): void {
   const target = event.currentTarget as HTMLElement;
   target.style.transform = 'translateY(0)';
+}
+
+/** 返回仪表盘 */
+function handleBackToDashboard(): void {
+  uiStore.setActiveTab(TAB_DASHBOARD);
 }
 </script>

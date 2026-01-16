@@ -2,6 +2,10 @@
   <div class="acu-relationship-graph">
     <!-- 工具栏 -->
     <div class="acu-graph-toolbar">
+      <button class="acu-graph-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <span class="acu-toolbar-divider"></span>
       <button class="acu-graph-btn" title="放大" @click="zoomIn">
         <i class="fas fa-plus"></i>
       </button>
@@ -127,7 +131,7 @@ import nodeHtmlLabel from 'cytoscape-node-html-label';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { useAvatarManager } from '../composables/useAvatarManager';
-import { useConfigStore } from '../stores/useConfigStore';
+import { TAB_DASHBOARD, useConfigStore, useUIStore } from '../stores';
 import type { ProcessedTable } from '../types';
 import { getCore, getRelationLegend, parseEmbeddedRelationships, parseRelationshipTable } from '../utils';
 import { AvatarManagerDialog } from './dialogs';
@@ -138,8 +142,9 @@ cytoscape.use(fcose);
 // 注册 node-html-label 扩展（用于 HTML 渲染节点头像）
 nodeHtmlLabel(cytoscape);
 
-// 配置 Store
+// Stores
 const configStore = useConfigStore();
+const uiStore = useUIStore();
 
 // 头像管理
 const avatarManager = useAvatarManager();
@@ -391,6 +396,15 @@ const parsedData = computed(() => {
 const hasData = computed(() => {
   return parsedData.value.nodeCount > 0;
 });
+
+// ============================================================
+// 导航操作
+// ============================================================
+
+/** 返回仪表盘 */
+function handleBackToDashboard() {
+  uiStore.setActiveTab(TAB_DASHBOARD);
+}
 
 // ============================================================
 // 布局配置

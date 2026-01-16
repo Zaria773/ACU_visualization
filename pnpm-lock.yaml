@@ -29,15 +29,12 @@ importers:
       compare-versions:
         specifier: ^6.1.1
         version: 6.1.1
-<<<<<<< HEAD
       cytoscape:
         specifier: ^3.33.1
         version: 3.33.1
       cytoscape-fcose:
         specifier: ^2.2.0
         version: 2.2.0(cytoscape@3.33.1)
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
       dedent:
         specifier: ^1.7.1
         version: 1.7.1
@@ -273,12 +270,9 @@ importers:
       webpack-obfuscator:
         specifier: ^3.6.0
         version: 3.6.0(javascript-obfuscator@4.2.2)(webpack@5.104.1)
-<<<<<<< HEAD
-=======
       yaml-loader:
         specifier: ^0.9.0
         version: 0.9.0
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
 packages:
 
@@ -477,60 +471,42 @@ packages:
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-linux-arm-musl@2.5.4':
     resolution: {integrity: sha512-kGO8RPvVrcAotV4QcWh8kZuHr9bXi9a3bSZw7kFarYR0+fGliU7hd/zevhjw8fnvIKG3J9EO5G6sXNGCSNMYPQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-linux-arm64-glibc@2.5.4':
     resolution: {integrity: sha512-KU75aooXhqGFY2W5/p8DYYHt4hrjHZod8AhcGAmhzPn/etTa+lYCDB2b1sJy3sWJ8ahFVTdy+EbqSBvMx3iFlw==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-linux-arm64-musl@2.5.4':
     resolution: {integrity: sha512-Qx8uNiIekVutnzbVdrgSanM+cbpDD3boB1f8vMtnuG5Zau4/bdDbXyKwIn0ToqFhIuob73bcxV9NwRm04/hzHQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-linux-x64-glibc@2.5.4':
     resolution: {integrity: sha512-UYBQvhYmgAv61LNUn24qGQdjtycFBKSK3EXr72DbJqX9aaLbtCOO8+1SkKhD/GNiJ97ExgcHBrukcYhVjrnogA==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-linux-x64-musl@2.5.4':
     resolution: {integrity: sha512-YoRWCVgxv8akZrMhdyVi6/TyoeeMkQ0PGGOf2E4omODrvd1wxniXP+DBynKoHryStks7l+fDAMUBRzqNHrVOpg==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@parcel/watcher-win32-arm64@2.5.4':
     resolution: {integrity: sha512-iby+D/YNXWkiQNYcIhg8P5hSjzXEHaQrk2SLrWOUD7VeC4Ohu0WQvmV+HDJokZVJ2UjJ4AGXW3bx7Lls9Ln4TQ==}
@@ -611,40 +587,28 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@tailwindcss/oxide-linux-arm64-musl@4.1.18':
     resolution: {integrity: sha512-1px92582HkPQlaaCkdRcio71p8bc8i/ap5807tPRDK/uw953cauQBT8c5tVGkOwrHMfc2Yh6UuxaH4vtTjGvHg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@tailwindcss/oxide-linux-x64-gnu@4.1.18':
     resolution: {integrity: sha512-v3gyT0ivkfBLoZGF9LyHmts0Isc8jHZyVcbzio6Wpzifg/+5ZJpDiRiUhDLkcr7f/r38SWNe7ucxmGW3j3Kb/g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@tailwindcss/oxide-linux-x64-musl@4.1.18':
     resolution: {integrity: sha512-bhJ2y2OQNlcRwwgOAGMY0xTFStt4/wyU6pvI6LSuZpRgKQwxTec0/3Scu91O8ir7qCR3AuepQKLU/kX99FouqQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@tailwindcss/oxide-wasm32-wasi@4.1.18':
     resolution: {integrity: sha512-LffYTvPjODiP6PT16oNeUQJzNVyJl1cjIebq/rWWBF+3eDst5JGEFSc5cWxyRCJ0Mxl+KyIkqRxk1XPEs9x8TA==}
@@ -902,73 +866,49 @@ packages:
     resolution: {integrity: sha512-34gw7PjDGB9JgePJEmhEqBhWvCiiWCuXsL9hYphDF7crW7UgI05gyBAi6MF58uGcMOiOqSJ2ybEeCvHcq0BCmQ==}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-arm64-musl@1.11.1':
     resolution: {integrity: sha512-RyMIx6Uf53hhOtJDIamSbTskA99sPHS96wxVE/bJtePJJtpdKGXO1wY90oRdXuYOGOTuqjT8ACccMc4K6QmT3w==}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-ppc64-gnu@1.11.1':
     resolution: {integrity: sha512-D8Vae74A4/a+mZH0FbOkFJL9DSK2R6TFPC9M+jCWYia/q2einCubX10pecpDiTmkJVUH+y8K3BZClycD8nCShA==}
     cpu: [ppc64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-riscv64-gnu@1.11.1':
     resolution: {integrity: sha512-frxL4OrzOWVVsOc96+V3aqTIQl1O2TjgExV4EKgRY09AJ9leZpEg8Ak9phadbuX0BA4k8U5qtvMSQQGGmaJqcQ==}
     cpu: [riscv64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-riscv64-musl@1.11.1':
     resolution: {integrity: sha512-mJ5vuDaIZ+l/acv01sHoXfpnyrNKOk/3aDoEdLO/Xtn9HuZlDD6jKxHlkN8ZhWyLJsRBxfv9GYM2utQ1SChKew==}
     cpu: [riscv64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-s390x-gnu@1.11.1':
     resolution: {integrity: sha512-kELo8ebBVtb9sA7rMe1Cph4QHreByhaZ2QEADd9NzIQsYNQpt9UkM9iqr2lhGr5afh885d/cB5QeTXSbZHTYPg==}
     cpu: [s390x]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-x64-gnu@1.11.1':
     resolution: {integrity: sha512-C3ZAHugKgovV5YvAMsxhq0gtXuwESUKc5MhEtjBpLoHPLYM+iuwSj3lflFwK3DPm68660rZ7G8BMcwSro7hD5w==}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-linux-x64-musl@1.11.1':
     resolution: {integrity: sha512-rV0YSoyhK2nZ4vEswT/QwqzqQXw5I6CjoaYMOX0TqBlWhojUf8P94mvI7nuJTeaCkkds3QE4+zS8Ko+GdXuZtA==}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   '@unrs/resolver-binding-wasm32-wasi@1.11.1':
     resolution: {integrity: sha512-5u4RkfxJm+Ng7IWgkzi3qrFOvLvQYnPBmjmZQ8+szTK/b31fQCnleNl1GgEt7nIsZRIf5PLhPwT0WM+q45x/UQ==}
@@ -1556,12 +1496,9 @@ packages:
     resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
     engines: {node: '>= 0.10'}
 
-<<<<<<< HEAD
   cose-base@2.2.0:
     resolution: {integrity: sha512-AzlgcsCbUMymkADOJtQm3wO9S3ltPfYOFD5033keQn9NJzIbtnZj+UdBJe7DYml/8TdbtHJW3j58SOnKhWY/5g==}
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   cosmiconfig@9.0.0:
     resolution: {integrity: sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg==}
     engines: {node: '>=14'}
@@ -1645,7 +1582,6 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
-<<<<<<< HEAD
   cytoscape-fcose@2.2.0:
     resolution: {integrity: sha512-ki1/VuRIHFCzxWNrsshHYPs6L7TvLu3DL+TyIGEsRcvVERmxokbf5Gdk7mFxZnTdiGtnA4cfSmjZJMviqSuZrQ==}
     peerDependencies:
@@ -1655,8 +1591,6 @@ packages:
     resolution: {integrity: sha512-iJc4TwyANnOGR1OmWhsS9ayRS3s+XQ185FmuHObThD+5AeJCakAAbWv8KimMTt08xCCLNgneQwFp+JRJOr9qGQ==}
     engines: {node: '>=0.10'}
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   data-view-buffer@1.0.2:
     resolution: {integrity: sha512-EmKO5V3OLXh1rtK2wgXRansaK1/mtVdTUEiEI0W8RkvgT05kfxaH29PliLnpLP73yYO6142Q72QNa8Wx/A5CqQ==}
     engines: {node: '>= 0.4'}
@@ -2543,12 +2477,9 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-<<<<<<< HEAD
-=======
   javascript-stringify@2.1.0:
     resolution: {integrity: sha512-JVAfqNPTvNq3sB/VHQJAFxN/sPgKnsKrCwyRt15zwNCdrMMJDdcEOdubuy+DuJYYdm0ox1J4uzEuYKkN+9yhVg==}
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   jest-util@29.7.0:
     resolution: {integrity: sha512-z6EbKajIpqGKU56y5KBUgy1dt1ihhQJgWzUlZHArA/+X2ad7Cb5iF+AK1EWVL/Bo7Rz9uurpqw6SiBCefUbCGA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -2633,12 +2564,9 @@ packages:
     resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
     engines: {node: '>= 8'}
 
-<<<<<<< HEAD
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   levn@0.3.0:
     resolution: {integrity: sha512-0OO4y2iOHix2W6ujICbKIaEQXvFQHue65vUG3pb5EUomzPI90z9hsA1VsO/dbIIpC53J8gxM9Q4Oho0jrCM/yA==}
     engines: {node: '>= 0.8.0'}
@@ -2685,40 +2613,28 @@ packages:
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   lightningcss-linux-arm64-musl@1.30.2:
     resolution: {integrity: sha512-5Vh9dGeblpTxWHpOx8iauV02popZDsCYMPIgiuw97OJ5uaDsL86cnqSFs5LZkG3ghHoX5isLgWzMs+eD1YzrnA==}
     engines: {node: '>= 12.0.0'}
     cpu: [arm64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   lightningcss-linux-x64-gnu@1.30.2:
     resolution: {integrity: sha512-Cfd46gdmj1vQ+lR6VRTTadNHu6ALuw2pKR9lYq4FnhvgBc4zWY1EtZcAc6EffShbb1MFrIPfLDXD6Xprbnni4w==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [glibc]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   lightningcss-linux-x64-musl@1.30.2:
     resolution: {integrity: sha512-XJaLUUFXb6/QG2lGIW6aIk6jKdtjtcffUT0NKvIqhSBY3hh9Ch+1LCeH80dR9q9LBjG3ewbDjnumefsLsP6aiA==}
     engines: {node: '>= 12.0.0'}
     cpu: [x64]
     os: [linux]
-<<<<<<< HEAD
     libc: [musl]
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
 
   lightningcss-win32-arm64-msvc@1.30.2:
     resolution: {integrity: sha512-FZn+vaj7zLv//D/192WFFVA0RgHawIcHqLX9xuWiQt7P0PtdFEVaxgF9rjM/IRYHQXNnk61/H/gb2Ei+kUQ4xQ==}
@@ -3325,7 +3241,6 @@ packages:
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
     deprecated: |-
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
-
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
   quansync@0.2.11:
@@ -4133,13 +4048,10 @@ packages:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
 
-<<<<<<< HEAD
-=======
   yaml-loader@0.9.0:
     resolution: {integrity: sha512-N0bPfDR42qCruELfmpF6Q8XnDu1elTULGjvVn7u6rsfDa8WhlmJbjXQRh+x5TGmpOqw8R9qfiUgc3aKP+8Hd4w==}
     engines: {node: '>= 20'}
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   yaml@2.8.2:
     resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
     engines: {node: '>= 14.6'}
@@ -5411,13 +5323,10 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-<<<<<<< HEAD
   cose-base@2.2.0:
     dependencies:
       layout-base: 2.0.1
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   cosmiconfig@9.0.0(typescript@6.0.0-dev.20250807):
     dependencies:
       env-paths: 2.2.1
@@ -5512,7 +5421,6 @@ snapshots:
 
   csstype@3.2.3: {}
 
-<<<<<<< HEAD
   cytoscape-fcose@2.2.0(cytoscape@3.33.1):
     dependencies:
       cose-base: 2.2.0
@@ -5520,8 +5428,6 @@ snapshots:
 
   cytoscape@3.33.1: {}
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   data-view-buffer@1.0.2:
     dependencies:
       call-bound: 1.0.4
@@ -6542,11 +6448,8 @@ snapshots:
       stringz: 2.1.0
       tslib: 2.8.1
 
-<<<<<<< HEAD
-=======
   javascript-stringify@2.1.0: {}
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
@@ -6624,11 +6527,8 @@ snapshots:
 
   klona@2.0.6: {}
 
-<<<<<<< HEAD
   layout-base@2.0.1: {}
 
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   levn@0.3.0:
     dependencies:
       prelude-ls: 1.1.2
@@ -8337,14 +8237,11 @@ snapshots:
 
   y18n@5.0.8: {}
 
-<<<<<<< HEAD
-=======
   yaml-loader@0.9.0:
     dependencies:
       javascript-stringify: 2.1.0
       yaml: 2.8.2
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   yaml@2.8.2: {}
 
   yargs-parser@21.1.1: {}

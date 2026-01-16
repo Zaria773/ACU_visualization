@@ -149,6 +149,9 @@
     &:hover {
       transform: scale(1.2);
     }
+
+    // 防御酒馆美化的 filter: invert(1)
+    filter: none !important;
   }
 
   &::-moz-range-thumb {
@@ -158,6 +161,8 @@
     border-radius: 50%;
     border: none;
     cursor: pointer;
+    // 防御酒馆美化的 filter: invert(1)
+    filter: none !important;
   }
 }
 

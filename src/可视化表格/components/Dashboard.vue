@@ -17,11 +17,8 @@
       <div class="acu-dash-header-actions">
         <!-- 编辑模式按钮组 -->
         <template v-if="isEditing">
-          <button class="acu-toolbar-btn" title="添加看板" @click.stop="showAddWidgetDialog = true">
-            <i class="fas fa-plus"></i>
-          </button>
-          <button class="acu-toolbar-btn" title="调整顺序" @click.stop="showSortDialog = true">
-            <i class="fas fa-sort"></i>
+          <button class="acu-toolbar-btn" title="管理看板" @click.stop="openWidgetManager">
+            <i class="fas fa-cog"></i>
           </button>
           <button class="acu-toolbar-btn acu-btn-primary" title="完成编辑" @click.stop="exitEditMode">
             <i class="fas fa-check"></i>
@@ -64,6 +61,7 @@
         :table-data="getTableById(widget.tableId)"
         :is-editing="isEditing"
         :diff-map="diffMap"
+        :all-tables="availableTables"
         :class="{
           'acu-dash-widget-dragging': draggingWidgetId === widget.id,
           'acu-dash-widget-drop-target': dropTargetId === widget.id,
@@ -84,37 +82,10 @@
       <div v-if="enabledWidgets.length === 0" class="acu-dash-empty-state">
         <i class="fas fa-layer-group"></i>
         <p>还没有配置任何看板</p>
-        <button class="acu-dash-add-first-btn" @click.stop="showAddWidgetDialog = true">
+        <button class="acu-dash-add-first-btn" @click.stop="openWidgetManager">
           <i class="fas fa-plus"></i>
           添加第一个看板
         </button>
-      </div>
-    </div>
-
-    <!-- 添加组件弹窗 (不使用 Teleport，因为 Vue 应用已挂载到父窗口) -->
-    <div v-if="showAddWidgetDialog" class="acu-modal-container" @click.self="showAddWidgetDialog = false">
-      <div class="acu-modal acu-add-widget-modal">
-        <div class="acu-modal-header">
-          <span class="acu-modal-title">添加看板</span>
-          <button class="acu-close-pill" @click.stop="showAddWidgetDialog = false">关闭</button>
-        </div>
-        <div class="acu-modal-body">
-          <div class="acu-add-widget-hint">选择要添加到仪表盘的表格：</div>
-          <div class="acu-add-widget-list">
-            <div
-              v-for="table in availableTables"
-              :key="table.id"
-              class="acu-add-widget-item"
-              :class="{ 'acu-add-widget-item-added': isTableAdded(table.id) }"
-              @click.stop="handleAddWidget(table.id)"
-            >
-              <i :class="['fas', getTableIcon(table.id)]"></i>
-              <span class="acu-add-widget-name">{{ table.name }}</span>
-              <span v-if="isTableAdded(table.id)" class="acu-add-widget-badge">已添加</span>
-              <span v-else class="acu-add-widget-count">{{ table.rows.length }} 行</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -141,9 +112,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 排序弹窗 -->
-    <DashboardSortDialog v-if="showSortDialog" :tables="tables" @close="showSortDialog = false" />
   </div>
 </template>
 
@@ -160,7 +128,6 @@ import { useUIStore } from '../stores/useUIStore';
 import type { ProcessedTable, TableRow, WidgetActionId } from '../types';
 import { TABLE_KEYWORD_RULES, WIDGET_ACTIONS } from '../types';
 import { DashboardWidget } from './dashboard';
-import DashboardSortDialog from './dialogs/DashboardSortDialog.vue';
 
 interface Props {
   /** 所有表格数据 */
@@ -192,12 +159,6 @@ const uiStore = useUIStore();
 
 /** 是否处于编辑模式 */
 const isEditing = ref(false);
-
-/** 是否显示添加组件弹窗 */
-const showAddWidgetDialog = ref(false);
-
-/** 是否显示排序弹窗 */
-const showSortDialog = ref(false);
 
 /** 搜索关键词 */
 const searchTerm = ref('');
@@ -296,7 +257,8 @@ function autoAddDefaultWidgets(): void {
     // 尝试匹配模板
     for (const [, keywords] of Object.entries(TABLE_KEYWORD_RULES)) {
       if (keywords.some(k => table.id.toLowerCase().includes(k.toLowerCase()) || table.name.includes(k))) {
-        dashboardStore.addWidget(table.id);
+        // 传入表名以确保标题正确显示
+        dashboardStore.addWidget(table.id, table.name);
         break;
       }
     }
@@ -318,13 +280,45 @@ function exitEditMode(): void {
 }
 
 // ============================================================
+// 方法 - 弹窗
+// ============================================================
+
+/** 打开看板管理弹窗 */
+function openWidgetManager(): void {
+  uiStore.openWidgetManagerDialog(props.tables);
+}
+
+// ============================================================
 // 方法 - 组件操作
 // ============================================================
 
-/** 添加组件 */
+/** 切换表格组件（已添加时移除，未添加时添加） */
 function handleAddWidget(tableId: string): void {
-  if (isTableAdded(tableId)) return;
-  dashboardStore.addWidget(tableId);
+  if (isTableAdded(tableId)) {
+    // 已添加时移除
+    const widget = dashboardStore.findWidgetByTableId(tableId);
+    if (widget) {
+      dashboardStore.removeWidget(widget.id);
+    }
+  } else {
+    // 未添加时添加
+    const table = props.tables.find(t => t.id === tableId);
+    dashboardStore.addWidget(tableId, table?.name);
+  }
+}
+
+/** 检查是否已添加特殊组件 */
+function hasSpecialWidget(widgetType: 'updateStatus' | 'optionsPanel'): boolean {
+  return dashboardStore.hasSpecialWidget(widgetType);
+}
+
+/** 切换特殊组件（已添加时移除，未添加时添加） */
+function handleAddSpecialWidget(widgetType: 'updateStatus' | 'optionsPanel'): void {
+  if (hasSpecialWidget(widgetType)) {
+    dashboardStore.removeSpecialWidget(widgetType);
+  } else {
+    dashboardStore.addSpecialWidget(widgetType);
+  }
 }
 
 /** 移除组件 */

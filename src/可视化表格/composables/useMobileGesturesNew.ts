@@ -422,14 +422,34 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       const isShortCard = scrollHeight <= clientHeight + 2;
 
       // ============================================================
-      // 【修复1】短卡片特殊处理：无需方向锁定，只要纵向意图明显就检测手势
-      // 短卡片没有内部滚动冲突，可以直接判断手势意图
+      // 【修复】短卡片也使用方向锁定机制
+      // 问题：之前短卡片每次 touchmove 都重新判断方向，导致手指微小偏移时手势不稳定
+      // 解决：短卡片也使用方向锁定，一旦锁定纵向就不再改变
       // ============================================================
       if (isShortCard) {
-        // 短卡片：只要纵向滑动意图明显（|deltaY| >= |deltaX|）就检测手势
-        const isVerticalIntent = Math.abs(deltaY) >= Math.abs(deltaX);
+        // 【方向锁定】：滑动超过阈值后锁定方向（与长卡片一致）
+        if (
+          !directionLocked.value &&
+          (Math.abs(deltaX) > DIRECTION_LOCK_THRESHOLD || Math.abs(deltaY) > DIRECTION_LOCK_THRESHOLD)
+        ) {
+          directionLocked.value = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+          console.info('[ACU Card] 短卡片方向锁定为:', directionLocked.value);
+        }
 
-        if (isVerticalIntent && Math.abs(deltaY) > 5) {
+        // 如果锁定为横向，处理父容器滚动
+        if (directionLocked.value === 'horizontal') {
+          if (!gestureLocked.value) {
+            gestureType.value = null;
+          }
+          // 手动滚动父容器
+          if (parentScrollContainer.value) {
+            parentScrollContainer.value.scrollLeft = parentScrollStart.value - deltaX;
+          }
+          return; // 不触发自定义手势
+        }
+
+        // 如果锁定为纵向，或者还没锁定但是纵向意图明显
+        if (directionLocked.value === 'vertical' || (directionLocked.value === null && Math.abs(deltaY) > 5)) {
           // 阻止默认行为
           if (e.cancelable) e.preventDefault();
           e.stopPropagation();
@@ -438,7 +458,7 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
           const displayHeight = Math.abs(deltaY) * 0.6;
           const newGestureType = deltaY > 0 ? 'insert' : 'delete';
 
-          // 【修复2】手势锁定：一旦进入手势状态就锁定，防止抽搐
+          // 【手势锁定】：一旦进入手势状态就锁定，防止抽搐
           if (displayHeight > 30) {
             if (!gestureLocked.value) {
               gestureType.value = newGestureType;
@@ -449,15 +469,8 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
             // 未达到阈值且未锁定，清空
             gestureType.value = null;
           }
-          // 如果已锁定但高度降低，保持手势状态（视觉反馈高度会自然变化）
-        } else if (!gestureLocked.value) {
-          // 横向滑动意图，且未锁定手势
-          gestureType.value = null;
-          // 手动滚动父容器
-          if (parentScrollContainer.value && Math.abs(deltaX) > Math.abs(deltaY)) {
-            parentScrollContainer.value.scrollLeft = parentScrollStart.value - deltaX;
-          }
         }
+
         return; // 短卡片处理完毕，不再执行后续逻辑
       }
 
@@ -542,10 +555,26 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       longPressTimer.value = null;
     }
 
+    const deltaX = lengthX.value;
+    const deltaY = lengthY.value;
+
+    // 【诊断日志】记录触摸结束时的关键状态
+    console.info('[ACU Card TouchEnd] 开始处理', {
+      layout,
+      deltaX: deltaX.toFixed(1),
+      deltaY: deltaY.toFixed(1),
+      threshold,
+      isSelectionMode: isSelectionMode.value,
+      hasNativeSelection: hasNativeSelection(),
+      shouldBlockClick: shouldBlockClick.value,
+      gestureType: gestureType.value,
+    });
+
     // 【原版核心判断】：手指离开的瞬间，再次确认一下是否选了字
     // 如果有字被选中，或者刚才处于选词模式，就"永久"锁住点击
     // 这个锁直到下一次 touchstart 才会解开
     if (isSelectionMode.value || hasNativeSelection()) {
+      console.info('[ACU Card TouchEnd] 选词模式，跳过手势');
       shouldBlockClick.value = true;
       isSwiping.value = false;
       gestureType.value = null;
@@ -554,13 +583,11 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
 
     // 如果已经锁了，就直接退出
     if (shouldBlockClick.value) {
+      console.info('[ACU Card TouchEnd] shouldBlockClick 锁定，跳过手势');
       isSwiping.value = false;
       gestureType.value = null;
       return;
     }
-
-    const deltaX = lengthX.value;
-    const deltaY = lengthY.value;
 
     if (layout === 'horizontal') {
       // 横向布局：结算上下拉动
@@ -573,6 +600,19 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       // 【修复】短卡片也需要容错，与 handleTouchMove 保持一致
       const isPullUp = deltaY < 0 && (scrollTop + clientHeight >= scrollHeight - 1 || isShortCard);
 
+      console.info('[ACU Card TouchEnd] 横向布局判定', {
+        scrollTop,
+        scrollHeight,
+        clientHeight,
+        isShortCard,
+        isPullDown,
+        isPullUp,
+        deltaY: deltaY.toFixed(1),
+        threshold,
+        应触发新增: isPullDown && deltaY > threshold,
+        应触发删除: isPullUp && Math.abs(deltaY) > threshold,
+      });
+
       // 【原版阈值】：横向布局 > 50px (实际检测的是 indicator height > 50)
       // 由于原版用 deltaY * 0.6 计算 height，所以实际 deltaY > 83.3 才触发
       // 但原版的判定是 topH > 50，这里保持一致用 threshold（默认 50）
@@ -582,8 +622,17 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       } else if (isPullUp && Math.abs(deltaY) > threshold) {
         console.info('[ACU Card] 上划触发删除切换 (deltaY:', deltaY, ')');
         onToggleDelete();
+      } else {
+        console.info('[ACU Card TouchEnd] 横向布局未触发任何操作');
       }
     } else if (layout === 'vertical') {
+      console.info('[ACU Card TouchEnd] 纵向布局判定', {
+        deltaX: deltaX.toFixed(1),
+        threshold,
+        '应触发删除(右滑)': deltaX > threshold,
+        '应触发新增(左滑)': deltaX < -threshold,
+      });
+
       // 【原版阈值】：竖向布局 > 40px
       if (deltaX > threshold) {
         // 右滑触发删除切换（与原版一致）
@@ -593,6 +642,8 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
         // 左滑触发新增行（与原版一致）
         console.info('[ACU Card] 左滑触发新增行 (deltaX:', deltaX, ')');
         onInsertRow();
+      } else {
+        console.info('[ACU Card TouchEnd] 纵向布局未触发任何操作');
       }
     }
 

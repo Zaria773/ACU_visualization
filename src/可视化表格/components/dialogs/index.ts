@@ -12,11 +12,13 @@
  * - NodeLabelDialog: 节点标签选择弹窗，用于选择显示的字符（复用于关系图和头像管理）
  * - AvatarManagerDialog: 头像管理弹窗，用于管理节点头像配置
  * - AvatarCropDialog: 头像裁剪弹窗，用于调整头像显示效果
+ * - DashboardWidgetManagerDialog: 看板管理弹窗，用于添加/移除/排序仪表盘看板
  */
 
 export { default as AdvancedPurgeDialog } from './AdvancedPurgeDialog.vue';
 export { default as AvatarCropDialog } from './AvatarCropDialog.vue';
 export { default as AvatarManagerDialog } from './AvatarManagerDialog.vue';
+export { default as DashboardWidgetManagerDialog } from './DashboardWidgetManagerDialog.vue';
 export { default as HistoryDialog } from './HistoryDialog.vue';
 export { default as InputFloorDialog } from './InputFloorDialog.vue';
 export { default as ManualUpdateDialog } from './ManualUpdateDialog.vue';
@@ -24,3 +26,5 @@ export { default as NodeLabelDialog } from './NodeLabelDialog.vue';
 export { default as PurgeRangeDialog } from './PurgeRangeDialog.vue';
 export { default as RowEditDialog } from './RowEditDialog.vue';
 export { default as SettingsDialog } from './SettingsDialog.vue';
+export { default as WidgetActionsDialog } from './WidgetActionsDialog.vue';
+export { default as WidgetSettingsDialog } from './WidgetSettingsDialog.vue';

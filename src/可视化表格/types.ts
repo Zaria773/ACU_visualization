@@ -602,7 +602,8 @@ export type WidgetActionId =
   | 'undo' // 撤回
   | 'manualUpdate' // 手动更新
   | 'relationshipGraph' // 人物关系图
-  | 'settings'; // 设置
+  | 'settings' // 设置
+  | 'nativeEdit'; // 打开原生编辑器
 
 /** 看板快捷按钮配置 */
 export interface WidgetAction {
@@ -615,12 +616,32 @@ export interface WidgetAction {
 /** 看板显示风格 */
 export type WidgetDisplayStyle = 'grid' | 'list' | 'compact';
 
+/** 单个标签定义 */
+export interface TagDefinition {
+  /** 标签唯一 ID */
+  id: string;
+  /** 标签显示文本 */
+  label: string;
+  /** 提示词模板（支持通配符: {{value}}, {{rowTitle}}, {{playerName}}, {{tableName}}） */
+  promptTemplate: string;
+  /** 是否固定显示（无论是否从列匹配到） */
+  isFixed: boolean;
+}
+
+/** 互动标签配置 */
+export interface InteractiveTagConfig {
+  /** 标签来源列（解析后匹配已定义标签） */
+  sourceColumns: string[];
+  /** 标签定义库 */
+  tagDefinitions: TagDefinition[];
+}
+
 /** 单个看板配置 */
 export interface DashboardWidgetConfig {
   /** 唯一 ID */
   id: string;
   /** 看板类型 */
-  type: 'table' | 'stats' | 'custom';
+  type: 'table' | 'stats' | 'custom' | 'updateStatus' | 'optionsPanel';
   /** 关联的表格 ID (type='table' 时必填) */
   tableId?: string;
   /** 显示标题 */
@@ -641,6 +662,12 @@ export interface DashboardWidgetConfig {
   colSpan: 1 | 2;
   /** 显示风格 */
   displayStyle: WidgetDisplayStyle;
+  /** 行标题列名（留空=默认第一列） */
+  titleColumn?: string;
+  /** 展示标签来源列名列表（纯展示徽章） */
+  displayTagColumns?: string[];
+  /** 互动标签配置 */
+  interactiveTagConfig?: InteractiveTagConfig;
 }
 
 /** 仪表盘配置 */
@@ -668,6 +695,7 @@ export const WIDGET_ACTIONS: Record<WidgetActionId, WidgetAction> = {
     tooltip: '人物关系图',
   },
   settings: { id: 'settings', icon: 'fa-cog', label: '设置', tooltip: '看板设置' },
+  nativeEdit: { id: 'nativeEdit', icon: 'fa-external-link-alt', label: '原生编辑器', tooltip: '打开原生编辑器' },
 };
 
 /** 看板模板 - 用于快速添加 */

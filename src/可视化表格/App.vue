@@ -187,6 +187,43 @@
       @close="uiStore.closeDashboardHistoryDialog"
     />
 
+    <!-- 组件设置弹窗 (Dashboard 使用) -->
+    <WidgetSettingsDialog
+      v-model:visible="uiStore.widgetSettingsDialog.visible"
+      :widget-id="uiStore.widgetSettingsDialog.props.widgetId"
+      :widget-config="uiStore.widgetSettingsDialog.props.widgetConfig"
+      :table-headers="uiStore.widgetSettingsDialog.props.tableHeaders"
+      @close="uiStore.closeWidgetSettingsDialog"
+    />
+
+    <!-- 头像裁剪弹窗 (全局) -->
+    <AvatarCropDialog
+      :visible="uiStore.avatarCropDialog.visible"
+      :image-url="uiStore.avatarCropDialog.props.imageUrl"
+      :name="uiStore.avatarCropDialog.props.name"
+      :initial-offset-x="uiStore.avatarCropDialog.props.initialOffsetX"
+      :initial-offset-y="uiStore.avatarCropDialog.props.initialOffsetY"
+      :initial-scale="uiStore.avatarCropDialog.props.initialScale"
+      @close="uiStore.closeAvatarCropDialog"
+      @apply="uiStore.handleAvatarCropApply"
+      @upload="uiStore.handleAvatarCropUpload"
+    />
+
+    <!-- 看板管理弹窗 (Dashboard 使用) -->
+    <DashboardWidgetManagerDialog
+      v-model:visible="uiStore.widgetManagerDialog.visible"
+      :tables="processedTables"
+      @close="uiStore.closeWidgetManagerDialog"
+    />
+
+    <!-- 快捷按钮配置弹窗 (Dashboard 使用) -->
+    <WidgetActionsDialog
+      v-model:visible="uiStore.widgetActionsDialog.visible"
+      :widget-id="uiStore.widgetActionsDialog.props.widgetId"
+      :current-actions="uiStore.widgetActionsDialog.props.currentActions"
+      @close="uiStore.closeWidgetActionsDialog"
+    />
+
     <!-- 全局 Toast 通知 -->
     <Toast :visible="toastState.visible" :message="toastState.message" :type="toastState.type" />
   </div>
@@ -215,12 +252,16 @@ import {
   Toast,
 } from './components';
 import {
+  AvatarCropDialog,
+  DashboardWidgetManagerDialog,
   HistoryDialog,
   InputFloorDialog,
   ManualUpdateDialog,
   PurgeRangeDialog,
   RowEditDialog,
   SettingsDialog,
+  WidgetActionsDialog,
+  WidgetSettingsDialog,
 } from './components/dialogs';
 
 // Store 导入
@@ -534,9 +575,14 @@ function handleTabChange(tabId: string) {
   isContentHidden.value = false;
   console.info(`[ACU] 切换到 Tab: ${tabId}`);
 
-  // 恢复该表的记忆高度（需要等待 DOM 更新）
+  // 恢复该表的记忆高度（需要等待 DOM 完全渲染）
+  // 使用 nextTick + 双重 requestAnimationFrame 确保移动端 DOM 渲染完成
   nextTick(() => {
-    restoreTableHeight(tabId);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        restoreTableHeight(tabId);
+      });
+    });
   });
 }
 
@@ -555,7 +601,9 @@ function restoreTableHeight(tabId: string) {
     dataAreaEl.style.height = `${savedHeight}px`;
     console.info(`[ACU] 恢复高度: ${tabId} = ${savedHeight}px`);
   } else {
-    // 没有记忆高度，计算自适应高度
+    // 没有记忆高度，先清除前一个Tab的高度，再计算自适应高度
+    // 关键：先设置为 auto 让内容自然撑开，确保不继承前一个 Tab 的高度
+    dataAreaEl.style.height = 'auto';
     mainPanelRef.value?.resetHeight();
   }
 }
@@ -587,9 +635,13 @@ function handleNavigateToTable(tableId: string) {
   uiStore.setActiveTab(tableId);
   console.info(`[ACU] 导航到表格: ${tableId}`);
 
-  // 恢复该表的记忆高度
+  // 恢复该表的记忆高度（使用双重 rAF 确保移动端 DOM 渲染完成）
   nextTick(() => {
-    restoreTableHeight(tableId);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        restoreTableHeight(tableId);
+      });
+    });
   });
 }
 
@@ -623,10 +675,10 @@ function handleDashboardAction(actionId: string, tableId: string) {
   }
 }
 
-/** 关闭当前表格，隐藏数据区域 */
+/** 关闭当前表格，返回仪表盘 */
 function handleTableClose() {
-  isContentHidden.value = true;
-  console.info('[ACU] 数据区已隐藏');
+  uiStore.setActiveTab(TAB_DASHBOARD);
+  console.info('[ACU] 返回仪表盘');
 }
 
 /** 高度拖拽开始 - 调用 MainPanel 的高度拖拽逻辑 */

@@ -400,6 +400,8 @@
       transition:
         transform 0.1s ease,
         box-shadow 0.1s ease !important;
+      // 防御酒馆美化的 filter: invert(1)
+      filter: none !important;
     }
 
     // Firefox 轨道
@@ -431,6 +433,8 @@
       transition:
         transform 0.1s ease,
         box-shadow 0.1s ease !important;
+      // 防御酒馆美化的 filter: invert(1)
+      filter: none !important;
     }
 
     // Firefox 进度条
@@ -756,7 +760,7 @@
 }
 
 // =========================================
-// 移动端底部弹起样式
+// 移动端底部弹起样式（设置面板专用）
 // =========================================
 
 @media (max-width: 768px) {
@@ -778,12 +782,14 @@
   // 设置弹窗在移动端的特殊处理
   .acu-settings-modal {
     max-width: none;
-    max-height: 60vh;
-    transition: max-height 0.3s ease;
-
-    // 展开状态
-    &.expanded {
-      max-height: 85vh;
+    max-height: 85vh; // 默认使用高的那一档
+    // 隐藏拖动把手（不再需要高度切换）
+    .acu-drag-handle {
+      display: none;
+    }
+    // 调矮顶栏高度（移除拖动把手后）
+    .acu-modal-header {
+      padding: 10px 16px;
     }
   }
 
@@ -905,7 +911,7 @@
 }
 
 // =========================================
-// PurgeRangeDialog 特定样式 (仿原代码 showPurgeRangeDialog)
+// PurgeRangeDialog 特定样式
 // =========================================
 
 // 遮罩层 - 居中对齐
@@ -2395,10 +2401,6 @@ details[open] > .acu-history-summary::before {
 // BallAppearancePanel 悬浮球外观设置面板
 // =========================================
 
-// 悬浮球外观面板容器
-.acu-ball-appearance-panel {
-  // 无需特殊样式，内容直接在 modal-body 中滚动
-}
 
 // 预览区固定在顶部（使用 position: sticky）
 .acu-ball-preview-fixed {
@@ -2442,10 +2444,6 @@ details[open] > .acu-history-summary::before {
   }
 }
 
-// 可滚动内容区
-.acu-ball-scroll-content {
-  // 无需额外样式，固定区域通过 sticky + margin 占位
-}
 
 // 标题行（标题与按钮同行）
 .acu-settings-title-row {
@@ -4682,5 +4680,939 @@ details[open] > .acu-history-summary::before {
     flex-shrink: 0;
     margin-top: 1px;
     color: var(--acu-title-color);
+  }
+}
+
+// =========================================
+// 仪表盘组件设置弹窗
+// =========================================
+
+.acu-widget-settings-modal {
+  max-width: 480px;
+  width: 100%;
+}
+
+// 列选择器（单选）
+.acu-column-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acu-column-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  input[type='radio'] {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-text-sub);
+  }
+
+  &.active {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+
+    .acu-column-indicator {
+      background: var(--acu-title-color);
+      border-color: var(--acu-title-color);
+
+      &::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: #fff;
+        border-radius: 50%;
+      }
+    }
+  }
+}
+
+.acu-column-indicator {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--acu-border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.acu-column-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--acu-text-main);
+}
+
+// 列复选框网格（展示标签多选）
+.acu-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.acu-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-text-sub);
+  }
+
+  &.checked {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+
+    .checkbox-icon {
+      background: var(--acu-title-color);
+      border-color: var(--acu-title-color);
+      color: #fff;
+    }
+  }
+}
+
+.checkbox-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--acu-border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--acu-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 标签定义区域
+.acu-tag-definitions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acu-tag-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 10px;
+}
+
+.acu-tag-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .tag-label-input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--acu-table-head);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    color: var(--acu-text-main);
+
+    &:focus {
+      outline: none;
+      border-color: var(--acu-title-color);
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+      opacity: 0.6;
+    }
+  }
+
+  .tag-delete-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--acu-text-sub);
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: #e74c3c;
+      color: #e74c3c;
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+}
+
+.acu-tag-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .prompt-label {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    i {
+      font-size: 10px;
+    }
+  }
+
+  .prompt-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    background: var(--acu-table-head);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    color: var(--acu-text-main);
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--acu-title-color);
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+      opacity: 0.6;
+    }
+  }
+}
+
+.acu-tag-options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--acu-border);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--acu-text-sub);
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      display: none;
+    }
+
+    .option-icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--acu-border);
+      border-radius: 4px;
+      font-size: 10px;
+      transition: all 0.2s ease;
+    }
+
+    input:checked + .option-icon {
+      background: var(--acu-title-color);
+      border-color: var(--acu-title-color);
+      color: #fff;
+    }
+  }
+}
+
+// 添加标签按钮
+.acu-add-tag-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: var(--acu-table-head);
+  border: 2px dashed var(--acu-border);
+  border-radius: 10px;
+  color: var(--acu-text-sub);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 提示词模板说明
+.acu-template-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--acu-title-color-bg);
+  border-radius: 8px;
+  margin-top: 12px;
+
+  .hint-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--acu-text-main);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+      color: var(--acu-title-color);
+    }
+  }
+
+  .hint-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hint-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: var(--acu-btn-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--acu-title-color);
+  }
+
+  .hint-desc {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+}
+
+// 标签定义项
+.acu-tag-definition-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+}
+
+.acu-tag-definition-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .tag-label {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--acu-table-head);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    color: var(--acu-text-main);
+
+    &:focus {
+      outline: none;
+      border-color: var(--acu-title-color);
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+      opacity: 0.6;
+    }
+  }
+}
+
+// 行内复选框
+.acu-checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+// 图标按钮
+.acu-btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-border);
+  }
+
+  &.danger:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+    color: #e74c3c;
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 文本域
+.acu-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--acu-table-head);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  color: var(--acu-text-main);
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-title-color);
+  }
+
+  &::placeholder {
+    color: var(--acu-text-sub);
+    opacity: 0.6;
+  }
+
+  &.prompt-template {
+    min-height: 50px;
+    font-family: inherit;
+  }
+}
+
+// 添加按钮
+.acu-btn-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: var(--acu-table-head);
+  border: 2px dashed var(--acu-border);
+  border-radius: 8px;
+  color: var(--acu-text-sub);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 设置行垂直布局变体
+.acu-settings-row.column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+
+  .acu-settings-label {
+    width: 100%;
+  }
+
+  .acu-checkbox-grid,
+  .acu-tag-definitions {
+    width: 100%;
+  }
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .acu-widget-settings-modal {
+    max-width: 100%;
+  }
+
+  .acu-checkbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .acu-tag-definition-row {
+    flex-wrap: wrap;
+
+    .tag-label {
+      flex: 1 1 100%;
+    }
+  }
+
+  .acu-template-hint .hint-list {
+    flex-direction: column;
+  }
+}
+
+// =========================================
+// WidgetSettingsDialog 组件设置弹窗样式
+// =========================================
+
+// 已选择的标签容器
+.acu-selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: var(--acu-table-head);
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+// 已选择的标签项
+.acu-selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 6px;
+  color: var(--acu-title-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// 标签移除按钮
+.acu-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--acu-title-color);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+
+  i {
+    font-size: 10px;
+  }
+}
+
+// 预设管理控制栏
+.acu-preset-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  .acu-select {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+// 小型弹窗（如保存预设弹窗）
+.acu-small-modal {
+  max-width: 340px;
+
+  .acu-modal-body {
+    padding: 16px 20px;
+  }
+}
+
+// 弹窗操作按钮区
+.acu-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--acu-border);
+}
+
+// 弹窗按钮通用样式
+.acu-modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.primary {
+    background: var(--acu-title-color);
+    border: 1px solid var(--acu-title-color);
+    color: #fff;
+
+    &:hover {
+      filter: brightness(1.1);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &.secondary {
+    background: transparent;
+    border: 1px solid var(--acu-border);
+    color: var(--acu-text-main);
+
+    &:hover {
+      background: var(--acu-btn-hover);
+      border-color: var(--acu-text-sub);
+    }
+  }
+}
+
+// =========================================
+// 看板管理弹窗
+// DashboardWidgetManagerDialog
+// =========================================
+
+.acu-widget-manager-modal {
+  max-width: 800px;
+  width: 95vw;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+  }
+
+  .acu-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--acu-text-main);
+
+    i {
+      color: var(--acu-title-color);
+    }
+  }
+}
+
+.acu-widget-manager-body {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  max-height: 60vh;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    max-height: 70vh;
+  }
+}
+
+// 区域容器
+.acu-widget-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 100%;
+
+  @media (max-width: 768px) {
+    min-height: 150px;
+  }
+}
+
+// 区域头部
+.acu-widget-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--acu-table-head);
+  border-radius: 10px 10px 0 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--acu-text-main);
+}
+
+.acu-widget-count {
+  background: var(--acu-title-color-bg);
+  color: var(--acu-title-color);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+// 列表容器
+.acu-widget-section-list {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--acu-card-bg);
+  border: 1px solid var(--acu-border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+
+  // 滚动条样式
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--acu-text-sub);
+    }
+  }
+}
+
+// 列表项
+.acu-widget-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  border-bottom: 1px solid var(--acu-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  > i {
+    color: var(--acu-title-color);
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+  }
+}
+
+// 已添加项 - 悬浮显示红色表示可移除
+.acu-widget-item-added {
+  &:hover {
+    background: rgba(231, 76, 60, 0.1);
+
+    .acu-widget-hint-remove {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// 拖拽中状态
+.acu-widget-dragging {
+  opacity: 0.5;
+  background: var(--acu-table-hover);
+}
+
+// 未添加项 - 悬浮显示绿色表示可添加
+.acu-widget-item-available {
+  &:hover {
+    background: rgba(39, 174, 96, 0.1);
+
+    .acu-widget-hint-add {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// 拖动手柄
+.acu-widget-drag-handle {
+  color: var(--acu-text-sub);
+  cursor: grab;
+  padding: 4px;
+  font-size: 12px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// 移动按钮
+.acu-widget-move-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  button {
+    width: 20px;
+    height: 14px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--acu-text-sub);
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      color: var(--acu-title-color);
+      background: var(--acu-title-color-bg);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// 名称
+.acu-widget-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--acu-text-main);
+}
+
+// 特殊组件徽章
+.acu-widget-badge-special {
+  background: var(--acu-title-color-bg);
+  color: var(--acu-title-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+// 行数提示
+.acu-widget-row-count {
+  color: var(--acu-text-sub);
+  font-size: 12px;
+}
+
+// 操作提示 (默认隐藏)
+.acu-widget-action-hint {
+  opacity: 0;
+  font-size: 14px;
+  margin-left: auto;
+  transition: opacity 0.15s;
+}
+
+.acu-widget-hint-remove {
+  color: #e74c3c;
+}
+
+.acu-widget-hint-add {
+  color: #27ae60;
+}
+
+// 空状态
+.acu-widget-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--acu-text-sub);
+  font-size: 13px;
+
+  i {
+    font-size: 24px;
+    opacity: 0.5;
   }
 }

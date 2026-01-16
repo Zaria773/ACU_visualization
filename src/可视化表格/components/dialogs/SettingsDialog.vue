@@ -1,11 +1,9 @@
 <template>
   <Transition name="modal">
     <div v-if="visible" class="acu-modal-container" @click.self="handleCancel">
-      <div ref="dialogRef" class="acu-modal acu-settings-modal" :class="{ expanded: isExpanded }">
+      <div ref="dialogRef" class="acu-modal acu-settings-modal">
         <!-- 头部 -->
         <div ref="headerRef" class="acu-modal-header">
-          <!-- 拖动把手区域（点击切换高度） -->
-          <div class="acu-drag-handle" @click="toggleHeight"></div>
           <!-- 返回按钮（仅在子面板时显示） -->
           <button v-if="currentPanel !== 'main'" class="acu-modal-back" @click.stop="goBack">
             <i class="fas fa-arrow-left"></i>
@@ -323,7 +321,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.1 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.2 ——</div>
       </div>
     </div>
   </Transition>
@@ -368,8 +366,6 @@ const ballStore = useBallAppearanceStore();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
 
-// 高度切换状态
-const isExpanded = ref(false); // false = 60vh, true = 85vh
 
 // 自定义字体弹窗状态
 const showAddFontDialog = ref(false);
@@ -493,10 +489,6 @@ const handleCancel = () => {
 // 高度切换功能
 // ============================================================
 
-/** 切换高度：60vh ↔ 85vh */
-const toggleHeight = () => {
-  isExpanded.value = !isExpanded.value;
-};
 
 // ============================================================
 // 自定义字体功能

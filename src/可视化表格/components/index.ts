@@ -49,7 +49,6 @@ export { default as SearchBox } from './SearchBox.vue';
 
 // 第5批组件 - 弹窗组件
 export * from './dialogs';
-export { default as DashboardSortDialog } from './dialogs/DashboardSortDialog.vue';
 
 // 第6批组件 - UI基础组件
 export { default as ActionBar } from './ActionBar.vue';

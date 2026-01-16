@@ -49,16 +49,6 @@ function common_path(lhs: string, rhs: string) {
 }
 
 function glob_script_files() {
-<<<<<<< HEAD
-  const files: string[] = fs
-    .globSync(`src/**/index.{ts,tsx,js,jsx}`)
-    .filter(
-      file => process.env.CI !== 'true' || !fs.readFileSync(path.join(import.meta.dirname, file)).includes('@no-ci'),
-    );
-
-  const results: string[] = [];
-  const handle = (file: string) => {
-=======
   const results: string[] = [];
 
   fs.globSync(`{示例,src}/**/index.{ts,tsx,js,jsx}`)
@@ -66,27 +56,21 @@ function glob_script_files() {
       file => process.env.CI !== 'true' || !fs.readFileSync(path.join(import.meta.dirname, file)).includes('@no-ci'),
     )
     .forEach(file => {
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
-    const file_dirname = path.dirname(file);
-    for (const [index, result] of results.entries()) {
-      const result_dirname = path.dirname(result);
-      const common = common_path(result_dirname, file_dirname);
-      if (common === result_dirname) {
-        return;
+      const file_dirname = path.dirname(file);
+      for (const [index, result] of results.entries()) {
+        const result_dirname = path.dirname(result);
+        const common = common_path(result_dirname, file_dirname);
+        if (common === result_dirname) {
+          return;
+        }
+        if (common === file_dirname) {
+          results.splice(index, 1, file);
+          return;
+        }
       }
-      if (common === file_dirname) {
-        results.splice(index, 1, file);
-        return;
-      }
-    }
-    results.push(file);
-<<<<<<< HEAD
-  };
-  files.forEach(handle);
-=======
+      results.push(file);
     });
 
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
   return results;
 }
 
@@ -113,10 +97,7 @@ function watch_tavern_helper(compiler: webpack.Compiler) {
 
     compiler.hooks.done.tap('watch_tavern_helper', () => {
       console.info('\n\x1b[36m[tavern_helper]\x1b[0m 检测到完成编译, 推送更新事件...');
-<<<<<<< HEAD
       io.emit('iframe_updated');
-=======
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
       if (compiler.options.plugins.find(plugin => plugin instanceof HtmlWebpackPlugin)) {
         io.emit('message_iframe_updated');
       } else {
@@ -154,10 +135,7 @@ function watch_tavern_sync(compiler: webpack.Compiler) {
   compiler.hooks.watchRun.tap('watch_tavern_sync', () => {
     if (!child_process) {
       child_process = spawn('pnpm', ['sync', 'watch', 'all', '-f'], {
-<<<<<<< HEAD
-=======
         shell: true,
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
         stdio: ['ignore', 'pipe', 'pipe'],
         cwd: import.meta.dirname,
         env: { ...process.env, FORCE_COLOR: '1' },
@@ -229,11 +207,7 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
       path: path.join(
         import.meta.dirname,
         'dist',
-<<<<<<< HEAD
-        path.relative(path.join(import.meta.dirname, 'src'), script_filepath.dir),
-=======
         path.relative(import.meta.dirname, script_filepath.dir).replace(/^[^\\/]+[\\/]/, ''),
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
       ),
       chunkFilename: `${script_filepath.name}.[contenthash].chunk.js`,
       asyncChunks: true,
@@ -354,8 +328,6 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
                 },
               ],
             },
-<<<<<<< HEAD
-=======
             {
               test: /\.ya?ml$/,
               loader: 'yaml-loader',
@@ -366,7 +338,6 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
               test: /\.ya?ml$/,
               loader: 'yaml-loader',
             },
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
           ].concat(
             entry.html === undefined
               ? ([
@@ -552,10 +523,7 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
         request.startsWith('!') ||
         request.startsWith('http') ||
         request.startsWith('@/') ||
-<<<<<<< HEAD
-=======
         request.startsWith('@util/') ||
->>>>>>> ad6d1e8e5505fa75c59cbd79365fd12fe00a82eb
         path.isAbsolute(request) ||
         fs.existsSync(path.join(context, request)) ||
         fs.existsSync(request)
