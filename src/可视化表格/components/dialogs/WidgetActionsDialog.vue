@@ -19,14 +19,10 @@
           </div>
           <div class="acu-settings-group">
             <!-- 按钮选择列表 - 使用标准设置行布局 -->
-            <div
-              v-for="action in availableActions"
-              :key="action.id"
-              class="acu-settings-row"
-            >
+            <div v-for="action in availableActions" :key="action.id" class="acu-settings-row">
               <div class="acu-settings-label">
                 <span>
-                  <i :class="['fas', action.icon]" style="margin-right: 8px; color: var(--acu-title-color);"></i>
+                  <i :class="['fas', action.icon]" style="margin-right: 8px; color: var(--acu-title-color)"></i>
                   {{ action.label }}
                 </span>
                 <span class="hint">{{ action.tooltip }}</span>
@@ -34,11 +30,7 @@
               <div class="acu-settings-control">
                 <!-- 使用标准 acu-switch 开关 -->
                 <label class="acu-switch">
-                  <input
-                    type="checkbox"
-                    :checked="isActionSelected(action.id)"
-                    @change="toggleAction(action.id)"
-                  />
+                  <input type="checkbox" :checked="isActionSelected(action.id)" @change="toggleAction(action.id)" />
                   <span class="slider"></span>
                 </label>
               </div>
@@ -53,18 +45,15 @@
             已选按钮 ({{ selectedActions.length }})
           </div>
           <div class="acu-settings-group">
-            <div v-if="selectedActions.length === 0" class="acu-empty-hint">
-              暂未选择任何快捷按钮
-            </div>
+            <div v-if="selectedActions.length === 0" class="acu-empty-hint">暂未选择任何快捷按钮</div>
             <div v-else class="acu-selected-actions-list">
-              <div
-                v-for="actionId in selectedActions"
-                :key="actionId"
-                class="acu-settings-row"
-              >
+              <div v-for="actionId in selectedActions" :key="actionId" class="acu-settings-row">
                 <div class="acu-settings-label">
                   <span>
-                    <i :class="['fas', getActionIcon(actionId)]" style="margin-right: 8px; color: var(--acu-title-color);"></i>
+                    <i
+                      :class="['fas', getActionIcon(actionId)]"
+                      style="margin-right: 8px; color: var(--acu-title-color)"
+                    ></i>
                     {{ getActionLabel(actionId) }}
                   </span>
                 </div>

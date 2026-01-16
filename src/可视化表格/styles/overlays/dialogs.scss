@@ -2401,7 +2401,6 @@ details[open] > .acu-history-summary::before {
 // BallAppearancePanel 悬浮球外观设置面板
 // =========================================
 
-
 // 预览区固定在顶部（使用 position: sticky）
 .acu-ball-preview-fixed {
   position: sticky;
@@ -2443,7 +2442,6 @@ details[open] > .acu-history-summary::before {
     font-size: 12px;
   }
 }
-
 
 // 标题行（标题与按钮同行）
 .acu-settings-title-row {
@@ -5456,7 +5454,9 @@ details[open] > .acu-history-summary::before {
   gap: 10px;
   padding: 12px 14px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   border-bottom: 1px solid var(--acu-border);
 
   &:last-child {

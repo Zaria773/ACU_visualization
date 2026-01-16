@@ -806,7 +806,12 @@ async function saveAll() {
         offsetY: changes.offsetY ?? existing?.offsetY ?? 50,
         scale: changes.scale ?? existing?.scale ?? 150,
         aliases,
-        labelIndices: changes.labelIndices !== undefined ? [...toRaw(changes.labelIndices)] : existing?.labelIndices ? [...existing.labelIndices] : undefined,
+        labelIndices:
+          changes.labelIndices !== undefined
+            ? [...toRaw(changes.labelIndices)]
+            : existing?.labelIndices
+              ? [...existing.labelIndices]
+              : undefined,
         updatedAt: Date.now(),
       };
 

@@ -539,7 +539,9 @@ export function useCellLock() {
         for (const [field, value] of Object.entries(fields)) {
           const colIdx = headers.indexOf(field);
           if (colIdx !== -1 && row[colIdx] !== value) {
-            console.info(`[CellLock] 恢复锁定值: ${tableName}[${rowKey}].${field} = "${value}" (原值: "${row[colIdx]}")`);
+            console.info(
+              `[CellLock] 恢复锁定值: ${tableName}[${rowKey}].${field} = "${value}" (原值: "${row[colIdx]}")`,
+            );
             row[colIdx] = value;
             modified = true;
           }

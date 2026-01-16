@@ -366,7 +366,6 @@ const ballStore = useBallAppearanceStore();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
 
-
 // 自定义字体弹窗状态
 const showAddFontDialog = ref(false);
 const newFontName = ref('');
@@ -488,7 +487,6 @@ const handleCancel = () => {
 // ============================================================
 // 高度切换功能
 // ============================================================
-
 
 // ============================================================
 // 自定义字体功能
