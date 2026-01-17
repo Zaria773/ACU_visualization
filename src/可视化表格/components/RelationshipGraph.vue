@@ -13,10 +13,6 @@
 
     <!-- 工具栏（底部） -->
     <div class="acu-graph-toolbar">
-      <button class="acu-graph-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <span class="acu-toolbar-divider"></span>
       <button class="acu-graph-btn" title="放大" @click="zoomIn">
         <i class="fas fa-plus"></i>
       </button>
@@ -60,6 +56,10 @@
       <span class="acu-toolbar-divider"></span>
       <button class="acu-graph-btn" title="头像管理" @click="openAvatarManager">
         <i class="fas fa-user-circle"></i>
+      </button>
+      <span class="acu-toolbar-divider"></span>
+      <button class="acu-graph-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
+        <i class="fas fa-arrow-left"></i>
       </button>
     </div>
 
