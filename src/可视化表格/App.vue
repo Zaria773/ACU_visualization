@@ -1206,10 +1206,7 @@ onMounted(() => {
 watchEffect(() => {
   const safeArea = configStore.config.mobileSafeAreaBottom ?? 50;
   if (window.parent?.document?.documentElement) {
-    window.parent.document.documentElement.style.setProperty(
-      '--acu-safe-area-bottom',
-      `${safeArea}px`
-    );
+    window.parent.document.documentElement.style.setProperty('--acu-safe-area-bottom', `${safeArea}px`);
   }
 });
 

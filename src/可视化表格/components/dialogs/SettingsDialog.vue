@@ -246,13 +246,7 @@
                     <span class="hint">{{ localConfig.mobileSafeAreaBottom ?? 50 }}px</span>
                   </div>
                   <div class="acu-settings-control">
-                    <input
-                      v-model.number="localConfig.mobileSafeAreaBottom"
-                      type="range"
-                      min="0"
-                      max="150"
-                      step="10"
-                    />
+                    <input v-model.number="localConfig.mobileSafeAreaBottom" type="range" min="0" max="150" step="10" />
                   </div>
                 </div>
 
@@ -383,7 +377,6 @@ const ballStore = useBallAppearanceStore();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
 
-
 // 自定义字体弹窗状态
 const showAddFontDialog = ref(false);
 const newFontName = ref('');
@@ -505,7 +498,6 @@ const handleCancel = () => {
 // ============================================================
 // 高度切换功能
 // ============================================================
-
 
 // ============================================================
 // 自定义字体功能

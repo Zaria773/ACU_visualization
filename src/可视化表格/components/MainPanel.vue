@@ -1174,12 +1174,11 @@ defineExpose({
       ...windowConfig.value,
       isCentered: false,
       // 如果没有有效的位置，设置合理的默认值
-      bottom: typeof windowConfig.value.bottom === 'number' && windowConfig.value.bottom >= 50
-        ? windowConfig.value.bottom
-        : 100,
-      left: typeof windowConfig.value.left === 'number'
-        ? windowConfig.value.left
-        : parentWidth / 2 - 200,
+      bottom:
+        typeof windowConfig.value.bottom === 'number' && windowConfig.value.bottom >= 50
+          ? windowConfig.value.bottom
+          : 100,
+      left: typeof windowConfig.value.left === 'number' ? windowConfig.value.left : parentWidth / 2 - 200,
     };
     console.info('[ACU MainPanel] 退出居中模式，切换到底部定位');
   },

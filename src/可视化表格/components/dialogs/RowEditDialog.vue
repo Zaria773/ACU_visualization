@@ -1,5 +1,10 @@
 <template>
-  <div v-if="visible" class="acu-modal-container acu-row-edit-modal-container" :class="themeClass" @click.self="handleClose">
+  <div
+    v-if="visible"
+    class="acu-modal-container acu-row-edit-modal-container"
+    :class="themeClass"
+    @click.self="handleClose"
+  >
     <div class="acu-modal acu-row-edit-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
