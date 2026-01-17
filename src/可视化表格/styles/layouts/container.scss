@@ -4,11 +4,14 @@
 // =========================================
 
 // 主容器基础样式 (MainPanel)
+// 【关键修复】参照 6.4.1：默认居中显示，使用 50% + transform 居中
 .acu-wrapper {
   position: fixed;
-  left: var(--acu-win-left, 100px);
-  bottom: var(--acu-win-bottom, 100px);
+  left: var(--acu-win-left, 50%);
+  bottom: var(--acu-win-bottom, 50%);
   width: var(--acu-win-width, 400px);
+  // 【关键】默认居中 transform，通过 JS 覆盖
+  transform: translate(-50%, 50%);
   display: flex;
   flex-direction: column-reverse;
   z-index: 2147483645;
@@ -16,7 +19,7 @@
   // 关键：限制整个面板容器最大高度为视口高度
   max-height: 100vh;
   // 确保不超出屏幕底部
-  max-height: calc(100vh - var(--acu-win-bottom, 100px));
+  max-height: calc(100vh - var(--acu-win-bottom, 50%));
 
   &.collapsed {
     display: none;
@@ -53,13 +56,16 @@
 
 // 窗口化模式定位 (全平台通用)
 // 使用 min() 和 clamp() 确保面板在窄屏时不会超出屏幕
+// 【关键修复】参照 6.4.1：默认居中显示
 #acu-parent-container .acu-wrapper {
   position: absolute !important;
   // 宽度取 "存储值" 和 "屏幕宽度-20px" 中的较小值
   width: min(var(--acu-win-width, 600px), calc(100vw - 20px)) !important;
-  // left 取 "存储值" 和 "屏幕宽度-100px" 中的较小值，确保至少100px在屏幕内
-  left: min(var(--acu-win-left, 50%), calc(100vw - 100px)) !important;
+  // 【关键】默认 50% 居中
+  left: var(--acu-win-left, 50%) !important;
   bottom: var(--acu-win-bottom, 50%) !important;
+  // 【关键】默认居中 transform
+  transform: translate(-50%, 50%);
   touch-action: none;
   // 额外保险：最大宽度不超过屏幕
   max-width: calc(100vw - 10px);
@@ -78,4 +84,37 @@ body.acu-resizing #acu-parent-container {
 body.acu-resizing * {
   cursor: ew-resize !important;
   user-select: none !important;
+}
+
+// =========================================
+// 居中模式：使用 top 定位实现真正居中
+// 当 .acu-centered-mode 类存在时，覆盖默认的 bottom 定位
+// 【关键】使用 vh/vw 单位而非 %，因为 % 相对于定位祖先，在跨 iframe 场景下可能失效
+// =========================================
+.acu-wrapper.acu-centered-mode {
+  // 覆盖默认的 bottom 定位
+  bottom: auto !important;
+  top: 50vh !important;
+  left: 50vw !important;
+  transform: translate(-50%, -50%) !important;
+  // 居中模式下不需要 max-height 限制
+  max-height: none !important;
+}
+
+// 居中模式下隐藏内容区域，只显示导航栏
+.acu-wrapper.acu-centered-mode .acu-data-display {
+  display: none !important;
+}
+
+// 嵌套在 #acu-parent-container 内的居中模式
+// 【关键】必须使用 position: fixed 才能相对于视口居中，
+// 因为 .acu-wrapper 的直接父元素 .acu-app 高度为 0，absolute 定位会失效
+// 【关键】使用 vh/vw 单位确保始终相对于视口定位
+#acu-parent-container .acu-wrapper.acu-centered-mode {
+  position: fixed !important;
+  bottom: auto !important;
+  top: 50vh !important;
+  left: 50vw !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: none !important;
 }

@@ -185,11 +185,13 @@
   }
 }
 
-// 切换按钮样式
+// 切换按钮样式（固定面板等）
 .acu-btn-toggle {
   &.active {
-    color: var(--acu-primary-color, #3498db);
-    background: rgba(52, 152, 219, 0.2);
+    background: var(--acu-title-color-bg, rgba(52, 152, 219, 0.2)) !important;
+    color: var(--acu-title-color, #3498db) !important;
+    border: 1px solid var(--acu-title-color, #3498db) !important;
+    box-shadow: inset 0 0 0 1px rgba(52, 152, 219, 0.3);
   }
 }
 

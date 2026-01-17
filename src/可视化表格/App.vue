@@ -236,7 +236,7 @@
  * 集成所有子组件，管理全局状态和事件通信
  */
 
-import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect } from 'vue';
 
 // 组件导入
 import {
@@ -569,20 +569,34 @@ function handleToggle() {
 
 /** Tab 切换 */
 function handleTabChange(tabId: string) {
+  // 【关键】如果点击了 Tab，退出居中模式（通过 MainPanel 暴露的方法，确保响应式更新）
+  if (tabId && mainPanelRef.value) {
+    mainPanelRef.value.exitCenteredMode();
+  }
+
+  // 1. 立即清除高度限制，避免前一个Tab的高度影响布局计算
+  const dataAreaEl = mainPanelRef.value?.getDataAreaElement();
+  if (dataAreaEl) {
+    dataAreaEl.style.height = '';
+    dataAreaEl.style.minHeight = '';
+    dataAreaEl.style.maxHeight = '';
+  }
+
   uiStore.setActiveTab(tabId);
   searchTerm.value = '';
   // Bug2副作用修复: 切换tab时恢复内容区域显示
   isContentHidden.value = false;
   console.info(`[ACU] 切换到 Tab: ${tabId}`);
 
-  // 恢复该表的记忆高度（需要等待 DOM 完全渲染）
-  // 使用 nextTick + 双重 requestAnimationFrame 确保移动端 DOM 渲染完成
+  // 2. 恢复该表的记忆高度（需要等待 DOM 完全渲染）
+  // 移动端需要更长的等待时间，使用 setTimeout 而非纯 rAF
   nextTick(() => {
-    requestAnimationFrame(() => {
+    // 使用 50ms 延迟确保移动端浏览器完成渲染
+    setTimeout(() => {
       requestAnimationFrame(() => {
         restoreTableHeight(tabId);
       });
-    });
+    }, 50);
   });
 }
 
@@ -601,9 +615,7 @@ function restoreTableHeight(tabId: string) {
     dataAreaEl.style.height = `${savedHeight}px`;
     console.info(`[ACU] 恢复高度: ${tabId} = ${savedHeight}px`);
   } else {
-    // 没有记忆高度，先清除前一个Tab的高度，再计算自适应高度
-    // 关键：先设置为 auto 让内容自然撑开，确保不继承前一个 Tab 的高度
-    dataAreaEl.style.height = 'auto';
+    // 没有记忆高度，使用自适应计算
     mainPanelRef.value?.resetHeight();
   }
 }
@@ -632,16 +644,24 @@ function handleTabsPopupClick(tabId: string) {
 
 /** 导航到指定表格 */
 function handleNavigateToTable(tableId: string) {
+  // 1. 立即清除高度限制，避免前一个Tab的高度影响布局计算
+  const dataAreaEl = mainPanelRef.value?.getDataAreaElement();
+  if (dataAreaEl) {
+    dataAreaEl.style.height = '';
+    dataAreaEl.style.minHeight = '';
+    dataAreaEl.style.maxHeight = '';
+  }
+
   uiStore.setActiveTab(tableId);
   console.info(`[ACU] 导航到表格: ${tableId}`);
 
-  // 恢复该表的记忆高度（使用双重 rAF 确保移动端 DOM 渲染完成）
+  // 2. 恢复该表的记忆高度（移动端需要更长的等待时间）
   nextTick(() => {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       requestAnimationFrame(() => {
         restoreTableHeight(tableId);
       });
-    });
+    }, 50);
   });
 }
 
@@ -1045,7 +1065,27 @@ onMounted(async () => {
     uiStore.setInitialized(true);
 
     // 设置默认活跃 Tab
-    if (!uiStore.activeTab && processedTables.value.length > 0) {
+    // 【关键修复】参照 6.4.1：居中模式（首次加载）下不自动打开任何 tab，只显示光秃秃的导航栏
+    // 这样导航栏就不会因为内容区域太大而被推到屏幕外面
+    let isCenteredMode = false;
+    try {
+      const winConfigRaw = localStorage.getItem('acu_win_config');
+      const winConfig = winConfigRaw ? JSON.parse(winConfigRaw) : null;
+      // 如果是居中模式（通常是首次加载）
+      if (winConfig?.isCentered === true) {
+        isCenteredMode = true;
+        // 【关键】强制设置 activeTab 为 null，只显示导航栏
+        uiStore.setActiveTab(null);
+        // 【关键】强制展开面板，不显示悬浮球
+        uiStore.isCollapsed = false;
+        console.info('[ACU] 居中模式（首次加载）：强制清除 Tab，展开面板，只显示导航栏');
+      }
+    } catch (e) {
+      // 解析失败，使用默认行为
+    }
+
+    // 非居中模式下，如果没有 activeTab 且有表格数据，则默认打开仪表盘
+    if (!isCenteredMode && !uiStore.activeTab && processedTables.value.length > 0) {
       uiStore.setActiveTab(TAB_DASHBOARD);
     }
   } catch (error) {
@@ -1161,6 +1201,17 @@ onMounted(() => {
 // ============================================================
 // 监听
 // ============================================================
+
+// 监听移动端安全区配置，将值注入到父窗口 CSS 变量
+watchEffect(() => {
+  const safeArea = configStore.config.mobileSafeAreaBottom ?? 50;
+  if (window.parent?.document?.documentElement) {
+    window.parent.document.documentElement.style.setProperty(
+      '--acu-safe-area-bottom',
+      `${safeArea}px`
+    );
+  }
+});
 
 // 监听数据变化，自动更新 diffMap
 watch(

@@ -391,7 +391,9 @@ function handleDrop(targetWidgetId: string): void {
  * 高度拖手按下事件
  */
 function handleHeightDragStart(event: PointerEvent): void {
-  emit('heightDragStart', event);
+  if (heightHandleRef.value) {
+    emit('heightDragStart', event, heightHandleRef.value);
+  }
 }
 
 /**

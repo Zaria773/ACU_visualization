@@ -513,6 +513,13 @@
         background: rgba(231, 76, 60, 0.1);
       }
     }
+
+    // 切换按钮样式（固定面板）
+    &.btn-toggle.active {
+      background: var(--acu-title-color-bg, rgba(52, 152, 219, 0.2));
+      color: var(--acu-title-color, #3498db);
+      border-color: var(--acu-title-color, #3498db);
+    }
   }
 }
 

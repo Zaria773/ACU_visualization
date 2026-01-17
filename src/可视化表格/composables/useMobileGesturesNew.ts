@@ -268,6 +268,15 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
   // ============================================================
   const gestureLocked = ref(false);
 
+  // ============================================================
+  // 【修复问题2】：记录初始尺寸，避免视觉反馈元素影响 scrollHeight 判定
+  // 问题：.acu-pull-overlay 元素高度变化会改变 scrollHeight，导致短卡片判定失效
+  // 解决：在 touchstart 时记录初始尺寸，后续判定基于初始值
+  // ============================================================
+  const initialScrollHeight = ref(0);
+  const initialClientHeight = ref(0);
+  const initialIsShortCard = ref(false);
+
   // 【横向布局横滑】：父容器滚动支持
   const parentScrollStart = ref(0); // touchstart 时父容器的 scrollLeft
   const parentScrollContainer = ref<HTMLElement | null>(null); // 父滚动容器
@@ -360,6 +369,11 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
     // 这解决了"下拉删除视觉反馈抽搐"问题：因为 atStart 初始为 true，导致第一次 touchmove 就认为在顶部
     checkScrollEdge();
 
+    // 【修复问题2】：记录初始尺寸（在视觉反馈元素高度为 0 时）
+    initialScrollHeight.value = el.scrollHeight;
+    initialClientHeight.value = el.clientHeight;
+    initialIsShortCard.value = el.scrollHeight <= el.clientHeight + 2;
+
     // 【原版逻辑】：开启长按计时（400ms）
     longPressTimer.value = setTimeout(() => {
       isSelectionMode.value = true;
@@ -415,11 +429,9 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
 
     if (layout === 'horizontal') {
       const scrollTop = el.scrollTop;
-      const scrollHeight = el.scrollHeight;
-      const clientHeight = el.clientHeight;
 
-      // 检测是否是短卡片（内容不超过容器高度）
-      const isShortCard = scrollHeight <= clientHeight + 2;
+      // 【修复问题2】：使用初始尺寸判定短卡片，避免视觉反馈元素影响
+      const isShortCard = initialIsShortCard.value;
 
       // ============================================================
       // 【修复】短卡片也使用方向锁定机制
@@ -458,17 +470,17 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
           const displayHeight = Math.abs(deltaY) * 0.6;
           const newGestureType = deltaY > 0 ? 'insert' : 'delete';
 
-          // 【手势锁定】：一旦进入手势状态就锁定，防止抽搐
+          // 【修复问题3.2/3.3】：允许方向变化时更新 gestureType
+          // 问题：之前手势锁定后 gestureType 不再更新，导致方向变化时视觉反馈与实际不一致
+          // 解决：始终根据当前方向更新 gestureType
           if (displayHeight > 30) {
-            if (!gestureLocked.value) {
-              gestureType.value = newGestureType;
-              gestureLocked.value = true;
-            }
-            // 如果已锁定，保持当前手势状态，不切换
+            gestureType.value = newGestureType;
+            gestureLocked.value = true;
           } else if (!gestureLocked.value) {
             // 未达到阈值且未锁定，清空
             gestureType.value = null;
           }
+          // 注意：已锁定但未达到阈值时，保持当前 gestureType（避免抽搐）
         }
 
         return; // 短卡片处理完毕，不再执行后续逻辑
@@ -494,10 +506,14 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
 
       // 横向布局：检测上下拉动（只有方向锁定为纵向时才会执行到这里）
       if (directionLocked.value === 'vertical') {
+        // 【修复问题1】：增加边缘检测容错（从 -1 改为 -2）
+        const scrollHeight = el.scrollHeight;
+        const clientHeight = el.clientHeight;
+
         // 下拉条件：向下拉且已在顶部
         const isPullDown = deltaY > 0 && scrollTop <= 0;
-        // 上划条件：向上拉且已在底部
-        const isPullUp = deltaY < 0 && scrollTop + clientHeight >= scrollHeight - 1;
+        // 上划条件：向上拉且已在底部（增加容错）
+        const isPullUp = deltaY < 0 && scrollTop + clientHeight >= scrollHeight - 2;
 
         if (isPullDown || isPullUp) {
           // 阻止默认滚动行为
@@ -508,12 +524,10 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
           const displayHeight = Math.abs(deltaY) * 0.6;
           const newGestureType = isPullDown ? 'insert' : 'delete';
 
-          // 【修复2】手势锁定
+          // 【修复问题3.2/3.3】：允许方向变化时更新 gestureType
           if (displayHeight > 30) {
-            if (!gestureLocked.value) {
-              gestureType.value = newGestureType;
-              gestureLocked.value = true;
-            }
+            gestureType.value = newGestureType;
+            gestureLocked.value = true;
           } else if (!gestureLocked.value) {
             gestureType.value = null;
           }
@@ -558,6 +572,17 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
     const deltaX = lengthX.value;
     const deltaY = lengthY.value;
 
+    // 【修复问题3.1】：如果方向锁定为横向，跳过纵向手势触发
+    // 问题：横滑后改变方向为上/下滑时，handleTouchEnd 仍会触发增删行
+    // 解决：检查 directionLocked，横向锁定时不触发纵向操作
+    if (layout === 'horizontal' && directionLocked.value === 'horizontal') {
+      console.info('[ACU Card TouchEnd] 方向锁定为横向，跳过纵向手势');
+      isSwiping.value = false;
+      gestureType.value = null;
+      gestureLocked.value = false;
+      return;
+    }
+
     // 【诊断日志】记录触摸结束时的关键状态
     console.info('[ACU Card TouchEnd] 开始处理', {
       layout,
@@ -594,11 +619,13 @@ export function useCardGestures(cardRef: Ref<HTMLElement | undefined>, options: 
       const scrollTop = el.scrollTop;
       const scrollHeight = el.scrollHeight;
       const clientHeight = el.clientHeight;
-      const isShortCard = scrollHeight <= clientHeight + 2;
+
+      // 【修复问题2】：使用初始尺寸判定短卡片
+      const isShortCard = initialIsShortCard.value;
 
       const isPullDown = deltaY > 0 && (scrollTop <= 0 || isShortCard);
-      // 【修复】短卡片也需要容错，与 handleTouchMove 保持一致
-      const isPullUp = deltaY < 0 && (scrollTop + clientHeight >= scrollHeight - 1 || isShortCard);
+      // 【修复问题1】：增加边缘检测容错（从 -1 改为 -2）
+      const isPullUp = deltaY < 0 && (scrollTop + clientHeight >= scrollHeight - 2 || isShortCard);
 
       console.info('[ACU Card TouchEnd] 横向布局判定', {
         scrollTop,

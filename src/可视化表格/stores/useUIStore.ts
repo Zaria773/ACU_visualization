@@ -82,6 +82,9 @@ export const TAB_RELATIONSHIP_GRAPH = 'acu_tab_relationship_graph';
 export const useUIStore = defineStore('acu-ui', () => {
   // ============================================================
   // 持久化状态 - 使用 useStorage 自动同步 localStorage
+  //
+  // 注意：居中模式检测已移至 index.ts 入口文件（checkAndResetCenteredMode）
+  // 在 Vue 应用初始化之前执行，确保 activeTab 在此处初始化时已被正确处理
   // ============================================================
 
   /** 面板折叠状态 - 对应原代码 isCollapsed */

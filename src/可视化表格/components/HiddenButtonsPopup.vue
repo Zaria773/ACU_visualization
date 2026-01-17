@@ -37,9 +37,13 @@ interface Props {
   visible: boolean;
   /** 要显示的按钮列表 */
   buttons: NavButtonConfig[];
+  /** 是否已固定面板（用于 pin 按钮激活状态） */
+  isPinned?: boolean;
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isPinned: false,
+});
 
 const emit = defineEmits<{
   /** 关闭浮窗 */
@@ -58,6 +62,14 @@ const getButtonClass = (buttonId: string): string[] => {
   // 危险按钮样式（清除范围）
   if (buttonId === 'purge') {
     classes.push('btn-danger');
+  }
+
+  // 切换按钮样式（固定面板）
+  if (buttonId === 'pin') {
+    classes.push('btn-toggle');
+    if (props.isPinned) {
+      classes.push('active');
+    }
   }
 
   return classes;

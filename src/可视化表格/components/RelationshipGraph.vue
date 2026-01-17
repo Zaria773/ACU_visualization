@@ -1,6 +1,17 @@
 <template>
   <div class="acu-relationship-graph">
-    <!-- 工具栏 -->
+    <!-- 图例（顶部） -->
+    <div v-if="showLegend" class="acu-graph-legend">
+      <div v-for="item in legend" :key="item.level" class="acu-legend-item">
+        <span class="dot" :style="{ backgroundColor: item.color }"></span>
+        <span class="label">{{ item.emoji }} {{ item.name }}</span>
+      </div>
+    </div>
+
+    <!-- 图容器（中间） -->
+    <div ref="containerRef" class="acu-graph-container"></div>
+
+    <!-- 工具栏（底部） -->
     <div class="acu-graph-toolbar">
       <button class="acu-graph-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
         <i class="fas fa-arrow-left"></i>
@@ -52,17 +63,6 @@
       </button>
     </div>
 
-    <!-- 图容器 -->
-    <div ref="containerRef" class="acu-graph-container"></div>
-
-    <!-- 图例 -->
-    <div v-if="showLegend" class="acu-graph-legend">
-      <div v-for="item in legend" :key="item.level" class="acu-legend-item">
-        <span class="dot" :style="{ backgroundColor: item.color }"></span>
-        <span class="label">{{ item.emoji }} {{ item.name }}</span>
-      </div>
-    </div>
-
     <!-- 空状态 -->
     <div v-if="!hasData" class="acu-graph-empty">
       <i class="fas fa-project-diagram"></i>
@@ -76,6 +76,7 @@
       :nodes="avatarManagerNodes"
       @close="closeAvatarManager"
       @update="handleAvatarUpdate"
+      @label-change="handleLabelChange"
     />
 
     <!-- 节点配置弹窗 - 选择显示的字符 -->
@@ -1064,11 +1065,18 @@ function applyLabelConfig() {
   const config = getLabelConfig();
 
   cy.nodes().forEach(node => {
-    const nodeConfig = config[node.id()];
+    const nodeId = node.id();
+    const nodeConfig = config[nodeId];
     if (nodeConfig && nodeConfig.displayLabel) {
+      // 有配置，使用配置的标签
       node.data('label', nodeConfig.displayLabel);
+    } else {
+      // 无配置，恢复为全名（node.id() 就是全名）
+      node.data('label', nodeId);
     }
   });
+
+  console.info('[RelationshipGraph] 标签配置已应用，共配置:', Object.keys(config).length, '个节点');
 }
 
 /** 打开节点配置弹窗 */
@@ -1255,8 +1263,9 @@ async function preloadAvatars() {
   console.info(`[RelationshipGraph] 头像预加载完成: ${cache.size}/${nodes.length}`);
 }
 
-/** 头像更新后刷新图形 */
+/** 头像更新后刷新图形（重操作，包含头像数据） */
 async function handleAvatarUpdate() {
+  console.log('[RelationshipGraph] handleAvatarUpdate 被调用');
   // 重新加载别名映射和头像
   await loadAliasMap();
   await preloadAvatars();
@@ -1277,6 +1286,25 @@ async function handleAvatarUpdate() {
         node.removeData('avatarScale');
       }
     });
+
+    // 重新应用标签配置（姓名选择）- 仅影响无头像节点的显示
+    applyLabelConfig();
+
+    // 强制触发节点重绘
+    cy.nodes().trigger('data');
+
+    // 触发样式重新计算
+    cy.style().update();
+  }
+}
+
+/** 标签变更后刷新图形（轻操作，只更新标签） */
+function handleLabelChange() {
+  console.log('[RelationshipGraph] handleLabelChange 被调用');
+  if (cy) {
+    // 重新应用标签配置
+    applyLabelConfig();
+
     // 触发样式重新计算
     cy.style().update();
   }

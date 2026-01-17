@@ -121,7 +121,7 @@
  */
 
 import { onClickOutside } from '@vueuse/core';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useDataPersistence } from '../../composables/useDataPersistence';
 import { toast } from '../../composables/useToast';
 import { getTableData } from '../../utils';
@@ -213,10 +213,7 @@ watch(
       // 加载可用表格列表
       loadAvailableTables();
 
-      // 自动聚焦
-      nextTick(() => {
-        startInputRef.value?.focus();
-      });
+      // 注意：移除自动聚焦，避免移动端弹出键盘
     }
   },
 );

@@ -30,7 +30,10 @@ export interface AvatarRecord {
   scale: number;
   /** 别名列表（用于姓名映射） */
   aliases: string[];
-  /** 显示标签配置（选中的字符索引） */
+  /**
+   * @deprecated 标签配置已迁移到聊天变量 acu_graph_config.labels
+   * 保留此字段仅为兼容旧数据，不再使用
+   */
   labelIndices?: number[];
   /** 更新时间 */
   updatedAt: number;
@@ -629,48 +632,26 @@ export function useAvatarManager() {
   }
 
   // ============================================================
-  // 显示标签
+  // 显示标签（已迁移到聊天变量，此处仅保留工具函数）
   // ============================================================
 
   /**
-   * 获取显示标签（根据 labelIndices 配置）
+   * @deprecated 标签配置已迁移到聊天变量 acu_graph_config.labels
+   * 此函数保留仅为兼容性，建议直接从聊天变量读取
    */
   async function getDisplayLabel(name: string): Promise<string> {
-    if (!name) return '';
-
-    const record = await getAvatar(name);
-
-    if (record?.labelIndices?.length) {
-      // 将全名按字符分割，只保留选中的索引
-      const chars = getDisplayChars(name);
-      return record.labelIndices.map(i => chars[i] || '').join('');
-    }
-
+    // 不再从 IndexedDB 读取，直接返回全名
+    // 调用方应该从聊天变量读取标签配置
     return name;
   }
 
   /**
-   * 设置显示标签配置
+   * @deprecated 标签配置已迁移到聊天变量 acu_graph_config.labels
+   * 此函数不再有效，请使用聊天变量保存标签配置
    */
-  async function setDisplayLabel(name: string, labelIndices: number[]): Promise<void> {
-    let record = await getAvatar(name);
-
-    if (!record) {
-      // 创建新记录
-      record = {
-        name,
-        offsetX: 50,
-        offsetY: 50,
-        scale: 150,
-        aliases: [],
-        labelIndices,
-        updatedAt: Date.now(),
-      };
-    } else {
-      record = { ...record, labelIndices, updatedAt: Date.now() };
-    }
-
-    await saveAvatar(record);
+  async function setDisplayLabel(_name: string, _labelIndices: number[]): Promise<void> {
+    console.warn('[AvatarManager] setDisplayLabel 已废弃，请使用聊天变量保存标签配置');
+    // 不再保存到 IndexedDB
   }
 
   /**

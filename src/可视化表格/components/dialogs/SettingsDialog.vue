@@ -239,6 +239,23 @@
                   </div>
                 </div>
 
+                <!-- 移动端底部安全区（仅移动端显示） -->
+                <div v-if="uiStore.isMobile" class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    移动端底部安全区
+                    <span class="hint">{{ localConfig.mobileSafeAreaBottom ?? 50 }}px</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <input
+                      v-model.number="localConfig.mobileSafeAreaBottom"
+                      type="range"
+                      min="0"
+                      max="150"
+                      step="10"
+                    />
+                  </div>
+                </div>
+
                 <!-- 锁定单元格入口 -->
                 <div class="acu-settings-row acu-nav-row" @click="handleEnterLockMode">
                   <div class="acu-settings-label">
@@ -321,7 +338,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.2 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 7.1.3 ——</div>
       </div>
     </div>
   </Transition>

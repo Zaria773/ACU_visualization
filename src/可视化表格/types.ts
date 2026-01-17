@@ -68,6 +68,8 @@ export interface ACUConfig {
   clearTableOnSwipe?: boolean;
   /** 是否收纳Tab栏（隐藏Tab栏，通过导航按钮弹出浮窗） */
   collapseTabBar?: boolean;
+  /** 移动端底部安全区大小 (0-150px，0表示禁用) */
+  mobileSafeAreaBottom?: number;
 }
 
 /** 导航栏按钮配置 */

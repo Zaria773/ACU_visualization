@@ -2,17 +2,20 @@
  * 人际关系图组件样式
  */
 
-// 主容器
+// 主容器 - 使用 flex 流式布局
 .acu-relationship-graph {
   position: relative;
   width: 100%;
   // 使用 flex: 1 让关系图撑满父容器的剩余空间
   flex: 1 1 auto;
-  // 使用 min-height 而不是 height，允许自动扩展
+  // 使用 min-height 确保最小可用空间
   min-height: 400px;
   background: var(--acu-bg-panel);
   border-radius: 12px;
   overflow: hidden;
+  // 流式布局：图例-图容器-工具栏
+  display: flex;
+  flex-direction: column;
 }
 
 // 当显示关系图时，面板内容区域高度最大化
@@ -22,8 +25,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 450px;
-  // 关键：移除 overflow: hidden，让关系图可以扩展
-  overflow: visible;
+  // 关键：使用 overflow: hidden 隐藏溢出，确保图例和工具栏不会超出容器
+  overflow: hidden;
 }
 
 // 当 DataTable 显示关系图时，容器高度最大化
@@ -31,27 +34,52 @@
   min-height: 450px;
   height: auto !important;
   max-height: none !important;
+  overflow: hidden;
 }
 
-// 图容器
+// 图容器 - 占满整个容器（图例和工具栏用绝对定位覆盖）
 .acu-graph-container {
   width: 100%;
-  height: 100%;
+  // 关键：用绝对定位让图容器占满，并为图例和工具栏预留空间
+  position: absolute;
+  top: 40px; // 图例高度
+  bottom: 48px; // 工具栏高度
+  left: 0;
+  right: 0;
+  overflow: hidden;
 }
 
-// 工具栏
+// 工具栏 - 绝对定位固定在底部
 .acu-graph-toolbar {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  background: var(--acu-card-bg);
-  padding: 6px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--acu-bg-panel);
+  padding: 8px 12px;
+  border-top: 1px solid var(--acu-border);
+  z-index: 10;
+}
+
+// 图例 - 绝对定位固定在顶部
+.acu-graph-legend {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  background: var(--acu-bg-panel);
+  padding: 8px 12px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--acu-border);
+  z-index: 10;
 }
 
 // 工具栏分隔符
@@ -108,23 +136,6 @@
   100% {
     transform: scale(1);
   }
-}
-
-// 图例
-.acu-graph-legend {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: var(--acu-card-bg);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 11px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: calc(100% - 24px);
 }
 
 .acu-legend-item {
@@ -346,13 +357,19 @@
     flex: 1;
     min-height: 0;
     height: 100%;
+    // 关键：隐藏溢出内容，防止图例出界
+    overflow: hidden !important;
   }
 
   .acu-graph-toolbar {
-    top: 8px;
-    right: 8px;
-    padding: 4px;
+    padding: 6px 8px;
     gap: 2px;
+    flex-wrap: wrap;
+    // 保持绝对定位
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 
   .acu-graph-btn {
@@ -362,11 +379,20 @@
   }
 
   .acu-graph-legend {
-    bottom: 8px;
-    left: 8px;
     padding: 6px 10px;
     font-size: 10px;
     gap: 6px;
+    // 保持绝对定位
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  // 图容器调整间距
+  .acu-graph-container {
+    top: 36px; // 移动端图例更矮
+    bottom: 44px; // 移动端工具栏更矮
   }
 
   .acu-legend-item .dot {

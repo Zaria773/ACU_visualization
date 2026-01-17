@@ -262,7 +262,9 @@
   padding: 4px;
 
   @media (max-width: 480px) {
-    grid-template-columns: repeat(5, 1fr);
+    // 移动端使用固定宽度 + 左对齐，按钮紧密排列
+    grid-template-columns: repeat(auto-fill, 48px);
+    justify-content: flex-start;
   }
 }
 
@@ -377,7 +379,9 @@
   padding: 4px;
 
   @media (max-width: 480px) {
-    grid-template-columns: repeat(6, 1fr);
+    // 移动端使用固定宽度 + 左对齐，按钮紧密排列
+    grid-template-columns: repeat(auto-fill, 40px);
+    justify-content: flex-start;
   }
 }
 

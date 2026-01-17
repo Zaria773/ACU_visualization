@@ -8,6 +8,7 @@
       {
         collapsed: isCollapsed,
         pinned: isPinned,
+        'acu-centered-mode': windowConfig.isCentered,
       },
     ]"
   >
@@ -111,6 +112,7 @@
         <HiddenButtonsPopup
           :visible="isHiddenPopupVisible"
           :buttons="hiddenButtons"
+          :is-pinned="isPinned"
           @close="isHiddenPopupVisible = false"
           @button-click="handleHiddenButtonClick"
         />
@@ -567,12 +569,49 @@ const resizeHandleRef = ref<HTMLElement>();
 // 持久化窗口配置
 // ============================================================
 
-const windowConfig = useStorage<WindowConfig>('acu_win_config', {
-  width: 400,
-  left: '50%',
-  bottom: '50%',
-  isCentered: true,
-});
+// ============================================================
+// 【关键修复】完全按照 6.4.1.ts renderInterface 的逻辑
+// 在 useStorage 之前，先用原生方式检查并修正 localStorage
+// 如果没存过位置（第一次打开），或者值无效，强制默认居中
+// ============================================================
+const WINDOW_CONFIG_KEY = 'acu_win_config';
+const DEFAULT_CENTERED_CONFIG: WindowConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
+
+// 先读取原始 localStorage 值，并检查是否有效
+let preCheckSavedWin: WindowConfig | null = null;
+let needResetToCenter = false;
+try {
+  const rawValue = localStorage.getItem(WINDOW_CONFIG_KEY);
+  preCheckSavedWin = rawValue ? JSON.parse(rawValue) : null;
+} catch (e) {
+  preCheckSavedWin = null;
+}
+
+// 【关键】完全按照 6.4.1 的逻辑 + 无效值检测：
+// 1. 如果没存过位置（第一次打开），默认居中
+if (!preCheckSavedWin) {
+  needResetToCenter = true;
+  console.info('[ACU MainPanel] 首次加载，设置默认居中配置');
+} else if (
+  // 2. 如果存过但值无效（bottom 太小导致看不到），也重置为居中
+  // 检测：非居中模式下，bottom 值小于 100px 就认为是异常（导航栏在屏幕底部外面）
+  !preCheckSavedWin.isCentered &&
+  typeof preCheckSavedWin.bottom === 'number' &&
+  preCheckSavedWin.bottom < 100
+) {
+  needResetToCenter = true;
+  console.warn('[ACU MainPanel] 检测到无效位置配置 (bottom=' + preCheckSavedWin.bottom + ')，重置为居中');
+}
+
+if (needResetToCenter) {
+  localStorage.setItem(WINDOW_CONFIG_KEY, JSON.stringify(DEFAULT_CENTERED_CONFIG));
+  // 【关键修复】参照 6.4.1：居中模式下不打开任何 tab，只显示光秃秃的导航栏
+  // 这样导航栏就不会因为内容区域太大而被推到屏幕外面
+  localStorage.removeItem('acu_active_tab');
+  console.info('[ACU MainPanel] 居中模式：清除 activeTab，只显示导航栏');
+}
+
+const windowConfig = useStorage<WindowConfig>(WINDOW_CONFIG_KEY, DEFAULT_CENTERED_CONFIG);
 
 // ============================================================
 // 辅助函数 - 边界检测
@@ -592,29 +631,16 @@ function isMobileDevice(): boolean {
 
 /**
  * 获取移动端安全底部边距
- * 在移动端（特别是 iOS），屏幕底部区域容易触发原生手势（返回、Home 指示条等）
- * 返回一个安全边距，防止导航栏被拖到这些区域
+ * 使用用户在设置中配置的安全区大小
+ * 返回一个安全边距，防止导航栏被拖到底部危险区域
  */
 function getMobileSafeBottomMargin(): number {
   if (!isMobileDevice()) {
     return 0;
   }
 
-  // 检测 iOS 设备（有 Home 指示条的设备需要更大边距）
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  // 检测是否是刘海屏/全面屏 iOS 设备（通过 CSS 环境变量）
-  const safeAreaBottom = parseInt(
-    getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || '0',
-    10,
-  );
-
-  if (isIOS) {
-    // iOS 设备：至少 60px，如果有安全区则使用安全区 + 额外边距
-    return Math.max(60, safeAreaBottom + 20);
-  }
-
-  // 其他移动设备：50px 安全边距
-  return 50;
+  // 使用配置值，默认 50px
+  return configStore.config.mobileSafeAreaBottom ?? 50;
 }
 
 /** 获取父窗口尺寸 */
@@ -625,17 +651,70 @@ function getParentWindowSize() {
   };
 }
 
-/** 验证并修正面板位置 */
+/**
+ * 验证并修正面板位置
+ * 参考 6.4.1 版本的 renderInterface 逻辑：
+ * 1. 如果没有存过位置（第一次打开），默认居中
+ * 2. 如果检测到异常位置（如 bottom 值过小），重置为居中模式
+ */
 function validateAndFixWindowPosition() {
   const config = windowConfig.value;
-
-  // 如果是居中模式，不需要检查
-  if (config.isCentered) return;
-
   const { width: parentWidth, height: parentHeight } = getParentWindowSize();
+
+  console.info('[ACU MainPanel] 验证面板位置:', JSON.stringify(config), 'parentHeight:', parentHeight);
+
+  // 【关键修改】参照 6.4.1：如果没存过位置（第一次打开），默认居中
+  if (!config || config.left === undefined || config.bottom === undefined) {
+    console.warn('[ACU MainPanel] 配置不完整，重置为居中模式');
+    windowConfig.value = {
+      width: config?.width || 400,
+      left: '50%',
+      bottom: '50%',
+      isCentered: true,
+    };
+    return;
+  }
+
+  // 居中模式：验证 left 和 bottom 是否为 '50%'
+  if (config.isCentered) {
+    // 居中模式下，left 和 bottom 应该是 '50%'
+    if (config.left !== '50%' || config.bottom !== '50%') {
+      console.warn('[ACU MainPanel] 居中模式下位置异常，修正为 50%');
+      windowConfig.value = {
+        ...config,
+        left: '50%',
+        bottom: '50%',
+      };
+    }
+    return;
+  }
+
+  // 非居中模式：验证位置是否合理
   let needUpdate = false;
+  let resetToCenter = false;
   let newLeft = config.left;
-  let newBottom = config.bottom;
+  const newBottom = config.bottom;
+
+  const safeBottomMargin = getMobileSafeBottomMargin();
+  // 【关键修改】降低阈值要求，主要检测明显异常的情况（面板完全跑到屏幕外）
+  const minSafeBottom = Math.max(safeBottomMargin, 50);
+
+  // 验证 bottom 位置
+  if (typeof config.bottom === 'number') {
+    // 检测异常情况：面板位置过低（太靠近屏幕底部，导航栏不可见）
+    if (config.bottom < minSafeBottom) {
+      console.warn(`[ACU MainPanel] 底部位置异常 (${config.bottom}px < ${minSafeBottom}px)，重置为居中模式`);
+      resetToCenter = true;
+    } else if (config.bottom > parentHeight - 50) {
+      // 面板位置超出屏幕顶部
+      console.warn(`[ACU MainPanel] 顶部位置异常 (${config.bottom}px > ${parentHeight - 50}px)，重置为居中模式`);
+      resetToCenter = true;
+    }
+  } else if (config.bottom !== '50%') {
+    // bottom 既不是数字也不是 '50%'（格式无效），重置为居中
+    console.warn('[ACU MainPanel] 非居中模式下 bottom 格式无效，重置为居中模式');
+    resetToCenter = true;
+  }
 
   // 验证 left 位置
   if (typeof config.left === 'number') {
@@ -647,24 +726,25 @@ function validateAndFixWindowPosition() {
       newLeft = Math.max(0, maxLeft);
       needUpdate = true;
     }
+  } else if (config.left !== '50%') {
+    // left 既不是数字也不是 '50%'（格式无效），重置为居中
+    console.warn('[ACU MainPanel] 非居中模式下 left 格式无效，重置为居中模式');
+    resetToCenter = true;
   }
 
-  // 验证 bottom 位置（考虑移动端安全区域）
-  if (typeof config.bottom === 'number') {
-    const safeBottomMargin = getMobileSafeBottomMargin();
-    const minBottom = safeBottomMargin; // 移动端不能低于安全边距
-    const maxBottom = parentHeight - 50;
-
-    if (config.bottom < minBottom) {
-      newBottom = minBottom;
-      needUpdate = true;
-      console.info(`[ACU MainPanel] 底部位置过低，已修正到安全区域: ${minBottom}px`);
-    } else if (config.bottom > maxBottom) {
-      newBottom = Math.max(minBottom, maxBottom);
-      needUpdate = true;
-    }
+  // 如果需要重置为居中模式
+  if (resetToCenter) {
+    windowConfig.value = {
+      width: config.width || 400,
+      left: '50%',
+      bottom: '50%',
+      isCentered: true,
+    };
+    console.info('[ACU MainPanel] 面板已重置为居中模式');
+    return;
   }
 
+  // 仅需要修正边界
   if (needUpdate) {
     console.info('[ACU MainPanel] 面板位置越界，已自动修正');
     windowConfig.value = {
@@ -688,29 +768,39 @@ function validateAndFixWindowPosition() {
 watchEffect(() => {
   if (!panelRef.value) return;
 
-  const config = windowConfig.value;
-  const el = panelRef.value;
-
-  // 设置 CSS 变量
-  if (config.width) {
-    el.style.setProperty('--acu-win-width', `${config.width}px`);
+  // 【完全按照 6.4.1】读取配置，如果没有则默认居中
+  let savedWin = windowConfig.value;
+  if (!savedWin) {
+    savedWin = { width: 400, left: '50%', bottom: '50%', isCentered: true };
   }
 
-  if (config.left !== undefined) {
-    const leftValue = typeof config.left === 'number' ? `${config.left}px` : config.left;
+  const el = panelRef.value;
+
+  // 【完全按照 6.4.1】统一应用位置逻辑
+  if (savedWin.width) {
+    el.style.setProperty('--acu-win-width', `${savedWin.width}px`);
+  }
+
+  if (savedWin.left !== undefined) {
+    const leftValue = typeof savedWin.left === 'number' ? `${savedWin.left}px` : savedWin.left;
     el.style.setProperty('--acu-win-left', leftValue);
   }
 
-  if (config.bottom !== undefined) {
-    const bottomValue = typeof config.bottom === 'number' ? `${config.bottom}px` : config.bottom;
+  if (savedWin.bottom !== undefined) {
+    const bottomValue = typeof savedWin.bottom === 'number' ? `${savedWin.bottom}px` : savedWin.bottom;
     el.style.setProperty('--acu-win-bottom', bottomValue);
   }
 
-  // 设置 transform
-  if (config.isCentered) {
-    el.style.transform = 'translate(-50%, 50%)';
+  // 设置 transform：居中模式使用 top 定位
+  if (savedWin.isCentered) {
+    // 居中模式：使用 top 定位，CSS 类会处理大部分样式
+    // 这里只确保 CSS 变量一致性
+    el.style.setProperty('--acu-win-left', '50%');
+    el.style.removeProperty('--acu-win-bottom');
+    el.style.transform = 'translate(-50%, -50%)';
   } else {
-    el.style.transform = '';
+    // 非居中模式：使用 bottom 定位
+    el.style.transform = 'none';
   }
 });
 
@@ -940,8 +1030,10 @@ const startHeightDrag = (e: PointerEvent, handleEl: HTMLElement) => {
 /**
  * 重置高度为自适应
  *
- * 简洁方案：临时移除高度限制，让浏览器自然布局，然后获取 scrollHeight 作为理想高度。
- * 关键：使用 requestAnimationFrame 确保移动端浏览器完成 DOM 重排后再读取 scrollHeight。
+ * 移动端修复方案：
+ * 1. 完全清除所有高度限制
+ * 2. 使用 setTimeout + rAF 确保移动端渲染完成
+ * 3. 遍历子元素计算实际内容高度，避免 scrollHeight 受容器影响
  */
 const resetHeight = () => {
   if (!dataAreaRef.value) return;
@@ -949,13 +1041,14 @@ const resetHeight = () => {
   // 1. 恢复自动高度模式
   isManualHeight.value = false;
 
-  // 2. 临时移除高度限制，让内容自然撑开
-  dataAreaRef.value.style.height = 'auto';
-  dataAreaRef.value.style.maxHeight = 'none';
+  // 2. 完全清除所有高度限制
+  dataAreaRef.value.style.height = '';
+  dataAreaRef.value.style.minHeight = '';
+  dataAreaRef.value.style.maxHeight = '';
 
-  // 3. 使用双重 requestAnimationFrame 确保浏览器完成布局重排
-  // 这在移动端尤为重要，因为单次 rAF 可能不足以等待完整渲染
-  requestAnimationFrame(() => {
+  // 3. 使用 setTimeout 确保移动端浏览器完成布局
+  // 50ms 延迟比纯 rAF 更可靠，因为移动端有额外的合成层处理
+  setTimeout(() => {
     requestAnimationFrame(() => {
       if (!dataAreaRef.value) return;
 
@@ -964,21 +1057,34 @@ const resetHeight = () => {
       const maxAllowed = parentHeight * 0.8;
       const minHeight = 200;
 
-      // 5. 获取自然高度（浏览器自动计算的完整高度）
-      const naturalHeight = dataAreaRef.value.scrollHeight;
+      // 5. 获取内容区域的实际高度
+      // 优先使用内容子元素的 offsetHeight，避免受容器影响
+      const contentEl = dataAreaRef.value.querySelector('.acu-panel-content');
+      let naturalHeight: number;
+
+      if (contentEl) {
+        // 获取内容区域的第一个子元素（DataTable/Dashboard/OptionsPanel）
+        const firstChild = contentEl.firstElementChild as HTMLElement;
+        if (firstChild) {
+          naturalHeight = firstChild.offsetHeight + 20; // 加上内边距
+        } else {
+          naturalHeight = (contentEl as HTMLElement).scrollHeight;
+        }
+      } else {
+        naturalHeight = dataAreaRef.value.scrollHeight;
+      }
 
       // 6. 计算最终高度：clamp(naturalHeight, minHeight, maxAllowed)
       const finalHeight = Math.max(minHeight, Math.min(naturalHeight, maxAllowed));
 
       // 7. 应用高度
       dataAreaRef.value.style.height = `${finalHeight}px`;
-      dataAreaRef.value.style.maxHeight = '';
       panelHeight.value = finalHeight;
 
       console.info(`[ACU] 高度已重置: natural=${naturalHeight}, final=${finalHeight}, max=${maxAllowed}`);
       emit('height-change', finalHeight);
     });
-  });
+  }, 50);
 };
 
 // ============================================================
@@ -1058,6 +1164,24 @@ defineExpose({
       bottom: '50%',
       isCentered: true,
     };
+  },
+  /** 退出居中模式，切换到底部定位 */
+  exitCenteredMode: () => {
+    if (!windowConfig.value.isCentered) return;
+
+    const parentWidth = window.parent?.innerWidth ?? window.innerWidth;
+    windowConfig.value = {
+      ...windowConfig.value,
+      isCentered: false,
+      // 如果没有有效的位置，设置合理的默认值
+      bottom: typeof windowConfig.value.bottom === 'number' && windowConfig.value.bottom >= 50
+        ? windowConfig.value.bottom
+        : 100,
+      left: typeof windowConfig.value.left === 'number'
+        ? windowConfig.value.left
+        : parentWidth / 2 - 200,
+    };
+    console.info('[ACU MainPanel] 退出居中模式，切换到底部定位');
   },
   /** 重置高度为自动 */
   resetHeight,

@@ -13,7 +13,7 @@
           :key="tab.id"
           class="acu-nav-btn acu-tab-config-btn"
           :class="{
-            'acu-nav-btn-special': tab.type !== 'normal',
+            'acu-nav-btn-special': isAggregateTab(tab.type),
             dragging: draggedIndex === index,
           }"
           draggable="true"
@@ -26,7 +26,7 @@
         >
           <i v-if="tab.icon" :class="tab.icon"></i>
           <span>{{ tab.name }}</span>
-          <span v-if="tab.type !== 'normal'" class="tab-type-badge-mini">{{ getTypeBadge(tab.type) }}</span>
+          <span v-if="isAggregateTab(tab.type)" class="tab-type-badge-mini">{{ getTypeBadge(tab.type) }}</span>
         </button>
       </div>
       <div v-else class="acu-empty-hint">
@@ -49,13 +49,13 @@
           v-for="tab in hiddenTabItems"
           :key="tab.id"
           class="acu-tab-hidden-item"
-          :class="{ 'is-special': tab.type !== 'normal' }"
+          :class="{ 'is-special': isAggregateTab(tab.type) }"
           :title="'添加 ' + tab.name"
           @click.stop="handleShow(tab.id)"
         >
           <i v-if="tab.icon" :class="tab.icon" class="tab-icon"></i>
           <span class="tab-name">{{ tab.name }}</span>
-          <span v-if="tab.type !== 'normal'" class="tab-type-badge">{{ getTypeBadge(tab.type) }}</span>
+          <span v-if="isAggregateTab(tab.type)" class="tab-type-badge">{{ getTypeBadge(tab.type) }}</span>
           <i class="fas fa-plus add-icon"></i>
         </button>
       </div>
@@ -223,6 +223,17 @@ const hiddenTabItems = computed<TabConfigItem[]>(() => {
 });
 
 /**
+ * 判断是否为聚合类型的 Tab（需要显示特殊徽章）
+ * - dashboard: 仪表盘
+ * - graph: 关系图
+ * - options: 选项面板（聚合所有选项表）
+ * 注意：special（带"选项"字眼的普通表格）不是聚合类型
+ */
+const isAggregateTab = (type: string): boolean => {
+  return type === 'dashboard' || type === 'graph' || type === 'options';
+};
+
+/**
  * 获取类型徽章文本
  */
 const getTypeBadge = (type: string): string => {
@@ -233,8 +244,6 @@ const getTypeBadge = (type: string): string => {
       return '关系';
     case 'options':
       return '聚合';
-    case 'special':
-      return '选项';
     default:
       return '';
   }

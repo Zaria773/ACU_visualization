@@ -1345,8 +1345,8 @@
 
 // 底部留白 - 适配移动端安全区
 .acu-bottom-spacer {
-  height: 80px;
-  padding-bottom: 30px;
+  height: calc(30px + var(--acu-safe-area-bottom, 50px));
+  padding-bottom: var(--acu-safe-area-bottom, 50px);
   width: 100%;
   text-align: center;
   color: var(--acu-text-sub, #999);
@@ -2180,9 +2180,8 @@ details[open] > .acu-history-summary::before {
   .acu-mobile-actions {
     flex-shrink: 0; // 不压缩，保持固定高度
     padding: 10px 12px;
-    // 底部安全区：确保不被浏览器底栏遮挡
-    // 使用 max() 确保至少有 50px 的底部内边距
-    padding-bottom: max(50px, calc(24px + env(safe-area-inset-bottom, 30px)));
+    // 底部安全区：使用用户配置的安全区大小
+    padding-bottom: calc(24px + var(--acu-safe-area-bottom, 50px));
     background: var(--acu-bg-panel);
     border-top: 1px solid var(--acu-border);
     display: flex;

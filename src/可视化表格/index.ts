@@ -19,6 +19,59 @@ import { getCore } from './utils/index';
 const SCRIPT_ID = 'acu-parent-container';
 const MAX_DATA_RETRIES = 10;
 
+// 存储键常量
+const STORAGE_KEYS = {
+  WIN_CONFIG: 'acu_win_config',
+  ACTIVE_TAB: 'acu_active_tab',
+  UI_COLLAPSE: 'acu_ui_collapse_state',
+} as const;
+
+/**
+ * 【关键修复】参照 6.4.1：初始化时检测居中模式并重置状态
+ *
+ * 问题：居中模式下，如果加载了 Dashboard 内容，内容高度会把导航栏推到屏幕外面
+ * 解决：
+ * 1. 居中模式（首次加载或重置后）不打开任何 Tab，只显示导航栏
+ * 2. 确保面板是展开状态（不显示悬浮球）
+ *
+ * 必须在 Vue 应用初始化之前执行，确保 Pinia store 初始化时不会恢复错误的状态
+ */
+function checkAndResetCenteredMode(): void {
+  try {
+    const winConfigRaw = localStorage.getItem(STORAGE_KEYS.WIN_CONFIG);
+
+    // 情况1：没有保存过位置（首次加载）
+    if (!winConfigRaw) {
+      // 设置默认居中配置
+      const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
+      localStorage.setItem(STORAGE_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
+      // 清除 activeTab，确保不显示内容区域
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
+      // 确保面板展开（不显示悬浮球）
+      localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+      console.info('[ACU] 首次加载：设置居中模式，清除 activeTab');
+      return;
+    }
+
+    // 情况2：已保存位置，检查是否是居中模式
+    const winConfig = JSON.parse(winConfigRaw);
+    if (winConfig?.isCentered === true) {
+      // 居中模式下清除 activeTab，只显示导航栏
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
+      // 确保面板展开（不显示悬浮球）
+      localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+      console.info('[ACU] 居中模式：清除 activeTab，确保面板展开');
+    }
+  } catch (e) {
+    // 解析失败，重置为安全的居中状态
+    const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
+    localStorage.setItem(STORAGE_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
+    localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+    console.warn('[ACU] 解析 win_config 失败，重置为居中模式:', e);
+  }
+}
+
 // Vue 应用实例 (用于清理)
 let vueApp: VueApp | null = null;
 let mountContainer: HTMLElement | null = null;
@@ -66,6 +119,10 @@ function initVueApp() {
  * 等待 API 就绪并初始化
  */
 function waitForApiAndInit() {
+  // 【关键】在 Vue 应用初始化之前检测居中模式
+  // 必须先执行，确保 Pinia store 初始化时 activeTab 已被正确处理
+  checkAndResetCenteredMode();
+
   let dataCheckRetries = 0;
 
   const checkApi = () => {

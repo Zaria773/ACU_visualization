@@ -1,0 +1,6 @@
+<群{name}>
+群内成员有:
+ {members}
+群的作用为:
+ {content}
+</群{name}>

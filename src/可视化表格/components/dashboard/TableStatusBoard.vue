@@ -24,7 +24,6 @@
         <tbody>
           <tr v-for="item in statusList" :key="item.sheetKey" @click.stop="handleTableClick(item)">
             <td class="acu-status-name">
-              <i v-if="item.isSummaryOrOutline" class="fas fa-book acu-status-icon-summary"></i>
               {{ item.name }}
             </td>
             <td class="acu-status-freq">

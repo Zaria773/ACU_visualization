@@ -255,6 +255,8 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'update'): void;
+  /** 标签变更 - 轻量级更新，不需要重新加载头像 */
+  (e: 'label-change'): void;
 }>();
 
 // ============================================================
@@ -338,6 +340,10 @@ async function loadAvatarList() {
   try {
     const list: AvatarListItem[] = [];
 
+    // 从聊天变量读取标签配置（统一数据源）
+    const graphConfig = getGraphConfig();
+    const labelsConfig = graphConfig.labels || {};
+
     for (const node of props.nodes) {
       const record = await avatarManager.getAvatar(node.name);
       const avatarUrl = await avatarManager.getAvatarUrl(node.name);
@@ -353,8 +359,10 @@ async function loadAvatarList() {
         source = 'auto';
       }
 
-      // 获取显示标签
-      const displayLabel = await avatarManager.getDisplayLabel(node.name);
+      // 从聊天变量获取显示标签配置
+      const labelConfig = labelsConfig[node.name];
+      const displayLabel = labelConfig?.displayLabel;
+      const labelIndices = labelConfig?.selectedIndices;
 
       // 获取别名列表
       const aliases = record?.aliases || [];
@@ -362,16 +370,16 @@ async function loadAvatarList() {
       list.push({
         id: node.id,
         name: node.name,
-        // label 来自图形节点的当前显示，如果没有则用 displayLabel 或全名
-        label: node.label || displayLabel || node.name,
+        // label 来自聊天变量配置，如果没有则用全名
+        label: displayLabel || node.name,
         type: node.type,
         avatarUrl,
         url: record?.url,
         offsetX: record?.offsetX ?? 50,
         offsetY: record?.offsetY ?? 50,
         scale: record?.scale ?? 150,
-        labelIndices: record?.labelIndices,
-        displayLabel: displayLabel !== node.name ? displayLabel : undefined,
+        labelIndices: labelIndices,
+        displayLabel: displayLabel,
         source,
         hasLocalBlob,
         aliases,
@@ -506,7 +514,7 @@ async function handleFileSelect(event: Event) {
     const response = await fetch(squareBase64);
     const squareBlob = await response.blob();
 
-    // 保存到 IndexedDB
+    // 保存到 IndexedDB（labelIndices 已迁移到聊天变量，不再保存到 IndexedDB）
     await avatarManager.saveAvatar({
       name: item.name,
       blob: squareBlob,
@@ -514,7 +522,6 @@ async function handleFileSelect(event: Event) {
       offsetY: item.offsetY,
       scale: item.scale,
       aliases: [],
-      labelIndices: item.labelIndices,
       updatedAt: Date.now(),
     });
 
@@ -582,7 +589,19 @@ function updateAliases(item: AvatarListItem, aliasesText: string) {
 // ============================================================
 
 function openLabelDialog(item: AvatarListItem) {
-  currentLabelItem.value = item;
+  // 从聊天变量读取最新的标签配置
+  const graphConfig = getGraphConfig();
+  const labelConfig = graphConfig.labels?.[item.name];
+
+  // 使用最新配置更新 item
+  const updatedItem = {
+    ...item,
+    labelIndices: labelConfig?.selectedIndices || [],
+    displayLabel: labelConfig?.displayLabel,
+    label: labelConfig?.displayLabel || item.name,
+  };
+
+  currentLabelItem.value = updatedItem;
   showLabelDialog.value = true;
 }
 
@@ -592,23 +611,15 @@ function closeLabelDialog() {
 }
 
 function applyLabel(data: { displayLabel: string; selectedIndices: number[] }) {
-  if (!currentLabelItem.value) return;
-
-  const item = currentLabelItem.value;
-
-  // 更新列表项（立即视觉反馈）
-  const idx = avatarList.value.findIndex(i => i.id === item.id);
-  if (idx !== -1) {
-    avatarList.value[idx] = {
-      ...avatarList.value[idx],
-      displayLabel: data.displayLabel,
-      labelIndices: data.selectedIndices,
-      label: data.displayLabel, // 更新列表中显示的标签
-    };
+  if (!currentLabelItem.value) {
+    console.warn('[AvatarManager] applyLabel: currentLabelItem 为空');
+    return;
   }
 
-  // 只保存到聊天变量（不保存到 IndexedDB）
-  // 使用节点 name 作为 key（与关系图保持一致）
+  const item = currentLabelItem.value;
+  console.log('[AvatarManager] applyLabel 被调用:', item.name, '->', data.displayLabel);
+
+  // 保存到聊天变量（统一数据源）- 先保存再更新 UI
   const config = getGraphConfig();
   if (!config.labels) config.labels = {};
   config.labels[item.name] = {
@@ -616,36 +627,63 @@ function applyLabel(data: { displayLabel: string; selectedIndices: number[] }) {
     selectedIndices: data.selectedIndices,
   };
   saveGraphConfig(config);
+  console.log('[AvatarManager] 标签已保存到聊天变量:', item.name, '->', data.displayLabel);
 
-  // 触发更新让关系图刷新
-  emit('update');
+  // 更新列表项（视觉反馈）
+  const idx = avatarList.value.findIndex(i => i.id === item.id);
+  if (idx !== -1) {
+    const updatedItem = {
+      ...avatarList.value[idx],
+      displayLabel: data.displayLabel,
+      labelIndices: data.selectedIndices,
+      label: data.displayLabel, // 更新列表中显示的标签
+    };
+    avatarList.value[idx] = updatedItem;
+  }
+
+  // 关闭弹窗
+  closeLabelDialog();
+
+  // 触发轻量级标签更新事件
+  console.log('[AvatarManager] 发送 label-change 事件');
+  emit('label-change');
 }
 
 function resetLabel() {
-  if (!currentLabelItem.value) return;
+  if (!currentLabelItem.value) {
+    console.warn('[AvatarManager] resetLabel: currentLabelItem 为空');
+    return;
+  }
 
   const item = currentLabelItem.value;
+  console.log('[AvatarManager] resetLabel 被调用:', item.name);
+
+  // 从聊天变量删除标签配置
+  const config = getGraphConfig();
+  if (config.labels && config.labels[item.name]) {
+    delete config.labels[item.name];
+    saveGraphConfig(config);
+    console.log('[AvatarManager] 标签已重置为全名:', item.name);
+  }
 
   // 更新列表项
   const idx = avatarList.value.findIndex(i => i.id === item.id);
   if (idx !== -1) {
-    avatarList.value[idx] = {
+    const updatedItem = {
       ...avatarList.value[idx],
       displayLabel: undefined,
       labelIndices: undefined,
       label: item.name, // 恢复为全名
     };
+    avatarList.value[idx] = updatedItem;
   }
 
-  // 只更新聊天变量（不操作 IndexedDB）
-  const config = getGraphConfig();
-  if (config.labels) {
-    delete config.labels[item.name];
-    saveGraphConfig(config);
-  }
+  // 关闭弹窗
+  closeLabelDialog();
 
-  // 触发更新让关系图刷新
-  emit('update');
+  // 触发轻量级标签更新事件
+  console.log('[AvatarManager] 发送 label-change 事件');
+  emit('label-change');
 }
 
 // ============================================================
@@ -684,12 +722,16 @@ function applyCrop(data: { offsetX: number; offsetY: number; scale: number }) {
   // 更新列表项
   const idx = avatarList.value.findIndex(i => i.id === item.id);
   if (idx !== -1) {
-    avatarList.value[idx] = {
+    const updatedItem = {
       ...avatarList.value[idx],
       offsetX: data.offsetX,
       offsetY: data.offsetY,
       scale: data.scale,
     };
+    avatarList.value[idx] = updatedItem;
+
+    // 同步更新 currentCropItem，确保预览区也能看到变化
+    currentCropItem.value = updatedItem;
   }
 
   closeCropDialog();
@@ -716,7 +758,7 @@ async function handleCropUpload(file: File) {
       offsetY: 50,
       scale: 150,
       aliases: [],
-      labelIndices: item.labelIndices,
+      // labelIndices 已迁移到聊天变量，不再保存到 IndexedDB
       updatedAt: Date.now(),
     });
 
@@ -806,7 +848,7 @@ async function saveAll() {
         offsetY: changes.offsetY ?? existing?.offsetY ?? 50,
         scale: changes.scale ?? existing?.scale ?? 150,
         aliases,
-        labelIndices: changes.labelIndices !== undefined ? [...toRaw(changes.labelIndices)] : existing?.labelIndices ? [...existing.labelIndices] : undefined,
+        // labelIndices 已迁移到聊天变量，不再保存到 IndexedDB
         updatedAt: Date.now(),
       };
 

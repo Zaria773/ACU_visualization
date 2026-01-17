@@ -53,21 +53,21 @@ export const NAV_BUTTONS: NavButtonConfig[] = [
 export type NavButtonId = (typeof NAV_BUTTONS)[number]['id'];
 
 /** 默认可见按钮列表 */
-const DEFAULT_VISIBLE_BUTTONS = ['save', 'refresh', 'settings', 'toggle'];
+const DEFAULT_VISIBLE_BUTTONS = ['save', 'collapseTab', 'refresh', 'toggle', 'settings'];
 
 /** 默认按钮顺序 */
 const DEFAULT_BUTTON_ORDER = [
   'save',
+  'collapseTab',
+  'refresh',
+  'toggle',
+  'settings',
   'saveAs',
   'undo',
-  'refresh',
   'manualUpdate',
   'purge',
   'pin',
-  'toggle',
   'openNative',
-  'collapseTab',
-  'settings',
 ];
 
 /** 默认按钮收纳组 */
@@ -101,6 +101,7 @@ export const DEFAULT_CONFIG: ACUConfig = {
   longPressDirectExec: false,
   clearTableOnSwipe: true,
   collapseTabBar: false,
+  mobileSafeAreaBottom: 50,
 };
 
 /** 主题配置列表 */
