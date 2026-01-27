@@ -433,6 +433,10 @@ export interface ACUScriptVariables {
    */
   backgroundConfig?: BackgroundConfig;
   /**
+   * 自定义 CSS
+   */
+  customCSS?: string;
+  /**
    * 抽签系统配置
    */
   divinationConfig?: DivinationConfig;
@@ -1029,4 +1033,30 @@ export interface ImportResult {
   renamedTags: number;
   /** 错误信息（如果失败） */
   error?: string;
+}
+
+// ============================================================
+// 全局 API 类型定义
+// ============================================================
+
+export interface AutoCardUpdaterAPI {
+  // 表格模板相关
+  getTemplatePresetNames: () => string[];
+  switchTemplatePreset: (name: string) => Promise<{ success: boolean; message: string }>;
+  importTemplateFromData: (data: string | object) => Promise<{ success: boolean; message: string }>;
+
+  // 剧情推进相关
+  getPlotPresetNames: () => string[];
+  getCurrentPlotPreset: () => string;
+  switchPlotPreset: (name: string) => boolean;
+  importPlotPresetFromData: (
+    data: string | object,
+    options?: { overwrite?: boolean; switchTo?: boolean }
+  ) => Promise<{ success: boolean; message: string; presetName?: string }>;
+}
+
+declare global {
+  interface Window {
+    AutoCardUpdaterAPI?: AutoCardUpdaterAPI;
+  }
 }

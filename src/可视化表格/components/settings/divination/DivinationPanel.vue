@@ -148,11 +148,26 @@ const handleFileUpload = async (event: Event) => {
   align-items: center;
   gap: 8px;
   width: 100%;
-  flex-wrap: nowrap; /* 防止换行 */
+  flex-wrap: nowrap !important; /* 强制不换行 */
 
   .acu-settings-input {
     flex: 1;
-    min-width: 0; /* 允许缩小 */
+    min-width: 50px; /* 允许缩小但保留最小宽度 */
+    width: 0; /* 关键：配合 flex: 1 确保能缩小 */
+  }
+
+  /* 移动端适配 */
+  @media (max-width: 600px) {
+    gap: 4px;
+
+    .acu-settings-input {
+      font-size: 12px !important;
+      padding: 6px 8px !important;
+    }
+
+    .acu-tool-btn {
+      padding: 6px 8px;
+    }
   }
 }
 

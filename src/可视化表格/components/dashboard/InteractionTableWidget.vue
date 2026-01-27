@@ -369,11 +369,22 @@ watch(
   { deep: true }
 );
 
+/** 记录进入编辑模式前的折叠状态 */
+let previousCollapsedState = false;
+
 // Watchers
-watch(() => props.isEditing, (val) => {
-  if (val) isCollapsed.value = true;
-  else isCollapsed.value = false;
-});
+watch(
+  () => props.isEditing,
+  (val) => {
+    if (val) {
+      previousCollapsedState = isCollapsed.value;
+      isCollapsed.value = true;
+    } else {
+      isCollapsed.value = previousCollapsedState;
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss">

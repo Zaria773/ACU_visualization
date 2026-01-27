@@ -220,21 +220,6 @@
                   </div>
                 </div>
 
-                <!-- 清除确认 -->
-                <div class="acu-settings-row">
-                  <div class="acu-settings-label">
-                    清除操作确认
-                    <span class="hint">删除数据前需确认。关闭后点按默认删除最新有数据楼层的数据</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <button
-                      class="acu-switch"
-                      :class="{ active: localConfig.purgeConfirmation }"
-                      @click="localConfig.purgeConfirmation = !localConfig.purgeConfirmation"
-                    ></button>
-                  </div>
-                </div>
-
                 <!-- 收纳Tab栏 -->
                 <div class="acu-settings-row">
                   <div class="acu-settings-label">

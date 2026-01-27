@@ -6,18 +6,18 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import type {
-  DivinationCategory,
-  DivinationConfig,
-  DivinationResult,
+  BiasType,
   Dimension,
   DimensionTier,
-  BiasType,
+  DivinationCategory,
+  DivinationConfig,
   DivinationPreset,
+  DivinationResult,
 } from '../types';
 import { getTableData } from '../utils';
-import { fileToBase64, compressImage } from '../utils/imageUpload';
+import { compressImage, fileToBase64 } from '../utils/imageUpload';
 
 /** 世界书名称 */
 const WORLDBOOK_NAME = 'ACU_Divination';
@@ -363,8 +363,8 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       // 1. 转 Base64
       const base64 = await fileToBase64(file);
 
-      // 2. 压缩 (卡背不需要太高清，限制宽度 300px，质量 0.8)
-      const compressed = await compressImage(base64, 300, 0.8);
+      // 2. 压缩 (提高画质限制：宽度 1024px，质量 0.9)
+      const compressed = await compressImage(base64, 1024, 0.9);
 
       // 3. 更新配置
       config.value.cardBackImage = compressed;

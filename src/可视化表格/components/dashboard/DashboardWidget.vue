@@ -282,6 +282,7 @@ watch(
       isCollapsed.value = previousCollapsedState;
     }
   },
+  { immediate: true },
 );
 
 // Emits

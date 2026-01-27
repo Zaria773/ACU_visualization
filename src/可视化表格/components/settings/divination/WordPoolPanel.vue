@@ -8,12 +8,13 @@
     <!-- 搜索/过滤 -->
     <div class="acu-settings-group">
       <div class="acu-settings-row">
-        <div class="acu-settings-control" style="width: 100%">
+        <div class="acu-settings-control" style="width: 100%; display: flex;">
           <input
             v-model="searchQuery"
             type="text"
-            class="acu-search-input"
+            class="acu-word-pool-search"
             placeholder="搜索词库名称..."
+            style="flex: 1; width: 100%;"
           />
         </div>
       </div>
@@ -169,7 +170,7 @@ const handleContentChange = (id: number | string) => {
 
 <style scoped lang="scss">
 // 样式使用全局类，这里只写少量特定的
-.acu-search-input {
+.acu-word-pool-search {
   width: 100%;
   padding: 8px 12px;
   border-radius: var(--acu-radius-md);

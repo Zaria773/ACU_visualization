@@ -13,6 +13,7 @@
 // 通用弹窗 (common/)
 // ============================================
 export { default as AdvancedPurgeDialog } from './common/AdvancedPurgeDialog.vue';
+export { default as DirectorDialog } from './common/DirectorDialog.vue';
 export { default as HistoryDialog } from './common/HistoryDialog.vue';
 export { default as IconSelectDialog } from './common/IconSelectDialog.vue';
 export { default as InputFloorDialog } from './common/InputFloorDialog.vue';

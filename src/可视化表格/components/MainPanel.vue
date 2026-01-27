@@ -497,6 +497,9 @@ const emitButtonAction = (actionId: string) => {
     case 'toggle':
       emit('toggle');
       break;
+    case 'director':
+      uiStore.directorDialog = true;
+      break;
     case 'settings':
       emit('settings');
       break;
@@ -1127,11 +1130,24 @@ const resetHeight = () => {
       const finalHeight = Math.min(maxHeight, Math.max(minHeight, naturalHeight));
 
       // 8. 应用高度
-      dataAreaRef.value.style.height = `${finalHeight}px`;
-      panelHeight.value = finalHeight;
+      // 【修复】如果是纵向布局且非关系图，不要强制设置固定高度，保持 auto 以便自适应
+      // 只有在横向布局或关系图（需要撑满或计算）时才设置固定高度
+      // 注意：横向布局下如果找不到卡片容器（如 Dashboard），也应该使用 auto
+      const isSpecialHorizontal = isHorizontal && dataAreaRef.value.querySelector('.acu-cards-container');
 
-      console.info(`[ACU] 高度已重置: natural=${naturalHeight}, max=${maxHeight}, final=${finalHeight}, horizontal=${isHorizontal}`);
-      emit('height-change', finalHeight);
+      if (!hasRelationshipGraph && !isSpecialHorizontal) {
+        dataAreaRef.value.style.height = '';
+        // 重新获取实际高度用于状态更新
+        const actualHeight = dataAreaRef.value.offsetHeight;
+        panelHeight.value = actualHeight;
+        console.info(`[ACU] 高度已重置(Auto): actual=${actualHeight}, horizontal=${isHorizontal}`);
+        emit('height-change', actualHeight);
+      } else {
+        dataAreaRef.value.style.height = `${finalHeight}px`;
+        panelHeight.value = finalHeight;
+        console.info(`[ACU] 高度已重置(Fixed): natural=${naturalHeight}, max=${maxHeight}, final=${finalHeight}, horizontal=${isHorizontal}`);
+        emit('height-change', finalHeight);
+      }
     });
   }, 50);
 };

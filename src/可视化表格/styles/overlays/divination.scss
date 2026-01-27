@@ -380,18 +380,18 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   position: relative;
   cursor: pointer;
   perspective: 1000px;
-  aspect-ratio: 220 / 385;
+  // aspect-ratio 由内联样式动态控制
 
   // 移动端：宽度占 90% 居中
   width: 90vw;
   height: auto;
-  max-height: 80vh; // 防止过高溢出
+  max-height: 80vh; // 稍微减小最大高度，留出更多空间
 
   // PC 端：高度占 80% 居中
   @media (min-width: 768px) {
     width: auto;
     height: 80vh;
-    max-width: 90vw; // 防止过宽溢出
+    max-width: 90vw; // 限制最大宽度，防止过宽
   }
 
   &__inner {

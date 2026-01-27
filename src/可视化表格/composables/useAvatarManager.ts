@@ -89,6 +89,18 @@ export function useAvatarManager() {
 
       request.onsuccess = () => {
         dbInstance = request.result;
+
+        // 监听连接关闭事件，自动重置实例以便下次重新连接
+        dbInstance.onclose = () => {
+          console.warn('[AvatarManager] 数据库连接已关闭，重置实例');
+          dbInstance = null;
+          isReady.value = false;
+        };
+
+        dbInstance.onerror = event => {
+          console.error('[AvatarManager] 数据库错误:', (event.target as any).error);
+        };
+
         isReady.value = true;
         console.info('[AvatarManager] 数据库连接成功');
         resolve(dbInstance);

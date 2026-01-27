@@ -113,6 +113,7 @@
             <TarotCard
               :is-flipped="isFlipped"
               :result="result"
+              :card-back-image="divinationStore.config.cardBackImage"
               @flip="handleFlip"
               @confirm="handleConfirm('reveal')"
             />

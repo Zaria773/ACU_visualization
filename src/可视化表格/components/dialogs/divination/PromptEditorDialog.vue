@@ -1,6 +1,11 @@
 <template>
   <Transition name="modal">
-    <div v-if="visible" class="acu-modal-container" @click.self="handleClose">
+    <div
+      v-if="visible"
+      class="acu-modal-container"
+      :class="{ 'acu-center-modal': uiStore.isMobile }"
+      @click.self="handleClose"
+    >
         <div class="acu-modal acu-prompt-editor-modal">
           <!-- 头部 -->
           <div class="acu-modal-header">
@@ -48,6 +53,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useToast } from '../../../composables/useToast';
+import { useUIStore } from '../../../stores/useUIStore';
 
 interface Props {
   visible: boolean;
@@ -61,6 +67,7 @@ const emit = defineEmits<{
   (e: 'save', prompt: string): void;
 }>();
 
+const uiStore = useUIStore();
 const toast = useToast();
 const localPrompt = ref('');
 

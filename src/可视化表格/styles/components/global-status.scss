@@ -68,12 +68,13 @@
   flex-wrap: wrap;
 }
 
-.acu-global-time-primary {
+// 增加权重以覆盖 base.scss 的全局重置
+.acu-global-widget .acu-global-time-primary {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.4em !important;
-  font-weight: 600 !important;
+  font-size: 1.4em;
+  font-weight: 600;
   color: var(--acu-title-color);
 
   i {
@@ -90,12 +91,13 @@
 // 地点样式
 // ------------------------------------------------------------
 
-.acu-global-location {
+// 增加权重以覆盖 base.scss 的全局重置
+.acu-global-widget .acu-global-location {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.5em !important; // 增大字号
-  font-weight: 600 !important; // 加粗
+  font-size: 1.5em; // 增大字号
+  font-weight: 600; // 加粗
   line-height: 1.4;
   color: var(--acu-text-main);
 
