@@ -1,10 +1,6 @@
 <template>
   <div class="card-back">
-    <img
-      :src="imageUrl"
-      alt="Tarot Card Back"
-      class="card-back__image"
-    />
+    <img :src="imageUrl" alt="Tarot Card Back" class="card-back__image" />
     <div class="card-back__overlay"></div>
   </div>
 </template>

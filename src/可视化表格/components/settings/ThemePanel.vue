@@ -1,4 +1,4 @@
- <template>
+<template>
   <div class="acu-theme-panel">
     <!-- 固定区域：预设管理 -->
     <PresetManagerHeader
@@ -247,7 +247,15 @@ import { useToast } from '../../composables/useToast';
 import { THEMES, useConfigStore } from '../../stores/useConfigStore';
 import { useThemeStore } from '../../stores/useThemeStore';
 import { useUIStore } from '../../stores/useUIStore';
-import { THEME_VAR_CSS_MAP, THEME_VAR_GROUPS, type BackgroundConfig, type HighlightConfig, type ThemePreset, type ThemeVariables, type ThemeVarOpacities } from '../../types';
+import {
+  THEME_VAR_CSS_MAP,
+  THEME_VAR_GROUPS,
+  type BackgroundConfig,
+  type HighlightConfig,
+  type ThemePreset,
+  type ThemeVariables,
+  type ThemeVarOpacities,
+} from '../../types';
 import BackgroundConfigPanel from './BackgroundConfigPanel.vue';
 import PresetManagerHeader from './PresetManagerHeader.vue';
 
@@ -557,16 +565,16 @@ function clearCSS() {
 
 function exportCSS() {
   const data = {
-  type: 'acu_theme_config',
-  version: '1.1',
-  timestamp: new Date().toISOString(),
-  theme: selectedTheme.value,
-  highlight: getCurrentHighlight(),
-  themeVars: getCurrentThemeVars(),
-  themeVarOpacities: getCurrentThemeVarOpacities(),
-  backgroundConfig: getBackgroundConfig(), // 修复：添加背景配置
-  customCSS: getCustomCSS(),
-};
+    type: 'acu_theme_config',
+    version: '1.1',
+    timestamp: new Date().toISOString(),
+    theme: selectedTheme.value,
+    highlight: getCurrentHighlight(),
+    themeVars: getCurrentThemeVars(),
+    themeVarOpacities: getCurrentThemeVarOpacities(),
+    backgroundConfig: getBackgroundConfig(), // 修复：添加背景配置
+    customCSS: getCustomCSS(),
+  };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);

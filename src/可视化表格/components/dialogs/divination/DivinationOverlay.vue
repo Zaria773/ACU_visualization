@@ -4,12 +4,7 @@
       enter-active-class="divination-overlay-enter-active"
       leave-active-class="divination-overlay-leave-active"
     >
-      <div
-        v-if="visible"
-        class="divination-overlay"
-        style="z-index: 2147483647;"
-        @click="handleOverlayClick"
-      >
+      <div v-if="visible" class="divination-overlay" style="z-index: 2147483647" @click="handleOverlayClick">
         <!-- 噪点纹理层 -->
         <div class="divination-grain"></div>
 
@@ -110,12 +105,7 @@
 
           <!-- 卡片舞台 -->
           <div class="divination-stage">
-            <TarotCard
-              :is-flipped="isFlipped"
-              :result="result"
-              @flip="handleFlip"
-              @confirm="handleConfirm('reveal')"
-            />
+            <TarotCard :is-flipped="isFlipped" :result="result" @flip="handleFlip" @confirm="handleConfirm('reveal')" />
 
             <!-- 翻牌前提示 -->
             <div v-if="!isFlipped" class="divination-hint">
@@ -125,11 +115,7 @@
 
           <!-- 底部控制区 -->
           <div class="divination-footer">
-            <button
-              v-if="isFlipped"
-              class="divination-btn divination-btn--retry"
-              @click.stop="handleRetry"
-            >
+            <button v-if="isFlipped" class="divination-btn divination-btn--retry" @click.stop="handleRetry">
               再抽一次
             </button>
           </div>
@@ -195,7 +181,7 @@ watch(
         isFlipped.value = false;
       }
     }
-  }
+  },
 );
 
 function handleClose() {

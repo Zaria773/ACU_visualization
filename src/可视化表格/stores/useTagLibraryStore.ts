@@ -349,7 +349,13 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     // 删除分类及其子分类
     library.value.categories = library.value.categories.filter(c => !categoryIdsToDelete.has(c.id));
 
-    console.info('[ACU TagLibrary] 已删除分类及其内容:', category.path, '(子分类数:', categoryIdsToDelete.size - 1, ')');
+    console.info(
+      '[ACU TagLibrary] 已删除分类及其内容:',
+      category.path,
+      '(子分类数:',
+      categoryIdsToDelete.size - 1,
+      ')',
+    );
     // saveLibrary 由 watch 自动触发
   }
 
@@ -680,10 +686,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
    * @param scope 导出范围
    * @param categoryId 分类 ID（scope='category' 时需要）
    */
-  function exportLibrary(
-    scope: 'all' | 'category' | 'selected',
-    categoryId?: string,
-  ): TagLibraryExport {
+  function exportLibrary(scope: 'all' | 'category' | 'selected', categoryId?: string): TagLibraryExport {
     let categoriesToExport: TagCategory[] = [];
     let tagsToExport: InteractiveTag[] = [];
 
@@ -763,9 +766,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
         const categoryId = pathToCategoryId.get(importTag.category) || '';
 
         // 检查是否存在同名标签
-        const existingTag = library.value.tags.find(
-          t => t.label === importTag.label && t.categoryId === categoryId,
-        );
+        const existingTag = library.value.tags.find(t => t.label === importTag.label && t.categoryId === categoryId);
 
         if (existingTag) {
           if (options.conflictStrategy === 'overwrite') {

@@ -55,12 +55,7 @@
         <div class="acu-settings-control">
           <div class="acu-image-upload-container">
             <!-- URL 输入 -->
-            <input
-              v-model="config.cardBackImage"
-              type="text"
-              class="acu-settings-input"
-              placeholder="输入图片 URL"
-            />
+            <input v-model="config.cardBackImage" type="text" class="acu-settings-input" placeholder="输入图片 URL" />
 
             <!-- 上传按钮 -->
             <button class="acu-tool-btn" @click="triggerUpload" title="上传图片">
@@ -68,13 +63,7 @@
             </button>
 
             <!-- 隐藏的文件输入 -->
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              class="acu-hidden-input"
-              @change="handleFileUpload"
-            />
+            <input ref="fileInput" type="file" accept="image/*" class="acu-hidden-input" @change="handleFileUpload" />
           </div>
         </div>
       </div>

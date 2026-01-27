@@ -41,8 +41,7 @@ const DEFAULT_LUCK_DIMENSION: Dimension = {
       name: '大吉',
       weight: 15,
       color: '#fbc02d',
-      prompt:
-        '命运此刻站在主角这边。请安排惊人的巧合或好运，让环境主动配合主角的行动，一切阻碍都应奇迹般地自行化解。',
+      prompt: '命运此刻站在主角这边。请安排惊人的巧合或好运，让环境主动配合主角的行动，一切阻碍都应奇迹般地自行化解。',
     },
     {
       id: 'slightlyLucky',
@@ -90,7 +89,13 @@ const DEFAULT_SANITY_DIMENSION: Dimension = {
   enabled: true,
   tiers: [
     { id: 'normal', name: '正常逻辑', weight: 50, prompt: '' },
-    { id: 'absurd', name: '天然合理', weight: 50, prompt: '特别要求：若需要融合非日常要素，场景中的所有角色必须视若无睹，将其视为日常生活中理所当然的一部分，绝不要表现出惊讶或质疑。' },
+    {
+      id: 'absurd',
+      name: '天然合理',
+      weight: 50,
+      prompt:
+        '特别要求：若需要融合非日常要素，场景中的所有角色必须视若无睹，将其视为日常生活中理所当然的一部分，绝不要表现出惊讶或质疑。',
+    },
   ],
 };
 
@@ -194,11 +199,15 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   }
 
   // 监听配置变化自动保存
-  watch([config, presets, activePresetId], () => {
-    if (isLoaded.value) {
-      saveConfig();
-    }
-  }, { deep: true });
+  watch(
+    [config, presets, activePresetId],
+    () => {
+      if (isLoaded.value) {
+        saveConfig();
+      }
+    },
+    { deep: true },
+  );
 
   // ============================================================
   // Preset Management
@@ -349,7 +358,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         await createOrReplaceWorldbook(WORLDBOOK_NAME, allEntries, { render: 'debounced' });
         console.info('[Divination] Category updated in worldbook');
       }
-
     } catch (e) {
       console.error('[Divination] Failed to update category:', e);
     }
@@ -414,7 +422,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 检查世界书是否存在
-      const names = await getWorldbookNames?.() || []; // 安全调用
+      const names = (await getWorldbookNames?.()) || []; // 安全调用
       // 实际上 getWorldbook 会抛出错误如果不存在，所以直接 try-catch 即可
       // 但这里我们假设如果 names 列表里没有就不尝试获取了
       // 注意: worldbook.d.ts 定义了 getWorldbookNames, 但不一定总是可用，需防御性编程
@@ -423,7 +431,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
       categories.value = entries.map(entry => {
         const { name, bias, limit } = parseEntryName(entry.name);
-        const words = entry.content.split(/[,，、\n]/).map(w => w.trim()).filter(w => w);
+        const words = entry.content
+          .split(/[,，、\n]/)
+          .map(w => w.trim())
+          .filter(w => w);
 
         return {
           id: entry.uid,
@@ -473,13 +484,16 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 2. 解析表格内容并构建新的条目列表
-      const newEntriesMap = new Map<string, {
-        name: string;
-        bias: BiasType;
-        limit: number;
-        words: Set<string>;
-        keys: string[];
-      }>();
+      const newEntriesMap = new Map<
+        string,
+        {
+          name: string;
+          bias: BiasType;
+          limit: number;
+          words: Set<string>;
+          keys: string[];
+        }
+      >();
 
       for (const table of randomTables) {
         // 获取列头 (第一行)
@@ -559,7 +573,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
             strategy: {
               ...existingEntry.strategy,
               // keys: _.uniq([...existingEntry.strategy.keys, ...data.keys]) // 如果需要合并 keys
-            }
+            },
           });
         } else {
           // 创建新条目
@@ -603,7 +617,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       } else {
         console.warn('[Divination] createOrReplaceWorldbook API unavailable');
       }
-
     } catch (e) {
       console.error('[Divination] Sync failed:', e);
     }
@@ -756,22 +769,24 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       .map(r => ({
         name: r.dimension.name,
         value: r.tier.name,
-        prompt: r.tier.prompt
+        prompt: r.tier.prompt,
       }));
 
     return {
-      luck: luckResult ? {
-        name: luckResult.tier.name,
-        color: luckResult.tier.color || '#808080',
-        prompt: luckResult.tier.prompt
-      } : {
-        name: '未知',
-        color: '#808080',
-        prompt: ''
-      },
+      luck: luckResult
+        ? {
+            name: luckResult.tier.name,
+            color: luckResult.tier.color || '#808080',
+            prompt: luckResult.tier.prompt,
+          }
+        : {
+            name: '未知',
+            color: '#808080',
+            prompt: '',
+          },
       dimensions: otherDimensions,
       words: drawnWords,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 

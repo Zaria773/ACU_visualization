@@ -67,8 +67,7 @@ export const DEFAULT_LUCK_TIERS: LuckTier[] = [
     name: '大吉',
     weight: 15,
     color: '#fbc02d',
-    prompt:
-      '命运此刻站在主角这边。请安排惊人的巧合或好运，让环境主动配合主角的行动，一切阻碍都应奇迹般地自行化解。',
+    prompt: '命运此刻站在主角这边。请安排惊人的巧合或好运，让环境主动配合主角的行动，一切阻碍都应奇迹般地自行化解。',
   },
   {
     id: 'slightlyLucky',

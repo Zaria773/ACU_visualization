@@ -3,7 +3,7 @@
     <!-- 头部 -->
     <div class="acu-status-board-header">
       <span class="acu-status-board-summary">
-          共 {{ statusList.length }} 个表格 · AI楼层 {{ currentTotalAiFloors }}
+        共 {{ statusList.length }} 个表格 · AI楼层 {{ currentTotalAiFloors }}
       </span>
       <button class="acu-icon-btn" :disabled="isLoading" title="刷新状态" @click.stop="handleRefresh">
         <i class="fas fa-redo" :class="{ 'acu-animate-spin': isLoading }"></i>

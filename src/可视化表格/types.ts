@@ -469,22 +469,22 @@ export interface DivinationPreset {
 export type BiasType = 'positive' | 'neutral' | 'negative';
 
 export interface DivinationCategory {
-  id: number;          // 对应 Worldbook Entry uid
-  name: string;        // 显示名称 (去除后缀)
-  bias: BiasType;      // 倾向
-  limit: number;       // 强制抽取数量
-  path: string[];      // 完整路径 (Keys + Name)
-  words: string[];     // 解析后的词汇列表
-  enabled: boolean;    // 是否启用
-  rawEntry: any;       // 原始世界书条目引用
+  id: number; // 对应 Worldbook Entry uid
+  name: string; // 显示名称 (去除后缀)
+  bias: BiasType; // 倾向
+  limit: number; // 强制抽取数量
+  path: string[]; // 完整路径 (Keys + Name)
+  words: string[]; // 解析后的词汇列表
+  enabled: boolean; // 是否启用
+  rawEntry: any; // 原始世界书条目引用
 }
 
 export interface DimensionTier {
-  id: string;          // 唯一标识
+  id: string; // 唯一标识
   name: string;
   weight: number;
   prompt: string;
-  color?: string;      // 颜色 (可选，用于运势等)
+  color?: string; // 颜色 (可选，用于运势等)
 }
 
 export interface Dimension {
@@ -496,14 +496,14 @@ export interface Dimension {
 
 export interface DivinationConfig {
   // 基础设置
-  enabled: boolean;    // 是否启用抽签系统，默认 true
-  drawCount: number;   // 总抽取数量 (目标值)，默认 4
+  enabled: boolean; // 是否启用抽签系统，默认 true
+  drawCount: number; // 总抽取数量 (目标值)，默认 4
   enableBias: boolean; // 是否启用倾向控制，默认 true
-  autoSync: boolean;   // 是否自动同步 ACU 表格，默认 true
+  autoSync: boolean; // 是否自动同步 ACU 表格，默认 true
 
   // 外观设置
   cardBackImage: string; // 卡背图 URL
-  themeColor: string;    // 主题色
+  themeColor: string; // 主题色
 
   // 行为设置
   flipMode: 'auto' | 'manual' | 'skip'; // 翻牌模式
@@ -514,7 +514,6 @@ export interface DivinationConfig {
   // 高级设置
   customTemplate: string; // 自定义提示词模板
 }
-
 
 export interface DivinationResult {
   luck: LuckTier;
@@ -704,51 +703,51 @@ export const THEME_VAR_GROUPS: Array<{
   icon: string;
   vars: Array<{ key: keyof ThemeVariables; label: string }>;
 }> = [
-    {
-      id: 'background',
-      name: '背景色',
-      icon: 'fa-fill-drip',
-      vars: [
-        { key: 'bgNav', label: '导航栏背景' },
-        { key: 'bgPanel', label: '面板背景' },
-        { key: 'cardBg', label: '卡片背景' },
-        { key: 'tableHead', label: '表头背景' },
-        { key: 'tableHover', label: '悬浮背景' },
-        { key: 'badgeBg', label: '徽章背景' },
-        { key: 'inputBg', label: '输入框背景' },
-        { key: 'menuBg', label: '菜单背景' },
-        { key: 'overlayBg', label: '遮罩背景' },
-      ],
-    },
-    {
-      id: 'text',
-      name: '文本色',
-      icon: 'fa-font',
-      vars: [
-        { key: 'textMain', label: '主文本色' },
-        { key: 'textSub', label: '次要文本色' },
-        { key: 'menuText', label: '菜单文本色' },
-      ],
-    },
-    {
-      id: 'button',
-      name: '边框与按钮',
-      icon: 'fa-square',
-      vars: [
-        { key: 'border', label: '边框色' },
-        { key: 'btnBg', label: '按钮背景' },
-        { key: 'btnHover', label: '按钮悬浮' },
-        { key: 'btnActiveBg', label: '按钮激活背景' },
-        { key: 'btnActiveText', label: '按钮激活文本' },
-      ],
-    },
-    {
-      id: 'effect',
-      name: '效果',
-      icon: 'fa-magic',
-      vars: [{ key: 'shadow', label: '阴影色' }],
-    },
-  ];
+  {
+    id: 'background',
+    name: '背景色',
+    icon: 'fa-fill-drip',
+    vars: [
+      { key: 'bgNav', label: '导航栏背景' },
+      { key: 'bgPanel', label: '面板背景' },
+      { key: 'cardBg', label: '卡片背景' },
+      { key: 'tableHead', label: '表头背景' },
+      { key: 'tableHover', label: '悬浮背景' },
+      { key: 'badgeBg', label: '徽章背景' },
+      { key: 'inputBg', label: '输入框背景' },
+      { key: 'menuBg', label: '菜单背景' },
+      { key: 'overlayBg', label: '遮罩背景' },
+    ],
+  },
+  {
+    id: 'text',
+    name: '文本色',
+    icon: 'fa-font',
+    vars: [
+      { key: 'textMain', label: '主文本色' },
+      { key: 'textSub', label: '次要文本色' },
+      { key: 'menuText', label: '菜单文本色' },
+    ],
+  },
+  {
+    id: 'button',
+    name: '边框与按钮',
+    icon: 'fa-square',
+    vars: [
+      { key: 'border', label: '边框色' },
+      { key: 'btnBg', label: '按钮背景' },
+      { key: 'btnHover', label: '按钮悬浮' },
+      { key: 'btnActiveBg', label: '按钮激活背景' },
+      { key: 'btnActiveText', label: '按钮激活文本' },
+    ],
+  },
+  {
+    id: 'effect',
+    name: '效果',
+    icon: 'fa-magic',
+    vars: [{ key: 'shadow', label: '阴影色' }],
+  },
+];
 
 // ============================================================
 // 仪表盘相关类型定义

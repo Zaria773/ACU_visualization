@@ -35,19 +35,11 @@
       <!-- 按钮区 -->
       <div v-if="!isEditing" class="acu-dash-actions">
         <!-- 全部存入按钮 -->
-        <button
-          class="acu-icon-btn"
-          title="将所有交互存入标签库"
-          @click.stop="handleImportAll"
-        >
+        <button class="acu-icon-btn" title="将所有交互存入标签库" @click.stop="handleImportAll">
           <i class="fas fa-save"></i>
         </button>
 
-        <button
-          class="acu-icon-btn"
-          :title="getActionTooltip('settings')"
-          @click.stop="handleAction('settings')"
-        >
+        <button class="acu-icon-btn" :title="getActionTooltip('settings')" @click.stop="handleAction('settings')">
           <i class="fas fa-cog"></i>
         </button>
 
@@ -74,11 +66,7 @@
 
             <div class="acu-interaction-actions">
               <!-- 追加到输入框 -->
-              <button
-                class="acu-icon-btn"
-                title="追加到输入框"
-                @click.stop="handleAppendToInput(row)"
-              >
+              <button class="acu-icon-btn" title="追加到输入框" @click.stop="handleAppendToInput(row)">
                 <i class="fas fa-reply"></i>
               </button>
               <!-- 单条存入 -->
@@ -193,9 +181,7 @@ const displayRows = computed(() => {
 
   if (props.searchTerm) {
     const searchLower = props.searchTerm.toLowerCase().trim();
-    rows = rows.filter(row =>
-      row.cells.some(cell => String(cell.value).toLowerCase().includes(searchLower))
-    );
+    rows = rows.filter(row => row.cells.some(cell => String(cell.value).toLowerCase().includes(searchLower)));
   }
 
   return rows;
@@ -340,7 +326,7 @@ function handleImportAll() {
 // 监听 AI 更新，自动导入
 watch(
   () => props.aiDiffMap,
-  (newAiDiff) => {
+  newAiDiff => {
     if (!newAiDiff || !props.tableData) return;
 
     // 检查是否有当前表格的 AI 更新
@@ -366,14 +352,17 @@ watch(
       }
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watchers
-watch(() => props.isEditing, (val) => {
-  if (val) isCollapsed.value = true;
-  else isCollapsed.value = false;
-});
+watch(
+  () => props.isEditing,
+  val => {
+    if (val) isCollapsed.value = true;
+    else isCollapsed.value = false;
+  },
+);
 </script>
 
 <style lang="scss">

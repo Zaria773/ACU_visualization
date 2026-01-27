@@ -2,11 +2,7 @@
   <div class="acu-switch-list">
     <!-- 头部按钮区 -->
     <div class="acu-switch-list-header">
-      <button
-        class="acu-quick-select-btn"
-        :class="{ active: isAllSelected }"
-        @click.stop="handleSelectAll"
-      >
+      <button class="acu-quick-select-btn" :class="{ active: isAllSelected }" @click.stop="handleSelectAll">
         <i class="fas fa-check-double"></i>
         全选
       </button>
@@ -151,7 +147,10 @@ function handleSelectAll(): void {
   if (isAllSelected.value) {
     emit('update:modelValue', []);
   } else {
-    emit('update:modelValue', props.items.map(item => item.key));
+    emit(
+      'update:modelValue',
+      props.items.map(item => item.key),
+    );
   }
 }
 

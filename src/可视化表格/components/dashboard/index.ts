@@ -5,4 +5,3 @@
  */
 export { default as InteractionTableWidget } from './InteractionTableWidget.vue';
 export { default as DashboardWidget } from './DashboardWidget.vue';
-

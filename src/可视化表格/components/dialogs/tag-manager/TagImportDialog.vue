@@ -1,10 +1,6 @@
 <!-- TagImportDialog.vue - 标签库导入弹窗 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-import-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -24,13 +20,7 @@
             <p>点击选择文件或拖拽 JSON 文件到此处</p>
             <span class="hint">支持从其他设备导出的标签库文件</span>
           </div>
-          <input
-            ref="fileInput"
-            type="file"
-            accept=".json"
-            style="display: none"
-            @change="handleFileSelect"
-          />
+          <input ref="fileInput" type="file" accept=".json" style="display: none" @change="handleFileSelect" />
         </div>
 
         <!-- 导入预览 -->
@@ -85,11 +75,7 @@
               <div v-if="importData.categories.length > 0" class="acu-preview-section">
                 <div class="acu-preview-header">分类 ({{ importData.categories.length }})</div>
                 <div class="acu-preview-items">
-                  <span
-                    v-for="cat in importData.categories.slice(0, 10)"
-                    :key="cat.id"
-                    class="acu-preview-item"
-                  >
+                  <span v-for="cat in importData.categories.slice(0, 10)" :key="cat.id" class="acu-preview-item">
                     {{ cat.icon ? cat.icon + ' ' : '' }}{{ cat.path }}
                   </span>
                   <span v-if="importData.categories.length > 10" class="acu-preview-more">
@@ -119,12 +105,8 @@
 
           <!-- 操作按钮 -->
           <div class="acu-import-actions">
-            <button class="acu-btn-secondary" @click.stop="resetImport">
-              <i class="fas fa-redo"></i> 重新选择
-            </button>
-            <button class="acu-btn-primary" @click.stop="executeImport">
-              <i class="fas fa-check"></i> 确认导入
-            </button>
+            <button class="acu-btn-secondary" @click.stop="resetImport"><i class="fas fa-redo"></i> 重新选择</button>
+            <button class="acu-btn-primary" @click.stop="executeImport"><i class="fas fa-check"></i> 确认导入</button>
           </div>
         </div>
 
@@ -235,9 +217,7 @@ async function parseFile(file: File) {
 function isTagConflict(tag: { label: string; category: string }): boolean {
   // 查找是否存在同名同分类的标签
   const categoryId = tagStore.getCategoryByPath(tag.category)?.id || '';
-  return tagStore.library.tags.some(
-    t => t.label === tag.label && t.categoryId === categoryId,
-  );
+  return tagStore.library.tags.some(t => t.label === tag.label && t.categoryId === categoryId);
 }
 
 function resetImport() {

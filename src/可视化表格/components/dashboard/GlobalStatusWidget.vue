@@ -3,7 +3,11 @@
     <!-- 头部区域 (Location + Time) -->
     <div class="acu-global-header">
       <!-- Location (H1) -->
-      <div v-if="locationText" class="acu-global-location" style="font-size: 1.5em !important; font-weight: 600 !important">
+      <div
+        v-if="locationText"
+        class="acu-global-location"
+        style="font-size: 1.5em !important; font-weight: 600 !important"
+      >
         <i class="fas fa-map-marker-alt"></i>
         <div class="location-path">
           <template v-for="(part, index) in locationParts" :key="index">
@@ -16,7 +20,11 @@
       <!-- Time Group -->
       <div v-if="timeData.current || timeData.passed || timeData.last" class="acu-global-time-group">
         <!-- Current Time -->
-        <div v-if="timeData.current" class="acu-global-time-primary" style="font-size: 1.4em !important; font-weight: 600 !important">
+        <div
+          v-if="timeData.current"
+          class="acu-global-time-primary"
+          style="font-size: 1.4em !important; font-weight: 600 !important"
+        >
           <i class="fas fa-clock"></i>
           <span>{{ timeData.current }}</span>
         </div>
@@ -128,12 +136,12 @@ const parsedData = computed(() => {
     timeCols: {
       current: null as TableCell | null,
       passed: null as TableCell | null,
-      last: null as TableCell | null
+      last: null as TableCell | null,
     },
     weatherCol: null as TableCell | null,
     peopleCol: null as TableCell | null,
     attributes: [] as TableCell[],
-    footer: null as TableCell | null
+    footer: null as TableCell | null,
   };
 
   // 1. 遍历所有单元格进行归类
@@ -216,7 +224,8 @@ const locationText = computed(() => {
   const cols = parsedData.value?.locationCols;
   if (!cols || cols.length === 0) return '';
   // 按列索引排序
-  return cols.sort((a, b) => a.colIndex - b.colIndex)
+  return cols
+    .sort((a, b) => a.colIndex - b.colIndex)
     .map(c => c.value)
     .join(' › ');
 });
@@ -231,7 +240,7 @@ const locationParts = computed(() => {
 const timeData = computed(() => ({
   current: parsedData.value?.timeCols.current?.value,
   passed: parsedData.value?.timeCols.passed?.value,
-  last: parsedData.value?.timeCols.last?.value
+  last: parsedData.value?.timeCols.last?.value,
 }));
 
 // Weather Display
@@ -273,7 +282,7 @@ const attributes = computed(() => {
   return parsedData.value.attributes.map(cell => ({
     key: cell.key,
     value: String(cell.value),
-    isLong: String(cell.value).length > 15
+    isLong: String(cell.value).length > 15,
   }));
 });
 
@@ -291,5 +300,4 @@ function getAttributeIcon(key: string): string {
   if (['级', 'level', 'lv', 'rank'].some(w => k.includes(w))) return 'fa-layer-group';
   return 'fa-info-circle';
 }
-
 </script>

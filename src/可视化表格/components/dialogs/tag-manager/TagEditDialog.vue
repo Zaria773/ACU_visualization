@@ -1,10 +1,6 @@
 <!-- TagEditDialog.vue - 标签编辑独立弹窗 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-tag-edit-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -35,12 +31,7 @@
                 <span class="hint">标签显示的文字内容</span>
               </div>
               <div class="acu-settings-control">
-                <input
-                  ref="labelInput"
-                  v-model="form.label"
-                  type="text"
-                  placeholder="输入标签文本"
-                />
+                <input ref="labelInput" v-model="form.label" type="text" placeholder="输入标签文本" />
               </div>
             </div>
 
@@ -90,11 +81,7 @@
                   </div>
                 </div>
 
-                <button
-                  class="acu-tool-btn"
-                  title="新增分类"
-                  @click.stop="showNewCategoryInput = true"
-                >
+                <button class="acu-tool-btn" title="新增分类" @click.stop="showNewCategoryInput = true">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
@@ -160,11 +147,7 @@
                     placeholder="分类路径"
                     @keyup.enter="createNewCategory"
                   />
-                  <button
-                    class="acu-tool-btn"
-                    title="选择图标"
-                    @click.stop="openNewCategoryIconSelect"
-                  >
+                  <button class="acu-tool-btn" title="选择图标" @click.stop="openNewCategoryIconSelect">
                     <i v-if="isFontAwesome(newCategoryIcon)" :class="newCategoryIcon"></i>
                     <span v-else>{{ newCategoryIcon || '图标' }}</span>
                   </button>
@@ -220,22 +203,13 @@
             <!-- 通配符快捷按钮 -->
             <div class="acu-wildcard-shortcuts">
               <span class="hint">点击插入:</span>
-              <button
-                class="acu-wildcard-btn"
-                @click.stop="insertWildcard(wildcards.value)"
-              >
+              <button class="acu-wildcard-btn" @click.stop="insertWildcard(wildcards.value)">
                 <code v-text="wildcards.value"></code>
               </button>
-              <button
-                class="acu-wildcard-btn"
-                @click.stop="insertWildcard(wildcards.rowTitle)"
-              >
+              <button class="acu-wildcard-btn" @click.stop="insertWildcard(wildcards.rowTitle)">
                 <code v-text="wildcards.rowTitle"></code>
               </button>
-              <button
-                class="acu-wildcard-btn"
-                @click.stop="insertWildcard(wildcards.user)"
-              >
+              <button class="acu-wildcard-btn" @click.stop="insertWildcard(wildcards.user)">
                 <code v-text="wildcards.user"></code>
               </button>
             </div>
@@ -255,7 +229,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -322,17 +295,17 @@ const allCategories = computed(() => tagStore.library.categories);
 const canSave = computed(() => form.value.label.trim().length > 0);
 const currentCategory = computed(() => {
   if (!form.value.categoryId) return null;
-  return allCategories.value.find((c) => c.id === form.value.categoryId) || null;
+  return allCategories.value.find(c => c.id === form.value.categoryId) || null;
 });
 const parentCategory = computed(() => {
   if (!newCategoryParentId.value) return null;
-  return allCategories.value.find((c) => c.id === newCategoryParentId.value) || null;
+  return allCategories.value.find(c => c.id === newCategoryParentId.value) || null;
 });
 
 // 监听 visible 变化，初始化表单
 watch(
   () => props.visible,
-  (visible) => {
+  visible => {
     if (visible) {
       if (props.tag) {
         // 编辑模式：填充现有数据
@@ -371,7 +344,6 @@ function handleClose() {
   emit('update:visible', false);
   emit('close');
 }
-
 
 function handleSave() {
   if (!canSave.value) return;
@@ -430,10 +402,10 @@ function openNewCategoryIconSelect() {
   uiStore.openIconSelectDialog(
     { currentIcon: newCategoryIcon.value },
     {
-      onSelect: (icon) => {
+      onSelect: icon => {
         newCategoryIcon.value = icon;
       },
-    }
+    },
   );
 }
 

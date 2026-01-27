@@ -15,15 +15,21 @@ import { toast } from './useToast';
 
 export interface UseAppNavigationOptions {
   /** MainPanel 组件 ref */
-  mainPanelRef: Ref<{
-    exitCenteredMode: () => void;
-    getDataAreaElement: () => HTMLElement | null;
-    resetHeight: () => void;
-  } | undefined>;
+  mainPanelRef: Ref<
+    | {
+        exitCenteredMode: () => void;
+        getDataAreaElement: () => HTMLElement | null;
+        resetHeight: () => void;
+      }
+    | undefined
+  >;
   /** FloatingBall 组件 ref */
-  floatingBallRef: Ref<{
-    setDocked: (docked: boolean) => void;
-  } | undefined>;
+  floatingBallRef: Ref<
+    | {
+        setDocked: (docked: boolean) => void;
+      }
+    | undefined
+  >;
   /** 搜索词 ref */
   searchTerm: Ref<string>;
   /** 内容隐藏状态 ref */

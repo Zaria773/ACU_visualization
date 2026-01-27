@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="tarot-card"
-    :class="{ 'tarot-card--flipped': isFlipped }"
-    @click.stop="handleClick"
-  >
+  <div class="tarot-card" :class="{ 'tarot-card--flipped': isFlipped }" @click.stop="handleClick">
     <div class="tarot-card__inner">
       <!-- 卡背（初始显示） -->
       <div class="tarot-card__face tarot-card__back">

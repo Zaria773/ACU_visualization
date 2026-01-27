@@ -24,13 +24,7 @@
                   <span class="hint">{{ config.nodeSize }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="config.nodeSize"
-                    type="range"
-                    min="30"
-                    max="80"
-                    step="5"
-                  />
+                  <input v-model.number="config.nodeSize" type="range" min="30" max="80" step="5" />
                 </div>
               </div>
 
@@ -41,13 +35,7 @@
                   <span class="hint">{{ config.edgeWidth.toFixed(1) }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="config.edgeWidth"
-                    type="range"
-                    min="1"
-                    max="5"
-                    step="0.5"
-                  />
+                  <input v-model.number="config.edgeWidth" type="range" min="1" max="5" step="0.5" />
                 </div>
               </div>
 
@@ -92,13 +80,7 @@
                   <span class="hint">{{ config.relationLabelFontSize }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="config.relationLabelFontSize"
-                    type="range"
-                    min="8"
-                    max="16"
-                    step="1"
-                  />
+                  <input v-model.number="config.relationLabelFontSize" type="range" min="8" max="16" step="1" />
                 </div>
               </div>
 
@@ -109,13 +91,7 @@
                   <span class="hint">{{ config.nameLabelFontSize }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="config.nameLabelFontSize"
-                    type="range"
-                    min="8"
-                    max="18"
-                    step="1"
-                  />
+                  <input v-model.number="config.nameLabelFontSize" type="range" min="8" max="18" step="1" />
                 </div>
               </div>
 
@@ -126,13 +102,7 @@
                   <span class="hint">{{ config.factionLabelFontSize }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="config.factionLabelFontSize"
-                    type="range"
-                    min="10"
-                    max="20"
-                    step="1"
-                  />
+                  <input v-model.number="config.factionLabelFontSize" type="range" min="10" max="20" step="1" />
                 </div>
               </div>
             </div>
@@ -143,7 +113,7 @@
             <div class="acu-settings-title">
               <i class="fas fa-palette"></i>
               势力颜色
-              <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto;">
+              <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto">
                 {{ factions.length }} 个势力
               </span>
             </div>
@@ -158,7 +128,7 @@
                 背景色
               </span>
               <span class="hint-item">
-                <i class="fas fa-adjust" style="font-size: 12px; margin-right: 2px;"></i>
+                <i class="fas fa-adjust" style="font-size: 12px; margin-right: 2px"></i>
                 透明度
               </span>
             </div>
@@ -221,9 +191,9 @@
                   </label>
                 </div>
               </div>
-              <div class="acu-settings-row" style="justify-content: flex-start; padding-top: 0; padding-bottom: 8px;">
-                <span style="font-size: 11px; color: var(--acu-text-sub);">
-                  <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+              <div class="acu-settings-row" style="justify-content: flex-start; padding-top: 0; padding-bottom: 8px">
+                <span style="font-size: 11px; color: var(--acu-text-sub)">
+                  <i class="fas fa-info-circle" style="margin-right: 4px"></i>
                   如需更换背景图片，请前往"设置 > 主题配置"
                 </span>
               </div>
@@ -235,7 +205,7 @@
             <div class="acu-settings-title">
               <i class="fas fa-th-list"></i>
               图例配置
-              <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto;">
+              <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto">
                 自定义关系颜色
               </span>
             </div>
@@ -299,7 +269,10 @@
                         />
                       </div>
                       <div class="acu-legend-edit-actions">
-                        <button class="acu-action-btn acu-action-btn-small acu-action-btn-primary" @click.stop="handleSaveLegendItem">
+                        <button
+                          class="acu-action-btn acu-action-btn-small acu-action-btn-primary"
+                          @click.stop="handleSaveLegendItem"
+                        >
                           <i class="fas fa-check"></i>
                         </button>
                         <button class="acu-action-btn acu-action-btn-small" @click.stop="handleCancelEditLegendItem">
@@ -327,7 +300,11 @@
                       <button class="acu-legend-action-btn" title="编辑" @click.stop="handleEditLegendItem(item)">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button class="acu-legend-action-btn acu-legend-action-btn-danger" title="删除" @click.stop="handleDeleteLegendItem(item.id)">
+                      <button
+                        class="acu-legend-action-btn acu-legend-action-btn-danger"
+                        title="删除"
+                        @click.stop="handleDeleteLegendItem(item.id)"
+                      >
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -339,7 +316,10 @@
               </div>
               <!-- 重置为默认图例 -->
               <div class="acu-legend-reset-wrapper">
-                <button class="acu-action-btn acu-action-btn-secondary acu-action-btn-small" @click.stop="handleResetLegendConfig">
+                <button
+                  class="acu-action-btn acu-action-btn-secondary acu-action-btn-small"
+                  @click.stop="handleResetLegendConfig"
+                >
                   <i class="fas fa-undo"></i>
                   重置为默认图例
                 </button>
@@ -373,7 +353,12 @@
 
 import { computed, reactive, ref } from 'vue';
 
-import { DEFAULT_FACTION_STYLE, FACTION_COLOR_PALETTE, type LegendItem, useGraphConfigStore } from '../../../stores/useGraphConfigStore';
+import {
+  DEFAULT_FACTION_STYLE,
+  FACTION_COLOR_PALETTE,
+  type LegendItem,
+  useGraphConfigStore,
+} from '../../../stores/useGraphConfigStore';
 import { useUIStore } from '../../../stores/useUIStore';
 
 const props = defineProps<{
@@ -651,5 +636,4 @@ function handleDeleteLegendItem(id: string): void {
 function handleResetLegendConfig(): void {
   graphConfigStore.resetLegendConfig();
 }
-
 </script>

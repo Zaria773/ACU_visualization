@@ -34,16 +34,8 @@
       <!-- 维度标题行 -->
       <div class="acu-settings-title dimension-header" @click="toggleCollapse(dim.id)">
         <div class="header-left">
-          <i
-            class="fas fa-chevron-right collapse-icon"
-            :class="{ 'is-expanded': !collapsedDimensions[dim.id] }"
-          ></i>
-          <input
-            v-model="dim.name"
-            class="acu-input-minimal dimension-name-input"
-            placeholder="维度名称"
-            @click.stop
-          />
+          <i class="fas fa-chevron-right collapse-icon" :class="{ 'is-expanded': !collapsedDimensions[dim.id] }"></i>
+          <input v-model="dim.name" class="acu-input-minimal dimension-name-input" placeholder="维度名称" @click.stop />
         </div>
         <div class="header-right">
           <label class="acu-switch" @click.stop>
@@ -68,11 +60,7 @@
             <!-- 第一行: 基本信息 -->
             <div class="tier-row basic-info">
               <div class="tier-name-wrapper">
-                <input
-                  v-model="tier.name"
-                  class="acu-input-minimal tier-name-input"
-                  placeholder="档位名称"
-                />
+                <input v-model="tier.name" class="acu-input-minimal tier-name-input" placeholder="档位名称" />
                 <!-- 颜色选择器 (仅运势维度显示) -->
                 <input
                   v-if="dim.id === 'luck'"
@@ -82,11 +70,7 @@
                   title="档位颜色"
                 />
               </div>
-              <button
-                class="acu-icon-btn small danger"
-                title="删除档位"
-                @click="removeTier(dimIndex, tierIndex)"
-              >
+              <button class="acu-icon-btn small danger" title="删除档位" @click="removeTier(dimIndex, tierIndex)">
                 <i class="fas fa-times"></i>
               </button>
             </div>
@@ -94,14 +78,7 @@
             <!-- 第二行: 权重调节 -->
             <div class="tier-row weight-control">
               <span class="label">权重</span>
-              <input
-                v-model.number="tier.weight"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                class="acu-range-input"
-              />
+              <input v-model.number="tier.weight" type="range" min="0" max="100" step="1" class="acu-range-input" />
               <span class="acu-badge">{{ tier.weight }}</span>
             </div>
 
@@ -141,9 +118,15 @@
         <!-- 1. 快捷按钮行 -->
         <div class="template-shortcuts-row">
           <span class="hint">快捷插入:</span>
-          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{luck}}')"><code>{{ '\{\{luck\}\}' }}</code></button>
-          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{words}}')"><code>{{ '\{\{words\}\}' }}</code></button>
-          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{dimensions}}')"><code>{{ '\{\{dimensions\}\}' }}</code></button>
+          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{luck}}')">
+            <code>{{ '\{\{luck\}\}' }}</code>
+          </button>
+          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{words}}')">
+            <code>{{ '\{\{words\}\}' }}</code>
+          </button>
+          <button class="acu-wildcard-btn" @click="insertTemplatePlaceholder('{{dimensions}}')">
+            <code>{{ '\{\{dimensions\}\}' }}</code>
+          </button>
         </div>
 
         <!-- 2. 文本框行 -->
@@ -166,9 +149,15 @@
               <i class="fas" :class="showHelp ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </div>
             <ul v-show="showHelp">
-              <li><code>{{ '\{\{luck\}\}' }}</code> - 运势结果（如：大吉...）</li>
-              <li><code>{{ '\{\{words\}\}' }}</code> - 随机词列表（如：苹果、香蕉）</li>
-              <li><code>{{ '\{\{dimensions\}\}' }}</code> - 其他维度结果拼接</li>
+              <li>
+                <code>{{ '\{\{luck\}\}' }}</code> - 运势结果（如：大吉...）
+              </li>
+              <li>
+                <code>{{ '\{\{words\}\}' }}</code> - 随机词列表（如：苹果、香蕉）
+              </li>
+              <li>
+                <code>{{ '\{\{dimensions\}\}' }}</code> - 其他维度结果拼接
+              </li>
             </ul>
           </div>
         </div>
@@ -176,13 +165,7 @@
     </div>
 
     <!-- 隐藏的文件输入 -->
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept=".json"
-      style="display: none"
-      @change="handleImportPresets"
-    />
+    <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportPresets" />
   </div>
 </template>
 
@@ -309,7 +292,7 @@ function handleImportPresets(event: Event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     try {
       const content = e.target?.result as string;
       const data = JSON.parse(content);
@@ -321,11 +304,11 @@ function handleImportPresets(event: Event) {
           const existing = divinationStore.presets.find(p => p.id === importedPreset.id);
           if (existing) {
             // 如果 ID 冲突但内容不同，或者只是想合并，这里简单处理为追加并重命名
-             // 实际策略可以是：覆盖、跳过或重命名。这里采用：如果 ID 相同则覆盖
-             const index = divinationStore.presets.findIndex(p => p.id === importedPreset.id);
-             divinationStore.presets[index] = importedPreset;
+            // 实际策略可以是：覆盖、跳过或重命名。这里采用：如果 ID 相同则覆盖
+            const index = divinationStore.presets.findIndex(p => p.id === importedPreset.id);
+            divinationStore.presets[index] = importedPreset;
           } else {
-             divinationStore.presets.push(importedPreset);
+            divinationStore.presets.push(importedPreset);
           }
           importedCount++;
         });

@@ -71,11 +71,7 @@
           <i :class="isUndoing ? 'fas fa-spinner fa-spin' : 'fas fa-undo'"></i>
         </button>
         <!-- 查看历史按钮 -->
-        <button
-          class="acu-history-trigger"
-          title="查看历史记录"
-          @click.stop="emit('showHistory')"
-        >
+        <button class="acu-history-trigger" title="查看历史记录" @click.stop="emit('showHistory')">
           <i class="fas fa-search"></i>
         </button>
       </div>

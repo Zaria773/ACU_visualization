@@ -440,9 +440,12 @@ export function useDataPersistence() {
         }
 
         // 也可以检查无标签槽位（如果当前是空标签）
-        if (!configKey && msg.TavernDB_ACU_IsolatedData[""] &&
-          msg.TavernDB_ACU_IsolatedData[""].independentData &&
-          msg.TavernDB_ACU_IsolatedData[""].independentData[tableId]) {
+        if (
+          !configKey &&
+          msg.TavernDB_ACU_IsolatedData[''] &&
+          msg.TavernDB_ACU_IsolatedData[''].independentData &&
+          msg.TavernDB_ACU_IsolatedData[''].independentData[tableId]
+        ) {
           return i;
         }
       }
@@ -470,7 +473,7 @@ export function useDataPersistence() {
   async function executeIncrementalSave(
     dataToUse: RawDatabaseData,
     commitDeletes: boolean,
-    modifiedTableIds: string[]
+    modifiedTableIds: string[],
   ): Promise<RawDatabaseData | null> {
     if (modifiedTableIds.length === 0) return null;
 
@@ -519,7 +522,9 @@ export function useDataPersistence() {
           try {
             storage = window.parent.localStorage;
             settingsKey = findACUSettingsKey(storage);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
         if (settingsKey) {
           const settingsStr = storage.getItem(settingsKey);
@@ -587,7 +592,11 @@ export function useDataPersistence() {
         let isolatedData = targetMsg.TavernDB_ACU_IsolatedData;
         // 如果是纯字符串 (旧版兼容)，尝试解析或初始化
         if (typeof isolatedData === 'string') {
-          try { isolatedData = JSON.parse(isolatedData); } catch { isolatedData = {}; }
+          try {
+            isolatedData = JSON.parse(isolatedData);
+          } catch {
+            isolatedData = {};
+          }
         }
         if (!isolatedData || typeof isolatedData !== 'object') {
           isolatedData = {};
@@ -595,7 +604,7 @@ export function useDataPersistence() {
 
         // 2. 获取当前标签的数据槽
         // 注意：我们必须使用空字符串 "" 作为无标签的 key，而不是 undefined
-        const slotKey = configKey || "";
+        const slotKey = configKey || '';
 
         if (!isolatedData[slotKey]) {
           isolatedData[slotKey] = {
@@ -649,7 +658,6 @@ export function useDataPersistence() {
           return finalData;
         }
       }
-
     } catch (e) {
       console.error('[ACU] Incremental save error:', e);
       throw e;

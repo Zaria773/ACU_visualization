@@ -12,7 +12,7 @@ export {
   NAV_BUTTONS,
   THEMES,
   useBallAppearanceStore,
-  useConfigStore
+  useConfigStore,
 } from './useConfigStore';
 export { DEFAULT_DASHBOARD_CONFIG, useDashboardStore } from './useDashboardStore';
 export { useDataStore } from './useDataStore';
@@ -21,4 +21,3 @@ export { DEFAULT_GRAPH_CONFIG, useGraphConfigStore } from './useGraphConfigStore
 export { useTagLibraryStore } from './useTagLibraryStore';
 export { DEFAULT_HIGHLIGHT_CONFIG, useThemeStore } from './useThemeStore';
 export { STORAGE_KEYS, TAB_DASHBOARD, TAB_OPTIONS, useUIStore } from './useUIStore';
-

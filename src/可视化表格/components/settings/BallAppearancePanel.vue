@@ -187,7 +187,11 @@
             <span class="acu-input-hint">输入图片 URL（支持 catbox、imgur 等外链）</span>
           </div>
           <!-- 如果有图片，显示预览和调整按钮 -->
-          <div v-if="localAppearance.content && localAppearance.content.startsWith('http')" class="acu-image-preview-row" style="margin-top: 10px;">
+          <div
+            v-if="localAppearance.content && localAppearance.content.startsWith('http')"
+            class="acu-image-preview-row"
+            style="margin-top: 10px"
+          >
             <div class="acu-preview-thumb-wrapper" :style="imagePreviewStyle" @click.stop="openCropDialog">
               <span class="acu-edit-hint"><i class="fas fa-crop-simple"></i></span>
             </div>
@@ -195,7 +199,7 @@
               <button class="acu-adjust-btn" @click.stop="openCropDialog">
                 <i class="fas fa-crop-simple"></i> 调整
               </button>
-              <button class="acu-adjust-btn" style="margin-left: 8px;" @click.stop="clearImage">
+              <button class="acu-adjust-btn" style="margin-left: 8px" @click.stop="clearImage">
                 <i class="fas fa-trash"></i> 清除
               </button>
             </div>
@@ -211,13 +215,12 @@
               <button class="acu-adjust-btn" @click.stop="openCropDialog">
                 <i class="fas fa-crop-simple"></i> 调整
               </button>
-              <button class="acu-adjust-btn" style="margin-left: 8px;" @click.stop="clearImage">
+              <button class="acu-adjust-btn" style="margin-left: 8px" @click.stop="clearImage">
                 <i class="fas fa-trash"></i> 清除
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -257,8 +260,7 @@ const imageUrlInput = ref('');
 
 /** 判断当前是否为 URL 图片 */
 const isUrlImage = computed(() => {
-  return localAppearance.type === 'image' &&
-    imageSourceType.value === 'url';
+  return localAppearance.type === 'image' && imageSourceType.value === 'url';
 });
 
 // 初始化时检测当前图片是否为 URL

@@ -77,7 +77,7 @@ const DEFAULT_CONFIG: IntegrityCheckConfig = {
   indexColumnName: '编码索引',
   checkEmptyCell: true,
   checkIndexGap: true,
-  emptyCheckColumns: [],  // 默认检测所有列
+  emptyCheckColumns: [], // 默认检测所有列
 };
 
 // ============================================================
@@ -229,7 +229,7 @@ function checkTableIntegrity(
         // 如果指定了检测列，只检测这些列；否则检测所有列
         if (config.emptyCheckColumns && config.emptyCheckColumns.length > 0) {
           if (!config.emptyCheckColumns.includes(headerName)) {
-            continue;  // 跳过非指定列
+            continue; // 跳过非指定列
           }
         }
 

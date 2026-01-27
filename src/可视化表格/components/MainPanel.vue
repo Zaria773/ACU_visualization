@@ -1084,7 +1084,7 @@ const resetHeight = () => {
           const cards = cardsContainer.querySelectorAll('.acu-data-card');
           let maxCardHeight = 0;
 
-          cards.forEach((card) => {
+          cards.forEach(card => {
             const cardEl = card as HTMLElement;
             // 获取卡片内部的实际内容高度（scrollHeight 包含溢出内容）
             const cardContentHeight = cardEl.scrollHeight;
@@ -1104,7 +1104,9 @@ const resetHeight = () => {
 
           naturalHeight = maxCardHeight + toolbarHeight + paginationHeight + containerPadding;
 
-          console.info(`[ACU] 横向布局高度计算: maxCard=${maxCardHeight}, toolbar=${toolbarHeight}, pagination=${paginationHeight}, padding=${containerPadding}`);
+          console.info(
+            `[ACU] 横向布局高度计算: maxCard=${maxCardHeight}, toolbar=${toolbarHeight}, pagination=${paginationHeight}, padding=${containerPadding}`,
+          );
         } else {
           naturalHeight = dataAreaRef.value.scrollHeight;
         }
@@ -1130,7 +1132,9 @@ const resetHeight = () => {
       dataAreaRef.value.style.height = `${finalHeight}px`;
       panelHeight.value = finalHeight;
 
-      console.info(`[ACU] 高度已重置: natural=${naturalHeight}, max=${maxHeight}, final=${finalHeight}, horizontal=${isHorizontal}`);
+      console.info(
+        `[ACU] 高度已重置: natural=${naturalHeight}, max=${maxHeight}, final=${finalHeight}, horizontal=${isHorizontal}`,
+      );
       emit('height-change', finalHeight);
     });
   }, 50);
