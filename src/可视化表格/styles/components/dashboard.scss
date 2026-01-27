@@ -33,7 +33,7 @@
 
 // 看板标题
 .acu-dash-title {
-  font-size: 1.2em;
+  font-size: 1.2em !important; // 强制覆盖可能的外部污染
   font-weight: bold;
   color: var(--acu-title-color);
   border-bottom: 1px dashed var(--acu-border);
@@ -44,7 +44,6 @@
   align-items: center;
   transition: background 0.2s;
   gap: 8px;
-  user-select: none; // 防止拖拽时选中文本
 
   // 可点击状态（非编辑态）- 点击折叠/展开
   &.acu-dash-title-clickable {

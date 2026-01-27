@@ -11,8 +11,8 @@
 // =========================================
 
 // 表单元素完全重置 - 使用 !important 确保优先级
-// 使用 :where() 降低选择器权重，以便组件内部样式(如 .acu-dash-title) 可以通过类选择器覆盖这些重置
-:where(.acu-wrapper, .acu-modal-container) {
+.acu-wrapper,
+.acu-modal-container {
   // 重置所有 input、select、textarea 的酒馆主题样式
   input,
   select,
@@ -137,7 +137,6 @@
 
   // 文本元素重置 - 防止酒馆主题的全局 p, div, span 样式
   // 重要：必须同时重置 font-family，否则会被酒馆主题覆盖
-  // 修改：移除 font-size/line-height 的 !important，允许组件样式覆盖
   &,
   p,
   div,
@@ -152,9 +151,9 @@
   th,
   td {
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
-    font-size: var(--acu-font-size, 13px);
+    font-size: var(--acu-font-size, 13px) !important;
     text-shadow: none !important;
-    line-height: 1.5;
+    line-height: 1.5 !important;
   }
 
   // 普通文本 - 使用 --acu-text-main
@@ -166,16 +165,16 @@
   .acu-card-label,
   .acu-grid-label,
   .acu-full-label {
-    color: var(--acu-text-main);
-    font-size: var(--acu-font-size, 13px);
+    color: var(--acu-text-main) !important;
+    font-size: var(--acu-font-size, 13px) !important;
   }
 
   // 次要文本颜色
   .hint,
   .acu-text-sub,
   .acu-settings-label .hint {
-    color: var(--acu-text-sub);
-    font-size: 11px;
+    color: var(--acu-text-sub) !important;
+    font-size: 11px !important;
   }
 
   // 标题元素 - 使用用户选择的 --acu-title-color 防止酒馆污染
@@ -185,19 +184,19 @@
   h4,
   h5,
   h6 {
-    color: var(--acu-title-color);
+    color: var(--acu-title-color) !important;
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
     text-shadow: none !important;
-    font-weight: 600;
+    font-weight: 600 !important;
   }
 
   // 特定标题组件 - 使用对应的颜色变量
   .acu-modal-title,
   .acu-settings-title {
-    color: var(--acu-text-main);
+    color: var(--acu-text-main) !important;
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
     text-shadow: none !important;
-    font-weight: 600;
+    font-weight: 600 !important;
   }
 
   // 面板标题、卡片标题、列名 - 使用 --acu-title-color
@@ -206,10 +205,10 @@
   .acu-card-label,
   .acu-grid-label,
   .acu-full-label {
-    color: var(--acu-title-color);
+    color: var(--acu-title-color) !important;
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
     text-shadow: none !important;
-    font-weight: 600;
+    font-weight: 600 !important;
   }
 
   // Tab 按钮、导航按钮
@@ -218,7 +217,7 @@
   .acu-nav-btn,
   .acu-action-btn {
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
-    font-size: var(--acu-font-size, 13px);
+    font-size: var(--acu-font-size, 13px) !important;
     text-shadow: none !important;
   }
 
@@ -227,9 +226,9 @@
   .acu-toast-message,
   .acu-toast span {
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
-    font-size: var(--acu-font-size, 13px);
+    font-size: var(--acu-font-size, 13px) !important;
     text-shadow: none !important;
-    color: var(--acu-text-main);
+    color: var(--acu-text-main) !important;
   }
 
   // 折叠栏标题、设置分组标题
@@ -239,8 +238,8 @@
   .acu-collapse-title,
   summary {
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
-    font-size: var(--acu-font-size, 13px);
-    color: var(--acu-text-main);
+    font-size: var(--acu-font-size, 13px) !important;
+    color: var(--acu-text-main) !important;
     text-shadow: none !important;
   }
 

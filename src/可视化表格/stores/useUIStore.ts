@@ -86,18 +86,6 @@ export interface NodeConfigDialogCallbacks {
   onStyleUpdate?: (nodeId: string) => void;
 }
 
-/** 姓名选择弹窗 Props */
-export interface NodeLabelDialogProps {
-  fullName: string;
-  initialIndices: number[];
-}
-
-/** 姓名选择弹窗回调 */
-export interface NodeLabelDialogCallbacks {
-  onApply: (indices: number[]) => void;
-  onReset: () => void;
-}
-
 /** 势力设置弹窗 Props */
 export interface FactionSettingsDialogProps {
   factionId: string;
@@ -394,53 +382,6 @@ export const useUIStore = defineStore('acu-ui', () => {
   const nodeConfigOnResetToFullName = shallowRef<((nodeId: string, fullName: string) => void) | null>(null);
   const nodeConfigOnStyleUpdate = shallowRef<((nodeId: string) => void) | null>(null);
 
-  /** 姓名选择弹窗状态 */
-  const nodeLabelDialog = reactive<{
-    visible: boolean;
-    props: NodeLabelDialogProps;
-  }>({
-    visible: false,
-    props: {
-      fullName: '',
-      initialIndices: [],
-    },
-  });
-
-  /** 姓名选择弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
-  const nodeLabelOnApply = shallowRef<((indices: number[]) => void) | null>(null);
-  const nodeLabelOnReset = shallowRef<(() => void) | null>(null);
-
-  /** 打开姓名选择弹窗 */
-  function openNodeLabelDialog(props: NodeLabelDialogProps, callbacks: NodeLabelDialogCallbacks) {
-    nodeLabelDialog.props = { ...props };
-    nodeLabelOnApply.value = callbacks.onApply;
-    nodeLabelOnReset.value = callbacks.onReset;
-    nodeLabelDialog.visible = true;
-  }
-
-  /** 关闭姓名选择弹窗 */
-  function closeNodeLabelDialog() {
-    nodeLabelDialog.visible = false;
-    nodeLabelOnApply.value = null;
-    nodeLabelOnReset.value = null;
-  }
-
-  /** 处理姓名选择应用 */
-  function handleNodeLabelApply(indices: number[]) {
-    if (nodeLabelOnApply.value) {
-      nodeLabelOnApply.value(indices);
-    }
-    closeNodeLabelDialog();
-  }
-
-  /** 处理姓名选择重置 */
-  function handleNodeLabelReset() {
-    if (nodeLabelOnReset.value) {
-      nodeLabelOnReset.value();
-    }
-    closeNodeLabelDialog();
-  }
-
   /** 关系图设置弹窗 Props */
   interface GraphSettingsDialogProps {
     factions: string[];
@@ -475,9 +416,6 @@ export const useUIStore = defineStore('acu-ui', () => {
 
   /** 设置弹窗 */
   const settingsDialog = ref(false);
-
-  /** 导演控制台弹窗 */
-  const directorDialog = ref(false);
 
   /** 输入楼层弹窗 */
   const inputFloorDialog = reactive<{
@@ -1697,12 +1635,10 @@ export const useUIStore = defineStore('acu-ui', () => {
     widgetActionsDialog,
     avatarManagerDialog,
     nodeConfigDialog,
-    nodeLabelDialog,
     graphSettingsDialog,
     factionSettingsDialog,
     // 通用弹窗状态（从 App.vue 迁移）
     settingsDialog,
-    directorDialog,
     inputFloorDialog,
     purgeRangeDialog,
     manualUpdateDialog,
@@ -1733,10 +1669,6 @@ export const useUIStore = defineStore('acu-ui', () => {
     handleNodeConfigConfirm,
     handleNodeConfigResetToFullName,
     handleNodeConfigStyleUpdate,
-    openNodeLabelDialog,
-    closeNodeLabelDialog,
-    handleNodeLabelApply,
-    handleNodeLabelReset,
     openGraphSettingsDialog,
     closeGraphSettingsDialog,
     openFactionSettingsDialog,

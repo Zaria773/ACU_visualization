@@ -11,7 +11,18 @@
       @delete="handleDeletePreset"
       @save="handleQuickSave"
       @save-as="openSaveDialog"
-    />
+    >
+      <template #actions>
+        <!-- 导出按钮 -->
+        <button class="acu-tool-btn" title="导出预设" @click.stop="handleExportPresets">
+          <i class="fas fa-download"></i>
+        </button>
+        <!-- 导入按钮 -->
+        <button class="acu-tool-btn" title="导入预设" @click.stop="triggerImport">
+          <i class="fas fa-upload"></i>
+        </button>
+      </template>
+    </PresetManagerHeader>
 
     <!-- 维度列表 -->
     <div
@@ -164,33 +175,6 @@
       </div>
     </div>
 
-    <!-- 导入/导出操作 (移至底部以适应移动端布局) -->
-    <div class="acu-settings-section">
-      <div class="acu-settings-title">
-        <i class="fas fa-exchange-alt"></i>
-        数据管理
-      </div>
-      <div class="acu-settings-group">
-        <div class="acu-settings-row column">
-          <div class="acu-settings-label">
-            预设数据
-            <span class="hint">导入或导出维度预设</span>
-          </div>
-          <div class="acu-settings-control" style="justify-content: flex-end; flex-wrap: wrap;">
-            <button class="acu-tool-btn" title="导出当前预设" @click.stop="handleExportCurrentPreset">
-              <i class="fas fa-file-export"></i> 导出当前
-            </button>
-            <button class="acu-tool-btn" title="备份所有预设" @click.stop="handleExportPresets">
-              <i class="fas fa-archive"></i> 备份所有
-            </button>
-            <button class="acu-tool-btn" title="导入预设" @click.stop="triggerImport">
-              <i class="fas fa-upload"></i> 导入
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 隐藏的文件输入 -->
     <input
       ref="fileInputRef"
@@ -295,28 +279,7 @@ function openSaveDialog() {
   );
 }
 
-// 导出当前预设
-function handleExportCurrentPreset() {
-  const activeId = divinationStore.activePresetId;
-  if (!activeId) {
-    toast.warning('请先选择一个预设');
-    return;
-  }
-  const preset = divinationStore.presets.find(p => p.id === activeId);
-  if (!preset) return;
-
-  const data = {
-    type: 'acu_divination_presets',
-    version: '1.0',
-    timestamp: new Date().toISOString(),
-    presets: [preset], // 仅导出当前预设
-  };
-
-  downloadJson(data, `acu-preset-${preset.name}-${Date.now()}.json`);
-  toast.success(`预设「${preset.name}」已导出`);
-}
-
-// 备份所有预设
+// 导出预设
 function handleExportPresets() {
   const data = {
     type: 'acu_divination_presets',
@@ -325,18 +288,14 @@ function handleExportPresets() {
     presets: divinationStore.presets,
   };
 
-  downloadJson(data, `acu-divination-backup-${Date.now()}.json`);
-  toast.success('所有预设已备份');
-}
-
-function downloadJson(data: any, filename: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename;
+  a.download = `acu-divination-presets-${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  toast.success('预设已导出');
 }
 
 // 触发导入

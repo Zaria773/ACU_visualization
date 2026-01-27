@@ -2,10 +2,6 @@
 .acu-prompt-editor-modal {
   max-width: 600px; // 比默认弹窗稍宽
 
-  @media (max-width: 768px) {
-    max-width: 90vw; // 移动端限制宽度
-  }
-
   // 覆盖 acu-textarea-scrollable 的部分样式以适应弹窗
   .acu-textarea-scrollable {
     background: var(--acu-bg-panel);

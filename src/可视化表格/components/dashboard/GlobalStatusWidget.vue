@@ -3,7 +3,7 @@
     <!-- 头部区域 (Location + Time) -->
     <div class="acu-global-header">
       <!-- Location (H1) -->
-      <div v-if="locationText" class="acu-global-location">
+      <div v-if="locationText" class="acu-global-location" style="font-size: 1.5em !important; font-weight: 600 !important">
         <i class="fas fa-map-marker-alt"></i>
         <div class="location-path">
           <template v-for="(part, index) in locationParts" :key="index">
@@ -16,7 +16,7 @@
       <!-- Time Group -->
       <div v-if="timeData.current || timeData.passed || timeData.last" class="acu-global-time-group">
         <!-- Current Time -->
-        <div v-if="timeData.current" class="acu-global-time-primary">
+        <div v-if="timeData.current" class="acu-global-time-primary" style="font-size: 1.4em !important; font-weight: 600 !important">
           <i class="fas fa-clock"></i>
           <span>{{ timeData.current }}</span>
         </div>

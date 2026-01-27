@@ -207,11 +207,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
               }
             }
           }
-
-          // 加载自定义 CSS
-          if (configToUse.customCSS) {
-            customCSS.value = configToUse.customCSS;
-          }
         }
       }
 
@@ -245,7 +240,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
           themeVars: currentThemeVars.value,
           themeVarOpacities: currentThemeVarOpacities.value,
           backgroundConfig: backgroundConfig.value,
-          customCSS: customCSS.value,
         };
 
         // 使用 insertOrAssignVariables 更新全局变量

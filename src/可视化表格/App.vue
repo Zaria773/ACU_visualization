@@ -141,9 +141,6 @@
     <!-- 设置弹窗 -->
     <SettingsDialog v-model:visible="uiStore.settingsDialog" @save="handleSettingsSave" />
 
-    <!-- 导演控制台弹窗 -->
-    <DirectorDialog v-model:visible="uiStore.directorDialog" />
-
     <!-- 输入楼层弹窗 -->
     <InputFloorDialog
       v-model:visible="uiStore.inputFloorDialog.visible"
@@ -248,16 +245,6 @@
       @confirm="uiStore.handleNodeConfigConfirm"
       @reset-to-full-name="uiStore.handleNodeConfigResetToFullName"
       @style-update="uiStore.handleNodeConfigStyleUpdate"
-    />
-
-    <!-- 姓名选择弹窗 (AvatarManagerDialog 使用) -->
-    <NodeLabelDialog
-      :visible="uiStore.nodeLabelDialog.visible"
-      :full-name="uiStore.nodeLabelDialog.props.fullName"
-      :initial-indices="uiStore.nodeLabelDialog.props.initialIndices"
-      @close="uiStore.closeNodeLabelDialog"
-      @apply="uiStore.handleNodeLabelApply"
-      @reset="uiStore.handleNodeLabelReset"
     />
 
     <!-- 关系图设置弹窗 (RelationshipGraph 使用) -->
@@ -373,7 +360,6 @@ import {
 import {
   AvatarCropDialog,
   AvatarManagerDialog,
-  DirectorDialog,
   FactionSettingsDialog,
   GraphSettingsDialog,
   HistoryDialog,
@@ -381,7 +367,6 @@ import {
   InputFloorDialog,
   ManualUpdateDialog,
   NodeConfigDialog,
-  NodeLabelDialog,
   PresetSaveDialog,
   PurgeRangeDialog,
   RowEditDialog,
@@ -882,8 +867,7 @@ function handleDashboardAction(actionId: string, tableId: string) {
 
 /** 关闭当前表格，返回仪表盘 */
 function handleTableClose() {
-  // 使用 handleTabChange 以确保高度被正确重置/恢复
-  handleTabChange(TAB_DASHBOARD);
+  uiStore.setActiveTab(TAB_DASHBOARD);
   console.info('[ACU] 返回仪表盘');
 }
 

@@ -251,8 +251,8 @@ useParentEventListener('resize', () => {
 // ============================================================
 
 onMounted(() => {
-  // 从全局变量加载外观配置
-  ballAppearanceStore.loadFromGlobalVariables();
+  // 从脚本变量加载外观配置
+  ballAppearanceStore.loadFromScriptVariables();
 });
 
 onUnmounted(() => {

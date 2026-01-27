@@ -21,8 +21,8 @@ import type {
 /** 存储键常量 (保持与原代码兼容) */
 const STORAGE_KEY_UI_CONFIG = 'acu_ui_config_v18';
 
-/** 全局配置键名 */
-const GLOBAL_CONFIG_KEY = 'acu_visualizer_config';
+/** 脚本 ID - 用于脚本变量存储 */
+const SCRIPT_ID = 'acu_visualizer_ui';
 
 /** 悬浮球外观默认配置 - 保持现有毛玻璃效果 */
 export const DEFAULT_BALL_APPEARANCE: FloatingBallAppearance = {
@@ -49,7 +49,6 @@ export const NAV_BUTTONS: NavButtonConfig[] = [
   { id: 'toggle', icon: 'fa-compress', label: '收起面板' },
   { id: 'openNative', icon: 'fa-external-link-alt', label: '原生编辑器' },
   { id: 'collapseTab', icon: 'fa-box-open', label: '收纳Tab' },
-  { id: 'director', icon: 'fa-clapperboard', label: '导演控制台' },
   { id: 'settings', icon: 'fa-cog', label: '设置' },
 ];
 
@@ -57,14 +56,13 @@ export const NAV_BUTTONS: NavButtonConfig[] = [
 export type NavButtonId = (typeof NAV_BUTTONS)[number]['id'];
 
 /** 默认可见按钮列表 */
-const DEFAULT_VISIBLE_BUTTONS = ['save', 'collapseTab', 'refresh', 'director', 'toggle', 'settings'];
+const DEFAULT_VISIBLE_BUTTONS = ['save', 'collapseTab', 'refresh', 'toggle', 'settings'];
 
 /** 默认按钮顺序 */
 const DEFAULT_BUTTON_ORDER = [
   'save',
   'collapseTab',
   'refresh',
-  'director',
   'toggle',
   'settings',
   'saveAs',
@@ -600,13 +598,13 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
   const isLoaded = ref(false);
 
   // ============================================================
-  // 全局变量持久化
+  // 脚本变量持久化
   // ============================================================
 
   /**
-   * 从全局变量加载配置
+   * 从脚本变量加载配置
    */
-  function loadFromGlobalVariables() {
+  function loadFromScriptVariables() {
     try {
       if (typeof getVariables !== 'function') {
         console.warn('[ACU] getVariables 不可用，使用默认配置');
@@ -614,55 +612,47 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
         return;
       }
 
-      const globalVars = getVariables({ type: 'global' });
-      const config = globalVars[GLOBAL_CONFIG_KEY] as ACUScriptVariables | undefined;
+      const scriptVars = getVariables({ type: 'script', script_id: SCRIPT_ID }) as ACUScriptVariables;
 
-      if (config?.ballAppearance) {
-        appearance.value = { ...DEFAULT_BALL_APPEARANCE, ...config.ballAppearance };
+      if (scriptVars?.ballAppearance) {
+        appearance.value = { ...DEFAULT_BALL_APPEARANCE, ...scriptVars.ballAppearance };
       }
 
-      if (config?.customFonts) {
-        customFonts.value = config.customFonts;
+      if (scriptVars?.customFonts) {
+        customFonts.value = scriptVars.customFonts;
       }
 
       isLoaded.value = true;
-      console.info('[ACU] 已从全局变量加载配置');
+      console.info('[ACU] 已从脚本变量加载配置');
     } catch (e) {
-      console.error('[ACU] 加载全局变量失败:', e);
+      console.error('[ACU] 加载脚本变量失败:', e);
       isLoaded.value = true;
     }
   }
 
   /**
-   * 保存配置到全局变量
+   * 保存配置到脚本变量
    */
-  function saveToGlobalVariables() {
+  function saveToScriptVariables() {
     try {
       if (typeof getVariables !== 'function' || typeof replaceVariables !== 'function') {
-        console.warn('[ACU] 变量 API 不可用');
+        console.warn('[ACU] 脚本变量 API 不可用');
         return;
       }
 
-      const globalVars = getVariables({ type: 'global' });
-      const currentConfig = (globalVars[GLOBAL_CONFIG_KEY] || {}) as ACUScriptVariables;
+      const scriptVars = getVariables({ type: 'script', script_id: SCRIPT_ID }) as ACUScriptVariables;
 
-      const newConfig: ACUScriptVariables = {
-        ...currentConfig,
+      const newVars: ACUScriptVariables = {
+        ...scriptVars,
         configVersion: 1,
         ballAppearance: appearance.value,
         customFonts: customFonts.value,
       };
 
-      replaceVariables(
-        {
-          ...globalVars,
-          [GLOBAL_CONFIG_KEY]: newConfig,
-        },
-        { type: 'global' },
-      );
-      console.info('[ACU] 已保存配置到全局变量');
+      replaceVariables(newVars, { type: 'script', script_id: SCRIPT_ID });
+      console.info('[ACU] 已保存配置到脚本变量');
     } catch (e) {
-      console.error('[ACU] 保存全局变量失败:', e);
+      console.error('[ACU] 保存脚本变量失败:', e);
     }
   }
 
@@ -671,7 +661,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     [appearance, customFonts],
     () => {
       if (isLoaded.value) {
-        saveToGlobalVariables();
+        saveToScriptVariables();
       }
     },
     { deep: true },
@@ -830,9 +820,9 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     customFonts,
     isLoaded,
 
-    // 全局变量
-    loadFromGlobalVariables,
-    saveToGlobalVariables,
+    // 脚本变量
+    loadFromScriptVariables,
+    saveToScriptVariables,
 
     // 悬浮球外观
     updateAppearance,

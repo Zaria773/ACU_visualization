@@ -514,8 +514,6 @@
 
   .acu-modal-body {
     padding: 0;
-    // 增加底部安全区
-    padding-bottom: var(--acu-safe-area-bottom, 20px);
   }
 
   // 操作按钮行
@@ -572,8 +570,6 @@
 
   .acu-modal-body {
     padding: 0;
-    // 增加底部安全区
-    padding-bottom: var(--acu-safe-area-bottom, 20px);
   }
 
   // 显示名称区域

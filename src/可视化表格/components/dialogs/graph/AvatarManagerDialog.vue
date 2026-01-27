@@ -189,6 +189,17 @@
     <!-- 隐藏的文件输入 -->
     <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelect" />
 
+    <!-- 姓名选择弹窗 -->
+    <NodeLabelDialog
+      v-if="showLabelDialog"
+      :visible="showLabelDialog"
+      :full-name="currentLabelItem?.name || ''"
+      :initial-indices="currentLabelItem?.labelIndices || []"
+      @close="closeLabelDialog"
+      @apply="applyLabel"
+      @reset="resetLabel"
+    />
+
     <!-- 裁剪弹窗 -->
     <AvatarCropDialog
       v-if="showCropDialog"
@@ -220,9 +231,9 @@ import { computed, onMounted, ref, toRaw, watch } from 'vue';
 
 import { useAvatarManager, type AvatarRecord } from '../../../composables/useAvatarManager';
 import { useToast } from '../../../composables/useToast';
-import { useUIStore } from '../../../stores/useUIStore';
 import { compressImage, fileToBase64 } from '../../../utils';
 import AvatarCropDialog from './AvatarCropDialog.vue';
+import NodeLabelDialog from './NodeLabelDialog.vue';
 
 // 聊天变量配置 key（与 RelationshipGraph 保持一致）
 const CHAT_VAR_GRAPH_CONFIG = 'acu_graph_config';
@@ -313,7 +324,6 @@ interface AvatarItem {
 
 const avatarManager = useAvatarManager();
 const toast = useToast();
-const uiStore = useUIStore();
 
 // Tab 切换
 type TabType = 'character' | 'faction';
@@ -340,7 +350,8 @@ const activeImportMenu = ref<string | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const currentUploadItem = ref<AvatarItem | null>(null);
 
-// 姓名选择弹窗 (已迁移至全局)
+// 姓名选择弹窗
+const showLabelDialog = ref(false);
 const currentLabelItem = ref<AvatarItem | null>(null);
 
 // 裁剪弹窗
@@ -465,54 +476,6 @@ async function loadData() {
       // 势力节点的 ID 使用传入的 ID，类型标记为 faction
       const item = await createAvatarItem(faction.id, faction.name, 'faction', labelsConfig);
       factions.push(item);
-    }
-
-    // 3. 应用未保存的变更 (pendingChanges)
-    // 确保在上传图片刷新列表后，之前修改但未保存的裁剪参数不会丢失
-    if (pendingChanges.value.size > 0) {
-      for (const [name, changes] of pendingChanges.value) {
-        // 更新人物列表
-        const avatarIdx = avatars.findIndex(i => i.name === name);
-        if (avatarIdx !== -1) {
-          // 使用 Object.assign 确保类型安全，虽然 changes 可能包含 extra 字段
-          const item = avatars[avatarIdx];
-          avatars[avatarIdx] = {
-            ...item,
-            offsetX: changes.offsetX ?? item.offsetX,
-            offsetY: changes.offsetY ?? item.offsetY,
-            scale: changes.scale ?? item.scale,
-            url: changes.url ?? item.url,
-            // 注意：avatarUrl 也会被 url 更新影响，这里简化处理
-            avatarUrl: changes.url ?? item.avatarUrl,
-            source: changes.url ? 'url' : item.source,
-            displayLabel: changes.displayLabel ?? item.displayLabel,
-            labelIndices: changes.labelIndices ?? item.labelIndices,
-            label: changes.displayLabel ?? item.label,
-            aliases: changes.aliases ?? item.aliases,
-            aliasesText: changes.aliases ? changes.aliases.join(', ') : item.aliasesText,
-          };
-        }
-
-        // 更新势力列表
-        const factionIdx = factions.findIndex(i => i.name === name);
-        if (factionIdx !== -1) {
-          const item = factions[factionIdx];
-          factions[factionIdx] = {
-            ...item,
-            offsetX: changes.offsetX ?? item.offsetX,
-            offsetY: changes.offsetY ?? item.offsetY,
-            scale: changes.scale ?? item.scale,
-            url: changes.url ?? item.url,
-            avatarUrl: changes.url ?? item.avatarUrl,
-            source: changes.url ? 'url' : item.source,
-            displayLabel: changes.displayLabel ?? item.displayLabel,
-            labelIndices: changes.labelIndices ?? item.labelIndices,
-            label: changes.displayLabel ?? item.label,
-            aliases: changes.aliases ?? item.aliases,
-            aliasesText: changes.aliases ? changes.aliases.join(', ') : item.aliasesText,
-          };
-        }
-      }
     }
 
     avatarList.value = avatars;
@@ -723,31 +686,19 @@ function openLabelDialog(item: AvatarItem) {
   };
 
   currentLabelItem.value = updatedItem;
-
-  // 打开全局弹窗
-  uiStore.openNodeLabelDialog(
-    {
-      fullName: updatedItem.name,
-      initialIndices: updatedItem.labelIndices || [],
-    },
-    {
-      onApply: (indices: number[]) => {
-        // 根据 indices 生成 displayLabel
-        const displayLabel = indices
-          .sort((a, b) => a - b)
-          .map(i => updatedItem.name[i])
-          .join('');
-
-        applyLabel(updatedItem, { displayLabel, selectedIndices: indices });
-      },
-      onReset: () => {
-        resetLabel(updatedItem);
-      },
-    },
-  );
+  showLabelDialog.value = true;
 }
 
-function applyLabel(item: AvatarItem, data: { displayLabel: string; selectedIndices: number[] }) {
+function closeLabelDialog() {
+  showLabelDialog.value = false;
+  currentLabelItem.value = null;
+}
+
+function applyLabel(data: { displayLabel: string; selectedIndices: number[] }) {
+  if (!currentLabelItem.value) return;
+
+  const item = currentLabelItem.value;
+
   // 添加到 pending changes
   addPendingChange(item.name, {
     displayLabel: data.displayLabel,
@@ -760,9 +711,15 @@ function applyLabel(item: AvatarItem, data: { displayLabel: string; selectedIndi
     labelIndices: data.selectedIndices,
     label: data.displayLabel,
   });
+
+  closeLabelDialog();
 }
 
-function resetLabel(item: AvatarItem) {
+function resetLabel() {
+  if (!currentLabelItem.value) return;
+
+  const item = currentLabelItem.value;
+
   // 添加到 pending changes (undefined 表示删除)
   addPendingChange(item.name, {
     displayLabel: undefined,
@@ -775,6 +732,8 @@ function resetLabel(item: AvatarItem) {
     labelIndices: undefined,
     label: item.name,
   });
+
+  closeLabelDialog();
 }
 
 // ============================================================
