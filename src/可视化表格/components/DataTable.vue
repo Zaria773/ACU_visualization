@@ -14,7 +14,7 @@
       <div class="acu-toolbar-right">
         <!-- 视图切换按钮 -->
         <button
-          class="acu-toolbar-btn"
+          class="acu-icon-btn"
           :title="viewMode === 'card' ? '切换到列表视图' : '切换到卡片视图'"
           @click="toggleViewMode"
         >
@@ -22,14 +22,14 @@
         </button>
 
         <!-- 倒序按钮 -->
-        <button class="acu-toolbar-btn" :class="{ active: isReversed }" title="倒序显示" @click="toggleReverse">
+        <button class="acu-icon-btn" :class="{ active: isReversed }" title="倒序显示" @click="toggleReverse">
           <i class="fas fa-sort-amount-down-alt"></i>
         </button>
 
         <!-- 高度拖手 -->
         <button
           ref="heightHandleRef"
-          class="acu-toolbar-btn acu-height-handle"
+          class="acu-icon-btn acu-height-handle"
           title="拖动调整高度 / 双击重置"
           @pointerdown="handleHeightDragStart"
           @dblclick="handleHeightReset"
@@ -39,20 +39,17 @@
         </button>
 
         <!-- 搜索框 -->
-        <div class="acu-search-box">
-          <i class="fas fa-search acu-search-icon"></i>
-          <input
-            v-model="localSearchTerm"
-            type="text"
-            class="acu-search-input"
-            placeholder="搜索..."
-            @input="handleSearchInput"
-          />
-          <i v-if="localSearchTerm" class="fas fa-times acu-search-clear" @click="clearSearch"></i>
-        </div>
+        <input
+          v-model="localSearchTerm"
+          type="text"
+          class="acu-search-input acu-search-inline"
+          placeholder="搜索..."
+          @input="handleSearchInput"
+        />
+        <i v-if="localSearchTerm" class="fas fa-times acu-search-clear" @click="clearSearch"></i>
 
         <!-- 关闭按钮 -->
-        <button class="acu-toolbar-btn acu-close-btn" title="关闭数据区" @click.stop="handleClose">
+        <button class="acu-icon-btn acu-close-btn" title="关闭数据区" @click.stop="handleClose">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -141,7 +138,7 @@
  * - 事件传递
  */
 
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useCellLock } from '../composables';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
@@ -248,6 +245,32 @@ const titleColIndex = computed(() => {
 /** 是否倒序显示 */
 const isReversed = computed(() => uiStore.isTableReversed(props.tableName));
 
+/**
+ * 变更状态快照 - 组件挂载时记录，Tab 切换会重新挂载从而刷新快照
+ * 用于排序时避免实时响应导致卡片立即跳动
+ */
+const changeTypeSnapshot = ref<Map<number, 'manual' | 'ai'>>(new Map());
+
+/**
+ * 创建变更状态快照
+ * 记录当前所有行的变更类型，供排序使用
+ */
+function createChangeTypeSnapshot() {
+  const snapshot = new Map<number, 'manual' | 'ai'>();
+  for (const row of props.rows) {
+    const changeType = dataStore.getRowChangeType(props.tableName, row.index, row.cells.length);
+    if (changeType) {
+      snapshot.set(row.index, changeType);
+    }
+  }
+  changeTypeSnapshot.value = snapshot;
+}
+
+// 组件挂载时创建快照（Tab 切换会重新挂载组件，从而刷新快照）
+onMounted(() => {
+  createChangeTypeSnapshot();
+});
+
 /** 过滤后的数据 */
 const filteredRows = computed(() => {
   let rows = props.rows;
@@ -272,7 +295,15 @@ const filteredRows = computed(() => {
 });
 
 /**
- * 获取行变更类型
+ * 获取行变更类型（用于排序，从快照读取）
+ * @returns 'manual' | 'ai' | null
+ */
+function getRowChangeTypeForSort(row: TableRow): 'manual' | 'ai' | null {
+  return changeTypeSnapshot.value.get(row.index) ?? null;
+}
+
+/**
+ * 获取行变更类型（用于高亮显示，实时读取）
  * @returns 'manual' | 'ai' | null
  */
 function getRowChangeType(row: TableRow): 'manual' | 'ai' | null {
@@ -293,9 +324,9 @@ const sortedRows = computed(() => {
   const rows = [...filteredRows.value];
 
   return rows.sort((a, b) => {
-    // 1. 手动高亮优先，AI高亮次之
-    const aChangeType = getRowChangeType(a);
-    const bChangeType = getRowChangeType(b);
+    // 1. 手动高亮优先，AI高亮次之（基于快照，不实时响应）
+    const aChangeType = getRowChangeTypeForSort(a);
+    const bChangeType = getRowChangeTypeForSort(b);
     const aPriority = getChangePriority(aChangeType);
     const bPriority = getChangePriority(bChangeType);
 

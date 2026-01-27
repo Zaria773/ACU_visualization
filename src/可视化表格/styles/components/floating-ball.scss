@@ -80,6 +80,11 @@
     position: relative;
     z-index: 2;
     // background-image, background-position, background-size 由内联样式设置
+
+    // 反色效果
+    &.ball-image-invert {
+      filter: invert(1);
+    }
   }
 
   &:active {

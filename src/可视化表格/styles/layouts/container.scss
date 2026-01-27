@@ -74,18 +74,6 @@
   max-height: calc(100vh - var(--acu-win-bottom, 50%)) !important;
 }
 
-// 拖拽交互状态
-body.acu-dragging #acu-parent-container,
-body.acu-resizing #acu-parent-container {
-  pointer-events: auto !important;
-  cursor: grabbing;
-}
-
-body.acu-resizing * {
-  cursor: ew-resize !important;
-  user-select: none !important;
-}
-
 // =========================================
 // 居中模式：使用 top 定位实现真正居中
 // 当 .acu-centered-mode 类存在时，覆盖默认的 bottom 定位

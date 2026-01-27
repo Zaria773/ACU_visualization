@@ -1,0 +1,134 @@
+// =========================================
+// Font - 自定义字体弹窗样式
+// 从 dialogs.scss 拆分而来
+// =========================================
+
+// =========================================
+// 自定义字体弹窗样式
+// =========================================
+
+// 字体控件容器（下拉框 + 添加按钮）
+.acu-font-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  select {
+    text-align: center; // 文字居中
+    text-align-last: center; // 下拉框选中项也居中
+  }
+}
+
+// 字体弹窗覆盖层（在 settings modal 内部）
+.acu-font-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+// 移动端字体弹窗适配
+@media (max-width: 768px) {
+  .acu-font-dialog-overlay {
+    padding: 16px;
+
+    .acu-mini-dialog {
+      width: 100%;
+      max-width: 340px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+  }
+}
+
+// 添加字体按钮
+.acu-add-font-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--acu-title-color-bg);
+    border-color: var(--acu-title-color);
+    color: var(--acu-title-color);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 添加字体弹窗
+.acu-add-font-dialog {
+  max-width: 380px;
+}
+
+// 字体表单
+.acu-font-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// 表单行
+.acu-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--acu-text-main);
+
+    .optional {
+      font-weight: normal;
+      font-size: 11px;
+      color: var(--acu-text-sub);
+      opacity: 0.7;
+    }
+  }
+
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: var(--acu-btn-bg);
+    border: 2px solid var(--acu-border);
+    border-radius: 8px;
+    color: var(--acu-text-main);
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--acu-title-color);
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+      opacity: 0.6;
+    }
+  }
+}
+
+

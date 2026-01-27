@@ -1,9 +1,69 @@
 // =========================================
 // Buttons - 按钮通用样式
-// 对应 .acu-action-btn 及相关按钮
+// =========================================
+// 通用按钮共4个:
+// - .acu-modal-btn   弹窗底部按钮（带 .primary/.secondary/.danger 变体）
+// - .acu-action-btn  扁平按钮，flex:1 自适应宽度
+// - .acu-tool-btn    万能工具按钮，有边框有背景
+// - .acu-icon-btn    无背景图标按钮，28x28
 // =========================================
 
-// 动作按钮
+// =========================================
+// 1. 弹窗按钮 .acu-modal-btn
+// 用途：弹窗底部操作按钮
+// 变体：.primary（主色）, .secondary（次要）, .danger（危险）
+// =========================================
+.acu-modal-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.primary {
+    background: var(--acu-title-color);
+    color: #fff;
+
+    &:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+  }
+
+  &.secondary {
+    background: var(--acu-btn-bg);
+    color: var(--acu-text-main);
+    border: 1px solid var(--acu-border);
+
+    &:hover {
+      background: var(--acu-btn-hover);
+    }
+  }
+
+  &.danger {
+    background: #e74c3c;
+    color: #fff;
+
+    &:hover {
+      background: #c0392b;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+// =========================================
+// 2. 扁平按钮 .acu-action-btn
+// 用途：操作栏、横向按钮组
+// 特性：flex:1 自适应宽度
+// =========================================
 .acu-action-btn {
   flex: 1;
   height: 36px;
@@ -17,6 +77,7 @@
   border: 1px solid transparent;
   transition: all 0.2s;
   font-size: 16px;
+  font-family: inherit;
   user-select: none;
 
   &:hover {
@@ -26,6 +87,67 @@
     border-color: var(--acu-border);
   }
 }
+
+// =========================================
+// 3. 工具按钮 .acu-tool-btn
+// 用途：万能小按钮，有边框有背景
+// =========================================
+.acu-tool-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  color: var(--acu-text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-title-color);
+  }
+
+  // 小号变体
+  &.small {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+// =========================================
+// 4. 图标按钮 .acu-icon-btn
+// 用途：无背景小图标按钮，28x28
+// =========================================
+.acu-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-title-color);
+  }
+
+  // 激活状态
+  &.active {
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+  }
+}
+
+// =========================================
+// 特定按钮样式
+// =========================================
 
 // 全局保存按钮
 #acu-btn-save-global {
@@ -262,24 +384,6 @@
     background: var(--acu-primary-color, #3498db) !important;
     color: #fff !important;
   }
-}
-
-// 弹出动画
-.popup-enter-active,
-.popup-leave-active {
-  transition: all 0.2s ease;
-}
-
-.popup-enter-from,
-.popup-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(-8px);
-}
-
-.popup-enter-to,
-.popup-leave-from {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 // =========================================

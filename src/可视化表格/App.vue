@@ -1,11 +1,9 @@
 <template>
   <div class="acu-app" :class="appClasses">
     <!-- 悬浮球 (面板隐藏时显示) -->
-    <!-- :style 绑定在跨 iframe 脚本项目中是可用的（参考 src/手机界面） -->
     <FloatingBall ref="floatingBallRef" :style="{ display: uiStore.isPanelVisible ? 'none' : 'block' }" />
 
     <!-- 主面板 -->
-    <!-- :style 绑定在跨 iframe 脚本项目中是可用的（参考 src/手机界面） -->
     <MainPanel
       ref="mainPanelRef"
       :style="{ display: uiStore.isPanelVisible ? 'flex' : 'none' }"
@@ -19,12 +17,12 @@
       :has-changes="dataStore.hasUnsavedChanges"
       @refresh="handleRefresh"
       @save="handleSave"
-      @save-as="showInputFloorDialog = true"
+      @save-as="handleSaveAs"
       @undo="handleUndo"
       @manual-update="handleManualUpdate"
-      @purge="showPurgeRangeDialog = true"
+      @purge="handlePurge"
       @open-native="handleOpenNative"
-      @settings="showSettingsDialog = true"
+      @settings="uiStore.openSettingsDialog"
       @toggle-pin="uiStore.togglePin"
       @toggle="handleToggle"
       @close="handlePanelClose"
@@ -51,7 +49,7 @@
       <!-- Tab浮窗插槽 -->
       <template #tabs-popup>
         <TabsPopup
-          :visible="showTabsPopup"
+          :visible="uiStore.tabsPopup"
           :tabs="tabList"
           :active-tab="uiStore.activeTab"
           :grid-columns="configStore.gridColumnsCss"
@@ -59,7 +57,7 @@
           :show-options-panel="hasOptionsTabs"
           :show-relationship-graph="hasRelationshipData"
           @tab-click="handleTabsPopupClick"
-          @close="showTabsPopup = false"
+          @close="uiStore.closeTabsPopup"
         />
       </template>
 
@@ -90,9 +88,11 @@
         <!-- 关系图视图 -->
         <RelationshipGraph
           v-else-if="uiStore.activeTab === TAB_RELATIONSHIP_GRAPH"
+          ref="relationshipGraphRef"
           :relationship-table="relationshipTableData"
           :character-tables="characterTablesData"
           :faction-table="factionTableData"
+          :all-tables="processedTables"
           :show-legend="true"
         />
 
@@ -139,29 +139,34 @@
     />
 
     <!-- 设置弹窗 -->
-    <SettingsDialog v-model:visible="showSettingsDialog" @save="handleSettingsSave" />
+    <SettingsDialog v-model:visible="uiStore.settingsDialog" @save="handleSettingsSave" />
 
     <!-- 输入楼层弹窗 -->
     <InputFloorDialog
-      v-model:visible="showInputFloorDialog"
-      :current-floor="currentTargetFloor"
+      v-model:visible="uiStore.inputFloorDialog.visible"
+      :current-floor="uiStore.inputFloorDialog.props.currentFloor"
       @confirm="handleSaveToFloor"
     />
 
     <!-- 清除范围弹窗 -->
-    <PurgeRangeDialog v-model:visible="showPurgeRangeDialog" :max-floor="maxFloorIndex" @confirm="handlePurgeRange" />
+    <PurgeRangeDialog
+      v-model:visible="uiStore.purgeRangeDialog.visible"
+      :max-floor="uiStore.purgeRangeDialog.props.maxFloor"
+      @confirm="handlePurgeRange"
+      @advanced-confirm="handleAdvancedPurgeConfirm"
+    />
 
     <!-- 手动更新配置弹窗 -->
-    <ManualUpdateDialog v-model:visible="showManualUpdateDialog" />
+    <ManualUpdateDialog v-model:visible="uiStore.manualUpdateDialog" />
 
     <!-- 历史记录弹窗 (DataTable 使用) -->
     <HistoryDialog
-      v-model:visible="showHistoryDialog"
-      :table-name="historyDialogData.tableName"
-      :table-id="historyDialogData.tableId"
-      :row-index="historyDialogData.rowIndex"
-      :current-row-data="historyDialogData.currentRowData"
-      :title-col-index="historyDialogData.titleColIndex"
+      v-model:visible="uiStore.historyDialog.visible"
+      :table-name="uiStore.historyDialog.props.tableName"
+      :table-id="uiStore.historyDialog.props.tableId"
+      :row-index="uiStore.historyDialog.props.rowIndex"
+      :current-row-data="uiStore.historyDialog.props.currentRowData"
+      :title-col-index="uiStore.historyDialog.props.titleColIndex"
       @apply="handleHistoryApply"
     />
 
@@ -204,16 +209,11 @@
       :initial-offset-x="uiStore.avatarCropDialog.props.initialOffsetX"
       :initial-offset-y="uiStore.avatarCropDialog.props.initialOffsetY"
       :initial-scale="uiStore.avatarCropDialog.props.initialScale"
+      :initial-invert="uiStore.avatarCropDialog.props.initialInvert"
+      :show-invert-option="uiStore.avatarCropDialog.props.showInvertOption"
       @close="uiStore.closeAvatarCropDialog"
       @apply="uiStore.handleAvatarCropApply"
       @upload="uiStore.handleAvatarCropUpload"
-    />
-
-    <!-- 看板管理弹窗 (Dashboard 使用) -->
-    <DashboardWidgetManagerDialog
-      v-model:visible="uiStore.widgetManagerDialog.visible"
-      :tables="processedTables"
-      @close="uiStore.closeWidgetManagerDialog"
     />
 
     <!-- 快捷按钮配置弹窗 (Dashboard 使用) -->
@@ -222,6 +222,112 @@
       :widget-id="uiStore.widgetActionsDialog.props.widgetId"
       :current-actions="uiStore.widgetActionsDialog.props.currentActions"
       @close="uiStore.closeWidgetActionsDialog"
+    />
+
+    <!-- 头像管理弹窗 (RelationshipGraph 使用) -->
+    <AvatarManagerDialog
+      :visible="uiStore.avatarManagerDialog.visible"
+      :nodes="uiStore.avatarManagerDialog.props.nodes"
+      :factions="uiStore.avatarManagerDialog.props.factions"
+      @close="uiStore.closeAvatarManagerDialog"
+      @update="uiStore.handleAvatarManagerUpdate"
+      @label-change="uiStore.handleAvatarManagerLabelChange"
+    />
+
+    <!-- 节点配置弹窗 (RelationshipGraph 使用) -->
+    <NodeConfigDialog
+      :visible="uiStore.nodeConfigDialog.visible"
+      :node-id="uiStore.nodeConfigDialog.props.nodeId"
+      :full-name="uiStore.nodeConfigDialog.props.fullName"
+      :current-label="uiStore.nodeConfigDialog.props.currentLabel"
+      :selected-indices="uiStore.nodeConfigDialog.props.selectedIndices"
+      @close="uiStore.closeNodeConfigDialog"
+      @confirm="uiStore.handleNodeConfigConfirm"
+      @reset-to-full-name="uiStore.handleNodeConfigResetToFullName"
+      @style-update="uiStore.handleNodeConfigStyleUpdate"
+    />
+
+    <!-- 关系图设置弹窗 (RelationshipGraph 使用) -->
+    <GraphSettingsDialog
+      :visible="uiStore.graphSettingsDialog.visible"
+      :factions="uiStore.graphSettingsDialog.props.factions"
+      @close="uiStore.closeGraphSettingsDialog"
+      @open-avatar-manager="handleOpenAvatarManagerFromSettings"
+    />
+
+    <!-- 势力设置弹窗 (RelationshipGraph 使用) -->
+    <FactionSettingsDialog
+      :visible="uiStore.factionSettingsDialog.visible"
+      :faction-id="uiStore.factionSettingsDialog.props.factionId"
+      :faction-name="uiStore.factionSettingsDialog.props.factionName"
+      @close="uiStore.closeFactionSettingsDialog"
+    />
+
+    <!-- 标签管理器弹窗 (WidgetSettingsDialog 使用) -->
+    <TagManagerDialog
+      :visible="uiStore.tagManagerDialog.visible"
+      :widget-id="uiStore.tagManagerDialog.props.widgetId"
+      :displayed-tag-ids="uiStore.tagManagerDialog.props.displayedTagIds"
+      :displayed-category-ids="uiStore.tagManagerDialog.props.displayedCategoryIds"
+      @close="uiStore.closeTagManagerDialog"
+      @save="uiStore.handleTagManagerSave"
+    />
+
+    <!-- 分类选择弹窗 (DashboardWidget 使用) -->
+    <CategorySelectPopup
+      :visible="uiStore.categorySelectDialog.visible"
+      :category-id="uiStore.categorySelectDialog.props.categoryId"
+      :row-context="uiStore.categorySelectDialog.props.rowContext"
+      :widget-id="uiStore.categorySelectDialog.props.widgetId"
+      @close="uiStore.closeCategorySelectDialog"
+      @select="handleCategoryTagSelect"
+    />
+
+    <!-- 标签二次编辑弹窗 (DashboardWidget 使用) -->
+    <TagPreEditDialog
+      :visible="uiStore.tagPreEditDialog.visible"
+      :tag-label="uiStore.tagPreEditDialog.props.tagLabel"
+      :resolved-prompt="uiStore.tagPreEditDialog.props.resolvedPrompt"
+      :show-companions="uiStore.tagPreEditDialog.props.showCompanions"
+      :widget-id="uiStore.tagPreEditDialog.props.widgetId"
+      @close="uiStore.closeTagPreEditDialog"
+    />
+
+    <!-- 预设保存弹窗 (全局) -->
+    <PresetSaveDialog
+      :visible="uiStore.presetSaveDialog.visible"
+      :preset-type="uiStore.presetSaveDialog.props.presetType"
+      :summary-items="uiStore.presetSaveDialog.props.summaryItems"
+      :initial-name="uiStore.presetSaveDialog.props.initialName"
+      :check-duplicate="uiStore.presetSaveDialog.props.checkDuplicate"
+      @update:visible="uiStore.closePresetSaveDialog"
+      @save="uiStore.handlePresetSave"
+    />
+
+    <!-- 抽签覆盖层 -->
+    <DivinationOverlay
+      :visible="uiStore.divinationOverlay.visible"
+      :result="uiStore.divinationOverlay.result"
+      @close="uiStore.closeDivinationOverlay"
+      @retry="performDivination"
+      @confirm="handleDivinationConfirm"
+    />
+
+    <!-- 隐藏提示词编辑弹窗 -->
+    <PromptEditorDialog
+      :visible="uiStore.promptEditorDialog.visible"
+      :prompt="uiStore.promptEditorDialog.props.prompt"
+      @close="uiStore.closePromptEditorDialog"
+      @save="handlePromptEditorSave"
+    />
+
+
+    <!-- 全局图标选择弹窗 -->
+    <IconSelectDialog
+      :visible="uiStore.iconSelectDialog.visible"
+      :current-icon="uiStore.iconSelectDialog.props.currentIcon"
+      @update:visible="uiStore.closeIconSelectDialog"
+      @select="uiStore.handleIconSelect"
     />
 
     <!-- 全局 Toast 通知 -->
@@ -236,7 +342,7 @@
  * 集成所有子组件，管理全局状态和事件通信
  */
 
-import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue';
 
 // 组件导入
 import {
@@ -253,29 +359,48 @@ import {
 } from './components';
 import {
   AvatarCropDialog,
-  DashboardWidgetManagerDialog,
+  AvatarManagerDialog,
+  FactionSettingsDialog,
+  GraphSettingsDialog,
   HistoryDialog,
+  IconSelectDialog,
   InputFloorDialog,
   ManualUpdateDialog,
+  NodeConfigDialog,
+  PresetSaveDialog,
   PurgeRangeDialog,
   RowEditDialog,
   SettingsDialog,
   WidgetActionsDialog,
   WidgetSettingsDialog,
 } from './components/dialogs';
+import {
+  DivinationOverlay,
+  PromptEditorDialog,
+} from './components/dialogs/divination';
+import {
+  CategorySelectPopup,
+  TagManagerDialog,
+  TagPreEditDialog,
+} from './components/dialogs/tag-manager';
 
 // Store 导入
 import { useConfigStore } from './stores/useConfigStore';
 import { useDataStore } from './stores/useDataStore';
-import { TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from './stores/useUIStore';
+import { useDivinationStore } from './stores/useDivinationStore';
+import { useTagLibraryStore } from './stores/useTagLibraryStore';
+import { getSmartTabIcon, TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from './stores/useUIStore';
 
 // Composables 导入
 import { useApiCallbacks } from './composables/useApiCallbacks';
 import { useCoreActions } from './composables/useCoreActions';
 import { useDataPersistence } from './composables/useDataPersistence';
+import { useDivinationAction } from './composables/useDivinationAction';
+import { appendPromptToInput as appendToInput, useHiddenPrompt } from './composables/useHiddenPrompt';
 import { useParentStyleInjection } from './composables/useParentStyleInjection';
 import { useRowHistory } from './composables/useRowHistory';
 import { useSwipeEnhancement } from './composables/useSwipeEnhancement';
+import { useTableUpdateStatus } from './composables/useTableUpdateStatus';
 import { toast, useToast } from './composables/useToast';
 import { useTouchScrollFix } from './composables/useTouchScrollFix';
 
@@ -283,7 +408,7 @@ import { useTouchScrollFix } from './composables/useTouchScrollFix';
 import { isCharacterTable, processJsonData } from './utils';
 
 // 类型导入
-import type { ProcessedTable, TabItem, TableRow } from './types';
+import type { InteractiveTag, ProcessedTable, TabItem, TableRow } from './types';
 
 // ============================================================
 // Store 实例
@@ -292,6 +417,8 @@ import type { ProcessedTable, TabItem, TableRow } from './types';
 const uiStore = useUIStore();
 const dataStore = useDataStore();
 const configStore = useConfigStore();
+const tagLibraryStore = useTagLibraryStore();
+const divinationStore = useDivinationStore() as any;
 
 // ============================================================
 // Composables
@@ -299,7 +426,11 @@ const configStore = useConfigStore();
 
 const { init: initStyles, cleanup: cleanupStyles } = useParentStyleInjection();
 const { saveToDatabase, getTableData, purgeFloorRange: executePurgeFloorRange, stopAutoSave } = useDataPersistence();
+const { refresh: refreshTableStatus } = useTableUpdateStatus();
 const { state: toastState } = useToast();
+const { setInput } = useCoreActions();
+const { setHiddenPrompt, setupSendIntercept, cleanupSendIntercept } = useHiddenPrompt();
+const { performDivination, confirmDivination } = useDivinationAction();
 
 // 触摸滚动修复（横向布局卡片滑动）- 随组件生命周期自动管理
 useTouchScrollFix();
@@ -317,6 +448,7 @@ const swipeEnhancement = useSwipeEnhancement();
 
 const floatingBallRef = ref<InstanceType<typeof FloatingBall>>();
 const mainPanelRef = ref<InstanceType<typeof MainPanel>>();
+const relationshipGraphRef = ref<InstanceType<typeof RelationshipGraph>>();
 
 // ============================================================
 // Provide (向子组件提供数据)
@@ -335,22 +467,7 @@ const searchTerm = ref('');
 /** 内容区域隐藏状态 */
 const isContentHidden = ref(false);
 
-/** 弹窗显示状态 */
-const showSettingsDialog = ref(false);
-const showInputFloorDialog = ref(false);
-const showPurgeRangeDialog = ref(false);
-const showManualUpdateDialog = ref(false);
-const showHistoryDialog = ref(false);
-const showTabsPopup = ref(false);
-
-/** 历史记录弹窗数据 */
-const historyDialogData = reactive({
-  tableName: '',
-  tableId: '',
-  rowIndex: 0,
-  currentRowData: null as TableRow | null,
-  titleColIndex: 1, // 标题列索引
-});
+// 弹窗状态已迁移到 useUIStore，此处不再需要独立的 ref
 
 /** 右键菜单状态 */
 const contextMenuState = reactive({
@@ -477,7 +594,7 @@ const characterTablesData = computed<ProcessedTable[]>(() => {
  * 获取势力表数据（用于关系图）
  */
 const factionTableData = computed<ProcessedTable | null>(() => {
-  const keywords = ['势力', 'faction', '组织', 'organization', '阵营'];
+  const keywords = ['势力', 'faction', '组织', 'organization', '阵营', '帮派', '宗门', '门派', '派系'];
   return (
     processedTables.value.find(t => {
       const name = t.name.toLowerCase();
@@ -485,6 +602,34 @@ const factionTableData = computed<ProcessedTable | null>(() => {
       return keywords.some(kw => name.includes(kw) || id.includes(kw));
     }) || null
   );
+});
+
+/**
+ * 获取势力列表（用于关系图设置弹窗）
+ * 从角色表中提取有归属的势力
+ */
+const factionList = computed<string[]>(() => {
+  const factions = new Set<string>();
+
+  // 从角色表中提取势力归属
+  for (const table of characterTablesData.value) {
+    // 查找势力/阵营列的索引
+    const factionColIndex = table.headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return lower.includes('势力') || lower.includes('阵营') || lower.includes('faction');
+    });
+
+    if (factionColIndex >= 0) {
+      for (const row of table.rows) {
+        const cell = row.cells.find(c => c.colIndex === factionColIndex);
+        if (cell && cell.value && String(cell.value).trim()) {
+          factions.add(String(cell.value).trim());
+        }
+      }
+    }
+  }
+
+  return Array.from(factions);
 });
 
 /** 当前选中的表格 */
@@ -510,18 +655,25 @@ const maxFloorIndex = computed(() => {
 // 辅助函数
 // ============================================================
 
-/** 获取表格图标 */
+/** 获取表格图标 (使用统一的智能匹配逻辑) */
 function getTableIcon(tableName: string): string {
+  // 优先使用 App 内部特定的匹配规则 (保持原有行为)
   const name = tableName.toLowerCase();
+
   if (name.includes('主角') || name.includes('player')) return 'fas fa-user';
-  if (name.includes('npc') || name.includes('角色')) return 'fas fa-users';
   if (name.includes('任务') || name.includes('quest')) return 'fas fa-tasks';
   if (name.includes('物品') || name.includes('item')) return 'fas fa-box-open';
-  if (name.includes('技能') || name.includes('skill')) return 'fas fa-magic';
   if (name.includes('装备') || name.includes('equip')) return 'fas fa-shield-alt';
   if (name.includes('状态') || name.includes('status')) return 'fas fa-heart';
   if (name.includes('事件') || name.includes('event')) return 'fas fa-calendar-alt';
   if (name.includes('选项') || name.includes('option')) return 'fas fa-sliders-h';
+
+  // 使用 useUIStore 中的通用智能匹配逻辑
+  const smartIcon = getSmartTabIcon(tableName);
+  if (smartIcon !== 'fas fa-table') {
+    return smartIcon;
+  }
+
   return 'fas fa-table';
 }
 
@@ -628,13 +780,13 @@ function handleTabsReorder(newOrder: string[]) {
 
 /** 收纳Tab按钮点击 - 显示/隐藏Tab浮窗 */
 function handleCollapseTabClick() {
-  showTabsPopup.value = !showTabsPopup.value;
-  console.info(`[ACU] Tab浮窗: ${showTabsPopup.value ? '显示' : '隐藏'}`);
+  uiStore.toggleTabsPopup();
+  console.info(`[ACU] Tab浮窗: ${uiStore.tabsPopup ? '显示' : '隐藏'}`);
 }
 
 /** Tab浮窗点击 - 切换Tab并关闭浮窗 */
 function handleTabsPopupClick(tabId: string) {
-  showTabsPopup.value = false;
+  uiStore.closeTabsPopup();
   handleTabChange(tabId);
 }
 
@@ -675,12 +827,30 @@ function handleShowRelationshipGraph() {
   }
 }
 
+/** 从设置弹窗打开头像管理器 */
+function handleOpenAvatarManagerFromSettings() {
+  // 调用 RelationshipGraph 组件的 openAvatarManager 方法
+  if (relationshipGraphRef.value) {
+    relationshipGraphRef.value.openAvatarManager();
+  }
+}
+
+/** 打开另存为弹窗 */
+function handleSaveAs() {
+  uiStore.openInputFloorDialog(currentTargetFloor.value);
+}
+
+/** 打开清除弹窗 */
+function handlePurge() {
+  uiStore.openPurgeRangeDialog(maxFloorIndex.value);
+}
+
 /** 处理仪表盘快捷按钮动作 */
 function handleDashboardAction(actionId: string, tableId: string) {
   switch (actionId) {
     case 'clear':
       // 打开清除弹窗
-      showPurgeRangeDialog.value = true;
+      handlePurge();
       break;
     case 'undo':
       // 撤回操作
@@ -699,6 +869,103 @@ function handleDashboardAction(actionId: string, tableId: string) {
 function handleTableClose() {
   uiStore.setActiveTab(TAB_DASHBOARD);
   console.info('[ACU] 返回仪表盘');
+}
+
+/**
+ * 打开数据库原生编辑器
+ * @param tableId 表格 ID (可选，无 tableId 时打开主界面)
+ */
+function openNativeEditor(tableId?: string): void {
+  try {
+    const parentWin = window.parent || window;
+    const api = (parentWin as any).AutoCardUpdaterAPI;
+
+    if (tableId && api?.openTableEditor) {
+      // 有 tableId：打开指定表格的编辑器
+      api.openTableEditor(tableId);
+    } else if (api?.openVisualizer) {
+      // 无 tableId：打开原生可视化主界面
+      api.openVisualizer();
+      console.info('[ACU] 已打开原生编辑器');
+
+      // 打开原生编辑器时，收起面板为悬浮球
+      handleToggle();
+    } else if (api?.openModal) {
+      // 备选方案：打开数据库主界面
+      api.openModal();
+    } else {
+      console.warn('[ACU] 无法打开原生编辑器：API 不可用');
+    }
+  } catch (e) {
+    console.error('[ACU] 打开原生编辑器失败', e);
+  }
+}
+
+// ============================================================
+// 事件处理 - 分类选择弹窗中的标签点击
+// ============================================================
+
+/**
+ * 处理分类弹窗中的标签选择
+ * @param tag 选中的标签
+ * @param rowContext 行上下文（用于解析通配符）
+ */
+function handleCategoryTagSelect(tag: InteractiveTag, rowContext: { title: string; value: string }) {
+  // 解析提示词模板中的通配符
+  let prompt = String(tag.promptTemplate || '');
+
+  // {{value}} - 标签本身的值
+  prompt = prompt.replace(/\{\{value\}\}/gi, tag.label);
+
+  // {{rowTitle}} - 当前行标题
+  if (rowContext?.title) {
+    prompt = prompt.replace(/\{\{rowTitle\}\}/gi, rowContext.title);
+  } else {
+    prompt = prompt.replace(/\{\{rowTitle\}\}/gi, '');
+  }
+
+  // {{playerName}} - 主角名
+  const playerName = getPlayerName();
+  prompt = prompt.replace(/\{\{playerName\}\}/gi, playerName);
+
+  // {{tableName}} - 表格名（分类弹窗没有表格上下文，留空）
+  prompt = prompt.replace(/\{\{tableName\}\}/gi, '');
+
+  const resolvedPrompt = prompt.trim();
+
+  // 检查是否为地点类标签（需要显示同伴选择器）
+  const category = tagLibraryStore.getCategoryById(tag.categoryId);
+  const isLocation = category ? (category.path.includes('地点') || category.path.includes('Location')) : false;
+
+  // 检查是否需要二次编辑
+  // 如果是地点标签，强制打开二次编辑弹窗以选择同伴
+  if (tag.allowPreEdit || isLocation) {
+    // 打开二次编辑弹窗
+    uiStore.openTagPreEditDialog({
+      tagLabel: tag.label,
+      resolvedPrompt,
+      showCompanions: isLocation,
+    });
+  } else if (resolvedPrompt) {
+    // 直接追加到输入框
+    setInput(resolvedPrompt);
+  }
+}
+
+/**
+ * 获取主角名
+ */
+function getPlayerName(): string {
+  const parentWin = window.parent || window;
+  try {
+    const ctx = (parentWin as any).SillyTavern?.getContext?.();
+    if (ctx?.name1) {
+      return ctx.name1;
+    }
+  } catch (e) {
+    console.warn('[ACU] 获取主角名失败', e);
+  }
+  return '{{user}}';
 }
 
 /** 高度拖拽开始 - 调用 MainPanel 的高度拖拽逻辑 */
@@ -723,11 +990,9 @@ function handleHeightDragStart(event: PointerEvent, handleEl: HTMLElement) {
     const dy = startY - moveE.clientY;
     let newHeight = startHeight + dy;
 
-    // 限制高度范围
+    // 限制高度范围：最小 200px，最大由 CSS 的 max-height: calc(100vh - bottom) 控制
     const minHeight = 200;
-    const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
-    const maxHeight = parentHeight * 0.8;
-    newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+    newHeight = Math.max(minHeight, newHeight);
 
     dataAreaEl.style.height = `${newHeight}px`;
   };
@@ -782,6 +1047,12 @@ async function loadData(): Promise<void> {
 
     // 刷新后清除所有高亮标记（手动和AI）
     dataStore.clearChanges(true);
+
+    // 顺带刷新表格更新状态（仪表盘数据）
+    // 由于 useTableUpdateStatus 改为了单例模式，这里调用会同步更新仪表盘组件
+    refreshTableStatus().catch(err => {
+      console.warn('[ACU] 刷新表格更新状态失败（非阻塞）:', err);
+    });
   }
 }
 
@@ -926,30 +1197,30 @@ function handleContextUndoDelete() {
 
 /** 显示历史记录弹窗 */
 function handleShowHistory(tableId: string, tableName: string, rowIndex: number, rowData: TableRow) {
-  historyDialogData.tableId = tableId;
-  historyDialogData.tableName = tableName;
-  historyDialogData.rowIndex = rowIndex;
-  historyDialogData.currentRowData = rowData;
-
   // 计算 titleColIndex（与 DataTable.vue 逻辑一致）
   const table = processedTables.value.find(t => t.id === tableId);
+  let titleColIndex = 1;
   if (table && (tableName.includes('总结') || tableName.includes('大纲'))) {
     const idx = table.headers.findIndex(h => h && (h.includes('索引') || h.includes('编号') || h.includes('代码')));
-    historyDialogData.titleColIndex = idx > 0 ? idx : 1;
-  } else {
-    historyDialogData.titleColIndex = 1;
+    titleColIndex = idx > 0 ? idx : 1;
   }
 
-  showHistoryDialog.value = true;
-  console.info(`[ACU] 打开历史记录: ${tableName}[${rowIndex}], titleColIndex=${historyDialogData.titleColIndex}`);
+  uiStore.openHistoryDialog({
+    tableId,
+    tableName,
+    rowIndex,
+    currentRowData: rowData,
+    titleColIndex,
+  });
+  console.info(`[ACU] 打开历史记录: ${tableName}[${rowIndex}], titleColIndex=${titleColIndex}`);
 }
 
 /** 应用历史记录更改 */
 async function handleHistoryApply(changes: Map<number, string>) {
-  const { tableId, tableName, rowIndex, currentRowData } = historyDialogData;
+  const { tableId, tableName, rowIndex, currentRowData } = uiStore.historyDialog.props;
 
   if (!currentRowData || changes.size === 0) {
-    showHistoryDialog.value = false;
+    uiStore.closeHistoryDialog();
     return;
   }
 
@@ -967,7 +1238,7 @@ async function handleHistoryApply(changes: Map<number, string>) {
   }
 
   console.info(`[ACU] 应用历史更改: ${changes.size} 个单元格`);
-  showHistoryDialog.value = false;
+  uiStore.closeHistoryDialog();
 }
 
 /** 将 TableRow 转换为 cells 格式 */
@@ -977,6 +1248,42 @@ function tableRowToCells(row: TableRow): Record<number, string> {
     cells[index] = String(cell.value);
   });
   return cells;
+}
+
+// ============================================================
+// 事件处理 - 抽签系统
+// ============================================================
+
+/**
+/**
+ * 处理抽签确认
+ */
+function handleDivinationConfirm() {
+  const result = uiStore.divinationOverlay.result;
+  if (result) {
+    confirmDivination(result);
+  } else {
+    console.error('[ACU] Confirm divination failed: No result found');
+  }
+}
+
+/**
+ * 处理隐藏提示词保存
+ * @param prompt 提示词内容
+ */
+function handlePromptEditorSave(prompt: string): void {
+  setHiddenPrompt(prompt);
+  setupSendIntercept();
+}
+
+/**
+ * 追加提示词到酒馆输入框
+ * @param prompt 提示词内容
+ */
+function appendPromptToInput(prompt: string): void {
+  const wrapped = `<元指令>\n${prompt}\n</元指令>`;
+  appendToInput(wrapped, '\n');
+  toast.success('提示词已追加到输入框');
 }
 
 // ============================================================
@@ -990,7 +1297,7 @@ function handleSettingsSave() {
 
 /** 手动更新 - 打开配置弹窗 */
 function handleManualUpdate() {
-  showManualUpdateDialog.value = true;
+  uiStore.openManualUpdateDialog();
 }
 
 /** 打开原生编辑器 */
@@ -1015,6 +1322,8 @@ async function handleSaveToFloor(floorIndex: number) {
     const success = await saveToDatabase(null, false, false, floorIndex);
     if (success) {
       console.info(`[ACU] 数据已保存到第 ${floorIndex} 楼`);
+      // 另存为后刷新界面以显示最新数据
+      await loadData();
     }
   } catch (error) {
     console.error('[ACU] 保存到指定楼层失败:', error);
@@ -1031,6 +1340,13 @@ async function handlePurgeRange(startFloor: number, endFloor: number) {
   } catch (error) {
     console.error('[ACU] 清除范围失败:', error);
   }
+}
+
+/** 高级清除完成回调 */
+async function handleAdvancedPurgeConfirm(result: { changedCount: number; tables: string[] }) {
+  console.info(`[ACU] 高级清除完成，影响 ${result.changedCount} 楼层，表格:`, result.tables);
+  // 刷新数据以反映变更
+  await loadData();
 }
 
 // ============================================================
@@ -1099,6 +1415,9 @@ onUnmounted(() => {
   // 停止自动保存 (防止内存泄露)
   stopAutoSave();
 
+  // 清理 DOM 拦截
+  cleanupSendIntercept();
+
   // 清理样式
   cleanupStyles();
 });
@@ -1139,11 +1458,12 @@ function isInsideACU(target: Element): boolean {
 
   // 检查是否有任何弹窗正在显示
   if (
-    showSettingsDialog.value ||
-    showInputFloorDialog.value ||
-    showPurgeRangeDialog.value ||
-    showManualUpdateDialog.value ||
-    showHistoryDialog.value
+    uiStore.settingsDialog ||
+    uiStore.inputFloorDialog.visible ||
+    uiStore.purgeRangeDialog.visible ||
+    uiStore.manualUpdateDialog ||
+    uiStore.historyDialog.visible ||
+    uiStore.presetSaveDialog.visible
   ) {
     return true;
   }
@@ -1191,6 +1511,10 @@ onMounted(() => {
 
   // 在父窗口文档上监听点击事件
   parentDoc.addEventListener('click', handleClickOutside);
+
+  // 初始化抽签系统配置
+  // 确保在应用加载时就读取配置，以便后续操作能获取到正确数据
+  divinationStore.loadConfig();
 
   // 清理函数
   onUnmounted(() => {

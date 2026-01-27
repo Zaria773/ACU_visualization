@@ -18,12 +18,6 @@
   }
 
   // 显示关系图时，强制最大高度
-  &.acu-show-graph {
-    min-height: 450px;
-    height: auto !important;
-    max-height: none !important;
-    flex: 1 1 auto;
-  }
 }
 
 // 工具栏 (固定在顶部，不随卡片滚动)
@@ -89,82 +83,35 @@
   flex-shrink: 0;
 }
 
-// 工具栏按钮
-.acu-toolbar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
+// 注意: 顶栏按钮请使用通用类 .acu-icon-btn (components/buttons.scss)
+// 高度拖手样式（附加到 .acu-icon-btn）
+.acu-icon-btn.acu-height-handle {
+  cursor: ns-resize;
+}
+
+// 关闭按钮样式（附加到 .acu-icon-btn）
+.acu-icon-btn.acu-close-btn {
+  &:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--acu-danger, #e74c3c);
+  }
+}
+
+// 无边框搜索输入框（内联模式）
+.acu-search-input.acu-search-inline {
+  width: 100px;
+  padding: 4px 8px;
   border: none;
   border-radius: var(--acu-radius-sm, 4px);
   background: transparent;
-  color: var(--acu-text-sub, #666);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: var(--acu-btn-hover, rgba(0, 0, 0, 0.06));
-    color: var(--acu-text-main, #333);
-  }
-
-  &.active {
-    background: var(--acu-title-color-bg, rgba(102, 126, 234, 0.15));
-    color: var(--acu-title-color, #667eea);
-  }
-
-  i {
-    font-size: 12px;
-  }
-
-  // 高度拖手样式
-  &.acu-height-handle {
-    cursor: ns-resize;
-    color: var(--acu-text-muted, #999);
-
-    &:hover {
-      color: var(--acu-title-color, #667eea);
-    }
-  }
-
-  // 关闭按钮样式
-  &.acu-close-btn {
-    &:hover {
-      background: rgba(231, 76, 60, 0.1);
-      color: var(--acu-danger, #e74c3c);
-    }
-  }
-}
-
-// 搜索框容器
-.acu-search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.acu-search-icon {
-  position: absolute;
-  left: 8px;
-  color: var(--acu-text-muted, #999);
-  font-size: 12px;
-  pointer-events: none;
-}
-
-.acu-search-input {
-  width: 140px;
-  padding: 5px 28px 5px 28px;
-  border: 1px solid var(--acu-border, rgba(0, 0, 0, 0.1));
-  border-radius: var(--acu-radius-sm, 4px);
-  background: var(--acu-bg-panel, #fff);
   color: var(--acu-text-main, #333);
   font-size: calc(var(--acu-font-size, 13px) - 1px);
   outline: none;
   transition: all 0.2s;
 
   &:focus {
-    width: 180px;
-    border-color: var(--acu-title-color, #667eea);
+    width: 140px;
+    background: var(--acu-btn-hover, rgba(0, 0, 0, 0.05));
   }
 
   &::placeholder {
@@ -172,12 +119,12 @@
   }
 }
 
+// 清除图标（内联模式）
 .acu-search-clear {
-  position: absolute;
-  right: 8px;
   color: var(--acu-text-muted, #999);
   cursor: pointer;
   font-size: 11px;
+  flex-shrink: 0;
 
   &:hover {
     color: var(--acu-text-main, #333);
@@ -199,7 +146,8 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    align-content: start;
+    align-content: flex-start;
+    align-items: stretch; // 关键：让卡片在同一行内拉伸到最高卡片的高度
 
     // 卡片固定宽度
     > .acu-data-card {
@@ -214,7 +162,8 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    align-content: start;
+    align-content: flex-start;
+    align-items: stretch; // 关键：让卡片在同一行内拉伸到最高卡片的高度
 
     // 列表模式下卡片稍窄
     > .acu-data-card {
@@ -231,12 +180,13 @@
 // 横向布局下的卡片容器 - 唯一滚动区域
 .acu-layout-horizontal .acu-cards-container {
   // 重置 grid 布局，改为 flex 以支持横向滚动
-  flex: 1; // 占满中间剩余空间
+  flex: 1 1 0;
+  height: 0; // 配合 flex-basis: 0，让 flex 控制实际高度
   min-height: 0; // 允许收缩
   display: flex !important;
   flex-wrap: nowrap !important;
   gap: 14px;
-  align-items: flex-start;
+  align-items: flex-start; // 关键修复：卡片高度自适应内容，不拉伸
   justify-content: flex-start;
   white-space: nowrap;
   overflow-x: auto !important;
@@ -259,7 +209,10 @@
   flex: 0 0 var(--acu-card-width, 280px) !important;
   width: var(--acu-card-width, 280px) !important;
   min-width: var(--acu-card-width, 280px); // 防止被压缩
-  max-height: calc(100% - 8px); // 留出滚动条空间（实际滚动条约8px）
+  // 关键修复：高度自适应内容
+  align-self: flex-start;
+  height: fit-content; // 让内容决定高度
+  max-height: calc(100% - 4px); // 但不超过容器高度
   overflow-y: auto;
   white-space: normal;
   touch-action: pan-x pan-y !important;
@@ -342,8 +295,3 @@
   color: var(--acu-text-muted, #999);
 }
 
-.acu-page-info {
-  margin-left: 12px;
-  color: var(--acu-text-muted, #666);
-  font-size: calc(var(--acu-font-size, 13px) - 1px);
-}

@@ -8,7 +8,7 @@
       </div>
       <div class="acu-header-actions">
         <span class="acu-options-count">{{ optionTables.length }} 个选项表</span>
-        <button class="acu-toolbar-btn acu-close-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
+        <button class="acu-icon-btn acu-close-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
           <i class="fas fa-times"></i>
         </button>
       </div>

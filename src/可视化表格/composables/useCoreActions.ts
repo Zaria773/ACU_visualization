@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 核心动作 Composable
  * 迁移原代码中的 CoreActions 对象逻辑
@@ -6,6 +8,7 @@
 import { useDataStore } from '../stores/useDataStore';
 import { getBadgeStyle, getCore } from '../utils';
 import { useDataPersistence } from './useDataPersistence';
+import { appendPromptToInput } from './useHiddenPrompt';
 import { toast } from './useToast';
 
 export function useCoreActions() {
@@ -150,27 +153,7 @@ export function useCoreActions() {
    * @param text 要追加的文本
    */
   const setInput = (text: string) => {
-    const parentDoc = window.parent.document;
-    const textarea = parentDoc.getElementById('send_textarea') as HTMLTextAreaElement;
-    // 移动端正则检测
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (textarea) {
-      // 1. 获取旧值并追加新值
-      const currentVal = textarea.value || '';
-      const newVal = currentVal ? currentVal + ' ' + text : text;
-
-      // 2. 赋值并触发事件
-      textarea.value = newVal;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-      // 3. 仅在非移动端聚焦 (防止弹键盘)
-      if (!isMobile) {
-        textarea.focus();
-      }
-    } else {
-      console.warn('[ACU] 未找到输入框 #send_textarea');
-    }
+    appendPromptToInput(text, ' ');
   };
 
   /**

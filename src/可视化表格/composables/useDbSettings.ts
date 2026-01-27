@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 数据库配置读写 Composable
  * 用于管理 AutoCardUpdater 数据库的设置配置

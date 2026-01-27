@@ -3,7 +3,8 @@
 > **路径**: `src/可视化表格/`
 > **技术栈**: Vue 3 + Pinia + VueUse + SCSS
 > **架构**: 跨 iframe 脚本（iframe 运行逻辑，UI 渲染到父窗口）
-> **调试**: 使用pnpm watch实时热重载，每一次代码改动的效果都在Silly Tavern前端可见
+> **调试**: 使用pnpm watch实时热重载监听，界面、脚本代码到酒馆网页的实时同步已经建立好了: 在代码变更后, 酒馆网页上将热重载新的脚本或界面代码, 因此你不需要刷新酒馆网页, 也不需要自己运行 `pnpm build` 来更新代码打包结果, 直接查看网页即可.
+
 > **推送github**:每次推送之前更改版本号：src\可视化表格\components\dialogs\SettingsDialog.vue:330-331
 ```
         <div class="acu-bottom-spacer">—— ACU Visualizer 版本号 ——</div>
@@ -34,7 +35,14 @@
 
 ### 2. 文件结构
 
-> **架构评级**: ⭐⭐⭐⭐ (4/5) — 逻辑剥离和样式管理优秀，结构分层合理
+> **架构评级**: ⭐⭐⭐⭐ (4/5)
+>
+> **2026-01-19 优化后**：
+> - ✅ dialogs/ 目录按领域拆分为 common/graph/dashboard/tag-manager
+> - ✅ 弹窗状态统一迁移到 useUIStore
+> - ✅ App.vue 逻辑提取为独立 composables（渐进式集成）
+> - ✅ 新增全局标签库系统 (useTagLibraryStore)
+> - ⚠️ useGraphConfigStore 职责仍偏重（634行，后续可拆分）
 
 ```
 src/可视化表格/
@@ -42,7 +50,7 @@ src/可视化表格/
 ├── App.vue                  # 根组件：组装所有子组件
 ├── types.ts                 # TypeScript 类型定义
 │
-├── components/              # Vue 单文件组件 (17 个 + 子目录)
+├── components/              # Vue 单文件组件
 │   ├── index.ts             # 统一导出
 │   │
 │   │  # 核心交互
@@ -65,24 +73,74 @@ src/可视化表格/
 │   ├── Pagination.vue       # 分页器
 │   ├── SearchBox.vue        # 搜索框
 │   ├── Toast.vue            # 通知提示
+│   ├── HiddenButtonsPopup.vue   # 隐藏按钮浮窗
+│   └── TabsPopup.vue            # Tab 收纳浮窗
 │   │
-│   ├── dialogs/             # 弹窗组件
+│   ├── dashboard/           # 仪表盘子组件
 │   │   ├── index.ts
-│   │   ├── SettingsDialog.vue       # 设置弹窗（主题/字体/布局/行为）
-│   │   ├── InputFloorDialog.vue     # 输入楼层弹窗
-│   │   ├── PurgeRangeDialog.vue     # 清除范围弹窗
-│   │   ├── AdvancedPurgeDialog.vue  # 高级清除弹窗
-│   │   ├── HistoryDialog.vue        # 历史记录弹窗
-│   │   └── ManualUpdateDialog.vue   # 手动更新弹窗
+│   │   ├── DashboardWidget.vue      # 看板卡片组件
+│   │   ├── EmbeddedOptionsPanel.vue # 嵌入式选项面板
+│   │   ├── TableStatusBoard.vue     # 表格更新状态看板
+│   │   └── InteractionTableWidget.vue # [新增] 交互表格组件
 │   │
-│   ├── settings/            # 设置面板子组件
+│   ├── dialogs/             # 弹窗组件 (按领域拆分)
+│   │   ├── index.ts
+│   │   │
+│   │   ├── common/          # 通用弹窗
+│   │   │   ├── SettingsDialog.vue       # 设置弹窗（主题/字体/布局/行为）
+│   │   │   ├── InputFloorDialog.vue     # 输入楼层弹窗
+│   │   │   ├── PurgeRangeDialog.vue     # 清除范围弹窗
+│   │   │   ├── AdvancedPurgeDialog.vue  # 高级清除弹窗
+│   │   │   ├── HistoryDialog.vue        # 历史记录弹窗
+│   │   │   ├── ManualUpdateDialog.vue   # 手动更新弹窗
+│   │   │   ├── IconSelectDialog.vue     # [新增] 图标选择弹窗
+│   │   │   └── PresetSaveDialog.vue     # [新增] 预设保存弹窗
+│   │   │
+│   │   ├── dashboard/       # 仪表盘弹窗
+│   │   │   ├── WidgetSettingsDialog.vue # 看板设置弹窗
+│   │   │   ├── WidgetActionsDialog.vue  # 看板操作弹窗
+│   │   │   └── RowEditDialog.vue        # 行编辑弹窗
+│   │   │
+│   │   ├── graph/           # 关系图弹窗
+│   │   │   ├── GraphSettingsDialog.vue  # 关系图设置弹窗
+│   │   │   ├── NodeConfigDialog.vue     # 节点配置弹窗
+│   │   │   ├── NodeLabelDialog.vue      # 节点标签选择弹窗
+│   │   │   ├── FactionSettingsDialog.vue # 势力设置弹窗
+│   │   │   ├── AvatarManagerDialog.vue  # 头像管理弹窗
+│   │   │   └── AvatarCropDialog.vue     # 头像裁剪弹窗
+│   │   │
+│   │   ├── tag-manager/     # 标签管理弹窗
+│   │   │   ├── index.ts
+│   │   │   ├── TagManagerDialog.vue     # 标签管理主弹窗
+│   │   │   ├── TagCategoryTree.vue      # 分类目录树组件
+│   │   │   ├── TagBadgeGrid.vue         # 标签网格组件
+│   │   │   ├── TagEditDialog.vue        # 标签编辑弹窗
+│   │   │   ├── TagImportDialog.vue      # 标签导入弹窗
+│   │   │   ├── CategorySelectPopup.vue  # 分类选择弹窗（仪表盘用）
+│   │   │   └── TagPreEditDialog.vue     # 标签预编辑弹窗
+│   │   │
+│   │   └── divination/      # [新增] 抽签系统弹窗
+│   │       ├── index.ts
+│   │       ├── DivinationOverlay.vue    # 抽签主界面
+│   │       ├── TarotCard.vue            # 塔罗牌组件
+│   │       ├── CardFront.vue            # 牌面
+│   │       ├── CardBack.vue             # 牌背
+│   │       ├── CornerOrnament.vue       # 角落装饰
+│   │       ├── PromptEditorDialog.vue   # 提示词编辑器
+│   │       └── types.ts
+│   │
+│   ├── settings/            # 设置面板子组件 (4 个)
 │   │   ├── TabConfigPanel.vue       # Tab 配置面板
-│   │   └── NavButtonConfigPanel.vue # 导航按钮配置
+│   │   ├── NavButtonConfigPanel.vue # 导航按钮配置
+│   │   ├── BallAppearancePanel.vue  # 悬浮球外观配置
+│   │   └── ThemePanel.vue           # 主题配置面板
 │   │
 │   └── ui/                  # 通用 UI 组件
-│       └── SortableList.vue # 可排序列表
+│       ├── index.ts
+│       ├── SortableList.vue # 可排序列表
+│       └── SwitchList.vue   # [新增] 开关列表
 │
-├── composables/             # 组合式函数（15 个，逻辑剥离层）
+├── composables/             # 组合式函数（逻辑剥离层）
 │   ├── index.ts             # 统一导出 + 迁移说明
 │   │
 │   │  # 跨 iframe 基础设施
@@ -105,15 +163,38 @@ src/可视化表格/
 │   ├── useIndexedDB.ts             # IndexedDB 底层操作
 │   ├── useSwipeEnhancement.ts      # Swipe 增强功能
 │   ├── useUpdatePresets.ts         # 更新预设管理
+│   ├── useCellLock.ts              # 单元格锁定管理
+│   ├── useTableUpdateStatus.ts     # 表格更新状态（仪表盘看板）
+│   │
+│   │  # 媒体资源管理
+│   ├── useAvatarManager.ts         # 头像管理（IndexedDB 存储）
+│   ├── useBackgroundStorage.ts     # 背景图片存储（IndexedDB）
 │   │
 │   │  # UI 辅助
-│   └── useToast.ts                 # Toast 通知
+│   ├── useToast.ts                 # Toast 通知
+│   │
+│   │  # App.vue 逻辑提取（渐进式集成）
+│   ├── useAppDataActions.ts        # 数据操作（加载/保存/撤销）
+│   ├── useAppNavigation.ts         # 导航操作（Tab切换/高度拖拽）
+│   ├── useAppContextMenu.ts        # 右键菜单操作
+│   └── useRelationshipData.ts      # 关系图数据计算
+│   │
+│   │  # [新增] 抽签与交互
+│   ├── useDraw.ts                  # 抽签逻辑
+│   ├── useHiddenPrompt.ts          # 隐藏提示词
+│   ├── usePromptBuild.ts           # 提示词构建
+│   ├── useWordPool.ts              # 词池管理
+│   └── useInteractionImporter.ts   # 交互表格导入
 │
-├── stores/                  # Pinia 状态管理（3 个领域 Store）
+├── stores/                  # Pinia 状态管理
 │   ├── index.ts
 │   ├── useConfigStore.ts    # 配置状态：主题、字体、布局偏好
 │   ├── useDataStore.ts      # 数据状态：表格数据、diff、pendingDeletes
-│   └── useUIStore.ts        # UI 状态：折叠、activeTab、弹窗可见性
+│   ├── useUIStore.ts        # UI 状态：折叠、activeTab、弹窗可见性
+│   ├── useDashboardStore.ts # 仪表盘配置：看板列表、布局
+│   ├── useGraphConfigStore.ts # 关系图配置：节点/边/图例/背景
+│   ├── useTagLibraryStore.ts # 全局标签库：分类树、标签、导入导出
+│   └── useThemeStore.ts     # 主题美化：预设、高亮色、自定义CSS
 │
 ├── styles/                  # SCSS 样式文件（Design Tokens 架构）
 │   ├── index.scss           # 入口：导入所有子模块
@@ -137,18 +218,39 @@ src/可视化表格/
 │   │   ├── settings-panel.scss
 │   │   ├── sortable-list.scss
 │   │   ├── table-selector.scss
-│   │   └── tabs.scss
+│   │   ├── tabs.scss
+│   │   ├── switch.scss
+│   │   ├── switch-list.scss
+│   │   └── interaction-widget.scss # [新增] 交互组件样式
 │   │
 │   ├── layouts/             # 布局样式
 │   │   ├── container.scss
 │   │   ├── panel.scss
-│   │   └── responsive.scss
+│   │   ├── responsive.scss
+│   │   └── settings.scss
 │   │
 │   ├── overlays/            # 覆盖层样式
 │   │   ├── context-menu.scss
 │   │   ├── dialogs.scss
 │   │   ├── overlays.scss
-│   │   └── quick-view.scss
+│   │   ├── quick-view.scss
+│   │   ├── avatar-dialogs.scss
+│   │   ├── dashboard-dialogs.scss
+│   │   ├── tag-manager.scss
+│   │   ├── dialogs-ball.scss
+│   │   ├── dialogs-font.scss
+│   │   ├── dialogs-graph.scss
+│   │   ├── dialogs-history.scss
+│   │   ├── dialogs-preset.scss
+│   │   ├── dialogs-purge.scss
+│   │   ├── dialogs-responsive.scss
+│   │   ├── dialogs-tag.scss
+│   │   ├── dialogs-theme.scss
+│   │   ├── dialogs-update.scss
+│   │   ├── dialogs-icon.scss       # [新增] 图标选择弹窗样式
+│   │   ├── dialogs-pre-edit.scss
+│   │   ├── dialogs-prompt-editor.scss # [新增] 提示词编辑器样式
+│   │   └── divination.scss         # [新增] 抽签系统样式
 │   │
 │   └── utilities/           # 工具样式
 │       ├── feedback.scss
@@ -157,7 +259,8 @@ src/可视化表格/
 └── utils/                   # 纯函数工具
     ├── index.ts             # getCore, getTableData 等
     ├── relationshipColors.ts
-    └── relationshipParser.ts
+    ├── relationshipParser.ts
+    └── imageUpload.ts       # 图片上传工具
 ```
 
 #### 架构设计说明
@@ -207,6 +310,8 @@ src/可视化表格/
 | | `--acu-btn-hover` | 按钮悬浮背景 |
 | **强调色** | `--acu-title-color` | 标题/主题色 |
 | | `--acu-title-color-bg` | 主题色浅背景 |
+| | `--acu-highlight-manual` | 手动修改高亮 |
+| | `--acu-highlight-ai` | ai填表高亮 |
 
 #### 3.2 禁止的写法
 
@@ -222,18 +327,54 @@ background: var(--acu-card-bg);
 border: 1px solid var(--acu-border);
 ```
 
-#### 3.3 复用现有样式类
+#### 3.3 样式复用原则（核心）
 
-| 组件类型 | 现有样式类 | 所在文件 |
-|----------|-----------|----------|
-| **按钮** | `.acu-nav-btn`, `.acu-action-btn`, `.acu-modal-btn` | `buttons.scss` |
-| **开关** | `.acu-switch` | `dialogs.scss` |
-| **输入框** | `.acu-settings-control input/select` | `dialogs.scss` |
-| **设置行** | `.acu-settings-row`, `.acu-settings-label` | `dialogs.scss` |
-| **分组容器** | `.acu-settings-group`, `.acu-config-section` | `dialogs.scss`, `settings-panel.scss` |
-| **弹窗** | `.acu-modal`, `.acu-modal-header`, `.acu-modal-body` | `dialogs.scss` |
-| **空状态** | `.acu-empty-hint` | `settings-panel.scss` |
-| **提示栏** | `.acu-config-hint`, `.acu-config-hint-fixed` | `settings-panel.scss` |
+**复用 = 在 Vue 模板中直接使用现有 CSS 类，而非复制 SCSS 代码**
+
+已有通用样式定义在 `styles/` 目录的 SCSS 文件中，完整列表见 [`STYLE_INDEX.md`](../../src/可视化表格/styles/STYLE_INDEX.md)。开发时：
+
+1. **查阅 STYLE_INDEX.md** 找到需要的样式类
+2. **在 Vue template 中直接写类名**（这些类已全局可用）
+3. **禁止复制 SCSS** 到新文件中"造轮子"
+
+**示例**：创建一个设置行
+
+```vue
+<!-- ✅ 正确：直接在 template 中使用现有类 -->
+<template>
+  <div class="acu-settings-row">
+    <div class="acu-settings-label">
+      标签名
+      <span class="hint">提示</span>
+    </div>
+    <div class="acu-settings-control">
+      <select class="acu-select">...</select>
+    </div>
+  </div>
+</template>
+
+<!-- 不需要写任何 SCSS！这些类已在 layouts/settings.scss 和 components/inputs.scss 中定义 -->
+```
+
+```scss
+// ❌ 错误：把现有样式复制到新文件
+.my-custom-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;  // 这是在重复 .acu-settings-row
+}
+```
+
+**常用可复用类**（完整列表见 STYLE_INDEX.md）：
+
+| 组件类型 | 直接使用的类名 | 定义位置 |
+|----------|---------------|----------|
+| **弹窗结构** | `.acu-modal-container`, `.acu-modal`, `.acu-modal-header`, `.acu-modal-body` | `overlays/dialogs.scss` |
+| **设置布局** | `.acu-settings-section`, `.acu-settings-title`, `.acu-settings-group`, `.acu-settings-row`, `.acu-settings-label`, `.acu-settings-control` | `layouts/settings.scss` |
+| **导航行** | `.acu-nav-row` | `layouts/settings.scss` |
+| **按钮** | `.acu-modal-btn`, `.acu-action-btn`, `.acu-tool-btn`, `.acu-icon-btn` | `components/buttons.scss` |
+| **表单控件** | `.acu-select`, `.acu-switch`, `input[type="color"]` | `components/inputs.scss`, `components/switch.scss` |
+| **提示** | `.hint`（在 `.acu-settings-label` 内）, `.acu-empty-hint` | `layouts/settings.scss` |
 
 #### 3.4 设计规范速查
 
@@ -247,17 +388,20 @@ border: 1px solid var(--acu-border);
 
 #### 3.5 新增弹窗/面板的标准模板
 
+**重点：直接使用现有类，只在必要时添加极少量定制样式**
+
 ```vue
 <template>
+  <!-- 所有类名都是现有的，直接用 -->
   <div class="acu-modal-container" @click.self="handleClose">
     <div class="acu-modal acu-xxx-modal">
-      <!-- 头部 -->
+      <!-- 头部：使用现有 .acu-modal-header -->
       <div class="acu-modal-header">
         <span class="acu-modal-title">标题</span>
-        <button class="acu-close-pill" @click="handleClose">完成</button>
+        <button class="acu-close-pill" @click.stop="handleClose">完成</button>
       </div>
 
-      <!-- 内容 -->
+      <!-- 内容：使用现有 .acu-modal-body + 设置布局类 -->
       <div class="acu-modal-body">
         <div class="acu-settings-section">
           <div class="acu-settings-title">
@@ -265,17 +409,24 @@ border: 1px solid var(--acu-border);
             分组标题
           </div>
           <div class="acu-settings-group">
-            <!-- 设置行 -->
+            <!-- 设置行：全部使用现有类 -->
             <div class="acu-settings-row">
               <div class="acu-settings-label">
                 标签
                 <span class="hint">提示文字</span>
               </div>
               <div class="acu-settings-control">
-                <!-- 控件 -->
+                <!-- 控件也用现有类：.acu-select, .acu-switch 等 -->
+                <select class="acu-select">...</select>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- 底部按钮：使用现有按钮类 -->
+        <div class="acu-modal-footer">
+          <button class="acu-modal-btn secondary" @click.stop="handleClose">取消</button>
+          <button class="acu-modal-btn primary" @click.stop="handleConfirm">确定</button>
         </div>
       </div>
     </div>
@@ -283,14 +434,17 @@ border: 1px solid var(--acu-border);
 </template>
 ```
 
-```scss
-// styles/overlays/dialogs.scss 中添加
-.acu-xxx-modal {
-  max-width: 400px; // 根据内容调整
+**新弹窗只需添加的 SCSS**：
 
-  // 移动端适配已由 .acu-modal 通用样式处理
+```scss
+// styles/overlays/dialogs-xxx.scss（或在现有文件中添加）
+// 只需设置尺寸，其他全部复用通用样式
+.acu-xxx-modal {
+  max-width: 400px;  // 唯一需要定制的：弹窗宽度
 }
 ```
+
+**禁止**：为弹窗的头部、按钮、设置行等重新写样式
 #### 3.6 全局弹窗开发规范（重要）
 
 **核心原则**：所有弹窗都必须在 `App.vue` 中统一渲染，通过 `useUIStore` 管理状态。**禁止在子组件中使用嵌套弹窗或 Teleport**。
@@ -528,11 +682,13 @@ function switchFromDialogAToDialogB(): void {
 #### 3.9 检查清单
 
 新增 UI 前请确认：
+- [ ] **查阅了 STYLE_INDEX.md**，确认没有可复用的现有类
+- [ ] **Vue template 中直接使用现有类名**（如 `.acu-settings-row`, `.acu-modal-btn`）
+- [ ] **没有复制 SCSS 代码创建重复样式**
+- [ ] 只有特定于该组件的样式才写新 SCSS（如弹窗宽度 `max-width`）
 - [ ] 所有颜色使用 `var(--acu-xxx)` 变量
-- [ ] 复用了现有的组件样式类
-- [ ] 样式写在 `styles/` 目录而非 `<style scoped>`
 - [ ] 移动端适配
-- [ ] 支持主题切换（不同 `.acu-theme-xxx` 下样式正确，主题 class是在 .acu-wrapper 容器）
+- [ ] 支持主题切换（不同 `.acu-theme-xxx` 下样式正确，主题 class 是在 .acu-wrapper 容器）
 - [ ] 弹窗按钮使用 `@click.stop` 阻止冒泡
 - [ ] **弹窗在 App.vue 中渲染，通过 useUIStore 管理状态**
 

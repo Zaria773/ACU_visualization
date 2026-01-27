@@ -4,11 +4,6 @@
 // =========================================
 
 // 搜索框包装器
-.acu-search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
 
 // 搜索输入框
 .acu-search-input {
@@ -83,6 +78,36 @@
   }
 }
 
+// 可滚动的通用编辑文本框 (acu-edit-textarea 的改进版)
+.acu-textarea-scrollable {
+  // 继承 acu-edit-textarea 的样式
+  width: 100%;
+  min-height: 24px;
+  padding: 6px 8px;
+  border: 2px solid var(--acu-title-color);
+  border-radius: var(--acu-radius-sm);
+  background: var(--acu-input-bg);
+  color: var(--acu-text-main);
+  font-size: var(--acu-font-size);
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+
+  // 关键差异：允许滚动和调整大小
+  overflow-y: auto !important;
+  resize: vertical;
+
+  // 启用文本选择
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  touch-action: manipulation;
+
+  &:focus {
+    box-shadow: 0 0 0 3px var(--acu-title-color-bg);
+  }
+}
+
 // 内联编辑器容器在编辑锁定状态下
 .acu-editing-lock .acu-inline-editor {
   // 编辑时允许触摸操作
@@ -90,24 +115,6 @@
 }
 
 // 传统编辑文本区域（设置等弹窗用）
-.acu-edit-textarea-legacy {
-  width: 100%;
-  min-height: 100px;
-  background: var(--acu-input-bg);
-  border: 1px solid var(--acu-border);
-  border-radius: 8px;
-  padding: 12px;
-  font-size: inherit;
-  font-family: inherit;
-  color: var(--acu-text-main);
-  resize: vertical;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: var(--acu-title-color);
-  }
-}
 
 // 设置项输入框
 .acu-settings-input {
@@ -166,48 +173,130 @@
   }
 }
 
-// 下拉选择框
+// =========================================
+// 下拉选择框 - 通用样式
+// 用法: <select class="acu-select">
+// =========================================
 .acu-select {
-  background: var(--acu-input-bg);
+  // 恢复原生下拉箭头
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  // 基础样式
+  padding: 8px 12px !important;
+  background: var(--acu-btn-bg) !important;
+  border: 1px solid var(--acu-border) !important;
+  border-radius: 6px !important;
+  color: var(--acu-text-main) !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  // 文字居中
+  text-align: center !important;
+  text-align-last: center !important; // 让选中项也居中
+  // 宽度自适应内容
+  width: auto !important;
+  min-width: 80px;
+  // 防御性属性
+  outline: none !important;
+  box-shadow: none !important;
+  min-height: auto !important;
+  height: auto !important;
+  line-height: normal !important;
+  margin: 0 !important;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: var(--acu-title-color) !important;
+  }
+
+  option {
+    background: var(--acu-bg-panel) !important;
+    color: var(--acu-text-main) !important;
+    text-align: center;
+  }
+}
+
+// =========================================
+// 颜色选择器 - 基础样式
+// 所有 input[type='color'] 自动应用，无需添加 class
+// =========================================
+input[type='color'] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 2px solid var(--acu-border) !important;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-title-color);
+    transform: scale(1.05);
+  }
+
+  // 清除浏览器默认样式
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  &::-webkit-color-swatch {
+    border-radius: 3px;
+    border: none;
+  }
+
+  &::-moz-color-swatch {
+    border-radius: 3px;
+    border: none;
+  }
+
+  // 虚线边框变体 - 用于边框颜色选择器
+  // 用法: <input type="color" class="acu-dashed">
+  &.acu-dashed {
+    border-style: dashed !important;
+  }
+}
+
+// =========================================
+// 颜色选择器 - 尺寸变体（兼容旧用法）
+// 用法: <input type="color" class="acu-color-swatch">
+// =========================================
+.acu-color-swatch {
+  // 与 input[type='color'] 基础样式一致，仅作为语义化类名
+  width: 32px !important;
+  height: 32px !important;
+}
+
+// 复选框样式
+
+// =========================================
+// 文本域 - 通用多行输入
+// =========================================
+.acu-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--acu-table-head);
   border: 1px solid var(--acu-border);
   border-radius: 6px;
-  padding: 8px 12px;
   color: var(--acu-text-main);
-  font-size: 14px;
-  cursor: pointer;
-  transition: border-color 0.2s;
+  resize: vertical;
+  font-family: inherit;
 
   &:focus {
     outline: none;
     border-color: var(--acu-title-color);
   }
 
-  option {
-    background: var(--acu-bg-panel);
-    color: var(--acu-text-main);
-  }
-}
-
-// 复选框样式
-.acu-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-
-  input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--acu-title-color);
-    cursor: pointer;
+  &::placeholder {
+    color: var(--acu-text-sub);
+    opacity: 0.6;
   }
 
-  label {
-    color: var(--acu-text-main);
-    font-size: 14px;
-    cursor: pointer;
-  }
+  // 提示词模板变体
 }
 
 // =========================================

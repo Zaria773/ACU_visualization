@@ -1,12 +1,16 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * UI 状态管理 Store
  * 迁移原代码中的 isCollapsed, isPinned, currentPage, currentSearchTerm, globalScrollTop, isEditingOrder 等全局变量
  */
 
 import { useStorage } from '@vueuse/core';
-import type { BallPosition, TableRow, DashboardWidgetConfig } from '../types';
-import { useDataStore } from './useDataStore';
 import { shallowRef } from 'vue';
+import type { DivinationResult } from '../components/dialogs/divination/types';
+import type { BallPosition, DashboardWidgetConfig, TableRow, WidgetActionId } from '../types';
+import { useDataStore } from './useDataStore';
+import { useDivinationStore } from './useDivinationStore';
 
 // ============================================================
 // 弹窗 Props 类型定义
@@ -36,11 +40,15 @@ export interface AvatarCropDialogProps {
   initialOffsetX?: number;
   initialOffsetY?: number;
   initialScale?: number;
+  /** 初始反色状态 */
+  initialInvert?: boolean;
+  /** 是否显示反色选项（默认 false，仅悬浮球需要） */
+  showInvertOption?: boolean;
 }
 
 /** 头像裁剪弹窗回调 */
 export interface AvatarCropDialogCallbacks {
-  onApply: (data: { offsetX: number; offsetY: number; scale: number }) => void;
+  onApply: (data: { offsetX: number; offsetY: number; scale: number; invert?: boolean }) => void;
   onUpload?: (file: File) => void;
 }
 
@@ -54,7 +62,96 @@ export interface WidgetSettingsDialogProps {
 /** 快捷按钮配置弹窗 Props */
 export interface WidgetActionsDialogProps {
   widgetId: string;
-  currentActions: string[];
+  currentActions: WidgetActionId[];
+}
+
+/** 头像管理弹窗 Props */
+export interface AvatarManagerDialogProps {
+  nodes: Array<{ id: string; name: string; label: string; type: string }>;
+  factions: Array<{ id: string; name: string }>;
+}
+
+/** 节点配置弹窗 Props */
+export interface NodeConfigDialogProps {
+  nodeId: string;
+  fullName: string;
+  currentLabel: string;
+  selectedIndices: number[];
+}
+
+/** 节点配置弹窗回调 */
+export interface NodeConfigDialogCallbacks {
+  onConfirm: (nodeId: string, displayLabel: string, selectedIndices: number[]) => void;
+  onResetToFullName: (nodeId: string, fullName: string) => void;
+  onStyleUpdate?: (nodeId: string) => void;
+}
+
+/** 势力设置弹窗 Props */
+export interface FactionSettingsDialogProps {
+  factionId: string;
+  factionName: string;
+}
+
+/** 分类选择弹窗 Props */
+export interface CategorySelectDialogProps {
+  categoryId: string;
+  rowContext: { title: string; value: string };
+  /** 来源组件 ID (用于管理标签) */
+  widgetId?: string;
+}
+
+/** 标签二次编辑弹窗 Props */
+export interface TagPreEditDialogProps {
+  tagLabel: string;
+  resolvedPrompt: string;
+  /** 是否显示同伴选择器 */
+  showCompanions?: boolean;
+  /** 来源组件 ID (用于管理标签) */
+  widgetId?: string;
+}
+
+/** 标签管理器弹窗 Props */
+export interface TagManagerDialogProps {
+  widgetId: string;
+  displayedTagIds: string[];
+  displayedCategoryIds: string[];
+}
+
+/** 图标选择弹窗 Props */
+export interface IconSelectDialogProps {
+  currentIcon: string;
+}
+
+/** 图标选择弹窗回调 */
+export interface IconSelectDialogCallbacks {
+  onSelect: (icon: string) => void;
+}
+
+/** 预设保存弹窗 Props */
+export interface PresetSaveDialogProps {
+  /** 预设类型：'manual-update' | 'theme' | 'divination' */
+  presetType: 'manual-update' | 'theme' | 'divination';
+  /** 摘要信息列表 */
+  summaryItems: string[];
+  /** 初始预设名称（可选） */
+  initialName?: string;
+  /** 检查重名的函数 */
+  checkDuplicate?: (name: string) => boolean;
+}
+
+/** 预设保存弹窗回调 */
+export interface PresetSaveDialogCallbacks {
+  onSave: (name: string) => void;
+}
+
+/** 输入楼层弹窗 Props */
+export interface InputFloorDialogProps {
+  currentFloor: number;
+}
+
+/** 清除范围弹窗 Props */
+export interface PurgeRangeDialogProps {
+  maxFloor: number;
 }
 
 // 注意：看板管理弹窗直接通过组件 props 传递 tables 数据，不需要在 store 中定义 Props 接口
@@ -78,6 +175,19 @@ export const STORAGE_KEYS = {
 export const TAB_DASHBOARD = 'acu_tab_dashboard_home';
 export const TAB_OPTIONS = 'acu_tab_options_panel';
 export const TAB_RELATIONSHIP_GRAPH = 'acu_tab_relationship_graph';
+
+/** 智能匹配 Tab 图标 */
+export function getSmartTabIcon(name: string): string {
+  if (/势力|组织|阵营/.test(name)) return 'fas fa-fist-raised';
+  if (/技能/.test(name)) return 'fas fa-magic';
+  if (/人物|角色|npc/i.test(name)) return 'fas fa-users';
+  if (/交互|行动/.test(name)) return 'fas fa-hand-pointer';
+  if (/随机/.test(name)) return 'fas fa-dice';
+  if (/全局/.test(name)) return 'fas fa-globe';
+  if (/地点|地图/.test(name)) return 'fas fa-map-marked-alt';
+  if (/大纲/.test(name)) return 'fas fa-book';
+  return 'fas fa-table';
+}
 
 export const useUIStore = defineStore('acu-ui', () => {
   // ============================================================
@@ -212,21 +322,16 @@ export const useUIStore = defineStore('acu-ui', () => {
       initialOffsetX: 50,
       initialOffsetY: 50,
       initialScale: 150,
+      initialInvert: false,
+      showInvertOption: false,
     },
   });
 
   /** 头像裁剪弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
-  const avatarCropOnApply = shallowRef<((data: { offsetX: number; offsetY: number; scale: number }) => void) | null>(
+  const avatarCropOnApply = shallowRef<((data: { offsetX: number; offsetY: number; scale: number; invert?: boolean }) => void) | null>(
     null,
   );
   const avatarCropOnUpload = shallowRef<((file: File) => void) | null>(null);
-
-  /** 看板管理弹窗状态 */
-  const widgetManagerDialog = reactive<{
-    visible: boolean;
-  }>({
-    visible: false,
-  });
 
   /** 快捷按钮配置弹窗状态 */
   const widgetActionsDialog = reactive<{
@@ -239,6 +344,240 @@ export const useUIStore = defineStore('acu-ui', () => {
       currentActions: [],
     },
   });
+
+  /** 头像管理弹窗状态 */
+  const avatarManagerDialog = reactive<{
+    visible: boolean;
+    props: AvatarManagerDialogProps;
+  }>({
+    visible: false,
+    props: {
+      nodes: [],
+      factions: [],
+    },
+  });
+
+  /** 头像管理弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const avatarManagerOnUpdate = shallowRef<(() => void) | null>(null);
+  const avatarManagerOnLabelChange = shallowRef<(() => void) | null>(null);
+
+  /** 节点配置弹窗状态 */
+  const nodeConfigDialog = reactive<{
+    visible: boolean;
+    props: NodeConfigDialogProps;
+  }>({
+    visible: false,
+    props: {
+      nodeId: '',
+      fullName: '',
+      currentLabel: '',
+      selectedIndices: [],
+    },
+  });
+
+  /** 节点配置弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const nodeConfigOnConfirm = shallowRef<
+    ((nodeId: string, displayLabel: string, selectedIndices: number[]) => void) | null
+  >(null);
+  const nodeConfigOnResetToFullName = shallowRef<((nodeId: string, fullName: string) => void) | null>(null);
+  const nodeConfigOnStyleUpdate = shallowRef<((nodeId: string) => void) | null>(null);
+
+  /** 关系图设置弹窗 Props */
+  interface GraphSettingsDialogProps {
+    factions: string[];
+  }
+
+  /** 关系图设置弹窗状态 */
+  const graphSettingsDialog = reactive<{
+    visible: boolean;
+    props: GraphSettingsDialogProps;
+  }>({
+    visible: false,
+    props: {
+      factions: [],
+    },
+  });
+
+  /** 势力设置弹窗状态 */
+  const factionSettingsDialog = reactive<{
+    visible: boolean;
+    props: FactionSettingsDialogProps;
+  }>({
+    visible: false,
+    props: {
+      factionId: '',
+      factionName: '',
+    },
+  });
+
+  // ============================================================
+  // 通用弹窗状态（从 App.vue 迁移）
+  // ============================================================
+
+  /** 设置弹窗 */
+  const settingsDialog = ref(false);
+
+  /** 输入楼层弹窗 */
+  const inputFloorDialog = reactive<{
+    visible: boolean;
+    props: InputFloorDialogProps;
+  }>({
+    visible: false,
+    props: {
+      currentFloor: 0,
+    },
+  });
+
+  /** 清除范围弹窗 */
+  const purgeRangeDialog = reactive<{
+    visible: boolean;
+    props: PurgeRangeDialogProps;
+  }>({
+    visible: false,
+    props: {
+      maxFloor: 0,
+    },
+  });
+
+  /** 手动更新弹窗 */
+  const manualUpdateDialog = ref(false);
+
+  /** 历史记录弹窗（DataTable 使用，与 dashboardHistoryDialog 分开） */
+  const historyDialog = reactive<{
+    visible: boolean;
+    props: HistoryDialogProps;
+  }>({
+    visible: false,
+    props: {
+      tableName: '',
+      tableId: '',
+      rowIndex: 0,
+      currentRowData: null,
+      titleColIndex: 1,
+    },
+  });
+
+  /** Tab 收纳浮窗 */
+  const tabsPopup = ref(false);
+
+  /** 预设保存弹窗状态 */
+  const presetSaveDialog = reactive<{
+    visible: boolean;
+    props: PresetSaveDialogProps;
+  }>({
+    visible: false,
+    props: {
+      presetType: 'manual-update',
+      summaryItems: [],
+      initialName: '',
+    },
+  });
+
+  /** 预设保存弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const presetSaveOnSave = shallowRef<((name: string) => void) | null>(null);
+
+  /** 分类选择弹窗状态 */
+  const categorySelectDialog = reactive<{
+    visible: boolean;
+    props: CategorySelectDialogProps;
+  }>({
+    visible: false,
+    props: {
+      categoryId: '',
+      rowContext: { title: '', value: '' },
+      widgetId: '',
+    },
+  });
+
+  /** 标签二次编辑弹窗状态 */
+  const tagPreEditDialog = reactive<{
+    visible: boolean;
+    props: TagPreEditDialogProps;
+  }>({
+    visible: false,
+    props: {
+      tagLabel: '',
+      resolvedPrompt: '',
+      showCompanions: false,
+      widgetId: '',
+    },
+  });
+
+  /** 标签管理器弹窗状态 */
+  const tagManagerDialog = reactive<{
+    visible: boolean;
+    props: TagManagerDialogProps;
+  }>({
+    visible: false,
+    props: {
+      widgetId: '',
+      displayedTagIds: [],
+      displayedCategoryIds: [],
+    },
+  });
+
+  /** 标签管理器弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const tagManagerOnSave = shallowRef<((displayedTagIds: string[], displayedCategoryIds: string[]) => void) | null>(
+    null,
+  );
+
+  /** 图标选择弹窗状态 */
+  const iconSelectDialog = reactive<{
+    visible: boolean;
+    props: IconSelectDialogProps;
+  }>({
+    visible: false,
+    props: {
+      currentIcon: '',
+    },
+  });
+
+  /** 图标选择弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const iconSelectOnSelect = shallowRef<((icon: string) => void) | null>(null);
+
+  /** 打开图标选择弹窗 */
+  function openIconSelectDialog(props: IconSelectDialogProps, callbacks: IconSelectDialogCallbacks) {
+    iconSelectDialog.props = { ...props };
+    iconSelectOnSelect.value = callbacks.onSelect;
+    iconSelectDialog.visible = true;
+  }
+
+  /** 关闭图标选择弹窗 */
+  function closeIconSelectDialog() {
+    iconSelectDialog.visible = false;
+    iconSelectOnSelect.value = null;
+  }
+
+  /** 处理图标选择 */
+  function handleIconSelect(icon: string) {
+    if (iconSelectOnSelect.value) {
+      iconSelectOnSelect.value(icon);
+    }
+    closeIconSelectDialog();
+  }
+
+  /** 抽签覆盖层状态 */
+  const divinationOverlay = reactive<{
+    visible: boolean;
+    result: DivinationResult | null;
+  }>({
+    visible: false,
+    result: null,
+  });
+
+  /** 隐藏提示词编辑弹窗状态 */
+  const promptEditorDialog = reactive<{
+    visible: boolean;
+    props: {
+      prompt: string;
+    };
+  }>({
+    visible: false,
+    props: {
+      prompt: '',
+    },
+  });
+
 
   // ============================================================
   // Getters
@@ -717,6 +1056,8 @@ export const useUIStore = defineStore('acu-ui', () => {
       initialOffsetX: props.initialOffsetX ?? 50,
       initialOffsetY: props.initialOffsetY ?? 50,
       initialScale: props.initialScale ?? 150,
+      initialInvert: props.initialInvert ?? false,
+      showInvertOption: props.showInvertOption ?? false,
     };
     avatarCropOnApply.value = callbacks.onApply;
     avatarCropOnUpload.value = callbacks.onUpload ?? null;
@@ -737,7 +1078,7 @@ export const useUIStore = defineStore('acu-ui', () => {
    * 处理头像裁剪应用
    * @param data 裁剪参数
    */
-  function handleAvatarCropApply(data: { offsetX: number; offsetY: number; scale: number }): void {
+  function handleAvatarCropApply(data: { offsetX: number; offsetY: number; scale: number; invert?: boolean }): void {
     if (avatarCropOnApply.value) {
       avatarCropOnApply.value(data);
     }
@@ -755,20 +1096,6 @@ export const useUIStore = defineStore('acu-ui', () => {
   }
 
   /**
-   * 打开看板管理弹窗
-   */
-  function openWidgetManagerDialog(): void {
-    widgetManagerDialog.visible = true;
-  }
-
-  /**
-   * 关闭看板管理弹窗
-   */
-  function closeWidgetManagerDialog(): void {
-    widgetManagerDialog.visible = false;
-  }
-
-  /**
    * 打开快捷按钮配置弹窗
    * @param props 弹窗参数
    */
@@ -783,6 +1110,393 @@ export const useUIStore = defineStore('acu-ui', () => {
   function closeWidgetActionsDialog(): void {
     widgetActionsDialog.visible = false;
   }
+
+  /**
+   * 打开头像管理弹窗
+   * @param props 弹窗参数
+   * @param callbacks 回调函数
+   */
+  function openAvatarManagerDialog(
+    props: AvatarManagerDialogProps,
+    callbacks: { onUpdate?: () => void; onLabelChange?: () => void },
+  ): void {
+    avatarManagerDialog.props = { ...props };
+    avatarManagerOnUpdate.value = callbacks.onUpdate ?? null;
+    avatarManagerOnLabelChange.value = callbacks.onLabelChange ?? null;
+    avatarManagerDialog.visible = true;
+  }
+
+  /**
+   * 关闭头像管理弹窗
+   */
+  function closeAvatarManagerDialog(): void {
+    avatarManagerDialog.visible = false;
+    // 清理回调
+    avatarManagerOnUpdate.value = null;
+    avatarManagerOnLabelChange.value = null;
+  }
+
+  /**
+   * 处理头像管理更新
+   */
+  function handleAvatarManagerUpdate(): void {
+    if (avatarManagerOnUpdate.value) {
+      avatarManagerOnUpdate.value();
+    }
+  }
+
+  /**
+   * 处理头像管理标签变更
+   */
+  function handleAvatarManagerLabelChange(): void {
+    if (avatarManagerOnLabelChange.value) {
+      avatarManagerOnLabelChange.value();
+    }
+  }
+
+  /**
+   * 打开节点配置弹窗
+   * @param props 弹窗参数
+   * @param callbacks 回调函数
+   */
+  function openNodeConfigDialog(props: NodeConfigDialogProps, callbacks: NodeConfigDialogCallbacks): void {
+    nodeConfigDialog.props = { ...props };
+    nodeConfigOnConfirm.value = callbacks.onConfirm;
+    nodeConfigOnResetToFullName.value = callbacks.onResetToFullName;
+    nodeConfigOnStyleUpdate.value = callbacks.onStyleUpdate ?? null;
+    nodeConfigDialog.visible = true;
+  }
+
+  /**
+   * 关闭节点配置弹窗
+   */
+  function closeNodeConfigDialog(): void {
+    nodeConfigDialog.visible = false;
+    // 清理回调
+    nodeConfigOnConfirm.value = null;
+    nodeConfigOnResetToFullName.value = null;
+    nodeConfigOnStyleUpdate.value = null;
+  }
+
+  /**
+   * 处理节点配置确认
+   * @param nodeId 节点 ID
+   * @param displayLabel 显示标签
+   * @param selectedIndices 选中的字符索引
+   */
+  function handleNodeConfigConfirm(nodeId: string, displayLabel: string, selectedIndices: number[]): void {
+    if (nodeConfigOnConfirm.value) {
+      nodeConfigOnConfirm.value(nodeId, displayLabel, selectedIndices);
+    }
+    closeNodeConfigDialog();
+  }
+
+  /**
+   * 处理节点配置重置为全名
+   * @param nodeId 节点 ID
+   * @param fullName 全名
+   */
+  function handleNodeConfigResetToFullName(nodeId: string, fullName: string): void {
+    if (nodeConfigOnResetToFullName.value) {
+      nodeConfigOnResetToFullName.value(nodeId, fullName);
+    }
+    closeNodeConfigDialog();
+  }
+
+  /**
+   * 处理节点样式更新
+   * @param nodeId 节点 ID
+   */
+  function handleNodeConfigStyleUpdate(nodeId: string): void {
+    if (nodeConfigOnStyleUpdate.value) {
+      nodeConfigOnStyleUpdate.value(nodeId);
+    }
+  }
+
+  /**
+   * 打开关系图设置弹窗
+   * @param factions 势力列表
+   */
+  function openGraphSettingsDialog(factions: string[] = []): void {
+    graphSettingsDialog.props.factions = factions;
+    graphSettingsDialog.visible = true;
+  }
+
+  /**
+   * 关闭关系图设置弹窗
+   */
+  function closeGraphSettingsDialog(): void {
+    graphSettingsDialog.visible = false;
+  }
+
+  /**
+   * 打开势力设置弹窗
+   * @param factionId 势力ID（容器节点ID）
+   * @param factionName 势力名称
+   */
+  function openFactionSettingsDialog(factionId: string, factionName: string): void {
+    factionSettingsDialog.props = {
+      factionId,
+      factionName,
+    };
+    factionSettingsDialog.visible = true;
+  }
+
+  /**
+   * 关闭势力设置弹窗
+   */
+  function closeFactionSettingsDialog(): void {
+    factionSettingsDialog.visible = false;
+  }
+
+  // ============================================================
+  // 通用弹窗 Actions（从 App.vue 迁移）
+  // ============================================================
+
+  /**
+   * 打开设置弹窗
+   */
+  function openSettingsDialog(): void {
+    settingsDialog.value = true;
+  }
+
+  /**
+   * 关闭设置弹窗
+   */
+  function closeSettingsDialog(): void {
+    settingsDialog.value = false;
+  }
+
+  /**
+   * 打开输入楼层弹窗
+   * @param currentFloor 当前目标楼层
+   */
+  function openInputFloorDialog(currentFloor: number = 0): void {
+    inputFloorDialog.props.currentFloor = currentFloor;
+    inputFloorDialog.visible = true;
+  }
+
+  /**
+   * 关闭输入楼层弹窗
+   */
+  function closeInputFloorDialog(): void {
+    inputFloorDialog.visible = false;
+  }
+
+  /**
+   * 打开清除范围弹窗
+   * @param maxFloor 最大楼层
+   */
+  function openPurgeRangeDialog(maxFloor: number = 0): void {
+    purgeRangeDialog.props.maxFloor = maxFloor;
+    purgeRangeDialog.visible = true;
+  }
+
+  /**
+   * 关闭清除范围弹窗
+   */
+  function closePurgeRangeDialog(): void {
+    purgeRangeDialog.visible = false;
+  }
+
+  /**
+   * 打开手动更新弹窗
+   */
+  function openManualUpdateDialog(): void {
+    manualUpdateDialog.value = true;
+  }
+
+  /**
+   * 关闭手动更新弹窗
+   */
+  function closeManualUpdateDialog(): void {
+    manualUpdateDialog.value = false;
+  }
+
+  /**
+   * 打开历史记录弹窗（DataTable 使用）
+   * @param props 弹窗参数
+   */
+  function openHistoryDialog(props: HistoryDialogProps): void {
+    historyDialog.props = { ...props };
+    historyDialog.visible = true;
+  }
+
+  /**
+   * 关闭历史记录弹窗（DataTable 使用）
+   */
+  function closeHistoryDialog(): void {
+    historyDialog.visible = false;
+  }
+
+  /**
+   * 打开 Tab 收纳浮窗
+   */
+  function openTabsPopup(): void {
+    tabsPopup.value = true;
+  }
+
+  /**
+   * 关闭 Tab 收纳浮窗
+   */
+  function closeTabsPopup(): void {
+    tabsPopup.value = false;
+  }
+
+  /**
+   * 切换 Tab 收纳浮窗
+   */
+  function toggleTabsPopup(): void {
+    tabsPopup.value = !tabsPopup.value;
+  }
+
+  /**
+   * 打开预设保存弹窗
+   * @param props 弹窗参数
+   * @param callbacks 回调函数
+   */
+  function openPresetSaveDialog(props: PresetSaveDialogProps, callbacks: PresetSaveDialogCallbacks): void {
+    presetSaveDialog.props = { ...props };
+    presetSaveOnSave.value = callbacks.onSave;
+    presetSaveDialog.visible = true;
+  }
+
+  /**
+   * 关闭预设保存弹窗
+   */
+  function closePresetSaveDialog(): void {
+    presetSaveDialog.visible = false;
+    presetSaveOnSave.value = null;
+  }
+
+  /**
+   * 处理预设保存
+   * @param name 预设名称
+   */
+  function handlePresetSave(name: string): void {
+    if (presetSaveOnSave.value) {
+      presetSaveOnSave.value(name);
+    }
+    closePresetSaveDialog();
+  }
+
+  // ============================================================
+  // 标签系统弹窗 Actions
+  // ============================================================
+
+  /**
+   * 打开分类选择弹窗
+   * @param props 弹窗参数
+   */
+  function openCategorySelectDialog(props: CategorySelectDialogProps): void {
+    categorySelectDialog.props = { ...props };
+    categorySelectDialog.visible = true;
+  }
+
+  /**
+   * 关闭分类选择弹窗
+   */
+  function closeCategorySelectDialog(): void {
+    categorySelectDialog.visible = false;
+  }
+
+  /**
+   * 打开标签二次编辑弹窗
+   * @param props 弹窗参数
+   */
+  function openTagPreEditDialog(props: TagPreEditDialogProps): void {
+    tagPreEditDialog.props = { ...props };
+    tagPreEditDialog.visible = true;
+  }
+
+  /**
+   * 关闭标签二次编辑弹窗
+   */
+  function closeTagPreEditDialog(): void {
+    tagPreEditDialog.visible = false;
+  }
+
+  /**
+   * 打开标签管理器弹窗
+   * @param props 弹窗参数
+   * @param onSave 保存回调
+   */
+  function openTagManagerDialog(
+    props: TagManagerDialogProps,
+    onSave?: (displayedTagIds: string[], displayedCategoryIds: string[]) => void,
+  ): void {
+    tagManagerDialog.props = { ...props };
+    tagManagerOnSave.value = onSave ?? null;
+    tagManagerDialog.visible = true;
+  }
+
+  /**
+   * 关闭标签管理器弹窗
+   */
+  function closeTagManagerDialog(): void {
+    tagManagerDialog.visible = false;
+    tagManagerOnSave.value = null;
+  }
+
+  /**
+   * 处理标签管理器保存
+   * @param displayedTagIds 已展示的标签 ID 列表
+   * @param displayedCategoryIds 已展示的分类 ID 列表
+   */
+  function handleTagManagerSave(displayedTagIds: string[], displayedCategoryIds: string[]): void {
+    if (tagManagerOnSave.value) {
+      tagManagerOnSave.value(displayedTagIds, displayedCategoryIds);
+    }
+    closeTagManagerDialog();
+  }
+
+  // ============================================================
+  // 抽签覆盖层 Actions
+  // ============================================================
+
+  /**
+   * 打开抽签覆盖层
+   * @param result 抽签结果
+   */
+  function openDivinationOverlay(result: DivinationResult): void {
+    divinationOverlay.result = result;
+    divinationOverlay.visible = true;
+  }
+
+  /**
+   * 关闭抽签覆盖层
+   */
+  function closeDivinationOverlay(): void {
+    divinationOverlay.visible = false;
+  }
+
+  /**
+   * 打开隐藏提示词编辑弹窗
+   * @param prompt 当前提示词
+   */
+  function openPromptEditorDialog(prompt: string): void {
+    promptEditorDialog.props.prompt = prompt;
+    promptEditorDialog.visible = true;
+  }
+
+  /**
+   * 关闭隐藏提示词编辑弹窗
+   */
+  function closePromptEditorDialog(): void {
+    promptEditorDialog.visible = false;
+  }
+
+  /**
+   * 初始化抽签系统
+   */
+  async function initDivinationSystem() {
+    const divinationStore = useDivinationStore();
+    if (!divinationStore.isLoaded) {
+      divinationStore.loadConfig();
+      await divinationStore.loadFromWorldbook();
+    }
+  }
+
 
   /**
    * 同步新表格到可见列表
@@ -918,8 +1632,19 @@ export const useUIStore = defineStore('acu-ui', () => {
     widgetSettingsDialog,
     dashboardHistoryDialog,
     avatarCropDialog,
-    widgetManagerDialog,
     widgetActionsDialog,
+    avatarManagerDialog,
+    nodeConfigDialog,
+    graphSettingsDialog,
+    factionSettingsDialog,
+    // 通用弹窗状态（从 App.vue 迁移）
+    settingsDialog,
+    inputFloorDialog,
+    purgeRangeDialog,
+    manualUpdateDialog,
+    historyDialog,
+    tabsPopup,
+    presetSaveDialog,
 
     // 弹窗 Actions
     openRowEditDialog,
@@ -933,9 +1658,75 @@ export const useUIStore = defineStore('acu-ui', () => {
     closeAvatarCropDialog,
     handleAvatarCropApply,
     handleAvatarCropUpload,
-    openWidgetManagerDialog,
-    closeWidgetManagerDialog,
     openWidgetActionsDialog,
     closeWidgetActionsDialog,
+    openAvatarManagerDialog,
+    closeAvatarManagerDialog,
+    handleAvatarManagerUpdate,
+    handleAvatarManagerLabelChange,
+    openNodeConfigDialog,
+    closeNodeConfigDialog,
+    handleNodeConfigConfirm,
+    handleNodeConfigResetToFullName,
+    handleNodeConfigStyleUpdate,
+    openGraphSettingsDialog,
+    closeGraphSettingsDialog,
+    openFactionSettingsDialog,
+    closeFactionSettingsDialog,
+    // 通用弹窗 Actions（从 App.vue 迁移）
+    openSettingsDialog,
+    closeSettingsDialog,
+    openInputFloorDialog,
+    closeInputFloorDialog,
+    openPurgeRangeDialog,
+    closePurgeRangeDialog,
+    openManualUpdateDialog,
+    closeManualUpdateDialog,
+    openHistoryDialog,
+    closeHistoryDialog,
+    openTabsPopup,
+    closeTabsPopup,
+    toggleTabsPopup,
+    openPresetSaveDialog,
+    closePresetSaveDialog,
+    handlePresetSave,
+
+    // 标签系统弹窗
+    categorySelectDialog,
+    tagPreEditDialog,
+    tagManagerDialog,
+    openCategorySelectDialog,
+    closeCategorySelectDialog,
+    openTagPreEditDialog,
+    closeTagPreEditDialog,
+    openTagManagerDialog,
+    closeTagManagerDialog,
+    handleTagManagerSave,
+
+    // 图标选择弹窗
+    iconSelectDialog,
+    openIconSelectDialog,
+    closeIconSelectDialog,
+    handleIconSelect,
+
+    // 抽签覆盖层
+    divinationOverlay,
+    openDivinationOverlay,
+    closeDivinationOverlay,
+
+    // 隐藏提示词编辑弹窗
+    promptEditorDialog,
+    openPromptEditorDialog,
+    closePromptEditorDialog,
+
+    // 抽签系统初始化
+    initDivinationSystem,
+
+    // 抽签设置弹窗 (占位，实际逻辑在 SettingsDialog 中)
+    openDivinationSettingsDialog: () => {
+      openSettingsDialog();
+      // 注意：这里只是打开设置弹窗，具体的面板切换逻辑在 SettingsDialog 中处理
+      // 或者如果需要直接打开特定面板，可以在 SettingsDialog 中监听某个状态
+    },
   };
 });

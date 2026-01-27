@@ -8,7 +8,7 @@
   display: flex;
   gap: 0; // 移除间距，使用边框分隔
 
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     flex-direction: column;
   }
 }
@@ -44,7 +44,7 @@
     background: transparent !important;
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     max-height: none;
     padding-right: 0;
   }
@@ -59,7 +59,7 @@
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     display: none;
   }
 }
@@ -71,7 +71,7 @@
   border-radius: 12px;
   overflow: hidden;
 
-  // 头部（快捷按钮区）
+  // 头部（快捷按钮区）- 按钮靠右
   &-header {
     display: flex;
     flex-wrap: wrap;
@@ -79,6 +79,7 @@
     padding: 10px 12px;
     border-bottom: 1px solid var(--acu-border);
     background: var(--acu-table-head);
+    justify-content: flex-end; // 按钮靠右
   }
 
   // 表格列表
@@ -126,8 +127,16 @@
       background: var(--acu-table-hover);
     }
 
-    // 复选框 - 防御酒馆主题污染
-    input[type='checkbox'] {
+    // 小型开关样式（用于表格选择器）
+    .acu-switch.small {
+      transform: scale(0.65);
+      transform-origin: center;
+      margin: 0 -4px; // 补偿缩放后的边距
+      flex-shrink: 0;
+    }
+
+    // 复选框 - 防御酒馆主题污染（保留兼容旧代码）
+    input[type='checkbox']:not(.acu-switch input) {
       // 恢复原生外观
       appearance: checkbox !important;
       -webkit-appearance: checkbox !important;
@@ -246,9 +255,6 @@
     margin-top: 8px;
   }
 
-  .acu-table-selector-list {
-    max-height: 180px;
-  }
 }
 
 // 折叠标题（移动端）
@@ -271,7 +277,7 @@
 
 // 响应式辅助类
 .acu-hide-mobile {
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     display: none !important;
   }
 }
@@ -279,14 +285,14 @@
 .acu-show-mobile-only {
   display: none;
 
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     display: block;
   }
 }
 
 // 手动更新弹窗宽度调整 (PC端扩大)
 .acu-manual-update-modal {
-  @media (min-width: 601px) {
+  @media (min-width: 769px) {
     max-width: 800px; // 增大宽度
 
     // PC端取消整体滚动，让左右区域各自滚动

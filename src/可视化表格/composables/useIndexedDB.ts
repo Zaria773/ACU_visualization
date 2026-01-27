@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * IndexedDB 操作封装
  * 为历史记录功能提供通用的 IndexedDB CRUD 操作

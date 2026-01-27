@@ -221,14 +221,14 @@
     text-shadow: none !important;
   }
 
-  // Toast 消息
+  // Toast 消息 - 颜色使用主文本色
   .acu-toast,
   .acu-toast-message,
   .acu-toast span {
     font-family: var(--acu-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
     font-size: var(--acu-font-size, 13px) !important;
     text-shadow: none !important;
-    color: #fff !important;
+    color: var(--acu-text-main) !important;
   }
 
   // 折叠栏标题、设置分组标题
@@ -440,51 +440,18 @@
 // =========================================
 
 // 禁用用户选择（用于拖拽等场景）
-.acu-no-select {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
 
 // 允许文本选择（用于可编辑区域）
-.acu-selectable {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  cursor: text;
-}
 
 // 可点击元素
-.acu-clickable {
-  cursor: pointer;
-  transition: opacity var(--acu-transition-fast);
-
-  &:hover {
-    opacity: 0.8;
-  }
-
-  &:active {
-    opacity: 0.6;
-  }
-}
 
 // =========================================
 // 6. 布局辅助 (Layout Helpers)
 // =========================================
 
 // Flex 居中
-.acu-flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 // Flex 两端对齐
-.acu-flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
 // =========================================
 // 7. 全屏穿透容器 (Parent Container)
@@ -523,44 +490,14 @@
 }
 
 // =========================================
-// 9. 拖拽交互状态 (Drag & Resize States)
+// 9. 文本溢出处理 (Text Overflow)
 // =========================================
-body.acu-dragging,
-body.acu-resizing {
-  #acu-parent-container {
-    pointer-events: auto !important;
-    cursor: grabbing;
-  }
-}
-
-body.acu-resizing * {
-  cursor: ew-resize !important;
-  user-select: none !important;
-}
-
-// =========================================
-// 10. 文本溢出处理 (Text Overflow)
-// =========================================
-.acu-text-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.acu-text-wrap {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
 
 // =========================================
 // 11. 隐藏元素 (Visibility)
 // =========================================
 .acu-hidden {
   display: none !important;
-}
-
-.acu-invisible {
-  visibility: hidden;
 }
 
 // =========================================

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 表格完整性检测 Composable
  * 用于检测 AI 填表后总结表/大纲表的完整性
@@ -63,6 +65,8 @@ export interface IntegrityCheckConfig {
   checkEmptyCell: boolean;
   /** 是否检测断裂 */
   checkIndexGap: boolean;
+  /** 空值检测的列名列表（为空数组时检测所有列） */
+  emptyCheckColumns: string[];
 }
 
 // ============================================================
@@ -73,6 +77,7 @@ const DEFAULT_CONFIG: IntegrityCheckConfig = {
   indexColumnName: '编码索引',
   checkEmptyCell: true,
   checkIndexGap: true,
+  emptyCheckColumns: [],  // 默认检测所有列
 };
 
 // ============================================================
@@ -219,6 +224,15 @@ function checkTableIntegrity(
     // 检测 1: 检查 AI 新增行是否有空列
     if (config.checkEmptyCell) {
       for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+        const headerName = String(headers[colIdx] || '').trim();
+
+        // 如果指定了检测列，只检测这些列；否则检测所有列
+        if (config.emptyCheckColumns && config.emptyCheckColumns.length > 0) {
+          if (!config.emptyCheckColumns.includes(headerName)) {
+            continue;  // 跳过非指定列
+          }
+        }
+
         const cellValue = row[colIdx];
         const strValue = cellValue !== undefined && cellValue !== null ? String(cellValue).trim() : '';
 

@@ -1,0 +1,579 @@
+🔍 开始扫描未使用的 CSS 类名...
+
+📁 找到 45 个 SCSS 文件
+🏷️  提取到 1204 个不同的类名
+
+📄 将在 92 个文件中搜索使用情况
+
+============================================================
+📊 扫描结果统计
+============================================================
+✅ 已使用: 751 个类名
+❌ 可能未使用: 421 个类名
+⏭️  已忽略: 32 个类名
+
+============================================================
+📋 按文件列出可能未使用的类名
+============================================================
+
+📁 animations.scss (15 个)
+----------------------------------------
+   .acu-animate-bounce
+   .acu-animate-fade-in
+   .acu-animate-fade-out
+   .acu-animate-pop-up
+   .acu-animate-shake
+   .acu-animate-shake-x
+   .acu-animate-slide-right
+   .acu-animate-slide-up
+   .acu-row-deleted
+   .acu-transition-color
+   .acu-transition-fast
+   .acu-transition-normal
+   .acu-transition-opacity
+   .acu-transition-slow
+   .acu-transition-transform
+
+📁 base.scss (10 个)
+----------------------------------------
+   .acu-clickable
+   .acu-dragging
+   .acu-flex-between
+   .acu-flex-center
+   .acu-invisible
+   .acu-no-select
+   .acu-resizing
+   .acu-selectable
+   .acu-text-ellipsis
+   .acu-text-wrap
+
+📁 components\badges.scss (8 个)
+----------------------------------------
+   .acu-badge-count
+   .acu-badge-default
+   .acu-badge-female
+   .acu-badge-level
+   .acu-badge-male
+   .acu-badge-number
+   .acu-badge-percent
+   .acu-badge-tag
+
+📁 components\buttons.scss (6 个)
+----------------------------------------
+   .popup-enter-active
+   .popup-enter-from
+   .popup-enter-to
+   .popup-leave-active
+   .popup-leave-from
+   .popup-leave-to
+
+📁 components\dashboard.scss (32 个)
+----------------------------------------
+   .acu-add-widget-badge
+   .acu-add-widget-count
+   .acu-add-widget-hint
+   .acu-add-widget-item
+   .acu-add-widget-item-added
+   .acu-add-widget-list
+   .acu-add-widget-modal
+   .acu-add-widget-name
+   .acu-dash-add-btn
+   .acu-dash-add-widget-btn
+   .acu-dash-char-info
+   .acu-dash-col-left
+   .acu-dash-col-right
+   .acu-dash-config-actions
+   .acu-dash-config-icon
+   .acu-dash-config-info
+   .acu-dash-config-item
+   .acu-dash-config-list
+   .acu-dash-done-btn
+   .acu-dash-edit-btn
+   .acu-dash-list-badge
+   .acu-dash-more-btn
+   .acu-dash-row-edit-btn
+   .acu-dash-sort-btn
+   .acu-dash-sub-grid
+   .acu-special-widgets
+   .acu-status-icon-summary
+   .acu-status-pending
+   .acu-status-synced
+   .acu-tab-header
+   .acu-tab-pane
+   .subtitle
+
+📁 components\data-card.scss (7 个)
+----------------------------------------
+   .acu-card-grid
+   .acu-cell-pending-lock
+   .acu-full-row
+   .acu-grid-cell
+   .acu-inline-input
+   .acu-lock-mode-hint
+   .pending-delete
+
+📁 components\data-table.scss (4 个)
+----------------------------------------
+   .acu-page-info
+   .acu-show-graph
+   .acu-view-card
+   .acu-view-list
+
+📁 components\inputs.scss (14 个)
+----------------------------------------
+   .acu-checkbox
+   .acu-color-swatch-lg
+   .acu-color-swatch-sm
+   .acu-edit-textarea-legacy
+   .acu-fade-enter-active
+   .acu-fade-enter-from
+   .acu-fade-enter-to
+   .acu-fade-leave-active
+   .acu-fade-leave-from
+   .acu-fade-leave-to
+   .acu-lg
+   .acu-search-wrapper
+   .acu-sm
+   .prompt-template
+
+📁 components\options-panel.scss (10 个)
+----------------------------------------
+   .acu-matrix-cell
+   .acu-matrix-grid
+   .acu-matrix-label
+   .acu-option-actions
+   .acu-option-content
+   .acu-option-group
+   .acu-option-header
+   .acu-option-list
+   .acu-option-name
+   .acu-options-grid
+
+📁 components\pagination.scss (1 个)
+----------------------------------------
+   .acu-page-info
+
+📁 components\table-selector.scss (1 个)
+----------------------------------------
+   .acu-table-selector-list
+
+📁 components\tabs.scss (13 个)
+----------------------------------------
+   .acu-tab-action-btn
+   .acu-tab-actions
+   .acu-tab-add
+   .acu-tab-badge
+   .acu-tab-close
+   .acu-tab-container
+   .acu-tab-content
+   .acu-tab-header
+   .acu-tab-panel
+   .acu-tab-scroll
+   .acu-tab-sortable
+   .sortable-chosen
+   .sortable-ghost
+
+📁 fonts.scss (16 个)
+----------------------------------------
+   .acu-font-bold
+   .acu-font-extrabold
+   .acu-font-fusion
+   .acu-font-medium
+   .acu-font-normal
+   .acu-font-semibold
+   .acu-label
+   .acu-leading-loose
+   .acu-leading-none
+   .acu-leading-normal
+   .acu-leading-relaxed
+   .acu-leading-snug
+   .acu-leading-tight
+   .acu-mono
+   .acu-subtitle
+   .acu-value
+
+📁 layouts\container.scss (2 个)
+----------------------------------------
+   .acu-dragging
+   .acu-resizing
+
+📁 layouts\panel.scss (7 个)
+----------------------------------------
+   .acu-fixed-bottom
+   .acu-fixed-top
+   .acu-height-control
+   .acu-height-drag-handle
+   .acu-scroll-horizontal
+   .acu-scroll-middle
+   .acu-scrollable-layout
+
+📁 layouts\responsive.scss (1 个)
+----------------------------------------
+   .acu-search-wrapper
+
+📁 overlays\avatar-dialogs.scss (4 个)
+----------------------------------------
+   .acu-avatar-delete-btn
+   .acu-source-auto
+   .acu-source-local
+   .acu-source-url
+
+📁 overlays\context-menu.scss (13 个)
+----------------------------------------
+   .acu-menu-arrow
+   .acu-menu-checkbox
+   .acu-menu-fade-enter-active
+   .acu-menu-fade-enter-from
+   .acu-menu-fade-enter-to
+   .acu-menu-fade-leave-active
+   .acu-menu-fade-leave-from
+   .acu-menu-fade-leave-to
+   .acu-menu-group-title
+   .acu-menu-shortcut
+   .acu-submenu
+   .from-bottom
+   .from-right
+
+📁 overlays\dashboard-dialogs.scss (3 个)
+----------------------------------------
+   .acu-add-widget-modal
+   .acu-dashboard-sort-modal
+   .acu-sort-hint
+
+📁 overlays\dialogs-ball.scss (40 个)
+----------------------------------------
+   .acu-ball-preview-container
+   .acu-ball-preview-hint
+   .acu-clear-btn
+   .acu-color-hex
+   .acu-color-preview-row
+   .acu-emoji-input-row
+   .acu-icon-content-input
+   .acu-icon-type-grid
+   .acu-icon-type-option
+   .acu-image-preview-area
+   .acu-image-upload-area
+   .acu-rgb-label
+   .acu-rgb-picker
+   .acu-rgb-row
+   .acu-rgb-slider
+   .acu-rgb-value
+   .acu-size-slider
+   .acu-size-slider-container
+   .acu-size-value
+   .acu-test-anim-btn
+   .ball-arc
+   .ball-ripple-1
+   .ball-ripple-2
+   .btn-delete
+   .label-a
+   .label-b
+   .label-g
+   .label-r
+   .preview-actions
+   .preview-arc
+   .preview-info
+   .preview-name
+   .preview-ripple
+   .preview-size
+   .slider-a
+   .slider-b
+   .slider-g
+   .slider-r
+   .type-emoji
+   .upload-hint
+
+📁 overlays\dialogs-font.scss (1 个)
+----------------------------------------
+   .acu-form-hint
+
+📁 overlays\dialogs-graph.scss (9 个)
+----------------------------------------
+   .acu-background-upload-area
+   .acu-faction-avatar-btn-wrapper
+   .acu-upload-clear-btn
+   .acu-upload-hint
+   .acu-upload-overlay
+   .acu-upload-preview
+   .acu-upload-zone
+   .acu-url-input-control
+   .drag-over
+
+📁 overlays\dialogs-preset.scss (1 个)
+----------------------------------------
+   .acu-sub-row
+
+📁 overlays\dialogs-purge.scss (5 个)
+----------------------------------------
+   .acu-table-selector-compact
+   .acu-table-selector-footer
+   .acu-table-selector-header
+   .acu-table-selector-item
+   .acu-table-selector-list
+
+📁 overlays\dialogs-responsive.scss (6 个)
+----------------------------------------
+   .modal-enter-from
+   .modal-leave-to
+   .preview-fade-enter-active
+   .preview-fade-enter-from
+   .preview-fade-leave-active
+   .preview-fade-leave-to
+
+📁 overlays\dialogs-tag.scss (19 个)
+----------------------------------------
+   .acu-category-select-wrapper
+   .acu-category-tab
+   .acu-category-tabs
+   .acu-displayed-tags
+   .acu-editor-row
+   .acu-has-children
+   .acu-level1-tabs
+   .acu-level2-tabs
+   .acu-mini-dialog-actions
+   .acu-mini-dialog-overlay
+   .acu-mini-dialog-title
+   .acu-new-category-btn
+   .acu-tag-actions
+   .acu-tag-editor
+   .acu-tag-editor-actions
+   .acu-tag-label
+   .acu-tag-library-item
+   .acu-tag-library-scroll
+   .acu-tag-remove-btn
+
+📁 overlays\dialogs-theme.scss (38 个)
+----------------------------------------
+   .acu-ball-preview-container
+   .acu-clear-btn
+   .acu-css-editor-container
+   .acu-css-footer
+   .acu-css-section
+   .acu-highlight-grid
+   .acu-highlight-item
+   .acu-highlight-label
+   .acu-highlight-swatch
+   .acu-icon-option
+   .acu-icon-type-grid
+   .acu-icon-type-option
+   .acu-image-upload
+   .acu-preset-actions
+   .acu-preset-btn
+   .acu-preset-empty
+   .acu-preset-icon
+   .acu-preset-info
+   .acu-preset-item
+   .acu-preset-list
+   .acu-preset-meta
+   .acu-preset-name
+   .acu-preset-section
+   .acu-rgb-label
+   .acu-rgb-picker
+   .acu-rgb-row
+   .acu-rgb-value
+   .acu-save-preset-btn
+   .acu-upload-btn
+   .acu-var-control
+   .acu-var-group-content
+   .acu-var-group-count
+   .acu-var-group-icon
+   .acu-var-group-name
+   .acu-var-input
+   .acu-var-item
+   .acu-var-swatch
+   .btn-delete
+
+📁 overlays\dialogs-update.scss (1 个)
+----------------------------------------
+   .acu-update-hint
+
+📁 overlays\dialogs.scss (8 个)
+----------------------------------------
+   .modal-enter-active
+   .modal-enter-from
+   .modal-leave-active
+   .modal-leave-to
+   .toast-enter-active
+   .toast-enter-from
+   .toast-leave-active
+   .toast-leave-to
+
+📁 overlays\overlays.scss (15 个)
+----------------------------------------
+   .acu-confirm-dialog
+   .acu-confirm-overlay
+   .acu-edit-overlay
+   .acu-loading-overlay
+   .acu-saving-overlay
+   .confirm-body
+   .confirm-footer
+   .confirm-header
+   .hidden-popup-enter-active
+   .hidden-popup-enter-from
+   .hidden-popup-leave-active
+   .hidden-popup-leave-to
+   .light
+   .saving-content
+   .subtext
+
+📁 overlays\quick-view.scss (12 个)
+----------------------------------------
+   .acu-quick-view
+   .acu-quick-view-actions
+   .acu-quick-view-btn
+   .acu-quick-view-content
+   .acu-quick-view-empty
+   .acu-quick-view-grid
+   .acu-quick-view-header
+   .acu-quick-view-item
+   .acu-quick-view-loading
+   .arrow-bottom
+   .arrow-right
+   .arrow-top
+
+📁 overlays\tag-manager.scss (2 个)
+----------------------------------------
+   .acu-badge-action
+   .acu-grid-create-hint
+
+📁 utilities\feedback.scss (17 个)
+----------------------------------------
+   .acu-changed
+   .acu-data-updated
+   .acu-delete-confirm
+   .acu-disabled
+   .acu-drag-over
+   .acu-dragging
+   .acu-feedback-error
+   .acu-feedback-success
+   .acu-feedback-warning
+   .acu-focused
+   .acu-new-item
+   .acu-progress-indicator
+   .acu-readonly
+   .acu-ripple
+   .acu-saving
+   .acu-skeleton
+   .acu-tooltip
+
+📁 utilities\helpers.scss (103 个)
+----------------------------------------
+   .acu-absolute
+   .acu-border-b
+   .acu-border-l
+   .acu-border-none
+   .acu-border-r
+   .acu-border-t
+   .acu-cursor-default
+   .acu-cursor-move
+   .acu-cursor-not-allowed
+   .acu-cursor-pointer
+   .acu-fixed
+   .acu-flex
+   .acu-flex-1
+   .acu-flex-auto
+   .acu-flex-col
+   .acu-flex-inline
+   .acu-flex-none
+   .acu-flex-nowrap
+   .acu-flex-row
+   .acu-flex-wrap
+   .acu-gap-
+   .acu-h-auto
+   .acu-h-full
+   .acu-inset-0
+   .acu-invisible
+   .acu-items-center
+   .acu-items-end
+   .acu-items-start
+   .acu-items-stretch
+   .acu-justify-around
+   .acu-justify-between
+   .acu-justify-center
+   .acu-justify-end
+   .acu-justify-start
+   .acu-m-
+   .acu-max-h-full
+   .acu-max-w-full
+   .acu-mb-
+   .acu-min-h-0
+   .acu-min-w-0
+   .acu-ml-
+   .acu-mr-
+   .acu-mt-
+   .acu-mx-
+   .acu-my-
+   .acu-opacity-0
+   .acu-opacity-100
+   .acu-opacity-25
+   .acu-opacity-50
+   .acu-opacity-75
+   .acu-overflow-auto
+   .acu-overflow-hidden
+   .acu-overflow-scroll
+   .acu-overflow-x-auto
+   .acu-overflow-x-hidden
+   .acu-overflow-y-auto
+   .acu-overflow-y-hidden
+   .acu-p-
+   .acu-pb-
+   .acu-pl-
+   .acu-pointer-events-auto
+   .acu-pointer-events-none
+   .acu-pr-
+   .acu-pt-
+   .acu-px-
+   .acu-py-
+   .acu-relative
+   .acu-rounded
+   .acu-rounded-full
+   .acu-rounded-lg
+   .acu-rounded-none
+   .acu-rounded-sm
+   .acu-rounded-xl
+   .acu-scrollbar
+   .acu-scrollbar-hidden
+   .acu-select-all
+   .acu-select-none
+   .acu-select-text
+   .acu-shadow-lg
+   .acu-shadow-none
+   .acu-shadow-sm
+   .acu-shadow-xl
+   .acu-sr-only
+   .acu-sticky
+   .acu-text-capitalize
+   .acu-text-center
+   .acu-text-danger
+   .acu-text-highlight
+   .acu-text-info
+   .acu-text-left
+   .acu-text-lowercase
+   .acu-text-right
+   .acu-text-success
+   .acu-text-truncate
+   .acu-text-uppercase
+   .acu-text-warning
+   .acu-text-wrap
+   .acu-transition
+   .acu-transition-fast
+   .acu-transition-none
+   .acu-transition-slow
+   .acu-w-auto
+   .acu-w-full
+
+============================================================
+💡 使用建议
+============================================================
+
+⚠️  注意事项:
+1. 此脚本基于静态分析，可能存在误报（动态生成的类名无法检测）
+2. 某些类名可能在 SCSS 中作为选择器的一部分使用（如 .parent .child）
+3. 建议逐个确认后再删除
+
+🔧 检查单个类名的使用情况:
+   grep -r "class-name" src/可视化表格 --include="*.vue" --include="*.ts"
+
+📝 输出到文件:
+   node scripts/find-unused-css.js > unused-css-report.txt
+

@@ -3,10 +3,10 @@
     <!-- 头部 -->
     <div class="acu-status-board-header">
       <span class="acu-status-board-summary">
-        共 {{ statusList.length }} 个表格 · AI楼层 {{ currentTotalAiFloors }}
+          共 {{ statusList.length }} 个表格 · AI楼层 {{ currentTotalAiFloors }}
       </span>
-      <button class="acu-toolbar-btn" :disabled="isLoading" title="刷新状态" @click.stop="handleRefresh">
-        <i class="fas fa-redo" :class="{ 'fa-spin': isLoading }"></i>
+      <button class="acu-icon-btn" :disabled="isLoading" title="刷新状态" @click.stop="handleRefresh">
+        <i class="fas fa-redo" :class="{ 'acu-animate-spin': isLoading }"></i>
       </button>
     </div>
 
@@ -22,8 +22,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in statusList" :key="item.sheetKey" @click.stop="handleTableClick(item)">
-            <td class="acu-status-name">
+          <tr
+            v-for="item in sortedStatusList"
+            :key="item.sheetKey"
+            :class="{ 'acu-highlight-ai': hasTableAiChanges(item.name) }"
+            @click.stop="handleTableClick(item)"
+          >
+            <td class="acu-status-name" :class="{ 'acu-highlight-ai': hasTableAiChanges(item.name) }">
               {{ item.name }}
             </td>
             <td class="acu-status-freq">
@@ -65,9 +70,10 @@
  * 显示所有表格的更新频率和未记录楼层信息
  */
 
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import type { TableUpdateStatus } from '../../composables/useTableUpdateStatus';
 import { useTableUpdateStatus } from '../../composables/useTableUpdateStatus';
+import { useDataStore } from '../../stores/useDataStore';
 
 // ============================================================
 // Emits
@@ -82,8 +88,44 @@ const emit = defineEmits<{
 // Composable
 // ============================================================
 
+const dataStore = useDataStore();
 const { statusList, isLoading, currentTotalAiFloors, refresh, formatLastUpdate, getUnrecordedClass } =
   useTableUpdateStatus();
+
+// ============================================================
+// AI 高亮相关
+// ============================================================
+
+/**
+ * 检查表格是否有 AI 变更
+ * @param tableName 表格名称
+ */
+function hasTableAiChanges(tableName: string): boolean {
+  const aiDiffMap = dataStore.aiDiffMap;
+  if (!aiDiffMap || aiDiffMap.size === 0) return false;
+
+  // 遍历 aiDiffMap，检查是否有属于该表格的变更
+  // key 格式: "表格名-row-行号" 或 "表格名-行号-列号"
+  for (const key of aiDiffMap) {
+    if (key.startsWith(`${tableName}-`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 排序后的状态列表
+ * AI 有变更的表格排在前面
+ */
+const sortedStatusList = computed(() => {
+  return [...statusList.value].sort((a, b) => {
+    const aHasAi = hasTableAiChanges(a.name);
+    const bHasAi = hasTableAiChanges(b.name);
+    if (aHasAi !== bHasAi) return bHasAi ? 1 : -1;
+    return a.orderNo - b.orderNo;
+  });
+});
 
 // ============================================================
 // Methods

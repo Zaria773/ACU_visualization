@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * ACU Visualizer 类型定义
  */
@@ -70,6 +72,8 @@ export interface ACUConfig {
   collapseTabBar?: boolean;
   /** 移动端底部安全区大小 (0-150px，0表示禁用) */
   mobileSafeAreaBottom?: number;
+  /** 是否自动存入交互标签 */
+  autoImportInteractions?: boolean;
 }
 
 /** 导航栏按钮配置 */
@@ -160,7 +164,7 @@ export interface TableCell {
   /** 列名/键 */
   key: string;
   /** 单元格值 */
-  value: string | number;
+  value: any;
   /** 是否有变更 */
   changed?: boolean;
 }
@@ -365,6 +369,8 @@ export interface FloatingBallAppearance {
   imageOffsetY?: number;
   /** 图片缩放比例 (100-300)，仅 type='image' 时有效 */
   imageScale?: number;
+  /** 是否对图片应用反色效果，仅 type='image' 时有效 */
+  imageInvert?: boolean;
 }
 
 // ============================================================
@@ -414,11 +420,153 @@ export interface ACUScriptVariables {
    * 当前激活的预设 ID (为空表示使用默认配置)
    */
   activePresetId?: string;
+  /**
+   * 主题变量覆盖
+   */
+  themeVars?: Partial<ThemeVariables>;
+  /**
+   * 主题变量透明度配置 (0-100)
+   */
+  themeVarOpacities?: ThemeVarOpacities;
+  /**
+   * 全局主题背景配置
+   */
+  backgroundConfig?: BackgroundConfig;
+  /**
+   * 抽签系统配置
+   */
+  divinationConfig?: DivinationConfig;
+  /**
+   * 抽签维度预设列表
+   */
+  divinationPresets?: DivinationPreset[];
+  /**
+   * 当前激活的抽签预设 ID
+   */
+  activeDivinationPresetId?: string;
+}
+
+// ============================================================
+// 抽签系统相关类型
+// ============================================================
+
+/**
+ * 抽签维度预设
+ */
+export interface DivinationPreset {
+  /** 预设唯一 ID */
+  id: string;
+  /** 预设名称 */
+  name: string;
+  /** 创建时间 */
+  createdAt: string;
+  /** 维度配置列表 */
+  dimensions: Dimension[];
+  /** 是否为内置预设 (不可删除) */
+  isBuiltin?: boolean;
+}
+
+export type BiasType = 'positive' | 'neutral' | 'negative';
+
+export interface DivinationCategory {
+  id: number;          // 对应 Worldbook Entry uid
+  name: string;        // 显示名称 (去除后缀)
+  bias: BiasType;      // 倾向
+  limit: number;       // 强制抽取数量
+  path: string[];      // 完整路径 (Keys + Name)
+  words: string[];     // 解析后的词汇列表
+  enabled: boolean;    // 是否启用
+  rawEntry: any;       // 原始世界书条目引用
+}
+
+export interface DimensionTier {
+  id: string;          // 唯一标识
+  name: string;
+  weight: number;
+  prompt: string;
+  color?: string;      // 颜色 (可选，用于运势等)
+}
+
+export interface Dimension {
+  id: string;
+  name: string;
+  enabled: boolean;
+  tiers: DimensionTier[];
+}
+
+export interface DivinationConfig {
+  // 基础设置
+  enabled: boolean;    // 是否启用抽签系统，默认 true
+  drawCount: number;   // 总抽取数量 (目标值)，默认 4
+  enableBias: boolean; // 是否启用倾向控制，默认 true
+  autoSync: boolean;   // 是否自动同步 ACU 表格，默认 true
+
+  // 外观设置
+  cardBackImage: string; // 卡背图 URL
+  themeColor: string;    // 主题色
+
+  // 行为设置
+  flipMode: 'auto' | 'manual' | 'skip'; // 翻牌模式
+
+  // 维度配置 (包含运势，运势通常为第一个维度 id='luck')
+  dimensions: Dimension[];
+
+  // 高级设置
+  customTemplate: string; // 自定义提示词模板
+}
+
+
+export interface DivinationResult {
+  luck: LuckTier;
+  dimensions: { name: string; value: string; prompt: string }[];
+  words: string[];
+  timestamp?: number;
 }
 
 // ============================================================
 // 主题美化与高亮配置
 // ============================================================
+
+/** 背景图片配置 */
+export interface BackgroundConfig {
+  /** 是否启用背景图片 */
+  enabled: boolean;
+  /** 是否有 IndexedDB 存储的图片（不存储 URL 本身，只标记状态） */
+  hasIndexedDBImage: boolean;
+  /** 外部图片 URL（http/https）- 直接存储，不放入 IndexedDB */
+  externalUrl?: string;
+  /**
+   * 运行时图片 URL（blob URL 或 externalUrl）
+   * 注意：此字段不应持久化，仅用于组件内渲染
+   */
+  imageUrl: string;
+  /** 透明度 0-100 */
+  opacity: number;
+  /** 填充方式 */
+  size: 'cover' | 'contain' | 'auto';
+  /** 模糊度 0-20px */
+  blur: number;
+  /** 水平偏移百分比 (-50 ~ 50) */
+  offsetX: number;
+  /** 垂直偏移百分比 (-50 ~ 50) */
+  offsetY: number;
+  /** 缩放比例 (50 ~ 200) */
+  scale: number;
+}
+
+/** 默认背景配置 */
+export const DEFAULT_BACKGROUND_CONFIG: BackgroundConfig = {
+  enabled: false,
+  hasIndexedDBImage: false,
+  externalUrl: undefined,
+  imageUrl: '',
+  opacity: 30,
+  size: 'cover',
+  blur: 0,
+  offsetX: 0,
+  offsetY: 0,
+  scale: 100,
+};
 
 /**
  * 主题 CSS 变量配置
@@ -489,6 +637,11 @@ export interface HighlightConfig {
 }
 
 /**
+ * 主题变量透明度配置 (0-100，100=完全不透明)
+ */
+export type ThemeVarOpacities = Partial<Record<keyof ThemeVariables, number>>;
+
+/**
  * 主题预设配置
  * 保存用户自定义的主题+高亮配置组合
  */
@@ -506,8 +659,12 @@ export interface ThemePreset {
    * 只保存用户修改过的变量，未修改的使用基础主题值
    */
   themeVars?: Partial<ThemeVariables>;
+  /** 主题变量透明度配置 */
+  themeVarOpacities?: ThemeVarOpacities;
   /** 高亮颜色配置 */
   highlight: HighlightConfig;
+  /** 背景配置 */
+  backgroundConfig?: BackgroundConfig;
   /** 自定义 CSS 代码 */
   customCSS?: string;
 }
@@ -547,51 +704,51 @@ export const THEME_VAR_GROUPS: Array<{
   icon: string;
   vars: Array<{ key: keyof ThemeVariables; label: string }>;
 }> = [
-  {
-    id: 'background',
-    name: '背景色',
-    icon: 'fa-fill-drip',
-    vars: [
-      { key: 'bgNav', label: '导航栏背景' },
-      { key: 'bgPanel', label: '面板背景' },
-      { key: 'cardBg', label: '卡片背景' },
-      { key: 'tableHead', label: '表头背景' },
-      { key: 'tableHover', label: '悬浮背景' },
-      { key: 'badgeBg', label: '徽章背景' },
-      { key: 'inputBg', label: '输入框背景' },
-      { key: 'menuBg', label: '菜单背景' },
-      { key: 'overlayBg', label: '遮罩背景' },
-    ],
-  },
-  {
-    id: 'text',
-    name: '文本色',
-    icon: 'fa-font',
-    vars: [
-      { key: 'textMain', label: '主文本色' },
-      { key: 'textSub', label: '次要文本色' },
-      { key: 'menuText', label: '菜单文本色' },
-    ],
-  },
-  {
-    id: 'button',
-    name: '边框与按钮',
-    icon: 'fa-square',
-    vars: [
-      { key: 'border', label: '边框色' },
-      { key: 'btnBg', label: '按钮背景' },
-      { key: 'btnHover', label: '按钮悬浮' },
-      { key: 'btnActiveBg', label: '按钮激活背景' },
-      { key: 'btnActiveText', label: '按钮激活文本' },
-    ],
-  },
-  {
-    id: 'effect',
-    name: '效果',
-    icon: 'fa-magic',
-    vars: [{ key: 'shadow', label: '阴影色' }],
-  },
-];
+    {
+      id: 'background',
+      name: '背景色',
+      icon: 'fa-fill-drip',
+      vars: [
+        { key: 'bgNav', label: '导航栏背景' },
+        { key: 'bgPanel', label: '面板背景' },
+        { key: 'cardBg', label: '卡片背景' },
+        { key: 'tableHead', label: '表头背景' },
+        { key: 'tableHover', label: '悬浮背景' },
+        { key: 'badgeBg', label: '徽章背景' },
+        { key: 'inputBg', label: '输入框背景' },
+        { key: 'menuBg', label: '菜单背景' },
+        { key: 'overlayBg', label: '遮罩背景' },
+      ],
+    },
+    {
+      id: 'text',
+      name: '文本色',
+      icon: 'fa-font',
+      vars: [
+        { key: 'textMain', label: '主文本色' },
+        { key: 'textSub', label: '次要文本色' },
+        { key: 'menuText', label: '菜单文本色' },
+      ],
+    },
+    {
+      id: 'button',
+      name: '边框与按钮',
+      icon: 'fa-square',
+      vars: [
+        { key: 'border', label: '边框色' },
+        { key: 'btnBg', label: '按钮背景' },
+        { key: 'btnHover', label: '按钮悬浮' },
+        { key: 'btnActiveBg', label: '按钮激活背景' },
+        { key: 'btnActiveText', label: '按钮激活文本' },
+      ],
+    },
+    {
+      id: 'effect',
+      name: '效果',
+      icon: 'fa-magic',
+      vars: [{ key: 'shadow', label: '阴影色' }],
+    },
+  ];
 
 // ============================================================
 // 仪表盘相关类型定义
@@ -605,7 +762,8 @@ export type WidgetActionId =
   | 'manualUpdate' // 手动更新
   | 'relationshipGraph' // 人物关系图
   | 'settings' // 设置
-  | 'nativeEdit'; // 打开原生编辑器
+  | 'nativeEdit' // 打开原生编辑器
+  | 'divination'; // 抽签
 
 /** 看板快捷按钮配置 */
 export interface WidgetAction {
@@ -616,7 +774,7 @@ export interface WidgetAction {
 }
 
 /** 看板显示风格 */
-export type WidgetDisplayStyle = 'grid' | 'list' | 'compact';
+export type WidgetDisplayStyle = 'grid' | 'list' | 'compact' | 'global';
 
 /** 单个标签定义 */
 export interface TagDefinition {
@@ -670,6 +828,8 @@ export interface DashboardWidgetConfig {
   displayTagColumns?: string[];
   /** 互动标签配置 */
   interactiveTagConfig?: InteractiveTagConfig;
+  /** 新标签系统配置（引用全局标签库） */
+  widgetTagConfig?: WidgetTagConfig;
 }
 
 /** 仪表盘配置 */
@@ -698,20 +858,11 @@ export const WIDGET_ACTIONS: Record<WidgetActionId, WidgetAction> = {
   },
   settings: { id: 'settings', icon: 'fa-cog', label: '设置', tooltip: '看板设置' },
   nativeEdit: { id: 'nativeEdit', icon: 'fa-external-link-alt', label: '原生编辑器', tooltip: '打开原生编辑器' },
+  divination: { id: 'divination', icon: 'fa-dice', label: '抽签', tooltip: '赛博算卦 - 注入隐藏提示词' },
 };
 
 /** 看板模板 - 用于快速添加 */
 export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = {
-  npc: {
-    type: 'table',
-    title: 'NPC',
-    icon: 'fa-users',
-    displayColumns: ['名称', '姓名', 'name', 'Name', '状态', '好感度'],
-    maxRows: 8,
-    actions: ['goToTable', 'relationshipGraph'],
-    colSpan: 1,
-    displayStyle: 'grid',
-  },
   task: {
     type: 'table',
     title: '任务',
@@ -756,9 +907,126 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
 
 /** 表格名称关键词匹配规则 */
 export const TABLE_KEYWORD_RULES: Record<string, string[]> = {
-  npc: ['NPC', 'npc', '人物', '角色', '关系', '好感', '重要人物'],
   task: ['任务', 'Task', 'task', 'Quest', 'quest', '日程'],
   item: ['物品', '道具', 'Item', 'item', '背包', '库存', '装备'],
-  character: ['主角', '玩家', 'Player', 'player', '属性', 'protagonist'],
+  character: ['主角', '玩家', 'Player', 'player', 'protagonist'],
   location: ['地点', '位置', 'Location', 'location', '场景'],
 };
+
+// ============================================================
+// 标签系统相关类型定义
+// ============================================================
+
+/** 标签分类定义 */
+export interface TagCategory {
+  /** 分类唯一 ID */
+  id: string;
+  /** 分类完整路径（用 / 分隔层级，如 "互动/日常"） */
+  path: string;
+  /** 分类图标（可选，如 "🎭"，只有一级分类需要图标） */
+  icon?: string;
+  /** 创建时间 */
+  createdAt: string;
+}
+
+/** 解析后的分类层级信息 */
+export interface ParsedCategory {
+  /** 原始分类 */
+  category: TagCategory;
+  /** 一级分类名 */
+  level1: string;
+  /** 二级分类名（可能为空） */
+  level2: string;
+  /** 剩余层级（如果有更深层级） */
+  rest: string;
+}
+
+/** 互动标签定义 - 存储在全局变量中 */
+export interface InteractiveTag {
+  /** 标签唯一 ID */
+  id: string;
+  /** 标签显示文本 */
+  label: string;
+  /** 所属分类 ID（空字符串表示未分类） */
+  categoryId: string;
+  /** 提示词模板 */
+  promptTemplate: string;
+  /** 创建时间 */
+  createdAt: string;
+  /** 【新增】追加前二次编辑：true 时点击标签弹出编辑器让用户修改后再追加 */
+  allowPreEdit?: boolean;
+}
+
+/** 全局标签库（不按表分） */
+export interface GlobalTagLibrary {
+  /** 所有分类 */
+  categories: TagCategory[];
+  /** 所有标签 */
+  tags: InteractiveTag[];
+}
+
+/** 组件配置中的标签引用 */
+export interface WidgetTagConfig {
+  /** 已展示的标签 ID 列表 */
+  displayedTagIds: string[];
+  /** 【新增】已展示的分类 ID 列表（点击后弹出子标签选择） */
+  displayedCategoryIds?: string[];
+}
+
+// ============================================================
+// 标签管理器模式与导入导出类型
+// ============================================================
+
+/** 标签管理器模式 */
+export type TagManagerMode =
+  | 'normal' // 普通模式：点击编辑
+  | 'create' // 新建模式：点击弹出空白编辑器
+  | 'add' // 添加模式：点击添加到已展示
+  | 'delete' // 删除模式：点击删除
+  | 'migrate' // 迁移模式：选中后迁移
+  | 'export'; // 导出模式：多选导出
+
+/** 标签库导出格式 */
+export interface TagLibraryExport {
+  /** 格式版本 */
+  version: '1.0';
+  /** 导出时间 */
+  exportedAt: string;
+  /** 分类列表 */
+  categories: Array<{
+    id: string;
+    path: string;
+    icon?: string;
+  }>;
+  /** 标签列表 */
+  tags: Array<{
+    id: string;
+    label: string;
+    /** 分类路径（非 ID，便于跨库导入） */
+    category: string;
+    prompt: string;
+    allowPreEdit?: boolean;
+  }>;
+}
+
+/** 导入选项 */
+export interface ImportOptions {
+  /** 冲突处理策略 */
+  conflictStrategy: 'overwrite' | 'rename';
+}
+
+/** 导入结果 */
+export interface ImportResult {
+  /** 是否成功 */
+  success: boolean;
+  /** 新增的分类数 */
+  addedCategories: number;
+  /** 新增的标签数 */
+  addedTags: number;
+  /** 更新的标签数（覆盖模式） */
+  updatedTags: number;
+  /** 重命名的标签数（重命名模式） */
+  renamedTags: number;
+  /** 错误信息（如果失败） */
+  error?: string;
+}

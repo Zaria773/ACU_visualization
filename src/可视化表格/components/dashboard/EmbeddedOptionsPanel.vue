@@ -10,7 +10,10 @@
     <div v-else class="acu-embedded-options-list">
       <div v-for="table in optionTables" :key="table.id" class="acu-embedded-option-group">
         <!-- 表格标题 -->
-        <div class="acu-embedded-option-title">{{ table.name }}</div>
+        <div class="acu-embedded-option-title">
+          <i :class="getSmartTabIcon(table.name)"></i>
+          {{ table.name }}
+        </div>
 
         <!-- 选项行列表 -->
         <div class="acu-embedded-option-rows">
@@ -44,6 +47,7 @@
 
 import { computed } from 'vue';
 import { useCoreActions } from '../../composables/useCoreActions';
+import { getSmartTabIcon } from '../../stores/useUIStore';
 import type { ProcessedTable } from '../../types';
 
 // ============================================================

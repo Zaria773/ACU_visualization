@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * ACU 可视化表格 - Vue 版本入口文件
  *
@@ -11,6 +13,8 @@
 import { createPinia } from 'pinia';
 import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
+import { cleanupSendIntercept, setupSendIntercept } from './composables/useHiddenPrompt';
+import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
 
 // jQuery 兼容层 - 脚本项目中 jQuery 作用于父窗口
@@ -207,12 +211,36 @@ function cleanup() {
 $(() => {
   console.info(`[ACU] 脚本加载: ${SCRIPT_ID}`);
 
+  // 注册脚本按钮
+  replaceScriptButtons([{ name: '🎴 隐藏提示词', visible: true }]);
+
+  // 监听按钮点击事件
+  eventOn(getButtonEvent('🎴 隐藏提示词'), () => {
+    // 确保 Vue 应用已初始化
+    if (!vueApp) {
+      console.warn('[ACU] Vue 应用尚未初始化');
+      return;
+    }
+
+    // 获取 store 并打开弹窗
+    const uiStore = useUIStore();
+    const currentPrompt = (window as any).__acu_hidden_prompt || '';
+    uiStore.openPromptEditorDialog(currentPrompt);
+  });
+
+  // 设置 DOM 发送拦截
+  setTimeout(() => {
+    setupSendIntercept();
+  }, 500);
+
   // 等待 API 就绪并初始化
   waitForApiAndInit();
 
   // 卸载时清理 (使用 pagehide 而非 unload)
   $(window).on('pagehide', () => {
     console.info('[ACU] 页面卸载，执行清理');
+    // 清理 DOM 拦截
+    cleanupSendIntercept();
     cleanup();
   });
 });

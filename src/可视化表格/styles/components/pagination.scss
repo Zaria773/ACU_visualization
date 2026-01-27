@@ -259,15 +259,6 @@
 }
 
 // 页码信息 (DataTable.vue 使用)
-.acu-page-info {
-  display: flex;
-  align-items: center;
-  color: var(--acu-text-sub, #999);
-  font-size: 12px;
-  white-space: nowrap;
-  margin-left: 8px;
-  flex-shrink: 0;
-}
 
 // 跳转输入区
 .acu-pagination-jump {

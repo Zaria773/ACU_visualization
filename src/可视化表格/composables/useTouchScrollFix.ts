@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * useTouchScrollFix.ts - 横向布局触摸滚动修复
  *

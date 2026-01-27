@@ -15,20 +15,6 @@
   padding: 6px;
   animation: acu-scaleIn 0.15s ease;
   transform-origin: top left;
-
-  // 如果菜单靠近右边缘，从右侧展开
-  &.from-right {
-    transform-origin: top right;
-  }
-
-  // 如果菜单靠近底部，从底部展开
-  &.from-bottom {
-    transform-origin: bottom left;
-  }
-
-  &.from-right.from-bottom {
-    transform-origin: bottom right;
-  }
 }
 
 // 菜单项
@@ -106,87 +92,10 @@
 }
 
 // 菜单分组标题
-.acu-menu-group-title {
-  padding: 6px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--acu-text-sub);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-// 子菜单箭头
-.acu-menu-arrow {
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--acu-text-sub);
-}
-
-// 子菜单容器
-.acu-submenu {
-  position: absolute;
-  top: 0;
-  left: 100%;
-  margin-left: 4px;
-  min-width: 140px;
-  background: var(--acu-bg-panel);
-  border: 1px solid var(--acu-border);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  padding: 6px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-10px);
-  transition: all 0.15s ease;
-
-  // 从右侧展开时
-  &.from-right {
-    left: auto;
-    right: 100%;
-    margin-left: 0;
-    margin-right: 4px;
-    transform: translateX(10px);
-  }
-}
-
-// 有子菜单的项
-.acu-menu-item.has-submenu {
-  position: relative;
-
-  &:hover .acu-submenu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-  }
-}
 
 // 菜单快捷键提示
-.acu-menu-shortcut {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--acu-text-sub);
-  opacity: 0.7;
-}
 
 // 菜单复选框/单选框
-.acu-menu-checkbox {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--acu-border);
-  border-radius: 4px;
-  font-size: 10px;
-  color: transparent;
-  transition: all 0.15s ease;
-
-  &.checked {
-    background: var(--acu-title-color);
-    border-color: var(--acu-title-color);
-    color: #fff;
-  }
-}
 
 // 紧凑模式菜单
 .acu-cell-menu.compact {
@@ -302,22 +211,3 @@
   opacity: 0.6;
 }
 
-// 右键菜单过渡动画
-.acu-menu-fade-enter-active,
-.acu-menu-fade-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-
-.acu-menu-fade-enter-from,
-.acu-menu-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-.acu-menu-fade-enter-to,
-.acu-menu-fade-leave-from {
-  opacity: 1;
-  transform: scale(1);
-}

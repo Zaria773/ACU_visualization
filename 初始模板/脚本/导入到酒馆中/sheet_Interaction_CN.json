@@ -1,0 +1,37 @@
+{
+  "sheet_Interaction_CN": {
+    "uid": "sheet_Interaction_CN",
+    "name": "交互生成器",
+    "domain": "chat",
+    "type": "dynamic",
+    "enable": true,
+    "required": false,
+    "triggerSend": false,
+    "triggerSendDeep": 1,
+    "config": {
+      "toChat": false,
+      "useCustomStyle": false,
+      "triggerSendToChat": false
+    },
+    "sourceData": {
+      "note": "【任务】\n根据当前剧情，构思 5 个主角对人物、或环境、物品等元素进行的交互。\n\n【填表规则】\n1. **交互对象**：填写当前交互的目标名称（如“史莱姆”、“酒保”）。\n2. **交互名称**：简短（要求4字内）（如“攻击”、“询问”）。\n3. **交互类型**：格式支持用/分隔的多级分类（如“怪物互动/战斗”、“人物互动/闲聊”）。\n4. **交互内容**：请用**第三人称**描写交互过程。\n   ★ **关键要求**：\n   - 必须明确写出主角的名字。\n   - 必须明确写出交互对象的名字。\n   - 不要使用“你我他”等代词，全部用具体名字。",
+      "initNode": "初始化：忽略剧情，凭空生成 1 行（5列）示例数据。",
+      "deleteNode": "不需要",
+      "updateNode": "每轮对话强制执行：完全覆盖目前5行，换成全新的 5 个随机交互。",
+      "insertNode": "若表为空，根据剧情插入5行。"
+    },
+    "content": [
+      [
+        null,
+        "交互对象",
+        "交互名称",
+        "交互类型",
+        "交互内容"
+      ]
+    ]
+  },
+  "mate": {
+    "type": "chatSheets",
+    "version": 1
+  }
+}

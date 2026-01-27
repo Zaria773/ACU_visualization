@@ -44,7 +44,7 @@
 .acu-nav-tabs-area {
   display: grid;
   grid-template-columns: var(--acu-nav-cols, repeat(auto-fill, minmax(110px, 1fr)));
-  gap: 5px;
+  gap: 3px;
   width: 100%;
 }
 
@@ -142,11 +142,6 @@
     opacity: 0.9;
     transform: scale(1.05);
   }
-}
-
-// 特殊 Tab (仪表盘/选项) - 复用普通按钮样式，不再设置特殊背景色
-.acu-nav-btn-special {
-  // 继承 .acu-nav-btn 的样式，与普通Tab按钮保持一致
 }
 
 // 导航按钮拖拽模式

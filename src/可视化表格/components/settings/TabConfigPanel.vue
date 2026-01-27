@@ -13,7 +13,6 @@
           :key="tab.id"
           class="acu-nav-btn acu-tab-config-btn"
           :class="{
-            'acu-nav-btn-special': isAggregateTab(tab.type),
             dragging: draggedIndex === index,
           }"
           draggable="true"

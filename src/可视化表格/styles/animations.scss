@@ -205,39 +205,18 @@
 // =========================================
 
 // 抖动效果
-.acu-animate-shake {
-  animation: acu-shake 0.4s ease-in-out infinite;
-}
 
 // 横向抖动
-.acu-animate-shake-x {
-  animation: acu-shake-x 0.5s ease-in-out;
-}
 
 // 淡入效果
-.acu-animate-fade-in {
-  animation: acu-fade-in var(--acu-transition-normal, 0.3s) ease-out;
-}
 
 // 淡出效果
-.acu-animate-fade-out {
-  animation: acu-fade-out var(--acu-transition-normal, 0.3s) ease-out;
-}
 
 // 弹出效果
-.acu-animate-pop-up {
-  animation: acu-pop-up var(--acu-transition-normal, 0.3s) cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 
 // 从右滑入
-.acu-animate-slide-right {
-  animation: acu-slide-in-right var(--acu-transition-normal, 0.3s) ease-out;
-}
 
 // 从下滑入
-.acu-animate-slide-up {
-  animation: acu-slide-in-up var(--acu-transition-normal, 0.3s) ease-out;
-}
 
 // 旋转加载
 .acu-animate-spin {
@@ -245,9 +224,6 @@
 }
 
 // 弹跳效果
-.acu-animate-bounce {
-  animation: acu-bounce 1s ease;
-}
 
 // =========================================
 // 9. 业务特化样式 (Business Styles)
@@ -272,20 +248,6 @@
 }
 
 // 已删除行样式
-.acu-row-deleted {
-  opacity: 0.6;
-  filter: grayscale(0.8);
-  transition: all var(--acu-transition-normal);
-
-  .acu-card-body,
-  .acu-card-header {
-    text-decoration: line-through;
-  }
-
-  .acu-card-body {
-    pointer-events: none;
-  }
-}
 
 // 待删除徽章
 .acu-badge-pending {
@@ -313,29 +275,6 @@
 // =========================================
 // 10. 过渡效果辅助 (Transition Helpers)
 // =========================================
-.acu-transition-fast {
-  transition: all var(--acu-transition-fast, 0.15s) ease;
-}
-
-.acu-transition-normal {
-  transition: all var(--acu-transition-normal, 0.3s) ease;
-}
-
-.acu-transition-slow {
-  transition: all var(--acu-transition-slow, 0.5s) ease;
-}
 
 // 特定属性过渡
-.acu-transition-transform {
-  transition: transform var(--acu-transition-normal, 0.3s) ease;
-}
 
-.acu-transition-opacity {
-  transition: opacity var(--acu-transition-normal, 0.3s) ease;
-}
-
-.acu-transition-color {
-  transition:
-    color var(--acu-transition-fast, 0.15s) ease,
-    background-color var(--acu-transition-fast, 0.15s) ease;
-}

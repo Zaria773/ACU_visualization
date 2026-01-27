@@ -10,12 +10,13 @@
   flex: 1 1 auto;
   // 使用 min-height 确保最小可用空间
   min-height: 150px;
-  // max-height 使用 80vh 作为上限，但实际高度受父容器 flex 限制
-  max-height: 80vh;
+  // 高度由父容器 .acu-wrapper 的 max-height: calc(100vh - bottom) 动态约束
+  // 无需在此固定限高，flex 布局会自动处理
   margin-bottom: 3px; // 恢复与导航栏之间的间距
   background: var(--acu-bg-panel);
   border: 1px solid var(--acu-border);
   border-radius: 12px;
+  position: relative; // 确保伪元素定位相对于此容器
   display: none;
   flex-direction: column;
   backdrop-filter: blur(8px);
@@ -108,29 +109,8 @@
 }
 
 // 高度调节控制
-.acu-height-control {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-right: 10px;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
 
 // 高度拖拽把手
-.acu-height-drag-handle {
-  cursor: ns-resize;
-  padding: 5px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  color: var(--acu-text-sub);
-
-  &:hover,
-  &.active {
-    color: var(--acu-title-color);
-    background: var(--acu-table-hover);
-  }
-}
 
 // 宽度调节把手 (右侧)
 .acu-resize-handle {
@@ -162,6 +142,12 @@
     opacity: 1;
     width: 4px;
     left: 0;
+  }
+
+  // 移动端隐藏宽度调节把手，防止误触
+  @media (max-width: 768px) {
+    display: none !important;
+    pointer-events: none !important;
   }
 }
 
@@ -197,72 +183,3 @@
   }
 }
 
-// =========================================
-// 通用可复用布局模式
-// 用于"固定头尾 + 滚动中间"的布局场景
-// 未来新面板类型可直接使用这些类
-// =========================================
-
-/**
- * 可滚动布局容器
- * 使用方式:
- *   <div class="acu-scrollable-layout">
- *     <div class="acu-fixed-top">头部固定区</div>
- *     <div class="acu-scroll-middle">中间滚动区</div>
- *     <div class="acu-fixed-bottom">底部固定区</div>
- *   </div>
- *
- * 注意: 父容器必须有明确的高度约束，否则布局会被内容撑开
- */
-.acu-scrollable-layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 0; // 关键：允许 flex 子元素收缩
-  height: 100%; // 需要父容器有明确高度
-
-  // 头部固定区 - 不收缩，不参与滚动
-  > .acu-fixed-top {
-    flex-shrink: 0;
-    z-index: 10;
-  }
-
-  // 中间滚动区 - 占据剩余空间，内容溢出时滚动
-  > .acu-scroll-middle {
-    flex: 1;
-    min-height: 0; // 关键：允许被压缩，使 overflow 生效
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain; // 防止滚动穿透
-
-    // 滚动条样式
-    scrollbar-width: thin;
-    scrollbar-color: var(--acu-title-color, #667eea) transparent;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--acu-title-color, #667eea);
-      border-radius: 3px;
-    }
-  }
-
-  // 底部固定区 - 不收缩，不参与滚动
-  > .acu-fixed-bottom {
-    flex-shrink: 0;
-    z-index: 10;
-  }
-}
-
-// 横向滚动变体
-.acu-scrollable-layout.acu-scroll-horizontal {
-  > .acu-scroll-middle {
-    overflow-x: auto;
-    overflow-y: hidden;
-    display: flex;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-}

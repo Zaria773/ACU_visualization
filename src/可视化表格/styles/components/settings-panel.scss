@@ -140,6 +140,8 @@
 .acu-tab-config-btn {
   position: relative;
   cursor: grab;
+  // 移动端：阻止触摸拖拽时触发滚动
+  touch-action: none;
 
   &:hover {
     border-color: #e74c3c !important;
@@ -280,6 +282,8 @@
   border-radius: 8px;
   background: var(--acu-card-bg, #fffef9);
   cursor: grab;
+  // 移动端：阻止触摸拖拽时触发滚动
+  touch-action: none;
   transition: all 0.2s;
 
   .btn-icon {

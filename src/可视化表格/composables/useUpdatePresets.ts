@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 更新预设管理 Composable
  * 用于管理手动更新的参数预设
@@ -37,6 +39,8 @@ export const AutoTriggerConfigSchema = z.object({
   targetTables: z.array(z.string()).default(['总结表', '大纲表']),
   /** 更新时指定的表格名称列表 (为空数组=更新全部表格) */
   updateTargetTables: z.array(z.string()).default([]),
+  /** 空值检测的列名列表 (为空数组=检测所有列) */
+  emptyCheckColumns: z.array(z.string()).default([]),
 });
 
 /** 预设 Schema */

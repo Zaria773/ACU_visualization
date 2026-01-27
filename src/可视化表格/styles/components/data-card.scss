@@ -54,11 +54,6 @@
   }
 
   // D2: 待删除状态动画 - 红色边框 + 晃动效果
-  &.pending-delete {
-    border: 2px solid #ff4444 !important;
-    background: rgba(255, 68, 68, 0.1);
-    animation: acu-shake 0.3s ease-in-out;
-  }
 }
 
 // D2: 晃动动画关键帧
@@ -94,12 +89,19 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: stretch; // 卡片高度拉伸，使同行卡片等高
     gap: 14px;
   }
 
   .acu-data-card {
     flex: 0 0 var(--acu-card-width, 280px);
     width: var(--acu-card-width, 280px);
+    height: auto; // 允许被 flex stretch 拉伸
+    // 关键修复：纵向布局下禁用卡片滚动，让滚动事件传递到容器
+    overflow-y: visible;
+    overflow-x: visible;
+    display: flex;
+    flex-direction: column;
 
     &:hover {
       transform: translateY(-4px);
@@ -115,7 +117,7 @@
     display: inline-flex;
     flex-wrap: nowrap;
     gap: 14px;
-    height: 100%;
+    height: auto; // 改为自动高度，不撑满父级
     align-items: flex-start;
     padding-bottom: 10px;
     min-width: 100%;
@@ -124,6 +126,7 @@
   .acu-data-card {
     flex: 0 0 var(--acu-card-width, 280px);
     width: var(--acu-card-width, 280px);
+    height: fit-content; // 高度自适应内容
     max-height: 98%;
     overflow-y: auto;
     white-space: normal;
@@ -189,7 +192,6 @@
   flex: 1;
   min-width: 0;
 
-  .acu-inline-input,
   textarea {
     width: 100%;
     font-size: 15px;
@@ -221,6 +223,74 @@
   padding: 1px 6px;
   border-radius: 8px;
   opacity: 0.8;
+}
+
+// 历史记录按钮组（撤回按钮 + 查看历史按钮）
+.acu-history-btns {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 2px; // PC端间距（原2px太小看起来像重叠）
+}
+
+// 通用历史按钮样式
+.acu-undo-trigger,
+.acu-history-trigger {
+  width: 26px;
+  height: 26px;
+  min-width: 26px; // 防止被压缩
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+  padding: 0;
+
+  &:hover {
+    background: var(--acu-table-hover);
+    color: var(--acu-title-color);
+    opacity: 1;
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  // 移动端增大触控区域 (最小44px触控区域)
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 13px;
+  }
+}
+
+// 撤回按钮特有样式
+.acu-undo-trigger {
+  // 加载状态
+  &.acu-loading {
+    opacity: 0.5;
+    cursor: wait;
+    pointer-events: none;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 }
 
 // 行锁定按钮（锁定编辑模式下显示在卡片头部右侧）
@@ -268,6 +338,7 @@
   flex-direction: column;
   gap: 0;
   font-size: var(--acu-font-size, 13px);
+  flex: 1; // 撑满剩余空间
 }
 
 // Grid Item 样式
@@ -276,6 +347,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 12px;
+  flex: 1; // 撑满剩余空间
 }
 
 .acu-grid-item {
@@ -413,24 +485,6 @@
 }
 
 // 行内编辑框
-.acu-inline-input {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  outline: none;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: 1.5;
-  color: inherit;
-  resize: none;
-  overflow: hidden;
-  padding: 2px;
-  margin: 0;
-  display: block;
-  border-radius: 4px;
-}
 
 // =========================================
 // DataCard.vue 扩展样式
@@ -513,8 +567,6 @@
 // 锁定模式下的单元格基础样式
 .acu-lock-mode {
   // 所有单元格在锁定模式下可点击
-  .acu-grid-cell,
-  .acu-full-row,
   .acu-card-row {
     cursor: pointer;
     transition:
@@ -564,31 +616,6 @@
 }
 
 // 待锁定（编辑模式下临时选中）的单元格样式
-.acu-cell-pending-lock {
-  position: relative;
-  background: rgba(46, 204, 113, 0.12) !important;
-  border-left: 3px solid #27ae60 !important;
-
-  // 待锁定图标（开锁状态）
-  &::after {
-    content: '\f3c1'; // FontAwesome lock-open icon
-    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome;
-    font-weight: 900;
-    position: absolute;
-    top: 4px;
-    right: 6px;
-    font-size: 10px;
-    color: #27ae60;
-    opacity: 0.8;
-    pointer-events: none;
-  }
-
-  .acu-grid-value,
-  .acu-full-value,
-  .acu-card-value {
-    color: #27ae60 !important;
-  }
-}
 
 // 整行锁定样式
 .acu-row-locked {
@@ -612,23 +639,6 @@
 }
 
 // 锁定模式提示条
-.acu-lock-mode-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(192, 57, 43, 0.05));
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  border-radius: 8px;
-  margin: 8px 12px;
-  font-size: 12px;
-  color: #c0392b;
-
-  i {
-    font-size: 14px;
-  }
-}
 
 // =========================================
 // 移动端下拉/滑动反馈（与原版 6.4.1.ts 一致）

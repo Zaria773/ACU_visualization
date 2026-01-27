@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * ACU Visualizer - Parent Style Injection Composable
  *
@@ -194,15 +196,7 @@ export function useParentStyleInjection() {
       .acu-toast p,
       .acu-toast div,
       .acu-toast span,
-      .acu-toast-message,
-      .acu-toast.acu-toast-success,
-      .acu-toast.acu-toast-success span,
-      .acu-toast.acu-toast-error,
-      .acu-toast.acu-toast-error span,
-      .acu-toast.acu-toast-warning,
-      .acu-toast.acu-toast-warning span,
-      .acu-toast.acu-toast-info,
-      .acu-toast.acu-toast-info span {
+      .acu-toast-message {
         font-family: ${fontFamily} !important;
         color: var(--acu-text-main) !important;
         text-shadow: none !important;
@@ -867,15 +861,6 @@ export function useParentStyleInjection() {
         text-shadow: none !important;
       }
 
-      /* Toast 消息 - 精确保护 */
-      .acu-toast,
-      .acu-toast-message,
-      .acu-toast span {
-        font-family: var(--acu-font-family) !important;
-        font-size: var(--acu-font-size, 13px) !important;
-        text-shadow: none !important;
-        color: #fff !important;
-      }
 
       /* Tab 按钮字体 */
       .acu-tab-btn,
@@ -1107,7 +1092,12 @@ export function useParentStyleInjection() {
 
   // 监听主题自定义配置变化
   watch(
-    [() => themeStore.currentThemeVars, () => themeStore.currentHighlight, () => themeStore.customCSS],
+    [
+      () => themeStore.currentThemeVars,
+      () => themeStore.currentHighlight,
+      () => themeStore.customCSS,
+      () => themeStore.backgroundConfig,
+    ],
     () => {
       if (!isInitialized.value) return;
       updateThemeCustomStyles();

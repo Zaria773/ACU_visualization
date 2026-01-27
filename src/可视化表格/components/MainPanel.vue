@@ -1006,11 +1006,9 @@ const startHeightDrag = (e: PointerEvent, handleEl: HTMLElement) => {
     const dy = startY - moveE.clientY;
     let newHeight = startHeight + dy;
 
-    // 限制高度范围
+    // 限制高度范围：最小 200px，最大由 CSS 的 max-height: calc(100vh - bottom) 控制
     const minHeight = 200;
-    const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
-    const maxHeight = parentHeight * 0.8;
-    newHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+    newHeight = Math.max(minHeight, newHeight);
 
     dataAreaRef.value.style.height = `${newHeight}px`;
     panelHeight.value = newHeight;
@@ -1034,6 +1032,10 @@ const startHeightDrag = (e: PointerEvent, handleEl: HTMLElement) => {
  * 1. 完全清除所有高度限制
  * 2. 使用 setTimeout + rAF 确保移动端渲染完成
  * 3. 遍历子元素计算实际内容高度，避免 scrollHeight 受容器影响
+ *
+ * 横向布局特殊处理：
+ * - 遍历所有卡片，找到最大内容高度
+ * - 动态获取工具栏、分页器等元素的实际高度
  */
 const resetHeight = () => {
   if (!dataAreaRef.value) return;
@@ -1052,36 +1054,83 @@ const resetHeight = () => {
     requestAnimationFrame(() => {
       if (!dataAreaRef.value) return;
 
-      // 4. 计算最大允许高度
-      const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
-      const maxAllowed = parentHeight * 0.8;
+      // 4. 高度范围
       const minHeight = 200;
+      // 最大高度：视口高度 - 导航栏实际高度 - 边距
+      const parentHeight = window.parent?.innerHeight ?? window.innerHeight;
+      const navEl = navContainerRef.value;
+      const navHeight = navEl ? navEl.offsetHeight : 0;
+      const maxHeight = parentHeight - navHeight - 20;
 
-      // 5. 获取内容区域的实际高度
-      // 优先使用内容子元素的 offsetHeight，避免受容器影响
-      const contentEl = dataAreaRef.value.querySelector('.acu-panel-content');
-      let naturalHeight: number;
-
-      if (contentEl) {
-        // 获取内容区域的第一个子元素（DataTable/Dashboard/OptionsPanel）
-        const firstChild = contentEl.firstElementChild as HTMLElement;
-        if (firstChild) {
-          naturalHeight = firstChild.offsetHeight + 20; // 加上内边距
-        } else {
-          naturalHeight = (contentEl as HTMLElement).scrollHeight;
-        }
-      } else {
-        naturalHeight = dataAreaRef.value.scrollHeight;
+      // 5. 检测是否包含关系图（特殊处理：强制撑满最大高度）
+      const hasRelationshipGraph = dataAreaRef.value.querySelector('.acu-relationship-graph');
+      if (hasRelationshipGraph) {
+        const finalHeight = maxHeight;
+        dataAreaRef.value.style.height = `${finalHeight}px`;
+        panelHeight.value = finalHeight;
+        console.info(`[ACU] 关系图高度重置: 强制最大高度 ${finalHeight}`);
+        emit('height-change', finalHeight);
+        return;
       }
 
-      // 6. 计算最终高度：clamp(naturalHeight, minHeight, maxAllowed)
-      const finalHeight = Math.max(minHeight, Math.min(naturalHeight, maxAllowed));
+      // 6. 检测是否是横向布局
+      const isHorizontal = configStore.config.layout === 'horizontal';
+      let naturalHeight: number;
 
-      // 7. 应用高度
+      if (isHorizontal) {
+        // 横向布局：遍历所有卡片，找到最大内容高度
+        const cardsContainer = dataAreaRef.value.querySelector('.acu-cards-container');
+        if (cardsContainer) {
+          const cards = cardsContainer.querySelectorAll('.acu-data-card');
+          let maxCardHeight = 0;
+
+          cards.forEach((card) => {
+            const cardEl = card as HTMLElement;
+            // 获取卡片内部的实际内容高度（scrollHeight 包含溢出内容）
+            const cardContentHeight = cardEl.scrollHeight;
+            if (cardContentHeight > maxCardHeight) {
+              maxCardHeight = cardContentHeight;
+            }
+          });
+
+          // 动态获取工具栏和分页器的实际高度
+          const toolbar = dataAreaRef.value.querySelector('.acu-table-toolbar') as HTMLElement;
+          const pagination = dataAreaRef.value.querySelector('.acu-pagination-container') as HTMLElement;
+          const toolbarHeight = toolbar ? toolbar.offsetHeight : 0;
+          const paginationHeight = pagination ? pagination.offsetHeight : 0;
+          // 卡片容器的 padding（实时获取）
+          const containerStyle = window.getComputedStyle(cardsContainer);
+          const containerPadding = parseFloat(containerStyle.paddingTop) + parseFloat(containerStyle.paddingBottom);
+
+          naturalHeight = maxCardHeight + toolbarHeight + paginationHeight + containerPadding;
+
+          console.info(`[ACU] 横向布局高度计算: maxCard=${maxCardHeight}, toolbar=${toolbarHeight}, pagination=${paginationHeight}, padding=${containerPadding}`);
+        } else {
+          naturalHeight = dataAreaRef.value.scrollHeight;
+        }
+      } else {
+        // 纵向布局：使用原来的逻辑
+        const contentEl = dataAreaRef.value.querySelector('.acu-panel-content');
+        if (contentEl) {
+          const firstChild = contentEl.firstElementChild as HTMLElement;
+          if (firstChild) {
+            naturalHeight = firstChild.offsetHeight + 20;
+          } else {
+            naturalHeight = (contentEl as HTMLElement).scrollHeight;
+          }
+        } else {
+          naturalHeight = dataAreaRef.value.scrollHeight;
+        }
+      }
+
+      // 7. 计算最终高度：至少 minHeight，最多 maxHeight
+      const finalHeight = Math.min(maxHeight, Math.max(minHeight, naturalHeight));
+
+      // 8. 应用高度
       dataAreaRef.value.style.height = `${finalHeight}px`;
       panelHeight.value = finalHeight;
 
-      console.info(`[ACU] 高度已重置: natural=${naturalHeight}, final=${finalHeight}, max=${maxAllowed}`);
+      console.info(`[ACU] 高度已重置: natural=${naturalHeight}, max=${maxHeight}, final=${finalHeight}, horizontal=${isHorizontal}`);
       emit('height-change', finalHeight);
     });
   }, 50);

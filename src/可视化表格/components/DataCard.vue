@@ -58,15 +58,27 @@
       >
         <i :class="isCurrentRowLocked ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
       </button>
-      <!-- 历史记录按钮 -->
-      <button
-        v-if="showHistoryButton && !uiStore.isLockEditMode"
-        class="acu-history-trigger"
-        title="查看历史记录"
-        @click.stop="emit('showHistory')"
-      >
-        <i class="fas fa-search"></i>
-      </button>
+      <!-- 历史记录按钮组 -->
+      <div v-if="showHistoryButton && !uiStore.isLockEditMode" class="acu-history-btns">
+        <!-- 撤回按钮 -->
+        <button
+          class="acu-undo-trigger"
+          :class="{ 'acu-loading': isUndoing }"
+          :disabled="isUndoing"
+          title="撤回到上一版本"
+          @click.stop="handleUndoRow"
+        >
+          <i :class="isUndoing ? 'fas fa-spinner fa-spin' : 'fas fa-undo'"></i>
+        </button>
+        <!-- 查看历史按钮 -->
+        <button
+          class="acu-history-trigger"
+          title="查看历史记录"
+          @click.stop="emit('showHistory')"
+        >
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
     </div>
 
     <!-- 卡片内容区 - Card 布局 -->
@@ -208,7 +220,8 @@
  */
 
 import { computed, ref, watch, watchEffect } from 'vue';
-import { useCardGestures, useCellLock, useIsMobile, useSelectionGuardEnhanced } from '../composables';
+import { useCardGestures, useCellLock, useIsMobile, useRowHistory, useSelectionGuardEnhanced } from '../composables';
+import { toast } from '../composables/useToast';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
 import type { TableCell, TableRow } from '../types';
@@ -270,9 +283,11 @@ const emit = defineEmits<{
 
 const cardRef = ref<HTMLElement>();
 const editingCell = ref<number | null>(null);
+const isUndoing = ref(false);
 const dataStore = useDataStore();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
+const rowHistory = useRowHistory();
 
 // 手势指示器 DOM refs（跨 iframe 生产构建修复需要）
 const pullTopRef = ref<HTMLElement>();
@@ -665,6 +680,50 @@ const handleCellSave = (colIndex: number, value: string) => {
 
   // 关闭编辑器
   editingCell.value = null;
+};
+
+/**
+ * 撤回到上一版本
+ */
+const handleUndoRow = async () => {
+  if (isUndoing.value) return;
+
+  isUndoing.value = true;
+  try {
+    // 获取历史记录
+    const snapshots = await rowHistory.getSnapshots(props.tableName, props.data.index);
+
+    if (snapshots.length === 0) {
+      toast.warning('该行没有历史记录');
+      return;
+    }
+
+    // 取最新的历史快照（第一条）
+    const latest = snapshots[0];
+
+    // 应用到当前行
+    let changedCount = 0;
+    for (const [colIndex, value] of Object.entries(latest.cells)) {
+      const idx = Number(colIndex);
+      const currentValue = props.data.cells[idx]?.value;
+      if (currentValue !== value) {
+        // 使用 skipHistory 避免重复保存历史
+        dataStore.updateCell(props.tableName, props.data.index, idx, value, { skipHistory: true });
+        changedCount++;
+      }
+    }
+
+    if (changedCount > 0) {
+      toast.success(`已撤回 ${changedCount} 个单元格到上一版本`);
+    } else {
+      toast.info('当前数据与历史版本相同');
+    }
+  } catch (err) {
+    console.error('[ACU] 撤回失败:', err);
+    toast.error('撤回失败');
+  } finally {
+    isUndoing.value = false;
+  }
 };
 
 /**

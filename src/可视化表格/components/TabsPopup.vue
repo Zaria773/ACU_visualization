@@ -8,7 +8,6 @@
           :key="tab.id"
           class="acu-nav-btn"
           :class="{
-            'acu-nav-btn-special': isSpecialTab(tab.id),
             active: activeTab === tab.id,
             'has-issues': !isSpecialTab(tab.id) && hasTabIssues(tab.name),
             'has-ai-changes': !isSpecialTab(tab.id) && !hasTabIssues(tab.name) && hasTabAiChanges(tab.name),

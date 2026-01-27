@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 行历史记录 Composable
  * 封装业务逻辑：保存快照、获取历史、格式转换

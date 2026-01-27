@@ -4,6 +4,7 @@
     :class="{
       'acu-dash-widget-wide': config.colSpan === 2,
       'acu-dash-widget-editing': isEditing,
+      'acu-highlight-ai-table': hasAiUpdate && !searchTerm,
     }"
     :draggable="isEditing"
     @dragstart="handleDragStart"
@@ -25,20 +26,25 @@
     </template>
 
     <!-- 头部 - 点击标题跳转，点击其他区域折叠/展开 -->
-    <div class="acu-dash-title" :class="{ 'acu-dash-title-clickable': !isEditing }" @click="handleTitleAreaClick">
+    <!-- 全局状态组件在展示态隐藏表头 -->
+    <div
+      v-if="config.displayStyle !== 'global' || isEditing"
+      class="acu-dash-title"
+      :class="{ 'acu-dash-title-clickable': !isEditing }"
+      style="font-size: 1.2em !important"
+      @click="handleTitleAreaClick"
+    >
       <span class="acu-dash-title-text" @click.stop="handleTitleTextClick">
-        <i :class="['fas', config.icon]"></i>
+        <i :class="['fas', displayIcon]"></i>
         {{ displayTitle }}
         <span v-if="rowCount > 0" class="acu-dash-count">{{ rowCount }}</span>
       </span>
       <!-- 按钮区（包含折叠指示器） -->
       <div v-if="!isEditing" class="acu-dash-actions">
-        <!-- 折叠指示器放在按钮区最左边 -->
-        <i class="fas acu-dash-collapse-icon" :class="isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
         <!-- 设置按钮常驻 (updateStatus 类型不显示) -->
         <button
           v-if="config.type !== 'updateStatus'"
-          class="acu-dash-action-btn"
+          class="acu-icon-btn"
           :title="getActionTooltip('settings')"
           @click.stop="handleAction('settings')"
         >
@@ -48,12 +54,14 @@
         <button
           v-for="actionId in filteredActionsNoSettings"
           :key="actionId"
-          class="acu-dash-action-btn"
+          class="acu-icon-btn"
           :title="getActionTooltip(actionId)"
           @click.stop="handleAction(actionId)"
         >
           <i :class="['fas', getActionIcon(actionId)]"></i>
         </button>
+        <!-- 折叠指示器放在按钮区最右边 -->
+        <i class="fas acu-dash-collapse-icon" :class="isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
       </div>
     </div>
 
@@ -69,6 +77,11 @@
         <EmbeddedOptionsPanel :tables="allTables ?? []" @navigate="handleNavigate" />
       </template>
 
+      <!-- 全局状态组件 (无表头，沉浸式) -->
+      <template v-else-if="config.displayStyle === 'global'">
+        <GlobalStatusWidget :table-data="tableData" :is-editing="isEditing" />
+      </template>
+
       <!-- 普通表格组件 -->
       <template v-else-if="tableData && displayRows.length > 0">
         <!-- 网格式展示 (NPC风格) -->
@@ -77,7 +90,10 @@
             v-for="row in displayRows"
             :key="row.key"
             class="acu-dash-npc-item acu-dash-interactive"
-            :class="{ 'acu-highlight-changed': isRowChanged(row) }"
+            :class="{
+              'acu-highlight-changed': isRowChanged(row),
+              'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+            }"
             @click.stop="handleRowClick(row)"
           >
             <span class="acu-dash-npc-text">{{ getDisplayValue(row) }}</span>
@@ -85,7 +101,7 @@
             <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
               {{ tag.value }}
             </span>
-            <!-- 互动标签 -->
+            <!-- 互动标签（旧系统） -->
             <span
               v-for="item in getInteractiveTags(row)"
               :key="item.tag.id"
@@ -95,6 +111,27 @@
               @click.stop="handleInteractiveTagClick(item.tag, row)"
             >
               {{ item.value }}
+            </span>
+            <!-- 互动标签（新系统 - 从全局标签库） -->
+            <span
+              v-for="newTag in displayedInteractiveTags"
+              :key="newTag.id"
+              class="acu-dash-interactive-tag acu-dash-global-tag"
+              :title="getNewTagTooltip(newTag)"
+              @click.stop="handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+            >
+              {{ newTag.label }}
+            </span>
+            <!-- 分类按钮（点击弹出该分类下的标签选择） -->
+            <span
+              v-for="category in displayedCategories"
+              :key="category.id"
+              class="acu-dash-category-btn"
+              :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+              @click.stop="handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+            >
+              <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
+              <span v-else>{{ getCategoryButtonLabel(category) }}</span>
             </span>
           </div>
         </div>
@@ -105,7 +142,10 @@
             v-for="row in displayRows"
             :key="row.key"
             class="acu-dash-list-item acu-dash-interactive"
-            :class="{ 'acu-highlight-changed': isRowChanged(row) }"
+            :class="{
+              'acu-highlight-changed': isRowChanged(row),
+              'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+            }"
             @click.stop="handleRowClick(row)"
           >
             <i class="fas fa-circle" style="font-size: 6px"></i>
@@ -114,7 +154,7 @@
             <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
               {{ tag.value }}
             </span>
-            <!-- 互动标签 -->
+            <!-- 互动标签（旧系统） -->
             <span
               v-for="item in getInteractiveTags(row)"
               :key="item.tag.id"
@@ -124,6 +164,27 @@
               @click.stop="handleInteractiveTagClick(item.tag, row)"
             >
               {{ item.value }}
+            </span>
+            <!-- 互动标签（新系统 - 从全局标签库） -->
+            <span
+              v-for="newTag in displayedInteractiveTags"
+              :key="newTag.id"
+              class="acu-dash-interactive-tag acu-dash-global-tag"
+              :title="getNewTagTooltip(newTag)"
+              @click.stop="handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+            >
+              {{ newTag.label }}
+            </span>
+            <!-- 分类按钮（点击弹出该分类下的标签选择） -->
+            <span
+              v-for="category in displayedCategories"
+              :key="category.id"
+              class="acu-dash-interactive-tag acu-dash-global-tag"
+              :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+              @click.stop="handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+            >
+              <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
+              <span v-else>{{ getCategoryButtonLabel(category) }}</span>
             </span>
           </div>
         </div>
@@ -149,16 +210,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useCoreActions } from '../../composables/useCoreActions';
-import { useUIStore } from '../../stores/useUIStore';
-import type { DashboardWidgetConfig, ProcessedTable, TableRow, TagDefinition, WidgetActionId } from '../../types';
+import { useDivinationAction } from '../../composables/useDivinationAction';
+import { useTagLibraryStore } from '../../stores/useTagLibraryStore';
+import { getSmartTabIcon, useUIStore } from '../../stores/useUIStore';
+import type {
+  DashboardWidgetConfig,
+  InteractiveTag,
+  ProcessedTable,
+  TableRow,
+  TagCategory,
+  TagDefinition,
+  WidgetActionId,
+} from '../../types';
 import { WIDGET_ACTIONS } from '../../types';
 import EmbeddedOptionsPanel from './EmbeddedOptionsPanel.vue';
+import GlobalStatusWidget from './GlobalStatusWidget.vue';
 import TableStatusBoard from './TableStatusBoard.vue';
 
 const uiStore = useUIStore();
+const tagLibraryStore = useTagLibraryStore();
 const { setInput } = useCoreActions();
+const { performDivination } = useDivinationAction();
+
+// ============================================================
+// 生命周期
+// ============================================================
+
+onMounted(async () => {
+  // 加载全局标签库
+  await tagLibraryStore.loadLibrary();
+});
+
+// Props
+interface Props {
+  config: DashboardWidgetConfig;
+  tableData: ProcessedTable | null;
+  isEditing: boolean;
+  diffMap: Set<string>;
+  /** AI 变更集合 */
+  aiDiffMap?: Set<string>;
+  /** 搜索关键词 */
+  searchTerm?: string;
+  /** 所有表格数据 (用于特殊组件如选项面板) */
+  allTables?: ProcessedTable[];
+}
+
+const props = defineProps<Props>();
 
 // ============================================================
 // 状态
@@ -167,17 +266,23 @@ const { setInput } = useCoreActions();
 /** 组件是否折叠 */
 const isCollapsed = ref(false);
 
-// Props
-interface Props {
-  config: DashboardWidgetConfig;
-  tableData: ProcessedTable | null;
-  isEditing: boolean;
-  diffMap: Set<string>;
-  /** 所有表格数据 (用于特殊组件如选项面板) */
-  allTables?: ProcessedTable[];
-}
+/** 记录进入编辑模式前的折叠状态 */
+let previousCollapsedState = false;
 
-const props = defineProps<Props>();
+// 监听编辑模式变化：进入时自动收起，退出时恢复
+watch(
+  () => props.isEditing,
+  (editing) => {
+    if (editing) {
+      // 进入编辑模式：记录当前状态，然后收起
+      previousCollapsedState = isCollapsed.value;
+      isCollapsed.value = true;
+    } else {
+      // 退出编辑模式：恢复之前的状态
+      isCollapsed.value = previousCollapsedState;
+    }
+  },
+);
 
 // Emits
 const emit = defineEmits<{
@@ -213,16 +318,148 @@ const displayTitle = computed(() => {
   return props.config.title;
 });
 
-/** 显示的行数据 (移除行数限制，显示所有行) */
+/** 显示图标 - 智能匹配 */
+const displayIcon = computed(() => {
+  // 1. 如果有配置的图标且不是默认表图标，优先使用配置
+  if (props.config.icon && props.config.icon !== 'fa-table') {
+    return props.config.icon;
+  }
+
+  // 2. 尝试使用智能匹配
+  const titleToMatch = props.tableData?.name || props.config.title;
+  if (titleToMatch) {
+    const smartIcon = getSmartTabIcon(titleToMatch);
+    // 移除 'fas ' 前缀，因为模板中已经加了 ['fas', icon]
+    return smartIcon.replace('fas ', '');
+  }
+
+  return 'fa-table';
+});
+
+// ============================================================
+// AI 高亮相关
+// ============================================================
+
+/** 判断行是否有 AI 更新 */
+function isRowAiChanged(row: TableRow): boolean {
+  if (!props.tableData || !props.aiDiffMap) return false;
+  const tableName = props.tableData.name;
+
+  // 检查 rowKey 格式: tableName-row-rowIndex
+  const rowKey = `${tableName}-row-${row.index}`;
+  if (props.aiDiffMap.has(rowKey)) return true;
+
+  // 检查 cellKey 格式: tableName-rowIndex-colIndex
+  // 当 AI 只修改某行的单个单元格时，只会添加 cellKey
+  for (let colIdx = 0; colIdx < row.cells.length; colIdx++) {
+    const cellKey = `${tableName}-${row.index}-${colIdx}`;
+    if (props.aiDiffMap.has(cellKey)) return true;
+  }
+
+  return false;
+}
+
+/** 组件是否有 AI 更新（用于标题高亮） */
+const hasAiUpdate = computed(() => {
+  if (!props.tableData || !props.aiDiffMap) return false;
+  return props.tableData.rows.some(row => isRowAiChanged(row));
+});
+
+// ============================================================
+// 搜索相关
+// ============================================================
+
+/** 判断行是否匹配搜索（全局搜索：所有单元格内容） */
+function isRowMatchSearch(row: TableRow): boolean {
+  if (!props.searchTerm) return false;
+  const searchLower = props.searchTerm.toLowerCase().trim();
+  if (!searchLower) return false;
+  return row.cells.some(cell => String(cell.value).toLowerCase().includes(searchLower));
+}
+
+// ============================================================
+// 过滤+排序后的行数据
+// ============================================================
+
+/**
+ * 显示的行数据（过滤+排序）
+ * - 搜索模式: 过滤不匹配的行
+ * - 非搜索模式: AI 更新的行排前面
+ */
 const displayRows = computed(() => {
   if (!props.tableData) return [];
-  return props.tableData.rows;
+
+  let rows = [...props.tableData.rows];
+
+  // 搜索模式：过滤不匹配的行
+  if (props.searchTerm) {
+    rows = rows.filter(row => isRowMatchSearch(row));
+  }
+
+  // 排序：AI 更新的排前面
+  return rows.sort((a, b) => {
+    const aAi = isRowAiChanged(a);
+    const bAi = isRowAiChanged(b);
+    if (aAi !== bAi) return bAi ? 1 : -1;
+    return a.index - b.index;
+  });
 });
 
 /** 内容区 class */
 const bodyClass = computed(() => ({
   'acu-dash-body-scrollable': true,
 }));
+
+// ============================================================
+// 新标签系统 - 从全局标签库读取已配置的标签
+// ============================================================
+
+/**
+ * 获取当前组件配置的已展示标签（从全局标签库）
+ * 这些是固定显示的标签，不依赖于行数据
+ */
+const displayedInteractiveTags = computed<InteractiveTag[]>(() => {
+  const config = props.config;
+  const displayedIds = config?.widgetTagConfig?.displayedTagIds || [];
+  return displayedIds.map(id => tagLibraryStore.getTagById(id)).filter((tag): tag is InteractiveTag => tag !== undefined);
+});
+
+/**
+ * 获取当前组件配置的已展示分类（从全局标签库）
+ * 点击分类会弹出该分类下的标签选择弹窗
+ */
+const displayedCategories = computed<TagCategory[]>(() => {
+  const config = props.config;
+  const displayedIds = config?.widgetTagConfig?.displayedCategoryIds || [];
+  return displayedIds
+    .map(id => tagLibraryStore.getCategoryById(id))
+    .filter((cat): cat is TagCategory => cat !== undefined);
+});
+
+/**
+ * 获取分类的显示名称（只取最后一级）
+ */
+function getCategoryDisplayName(category: TagCategory): string {
+  const parts = category.path.split('/');
+  return parts[parts.length - 1];
+}
+
+/**
+ * 获取分类按钮的显示标签
+ * 有 emoji 就只显示 emoji，没有才显示文字名称
+ */
+function getCategoryButtonLabel(category: TagCategory): string {
+  // 如果有 icon（emoji），只显示 emoji
+  if (category.icon) {
+    return category.icon;
+  }
+  // 没有 emoji，显示分类名称（只取最后一级）
+  return getCategoryDisplayName(category);
+}
+
+function isFontAwesome(icon: string): boolean {
+  return icon.startsWith('fa') || icon.includes(' fa-');
+}
 
 /** 过滤掉 goToTable 按钮，因为点击顶栏已可跳转 */
 const filteredActions = computed(() => {
@@ -314,9 +551,20 @@ function getValue(row: TableRow): string {
  * 检查行是否有变更
  */
 function isRowChanged(row: TableRow): boolean {
-  if (!props.config.tableId) return false;
-  const key = `${props.config.tableId}:${row.key}`;
-  return props.diffMap.has(key);
+  if (!props.tableData) return false;
+  const tableName = props.tableData.name;
+
+  // 检查 rowKey 格式: tableName-row-rowIndex
+  const rowKey = `${tableName}-row-${row.index}`;
+  if (props.diffMap.has(rowKey)) return true;
+
+  // 检查 cellKey 格式: tableName-rowIndex-colIndex
+  for (let colIdx = 0; colIdx < row.cells.length; colIdx++) {
+    const cellKey = `${tableName}-${row.index}-${colIdx}`;
+    if (props.diffMap.has(cellKey)) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -416,7 +664,7 @@ function getTagTooltip(tag: TagDefinition): string {
 }
 
 /**
- * 处理互动标签点击
+ * 处理互动标签点击（旧系统 - TagDefinition）
  * @param tag 标签定义
  * @param row 当前行数据
  */
@@ -435,10 +683,110 @@ function handleInteractiveTagClick(tag: TagDefinition, row: TableRow): void {
   const playerName = getPlayerName();
   prompt = prompt.replace(/\{\{playerName\}\}/gi, playerName);
 
+  // {{tableName}} - 表格名称
+  const tableName = props.tableData?.name || props.config.title || '';
+  prompt = prompt.replace(/\{\{tableName\}\}/gi, tableName);
+
   // 追加到输入框
   if (prompt) {
     setInput(prompt);
   }
+}
+
+/**
+ * 解析标签的提示词模板通配符
+ * @param tag 互动标签
+ * @param rowData 当前行数据（可选）
+ * @returns 解析后的提示词
+ */
+function resolveTagPrompt(tag: InteractiveTag, rowData?: { title: string; value: string }): string {
+  let prompt = tag.promptTemplate;
+
+  // {{value}} - 标签本身的值
+  prompt = prompt.replace(/\{\{value\}\}/gi, tag.label);
+
+  // {{rowTitle}} - 当前行标题（如果有）
+  if (rowData?.title) {
+    prompt = prompt.replace(/\{\{rowTitle\}\}/gi, rowData.title);
+  } else {
+    prompt = prompt.replace(/\{\{rowTitle\}\}/gi, '');
+  }
+
+  // {{playerName}} - 主角名（使用酒馆宏 {{user}}，让酒馆处理）
+  const playerName = getPlayerName();
+  prompt = prompt.replace(/\{\{playerName\}\}/gi, playerName);
+
+  // {{tableName}} - 表格名称
+  const tableName = props.tableData?.name || props.config.title || '';
+  prompt = prompt.replace(/\{\{tableName\}\}/gi, tableName);
+
+  return prompt.trim();
+}
+
+/**
+ * 处理新标签系统的标签点击（InteractiveTag）
+ * @param tag 互动标签
+ * @param rowData 当前行数据（可选）
+ */
+function handleNewInteractiveTagClick(tag: InteractiveTag, rowData?: { title: string; value: string }): void {
+  const resolvedPrompt = resolveTagPrompt(tag, rowData);
+
+  // 检查是否为地点类标签（需要显示同伴选择器）
+  const category = tagLibraryStore.getCategoryById(tag.categoryId);
+  const isLocation = category ? (category.path.includes('地点') || category.path.includes('Location')) : false;
+
+  // 检查是否需要二次编辑
+  // 如果是地点标签，强制打开二次编辑弹窗以选择同伴
+  if (tag.allowPreEdit || isLocation) {
+    // 打开二次编辑弹窗
+    uiStore.openTagPreEditDialog({
+      tagLabel: tag.label,
+      resolvedPrompt,
+      showCompanions: isLocation,
+      widgetId: props.config.id,
+    });
+  } else if (resolvedPrompt) {
+    // 直接追加到输入框
+    setInput(resolvedPrompt);
+  }
+}
+
+/**
+ * 处理分类按钮点击
+ * @param category 分类对象
+ * @param rowData 当前行数据（用于后续解析通配符）
+ */
+function handleCategoryClick(category: TagCategory, rowData: { title: string; value: string }): void {
+  uiStore.openCategorySelectDialog({
+    categoryId: category.id,
+    rowContext: rowData,
+    widgetId: props.config.id,
+  });
+}
+
+/**
+ * 处理分类弹窗中的标签选择
+ * @param tag 选中的标签
+ * @param rowContext 行上下文
+ */
+function handleCategoryTagSelect(tag: InteractiveTag, rowContext: { title: string; value: string }): void {
+  handleNewInteractiveTagClick(tag, rowContext);
+}
+
+/**
+ * 获取标签的 tooltip（新标签系统）
+ */
+function getNewTagTooltip(tag: InteractiveTag): string {
+  if (!tag.promptTemplate) return tag.label;
+
+  // 简单预览，替换通配符占位符
+  let preview = tag.promptTemplate;
+  preview = preview.replace(/\{\{value\}\}/gi, `[${tag.label}]`);
+  preview = preview.replace(/\{\{rowTitle\}\}/gi, '[行标题]');
+  preview = preview.replace(/\{\{playerName\}\}/gi, '[主角名]');
+  preview = preview.replace(/\{\{tableName\}\}/gi, '[表格名]');
+
+  return preview.length > 50 ? preview.substring(0, 50) + '...' : preview;
 }
 
 /**
@@ -499,11 +847,18 @@ function handleAction(actionId: WidgetActionId): void {
     return;
   }
 
-  // 其他按钮：向上传递事件
-  if (props.config.tableId) {
-    emit('action', actionId, props.config.tableId);
+  // 抽签按钮：触发抽签流程
+  if (actionId === 'divination') {
+    performDivination();
+    return;
   }
+
+  // 其他按钮：向上传递事件
+  // 即使没有 tableId (如 updateStatus 组件)，也允许触发动作
+  // App.vue 中有些动作不需要 tableId (如 manualUpdate)
+  emit('action', actionId, props.config.tableId || '');
 }
+
 
 /**
  * 打开数据库原生编辑器
@@ -521,6 +876,8 @@ function openNativeEditor(tableId?: string): void {
       // 无 tableId：打开原生可视化主界面
       api.openVisualizer();
       console.info('[ACU] 已打开原生编辑器');
+      // 打开原生编辑器时，收起面板为悬浮球
+      uiStore.isCollapsed = true;
     } else if (api?.openModal) {
       // 备选方案：打开数据库主界面
       api.openModal();

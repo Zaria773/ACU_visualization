@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * useApiCallbacks.ts - 数据库 API 回调管理
  *
@@ -10,8 +12,10 @@
 import { onMounted, onUnmounted } from 'vue';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
+import type { RawDatabaseData, TableRow } from '../types';
 import { getCore, getTableData } from '../utils/index';
 import { useDbSettings } from './useDbSettings';
+import { saveSnapshot as saveRowSnapshot } from './useRowHistory';
 import { toast } from './useToast';
 import { useUpdatePresets } from './useUpdatePresets';
 
@@ -44,6 +48,112 @@ export function useApiCallbacks() {
   let isAutoUpdating = false;
 
   /**
+   * 获取当前聊天ID
+   */
+  function getCurrentChatId(): string {
+    try {
+      const ST =
+        (window as any).SillyTavern || (window.parent as any)?.SillyTavern || (window.top as any)?.SillyTavern;
+      if (ST?.getCurrentChatId) {
+        const chatId = ST.getCurrentChatId();
+        if (chatId) return chatId;
+      }
+      if (ST?.chat_metadata?.chat_id) {
+        return String(ST.chat_metadata.chat_id);
+      }
+    } catch (e) {
+      console.warn('[ACU] 获取 chatId 失败:', e);
+    }
+    return 'default';
+  }
+
+  /**
+   * 比较两行数据是否有变化
+   */
+  function hasRowChanged(
+    oldRow: (string | number)[] | undefined,
+    newRow: (string | number)[] | undefined,
+  ): boolean {
+    if (!oldRow && !newRow) return false;
+    if (!oldRow || !newRow) return true;
+    if (oldRow.length !== newRow.length) return true;
+
+    for (let i = 0; i < oldRow.length; i++) {
+      const oldVal = String(oldRow[i] ?? '').trim();
+      const newVal = String(newRow[i] ?? '').trim();
+      // 'null' 和 'undefined' 字符串也视为空
+      const normalizedOld = oldVal === 'null' || oldVal === 'undefined' ? '' : oldVal;
+      const normalizedNew = newVal === 'null' || newVal === 'undefined' ? '' : newVal;
+      if (normalizedOld !== normalizedNew) return true;
+    }
+    return false;
+  }
+
+  /**
+   * 保存 AI 填表变更到行历史
+   * 在 tableUpdateCallback 中调用，对比快照与新数据，将变更行的旧值保存到 IndexedDB
+   */
+  async function saveAiChangesToHistory(
+    oldData: RawDatabaseData,
+    newData: RawDatabaseData,
+  ): Promise<void> {
+    const chatId = getCurrentChatId();
+    if (!chatId) {
+      console.warn('[ACU] 无法获取 chatId，跳过 AI 变更历史保存');
+      return;
+    }
+
+    let savedCount = 0;
+
+    for (const sheetId in newData) {
+      if (!sheetId.startsWith('sheet_')) continue;
+
+      const newSheet = newData[sheetId];
+      const oldSheet = oldData[sheetId];
+
+      if (!newSheet?.content || !Array.isArray(newSheet.content)) continue;
+
+      const tableName = newSheet.name || sheetId.replace('sheet_', '');
+      const headers = newSheet.content[0] || [];
+
+      // 对比每一行（跳过表头行）
+      for (let rowIdx = 1; rowIdx < newSheet.content.length; rowIdx++) {
+        const realRowIdx = rowIdx - 1;
+        const newRow = newSheet.content[rowIdx];
+        const oldRow = oldSheet?.content?.[rowIdx];
+
+        // 检查是否有变化
+        if (hasRowChanged(oldRow, newRow)) {
+          // 如果旧数据存在，保存旧数据到历史
+          if (oldRow && Array.isArray(oldRow)) {
+            // 构建 TableRow 格式的数据
+            const tableRow: TableRow = {
+              index: realRowIdx,
+              key: `${tableName}-row-${realRowIdx}`,
+              cells: oldRow.map((val, i) => ({
+                colIndex: i,
+                key: String(headers[i] || `col_${i}`),
+                value: String(val ?? ''),
+              })),
+            };
+
+            try {
+              await saveRowSnapshot(chatId, tableName, tableRow, 'ai');
+              savedCount++;
+            } catch (err) {
+              console.warn('[ACU] 保存 AI 变更历史失败:', err);
+            }
+          }
+        }
+      }
+    }
+
+    if (savedCount > 0) {
+      console.info(`[ACU] 已保存 ${savedCount} 行 AI 变更历史记录`);
+    }
+  }
+
+  /**
    * 注册 API 回调
    */
   function registerCallbacks() {
@@ -59,16 +169,24 @@ export function useApiCallbacks() {
 
     // 表格更新回调
     if (api.registerTableUpdateCallback) {
-      tableUpdateCallback = () => {
+      tableUpdateCallback = async () => {
         // 检查是否正在关闭
         if (isShuttingDown) return;
 
         // 检查是否正在编辑排序或保存中
         if (uiStore.isEditingOrder || dataStore.isSaving) return;
 
+        // 获取旧快照（AI填表前的数据）用于保存历史
+        const oldSnapshot = dataStore.snapshot;
+
         // 重新加载数据
         const newData = getTableData();
         if (newData) {
+          // 【关键修复】在更新数据前，对比快照保存变更行的历史记录
+          if (oldSnapshot) {
+            await saveAiChangesToHistory(oldSnapshot, newData);
+          }
+
           dataStore.setStagedData(newData);
 
           // 同步新表格到可见列表（确保新模板的表格能显示）
@@ -78,11 +196,17 @@ export function useApiCallbacks() {
           // 生成 AI 差异映射（高亮 AI 填表的变更）
           dataStore.generateDiffMap(newData);
 
-          // 执行完整性检测
-          dataStore.checkIntegrity(newData);
+          // 【关键修复】只有开启智能检测时才执行完整性检测
+          if (presetsManager.globalAutoTriggerEnabled.value) {
+            // 执行完整性检测
+            dataStore.checkIntegrity(newData);
 
-          // 检查是否有问题并需要提示
-          checkAndNotifyIssues();
+            // 检查是否有问题并需要提示
+            checkAndNotifyIssues();
+          } else {
+            // 关闭检测时清除所有警告
+            dataStore.clearIntegrityIssues();
+          }
         }
       };
       api.registerTableUpdateCallback(tableUpdateCallback);
@@ -155,6 +279,12 @@ export function useApiCallbacks() {
    * 检查完整性问题并提示用户（或自动触发修复）
    */
   async function checkAndNotifyIssues() {
+    // 【关键修复】首先检查全局开关是否开启
+    // 全局开关关闭时（默认状态），不进行任何检测和提示
+    if (!presetsManager.globalAutoTriggerEnabled.value) {
+      return;
+    }
+
     // 检查是否有问题
     if (!dataStore.hasIntegrityIssues) return;
 

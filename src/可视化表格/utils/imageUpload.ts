@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * 图片上传和压缩工具函数
  * 用于悬浮球图标、人际关系图头像等

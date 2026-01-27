@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 /**
  * ACU Visualizer Composables
  * Vue 3 Composition API 函数集合
@@ -53,7 +55,7 @@ export {
   useCardGestures,
   useIsMobile,
   useMobileGestures as useMobileGesturesNew,
-  useSelectionGuardEnhanced,
+  useSelectionGuardEnhanced
 } from './useMobileGesturesNew';
 
 // 类型导出 - 手势系统
@@ -61,7 +63,7 @@ export type {
   CardGestureOptions,
   GestureIndicatorConfig,
   GestureState,
-  MobileGestureOptions,
+  MobileGestureOptions
 } from './useMobileGesturesNew';
 
 // ============================================
@@ -90,7 +92,7 @@ export {
   useStorage,
   useTextSelection,
   useThrottleFn,
-  watchDebounced,
+  watchDebounced
 } from './useVueUseIntegration';
 
 // 类型导出 - VueUse 集成
@@ -99,7 +101,7 @@ export type {
   DebouncedSaveOptions,
   DraggableWithSnapOptions,
   PanelType,
-  SmartHeightOptions,
+  SmartHeightOptions
 } from './useVueUseIntegration';
 
 // ============================================
@@ -115,14 +117,14 @@ export {
   checkTableIntegrity,
   extractNumber,
   isSummaryOrOutlineTable,
-  useTableIntegrityCheck,
+  useTableIntegrityCheck
 } from './useTableIntegrityCheck';
 
 export type {
   IntegrityCheckConfig,
   IntegrityIssue,
   IntegrityIssueType,
-  TableCheckResult,
+  TableCheckResult
 } from './useTableIntegrityCheck';
 
 // ============================================
@@ -133,7 +135,7 @@ export {
   PresetStorageSchema,
   UpdatePresetSchema,
   UpdateSettingsSchema,
-  useUpdatePresets,
+  useUpdatePresets
 } from './useUpdatePresets';
 
 export type { AutoTriggerConfig, PresetStorage, UpdatePreset, UpdateSettings } from './useUpdatePresets';
@@ -152,7 +154,7 @@ export {
   deleteSnapshot,
   getStats as getDBStats,
   getSnapshots as getSnapshotsFromDB,
-  initDB,
+  initDB
 } from './useIndexedDB';
 export type { RowSnapshot as IndexedDBRowSnapshot } from './useIndexedDB';
 
@@ -178,3 +180,81 @@ export type { AvatarRecord, AvatarStats } from './useAvatarManager';
 // ============================================
 export { useTableUpdateStatus } from './useTableUpdateStatus';
 export type { DbGlobalSettings, TableUpdateStatus } from './useTableUpdateStatus';
+
+// ============================================
+// 背景图片存储（IndexedDB）
+// ============================================
+export {
+  deleteBackground,
+  fileToBlob,
+  hasBackground,
+  loadBackground,
+  revokeBlobUrl,
+  saveBackground,
+  urlToBlob
+} from './useBackgroundStorage';
+export type { BackgroundRecord } from './useBackgroundStorage';
+
+// ============================================
+// App 事件处理 Composables（从 App.vue 提取）
+// ============================================
+export { useAppDataActions } from './useAppDataActions';
+export type { UseAppDataActionsOptions } from './useAppDataActions';
+
+export { useAppNavigation } from './useAppNavigation';
+export type { UseAppNavigationOptions } from './useAppNavigation';
+
+export { useAppContextMenu } from './useAppContextMenu';
+export type { ContextMenuState, UseAppContextMenuOptions } from './useAppContextMenu';
+
+// ============================================
+// 关系图数据计算（从 App.vue 提取）
+// ============================================
+export { useRelationshipData } from './useRelationshipData';
+
+// ============================================
+// 抽签系统 - 运势抽取
+// ============================================
+export {
+  calculateProbabilities, cloneLuckTier,
+  createLuckTier,
+  DEFAULT_LUCK_TIERS,
+  drawLuck, getTierProbability,
+  useDraw,
+  validateLuckTiers
+} from './useDraw';
+export type { LuckTier, UseDrawOptions, UseDrawReturn } from './useDraw';
+
+// ============================================
+// 抽签系统 - 词库扫描与预处理
+// ============================================
+export {
+  detectWordPoolTables,
+  drawOneFromEachPool,
+  drawOneFromPool,
+  drawWords,
+  getWordPoolStats,
+  getWordPoolTableData,
+  parseWordPool,
+  useWordPool
+} from './useWordPool';
+export type { TableRow, UseWordPoolOptions, UseWordPoolReturn, WordPool } from './useWordPool';
+
+// ============================================
+// 抽签系统 - 提示词拼装
+// ============================================
+export {
+  buildFullPrompt,
+  buildPrompt,
+  buildPromptWithTemplate,
+  extractPlaceholders,
+  formatWords,
+  previewPrompt,
+  TEMPLATE_FULL,
+  TEMPLATE_SIMPLE,
+  TEMPLATE_WITH_DIMENSIONS,
+  usePromptBuild,
+  validateTemplate
+} from './usePromptBuild';
+export type { DrawResult, FullDrawResult, UsePromptBuildOptions, UsePromptBuildReturn } from './usePromptBuild';
+

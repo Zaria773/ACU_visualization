@@ -17,7 +17,6 @@
         :key="tab.id"
         class="acu-nav-btn"
         :class="{
-          'acu-nav-btn-special': isSpecialTab(tab.id),
           active: activeTab === tab.id,
           'drag-handle': isEditingOrder,
           'has-issues': !isSpecialTab(tab.id) && hasTabIssues(tab.name),
@@ -31,7 +30,7 @@
         @drop="handleDrop($event, tab)"
         @dragend="handleDragEnd"
       >
-        <i v-if="tab.icon" :class="tab.icon"></i>
+        <i :class="tab.icon || getSmartTabIcon(tab.name)"></i>
         <span>{{ tab.name }}</span>
       </button>
     </div>
@@ -50,7 +49,7 @@
 
 import { computed, ref, watch } from 'vue';
 import { useDataStore } from '../stores/useDataStore';
-import { TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from '../stores/useUIStore';
+import { getSmartTabIcon, TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, useUIStore } from '../stores/useUIStore';
 import type { TabItem } from '../types';
 
 // ============================================================
@@ -193,6 +192,7 @@ function hasTabIssues(tabName: string): boolean {
 function hasTabAiChanges(tabName: string): boolean {
   return dataStore.hasTableAiChanges(tabName);
 }
+
 
 /**
  * 获取 Tab 的 tooltip

@@ -18,6 +18,19 @@
   flex-direction: column;
 }
 
+// 背景层 - 绝对定位，在图容器下方
+.acu-graph-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0; // 最底层
+  pointer-events: none; // 不影响交互
+  background-color: transparent;
+  background-repeat: no-repeat;
+}
+
 // 当显示关系图时，面板内容区域高度最大化
 .acu-panel-content:has(.acu-relationship-graph) {
   // 使用 flex 布局让关系图能够撑满
@@ -33,7 +46,7 @@
 .acu-data-table:has(.acu-relationship-graph) {
   min-height: 450px;
   height: auto !important;
-  max-height: none !important;
+  // 移除 max-height: none，让 flex 布局自动约束高度
   overflow: hidden;
 }
 
@@ -47,6 +60,8 @@
   left: 0;
   right: 0;
   overflow: hidden;
+  z-index: 1; // 在背景层之上
+  background: transparent; // 透明背景以显示背景层
 }
 
 // 工具栏 - 绝对定位固定在底部
@@ -149,6 +164,27 @@
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+
+    // 虚线样式（代表过往/隐藏关系）
+    &.dashed {
+      width: 18px;
+      height: 2px;
+      border-radius: 0;
+      border: none;
+      background: transparent !important;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        border-top: 2px dashed currentColor;
+        color: inherit;
+      }
+    }
   }
 
   .label {
@@ -348,8 +384,7 @@
     flex: 1 1 auto;
     // 关键：设置最小高度为可用视口高度
     min-height: calc(100vh - var(--acu-win-bottom, 100px) - 80px);
-    // 移除 max-height 限制，让 Flexbox 自动控制
-    max-height: none;
+    // 高度由父容器 flex 布局约束，无需单独设置 max-height
   }
 
   .acu-panel-content:has(.acu-relationship-graph) {
@@ -415,9 +450,7 @@
 }
 
 .acu-graph-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  // width, height, border-radius 由内联样式设置（支持动态大小和形状）
   border: 2px solid var(--acu-text-main, #333);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -426,7 +459,7 @@
 }
 
 .acu-graph-avatar-name {
-  font-size: 14px;
+  // font-size 由内联样式设置（受"人名标签字体大小"设置影响）
   font-weight: bold;
   color: var(--acu-text-main, #333);
   text-shadow:
@@ -438,4 +471,18 @@
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// ============================================================
+// 势力容器布局（Cola 布局）
+// Cytoscape 复合节点样式在 JS 中动态设置
+// 这里只定义额外的 UI 辅助样式
+// ============================================================
+
+// Cola 布局按钮激活状态（与其他布局按钮一致）
+.acu-graph-btn[title='势力分组布局'] {
+  &.active {
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+  }
 }
