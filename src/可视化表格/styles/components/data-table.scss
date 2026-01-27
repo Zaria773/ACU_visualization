@@ -1,0 +1,297 @@
+// =========================================
+// Data Table - 数据表格容器
+// 对应 DataTable.vue 组件
+// =========================================
+
+// 数据表格主容器
+.acu-data-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; // 重要：允许 flex 子元素收缩
+  height: 100%; // 确保占满父容器，让 flex 子元素能正确计算高度
+  gap: 0;
+
+  &.acu-table-loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  // 显示关系图时，强制最大高度
+}
+
+// 工具栏 (固定在顶部，不随卡片滚动)
+.acu-table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--acu-table-head, rgba(0, 0, 0, 0.03));
+  border-bottom: 1px solid var(--acu-border, rgba(0, 0, 0, 0.06));
+  border-radius: 0; // 移除圆角，贴合容器
+  gap: 12px;
+  z-index: 10;
+  flex-shrink: 0; // 不收缩
+}
+
+// 工具栏左侧 (表名 + 条数)
+.acu-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.acu-table-title {
+  font-weight: 600;
+  font-size: calc(var(--acu-font-size, 13px) + 1px);
+  color: var(--acu-title-color, var(--acu-text-main, #333));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acu-table-count {
+  font-size: calc(var(--acu-font-size, 13px) - 2px);
+  color: var(--acu-text-muted, #999);
+  white-space: nowrap;
+}
+
+.acu-table-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+
+  &.acu-badge-changed {
+    background: rgba(102, 126, 234, 0.15);
+    color: var(--acu-title-color, #667eea);
+  }
+
+  &.acu-badge-deleting {
+    background: rgba(231, 76, 60, 0.15);
+    color: var(--acu-danger, #e74c3c);
+  }
+}
+
+// 工具栏右侧 (按钮组)
+.acu-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// 注意: 顶栏按钮请使用通用类 .acu-icon-btn (components/buttons.scss)
+// 高度拖手样式（附加到 .acu-icon-btn）
+.acu-icon-btn.acu-height-handle {
+  cursor: ns-resize;
+}
+
+// 关闭按钮样式（附加到 .acu-icon-btn）
+.acu-icon-btn.acu-close-btn {
+  &:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--acu-danger, #e74c3c);
+  }
+}
+
+// 无边框搜索输入框（内联模式）
+.acu-search-input.acu-search-inline {
+  width: 100px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--acu-radius-sm, 4px);
+  background: transparent;
+  color: var(--acu-text-main, #333);
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+  outline: none;
+  transition: all 0.2s;
+
+  &:focus {
+    width: 140px;
+    background: var(--acu-btn-hover, rgba(0, 0, 0, 0.05));
+  }
+
+  &::placeholder {
+    color: var(--acu-text-muted, #999);
+  }
+}
+
+// 清除图标（内联模式）
+.acu-search-clear {
+  color: var(--acu-text-muted, #999);
+  cursor: pointer;
+  font-size: 11px;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--acu-text-main, #333);
+  }
+}
+
+// 卡片容器 (唯一可滚动区域)
+.acu-cards-container {
+  flex: 1;
+  min-height: 0; // 重要：允许 flex 容器收缩
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain; // 防止滚动穿透
+  padding: 12px; // 足够容纳卡片阴影和边框
+
+  // 卡片视图 - 使用 flexbox 实现固定间距 + 居中对齐
+  &.acu-view-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-content: flex-start;
+    align-items: stretch; // 关键：让卡片在同一行内拉伸到最高卡片的高度
+
+    // 卡片固定宽度
+    > .acu-data-card {
+      flex: 0 0 var(--acu-card-width, 280px);
+      width: var(--acu-card-width, 280px);
+    }
+  }
+
+  // 列表视图 - 也使用 flexbox
+  &.acu-view-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-content: flex-start;
+    align-items: stretch; // 关键：让卡片在同一行内拉伸到最高卡片的高度
+
+    // 列表模式下卡片稍窄
+    > .acu-data-card {
+      flex: 0 0 var(--acu-card-width, 280px);
+      width: var(--acu-card-width, 280px);
+    }
+  }
+}
+
+// =========================================
+// 横向布局模式 - 对应 config.layout === 'horizontal'
+// =========================================
+
+// 横向布局下的卡片容器 - 唯一滚动区域
+.acu-layout-horizontal .acu-cards-container {
+  // 重置 grid 布局，改为 flex 以支持横向滚动
+  flex: 1 1 0;
+  height: 0; // 配合 flex-basis: 0，让 flex 控制实际高度
+  min-height: 0; // 允许收缩
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 14px;
+  align-items: flex-start; // 关键修复：卡片高度自适应内容，不拉伸
+  justify-content: flex-start;
+  white-space: nowrap;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  touch-action: pan-x pan-y !important;
+  padding: 12px;
+  padding-bottom: 8px; // 为滚动条留出空间
+  overscroll-behavior-x: contain;
+
+  // 卡片视图和列表视图都使用相同布局
+  &.acu-view-card,
+  &.acu-view-list {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+}
+
+// 横向布局下的数据卡片
+.acu-layout-horizontal .acu-data-card {
+  flex: 0 0 var(--acu-card-width, 280px) !important;
+  width: var(--acu-card-width, 280px) !important;
+  min-width: var(--acu-card-width, 280px); // 防止被压缩
+  // 关键修复：高度自适应内容
+  align-self: flex-start;
+  height: fit-content; // 让内容决定高度
+  max-height: calc(100% - 4px); // 但不超过容器高度
+  overflow-y: auto;
+  white-space: normal;
+  touch-action: pan-x pan-y !important;
+  display: flex !important; // 强制为 flex 而不是 grid item
+}
+
+// 横向布局下的数据表格容器
+.acu-layout-horizontal .acu-data-table {
+  height: 100%;
+  min-height: 200px; // 确保有最小高度
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // 不在这层滚动
+}
+
+// 横向布局下的工具栏 - 固定不随内容滚动
+.acu-layout-horizontal .acu-table-toolbar {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+// 横向布局下的分页器 - 固定不随内容滚动
+.acu-layout-horizontal .acu-pagination-container {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+// 横向布局下的面板内容 - 不要在这层滚动
+.acu-layout-horizontal .acu-panel-content {
+  overflow: hidden !important; // 滚动只在 .acu-cards-container 内
+  min-height: 150px;
+}
+
+// 空状态
+.acu-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--acu-text-muted, #999);
+  grid-column: 1 / -1;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--acu-font-size, 13px);
+  }
+}
+
+// 分页器
+.acu-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  flex-wrap: wrap;
+}
+
+.acu-btn-page {
+  min-width: 32px;
+  padding: 4px 8px;
+  font-size: calc(var(--acu-font-size, 13px) - 1px);
+
+  &.active {
+    font-weight: 600;
+  }
+}
+
+.acu-page-ellipsis {
+  padding: 4px 8px;
+  color: var(--acu-text-muted, #999);
+}
+

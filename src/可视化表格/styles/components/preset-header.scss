@@ -1,0 +1,160 @@
+// =========================================
+// Preset Header - 预设管理头部样式
+// =========================================
+
+// 固定头部区域：预设管理（使用 position: sticky）
+.acu-preset-header {
+  position: sticky;
+  top: 0;
+  margin: 0 0 16px;
+  padding: 12px 16px; // 与普通 section 保持一致
+  z-index: 10;
+  background: var(--acu-table-head);
+  border-bottom: 1px solid var(--acu-border);
+
+  .acu-settings-row {
+    margin-bottom: 0;
+  }
+
+  // hint 不换行
+  .hint {
+    white-space: nowrap;
+  }
+}
+
+// 预设控制区
+.acu-preset-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto; // 确保控件靠右对齐
+  justify-content: flex-end; // 控件内容靠右
+}
+
+// 预设下拉框
+.acu-preset-dropdown {
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+
+  &.open .acu-preset-dropdown-btn i {
+    transform: rotate(180deg);
+  }
+}
+
+.acu-preset-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  color: var(--acu-text-main);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-text-sub);
+  }
+
+  .acu-preset-selected-name {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  i {
+    font-size: 10px;
+    color: var(--acu-text-sub);
+    transition: transform 0.2s ease;
+    margin-left: 8px;
+  }
+}
+
+.acu-preset-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.acu-preset-option {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+  }
+
+  &.active {
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+  }
+
+  &:first-child {
+    border-radius: 7px 7px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 7px 7px;
+  }
+
+  .acu-preset-option-name {
+    flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .acu-preset-delete-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--acu-text-sub);
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: rgba(231, 76, 60, 0.1);
+      color: #e74c3c;
+    }
+
+    i {
+      font-size: 10px;
+    }
+  }
+
+  &:hover .acu-preset-delete-btn {
+    opacity: 1;
+  }
+}
+
+// 操作按钮组
+.acu-preset-actions {
+  display: flex;
+  gap: 8px;
+}

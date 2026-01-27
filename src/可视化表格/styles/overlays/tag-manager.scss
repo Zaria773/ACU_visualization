@@ -1,0 +1,1460 @@
+/**
+ * 标签管理器样式
+ */
+
+// ==================== 标签管理器弹窗 ====================
+
+// PC 端：超大弹窗
+.acu-tag-manager-modal {
+  width: 90vw;
+  max-width: 1400px;
+  height: 85vh;
+  max-height: 900px;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 768px) {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .acu-modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+  }
+}
+
+.acu-tag-manager-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+// ==================== 已展示区（顶部） ====================
+
+.acu-displayed-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--acu-border);
+  min-height: 50px;
+  background: var(--acu-table-head);
+
+  .acu-displayed-label {
+    font-weight: 500;
+    color: var(--acu-text-sub);
+    font-size: 13px;
+    margin-right: 4px;
+  }
+
+  .acu-displayed-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    background: var(--acu-badge-bg);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--acu-btn-hover);
+
+      .acu-remove-icon {
+        opacity: 1;
+      }
+    }
+
+    .acu-tag-icon {
+      font-size: 14px;
+    }
+
+    .acu-remove-icon {
+      font-size: 10px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+  }
+
+  .acu-empty-hint {
+    color: var(--acu-text-sub);
+    font-size: 12px;
+    font-style: italic;
+  }
+}
+
+// ==================== 搜索栏 ====================
+
+.acu-tag-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--acu-border);
+  background: var(--acu-card-bg);
+
+  i {
+    color: var(--acu-text-sub);
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 13px;
+    color: var(--acu-text-main);
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+    }
+  }
+
+  .acu-clear-search {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--acu-text-sub);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--acu-text-main);
+    }
+  }
+}
+
+// ==================== 工具栏 ====================
+
+.acu-tag-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--acu-border);
+  flex-wrap: wrap;
+  background: var(--acu-bg-panel);
+
+  .acu-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--acu-border);
+    background: var(--acu-btn-bg);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--acu-text-main);
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: var(--acu-btn-hover);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.active {
+      background: var(--acu-title-color);
+      color: white;
+      border-color: var(--acu-title-color);
+    }
+
+    i {
+      font-size: 12px;
+    }
+
+    .btn-label {
+      @media (max-width: 768px) {
+        display: none;
+      }
+    }
+  }
+
+  .export-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
+}
+
+// ==================== 双栏布局 ====================
+
+.acu-tag-manager {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+
+// ==================== 左侧目录树 ====================
+
+.acu-tag-tree {
+  width: 240px;
+  min-width: 200px;
+  overflow-y: auto;
+  border-right: 1px solid var(--acu-border);
+  background: var(--acu-card-bg);
+
+  @media (max-width: 768px) {
+    width: 140px;
+    min-width: 120px;
+  }
+
+  // 根目录图标编辑器
+  .acu-root-icon-editor {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--acu-card-bg);
+    border-bottom: 1px solid var(--acu-border);
+
+    .acu-icon-input {
+      width: 40px;
+      text-align: center;
+      font-size: 16px;
+      padding: 4px;
+      border: 1px solid var(--acu-border);
+      border-radius: 4px;
+      background: var(--acu-bg-panel);
+      color: var(--acu-text-main);
+    }
+
+    .acu-btn-small {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      background: var(--acu-btn-bg);
+      color: var(--acu-text-main);
+      cursor: pointer;
+
+      &:hover {
+        background: var(--acu-btn-hover);
+      }
+    }
+  }
+
+  // 根目录行特殊样式
+  .acu-root-item {
+    font-weight: 500;
+
+    .acu-edit-icon-btn {
+      opacity: 0;
+      padding: 2px 6px;
+      border: none;
+      background: transparent;
+      color: var(--acu-text-sub);
+      cursor: pointer;
+      transition: opacity 0.2s;
+
+      &:hover {
+        color: var(--acu-title-color);
+      }
+    }
+
+    &:hover .acu-edit-icon-btn {
+      opacity: 1;
+    }
+  }
+
+  .acu-tag-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      background: var(--acu-table-hover);
+    }
+
+    &.active {
+      background: var(--acu-title-color-bg);
+      border-left-color: var(--acu-title-color);
+    }
+
+    &.selected {
+      outline: 2px solid var(--acu-title-color);
+      outline-offset: -2px;
+    }
+
+    &.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--acu-bg-panel);
+      border-bottom: 1px solid var(--acu-border);
+    }
+
+    .acu-tree-toggle {
+      width: 16px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--acu-text-sub);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .acu-tree-toggle-placeholder {
+      width: 0px;
+    }
+
+    .acu-tree-icon {
+      font-size: 14px;
+    }
+
+    .acu-tree-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--acu-text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .acu-tree-count {
+      font-size: 11px;
+      color: var(--acu-text-sub);
+    }
+
+    // 分类树操作按钮通用样式
+    .acu-add-btn,
+    .acu-select-btn,
+    .acu-migrate-btn,
+    .acu-delete-btn {
+      padding: 4px 2px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--acu-text-sub);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.2s;
+      font-size: 11px;
+
+      &:hover {
+        opacity: 1;
+        background: var(--acu-btn-hover);
+      }
+
+      &.active {
+        color: var(--acu-title-color);
+        opacity: 1;
+      }
+    }
+
+    .acu-add-btn:hover {
+      color: var(--acu-success, #28a745);
+    }
+
+    .acu-select-btn.active {
+      color: var(--acu-title-color);
+    }
+
+    .acu-migrate-btn:hover {
+      color: var(--acu-warning, #ffc107);
+    }
+
+    .acu-delete-btn:hover {
+      color: var(--acu-danger, #dc3545);
+    }
+
+    &:hover .acu-add-btn,
+    &:hover .acu-select-btn,
+    &:hover .acu-migrate-btn,
+    &:hover .acu-delete-btn,
+    &.migrate-target .acu-migrate-btn {
+      opacity: 1;
+    }
+  }
+
+  .acu-tree-divider {
+    height: 1px;
+    margin: 8px 12px;
+    background: var(--acu-border);
+  }
+
+  .acu-tree-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px;
+    color: var(--acu-text-sub);
+    font-size: 12px;
+
+    i {
+      font-size: 24px;
+      opacity: 0.5;
+    }
+  }
+}
+
+// ==================== 右侧标签网格 ====================
+
+.acu-tag-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--acu-bg-panel);
+
+  .acu-tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: var(--acu-badge-bg);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+
+    &:hover {
+      transform: scale(1.05);
+      background: var(--acu-btn-hover);
+    }
+
+    &.selected {
+      border-color: var(--acu-title-color);
+      background: var(--acu-title-color-bg);
+    }
+
+    &.added {
+      .added-icon {
+        color: #27ae60;
+      }
+    }
+
+    &.mode-add {
+      .add-icon {
+        color: var(--acu-text-sub);
+        font-size: 10px;
+        transition: color 0.2s;
+      }
+      &:hover .add-icon {
+        color: var(--acu-title-color);
+      }
+    }
+    &.mode-add.added {
+      background-color: var(--acu-table-head);
+      opacity: 0.8;
+      cursor: default;
+      &:hover {
+        transform: none;
+        background-color: var(--acu-table-head);
+      }
+    }
+    &.mode-migrate,
+    &.mode-export {
+      .tap-icon {
+        font-size: 10px;
+        color: var(--acu-text-sub);
+        opacity: 0;
+        transition: all 0.2s;
+        transform: rotate(-30deg);
+      }
+      &:hover .tap-icon,
+      &.selected .tap-icon {
+        opacity: 1;
+        color: var(--acu-title-color);
+      }
+    }
+
+    &.mode-delete:hover {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: #e74c3c;
+    }
+
+    .acu-badge-icon {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .acu-badge-label {
+      color: var(--acu-text-main);
+    }
+
+    .acu-badge-delete {
+      color: #e74c3c;
+      font-size: 11px;
+    }
+
+    // 添加/删除模式的动作图标
+    .acu-badge-action {
+      font-size: 11px;
+      color: var(--acu-text-sub);
+      transition: color 0.2s;
+
+      &.added {
+        color: #27ae60;
+      }
+    }
+
+    &.mode-add:hover .acu-badge-action:not(.added) {
+      color: #27ae60;
+    }
+  }
+
+  .acu-grid-empty,
+  .acu-grid-create-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 48px;
+    color: var(--acu-text-sub);
+
+    i {
+      font-size: 36px;
+      opacity: 0.5;
+    }
+
+    span {
+      font-size: 14px;
+    }
+  }
+
+  .acu-grid-create-hint {
+    cursor: pointer;
+    border: 2px dashed var(--acu-border);
+    border-radius: 12px;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--acu-title-color);
+      color: var(--acu-title-color);
+    }
+  }
+}
+
+// ==================== 标签编辑弹窗 ====================
+
+.acu-tag-edit-modal {
+  max-width: 480px;
+  width: 90vw;
+
+  @media (max-width: 768px) {
+    width: 100vw;
+    max-width: none;
+    height: auto;
+    max-height: 90vh;
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  // 头部操作区：保存按钮 + 关闭按钮
+  .acu-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .acu-close-x {
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      color: var(--acu-text-sub);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+      font-size: 14px;
+
+      &:hover {
+        color: var(--acu-text-main);
+        background: var(--acu-btn-hover);
+      }
+    }
+  }
+
+  // 使用设置面板的标准结构，覆盖一些特定样式
+  .acu-modal-body {
+    padding: 0;
+  }
+
+
+  // 分类选择控件：select + 新增按钮
+  .acu-category-control {
+    display: flex;
+    gap: 6px;
+
+    select {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .acu-add-btn {
+      flex-shrink: 0;
+      padding: 8px 10px;
+      border: 1px solid var(--acu-border);
+      border-radius: 6px;
+      background: var(--acu-btn-bg);
+      color: var(--acu-text-main);
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--acu-btn-hover);
+        color: var(--acu-title-color);
+      }
+    }
+  }
+
+  // 新增分类控件行 - 垂直布局避免挤压
+  .acu-new-category-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    background: var(--acu-table-head);
+    margin: -10px -16px;
+    padding: 10px 16px;
+
+    .acu-settings-label {
+      flex: none !important;
+      width: 100% !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 8px !important;
+
+      .hint {
+        white-space: nowrap !important;
+        display: inline !important;
+      }
+    }
+
+    .acu-settings-control {
+      width: 100% !important;
+      margin-left: 0;
+    }
+  }
+
+  .acu-new-category-control {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+
+    input[type='text'] {
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .acu-icon-input {
+      width: 50px !important;
+      flex: none !important;
+      text-align: center;
+    }
+  }
+
+  .acu-textarea {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--acu-border) !important;
+    border-radius: 6px !important;
+    background: var(--acu-btn-bg) !important;
+    color: var(--acu-text-main) !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    resize: vertical !important;
+    min-height: 80px !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: var(--acu-title-color) !important;
+      box-shadow: 0 0 0 2px var(--acu-title-color-bg) !important;
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub) !important;
+      opacity: 0.7 !important;
+    }
+  }
+
+  // 通配符快捷按钮区 - 透明但可点击
+  .acu-wildcard-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+
+    .hint {
+      color: var(--acu-text-sub);
+      font-size: 12px;
+    }
+
+    .acu-wildcard-btn {
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: transparent !important;
+      border: none !important;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--acu-text-sub) !important;
+      transition: all 0.2s;
+      opacity: 0.6;
+
+      &:hover {
+        opacity: 1;
+        color: var(--acu-title-color) !important;
+      }
+
+      code {
+        font-family: inherit;
+        background: transparent !important;
+        color: inherit !important;
+        padding: 0 !important;
+        border: none !important;
+      }
+    }
+  }
+
+  // 通配符说明折叠区
+  .acu-wildcard-help {
+    background: var(--acu-table-head);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 8px;
+
+    .acu-help-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: var(--acu-table-hover);
+      }
+
+      i:first-child {
+        color: #f39c12;
+      }
+
+      i:last-child {
+        margin-left: auto;
+        font-size: 10px;
+        color: var(--acu-text-sub);
+      }
+    }
+
+    ul {
+      margin: 0;
+      padding: 0 12px 12px 36px;
+      font-size: 12px;
+      color: var(--acu-text-sub);
+
+      li {
+        margin: 6px 0;
+      }
+
+      code {
+        background: var(--acu-card-bg) !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
+        font-family: monospace !important;
+        font-size: 11px !important;
+        color: var(--acu-text-main) !important;
+        border: none !important;
+      }
+    }
+  }
+
+}
+
+// ==================== 导入弹窗 ====================
+
+.acu-import-modal {
+  max-width: 500px;
+  width: 90vw;
+}
+
+.acu-import-upload {
+  .acu-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 24px;
+    border: 2px dashed var(--acu-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--acu-title-color);
+      background: var(--acu-title-color-bg);
+    }
+
+    i {
+      font-size: 48px;
+      color: var(--acu-text-sub);
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--acu-text-main);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--acu-text-sub);
+    }
+  }
+}
+
+.acu-import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.acu-import-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+
+  .acu-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    i {
+      font-size: 24px;
+      color: var(--acu-title-color);
+    }
+
+    .acu-stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--acu-text-main);
+    }
+
+    .acu-stat-label {
+      font-size: 12px;
+      color: var(--acu-text-sub);
+    }
+
+    &.acu-stat-conflict {
+      i {
+        color: #f39c12;
+      }
+    }
+  }
+}
+
+.acu-conflict-options {
+  background: var(--acu-table-head);
+  border-radius: 8px;
+  padding: 12px;
+
+  .acu-radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--acu-table-hover);
+    }
+
+    input {
+      margin-top: 2px;
+    }
+
+    span {
+      display: block;
+      font-size: 13px;
+
+      &.hint {
+        font-size: 11px;
+        color: var(--acu-text-sub);
+        margin-top: 2px;
+      }
+    }
+  }
+}
+
+.acu-import-list {
+  .acu-preview-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .acu-preview-section {
+    margin-bottom: 12px;
+
+    .acu-preview-header {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--acu-text-sub);
+      margin-bottom: 8px;
+    }
+
+    .acu-preview-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      .acu-preview-item {
+        padding: 4px 10px;
+        border-radius: 12px;
+        background: var(--acu-badge-bg);
+        font-size: 12px;
+
+        &.conflict {
+          background: rgba(243, 156, 18, 0.2);
+          color: #f39c12;
+        }
+      }
+
+      .acu-preview-more {
+        font-size: 12px;
+        color: var(--acu-text-sub);
+        padding: 4px;
+      }
+    }
+  }
+}
+
+.acu-import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.acu-import-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  font-size: 13px;
+}
+
+// ==================== 分类选择弹出层 ====================
+
+// ==================== 分类选择弹窗（DashboardWidget 使用） ====================
+
+.acu-category-select-modal {
+  max-width: 600px;
+  width: 90vw;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+
+  &.has-subcategories {
+    max-width: 800px;
+  }
+
+  @media (max-width: 768px) {
+    width: 100vw;
+    max-width: none;
+    max-height: 80vh;
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .acu-modal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+  }
+}
+
+// 双栏布局（有子分类时）
+.acu-category-select-dual {
+  display: flex;
+  height: 100%;
+  min-height: 300px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+// 左侧分类树
+.acu-category-tree {
+  width: 180px;
+  min-width: 150px;
+  border-right: 1px solid var(--acu-border);
+  overflow-y: auto;
+  background: var(--acu-card-bg);
+
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--acu-border);
+    max-height: 120px;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .acu-tree-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-left: 3px solid transparent;
+
+    @media (max-width: 768px) {
+      padding: 6px 10px;
+      border-left: none;
+      border-radius: 16px;
+      background: var(--acu-badge-bg);
+    }
+
+    &:hover {
+      background: var(--acu-table-hover);
+    }
+
+    &.active {
+      background: var(--acu-title-color-bg);
+      border-left-color: var(--acu-title-color);
+
+      @media (max-width: 768px) {
+        border-left: none;
+        background: var(--acu-title-color);
+        color: white;
+
+        .acu-tree-count {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+
+    .acu-tree-icon {
+      font-size: 14px;
+
+      i {
+        color: var(--acu-text-sub);
+      }
+    }
+
+    .acu-tree-label {
+      flex: 1;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .acu-tree-count {
+      font-size: 11px;
+      color: var(--acu-text-sub);
+    }
+  }
+}
+
+// 右侧标签网格
+.acu-category-tags-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--acu-bg-panel);
+
+  @media (max-width: 768px) {
+    min-height: 200px;
+  }
+}
+
+// 无子分类时：只显示标签
+.acu-category-tags-only {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 400px;
+
+  .acu-tags-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+// 标签按钮
+.acu-tag-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  background: var(--acu-badge-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--acu-text-main);
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// 空状态
+.acu-tags-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 32px;
+  color: var(--acu-text-sub);
+
+  i {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  span {
+    font-size: 13px;
+  }
+}
+
+// ==================== 二次编辑弹窗 ====================
+
+.acu-pre-edit-modal {
+  max-width: 500px;
+  width: 90vw;
+
+  @media (max-width: 768px) {
+    width: 100vw;
+    max-width: none;
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.acu-pre-edit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+
+  .acu-pre-edit-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--acu-text-main);
+  }
+
+  .acu-pre-edit-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid var(--acu-border);
+    border-radius: 8px;
+    background: var(--acu-input-bg);
+    color: var(--acu-text-main);
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: var(--acu-title-color);
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+    }
+  }
+  .acu-pre-edit-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--acu-table-head);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--acu-text-sub);
+
+    i {
+      color: #f39c12;
+    }
+  }
+
+  .acu-pre-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--acu-border);
+}
+}
+
+// ==================== 同伴选择器 ====================
+
+.acu-companion-selector {
+display: flex;
+flex-direction: column;
+gap: 8px;
+padding: 12px;
+background: var(--acu-bg-panel);
+border: 1px solid var(--acu-border);
+border-radius: 8px;
+
+.acu-companion-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acu-text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acu-avatar-list {
+  display: flex;
+  gap: 8px;
+
+  // PC端：网格布局，纵向滚动
+  flex-wrap: wrap;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px; // 预留滚动条空间
+
+  // 移动端：横向滚动，不换行
+  @media (max-width: 768px) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding-bottom: 8px; // 预留滚动条空间
+  }
+
+  .acu-avatar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 60px;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    .acu-avatar-img-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+      background: var(--acu-table-head);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      &.no-img {
+        background: var(--acu-badge-bg);
+      }
+
+      .acu-avatar-text-icon {
+        font-size: 20px;
+        font-weight: bold;
+        color: var(--acu-text-sub);
+        text-transform: uppercase;
+      }
+    }
+
+    &:hover .acu-avatar-img-wrapper {
+      border-color: var(--acu-title-color);
+    }
+
+    .acu-avatar-name {
+      font-size: 11px;
+      color: var(--acu-text-main);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+  }
+
+  .acu-avatar-empty {
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    color: var(--acu-text-sub);
+    font-size: 12px;
+  }
+}
+}
+
+// ==================== 自定义下拉框 ====================
+
+.acu-custom-select {
+  position: relative;
+  // flex: 1; // 移除 flex: 1，改为自适应宽度
+  min-width: 120px; // 最小宽度
+  max-width: 100%;
+  height: 32px;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 0; // Prevent flex overflow
+
+  &:hover {
+    border-color: var(--acu-text-sub);
+  }
+
+  &.active {
+    border-color: var(--acu-title-color);
+
+    .arrow {
+      transform: rotate(180deg);
+    }
+  }
+
+  .selected-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+
+    i,
+    span:not(.text):not(.placeholder) {
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+      color: var(--acu-text-main);
+    }
+
+    .placeholder {
+      color: var(--acu-text-sub);
+      font-size: 13px;
+    }
+  }
+
+  .arrow {
+    font-size: 12px;
+    color: var(--acu-text-sub);
+    margin-left: 8px;
+    transition: transform 0.2s;
+  }
+
+  .acu-custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 100%; // 至少和触发器一样宽
+    width: max-content; // 随内容撑开
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--acu-bg-panel);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    margin-top: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: var(--acu-table-hover);
+      }
+
+      &.selected {
+        background: var(--acu-title-color-bg);
+        color: var(--acu-title-color);
+
+        .text {
+          color: var(--acu-title-color);
+          font-weight: 500;
+        }
+      }
+
+      i,
+      span:not(.text) {
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .text {
+        font-size: 13px;
+        color: var(--acu-text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}

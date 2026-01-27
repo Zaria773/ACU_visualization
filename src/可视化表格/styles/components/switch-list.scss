@@ -1,0 +1,126 @@
+// =========================================
+// SwitchList - 通用多选开关列表
+// 用于可视化表格中各种多选场景
+// =========================================
+
+.acu-switch-list {
+  background: var(--acu-card-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  overflow: hidden;
+
+  // 头部按钮区 - 按钮靠右
+  &-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--acu-border);
+    background: var(--acu-table-head);
+    justify-content: flex-end; // 按钮靠右
+  }
+
+  // 滚动列表区
+  &-body {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 8px;
+
+    // 滚动条 - 防御酒馆主题污染
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--acu-border) transparent !important;
+
+    &::-webkit-scrollbar {
+      width: 6px !important;
+      height: 6px !important;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--acu-border) !important;
+      border-radius: 3px !important;
+
+      &:hover {
+        background: var(--acu-text-sub) !important;
+      }
+    }
+    &::-webkit-scrollbar-corner {
+      background: transparent !important;
+    }
+  }
+
+  // 单个列表项
+  &-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+
+    &:hover {
+      background: var(--acu-table-hover);
+    }
+
+    // 选中状态
+    &.is-selected {
+      background: var(--acu-title-color-bg);
+    }
+
+    // 标签文本
+    .item-label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--acu-text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // 徽章
+    .item-badge {
+      color: var(--acu-title-color);
+      margin-left: 4px;
+      font-size: 10px;
+    }
+
+    // 小型开关
+    .acu-switch.small {
+      transform: scale(0.65);
+      transform-origin: center;
+      margin: 0 -4px;
+      flex-shrink: 0;
+    }
+  }
+
+  // 空状态
+  &-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--acu-text-sub);
+    font-size: 13px;
+
+    i {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+  }
+
+  // 底部统计
+  &-footer {
+    padding: 8px 12px;
+    border-top: 1px solid var(--acu-border);
+    font-size: 12px;
+    color: var(--acu-text-sub);
+    text-align: center;
+
+    .empty-hint {
+      color: var(--acu-title-color);
+    }
+  }
+}

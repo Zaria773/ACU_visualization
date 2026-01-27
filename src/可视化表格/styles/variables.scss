@@ -1,0 +1,318 @@
+// ============================================
+// ACU Visualizer - CSS Variables
+// 样式变量定义文件
+// ============================================
+
+// =========================================
+// 1. 基础色板 (Base Palette)
+// =========================================
+:root {
+  // 中性色阶
+  --acu-neutral-50: #fafafa;
+  --acu-neutral-100: #f5f5f5;
+  --acu-neutral-200: #eeeeee;
+  --acu-neutral-300: #e0e0e0;
+  --acu-neutral-400: #bdbdbd;
+  --acu-neutral-500: #9e9e9e;
+  --acu-neutral-600: #757575;
+  --acu-neutral-700: #616161;
+  --acu-neutral-800: #424242;
+  --acu-neutral-900: #212121;
+
+  // 语义色
+  --acu-success: #27ae60;
+  --acu-warning: #f39c12;
+  --acu-danger: #e74c3c;
+  --acu-info: #3498db;
+
+  // 布局层级 (Z-Index)
+  --acu-z-ball: 2147483646;
+  --acu-z-overlay: 2147483647;
+  --acu-z-menu: 2147483648;
+
+  // 圆角
+  --acu-radius-sm: 6px;
+  --acu-radius-md: 12px;
+  --acu-radius-lg: 16px;
+
+  // 阴影
+  --acu-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --acu-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --acu-shadow-lg: 0 15px 50px rgba(0, 0, 0, 0.3);
+
+  // 过渡时间
+  --acu-transition-fast: 0.15s;
+  --acu-transition-normal: 0.3s;
+  --acu-transition-slow: 0.5s;
+}
+
+// =========================================
+// 2. 主题变量 (Theme Variables)
+// =========================================
+
+// 默认主题: Retro 复古羊皮纸
+.acu-wrapper,
+.acu-theme-retro {
+  // 背景色
+  --acu-bg-nav: #e6e2d3;
+  --acu-bg-panel: #e6e2d3;
+  --acu-card-bg: #fffef9;
+  --acu-table-head: #efebe4;
+  --acu-table-hover: #f0ebe0;
+  --acu-badge-bg: #efebe4;
+  --acu-input-bg: rgba(255, 255, 255, 0.5);
+  --acu-menu-bg: #fff;
+  --acu-overlay-bg: rgba(94, 75, 53, 0.4);
+
+  // 文本色
+  --acu-text-main: #5e4b35;
+  --acu-text-sub: #999;
+  --acu-menu-text: #333;
+
+  // 边框色
+  --acu-border: #dcd0c0;
+
+  // 按钮色
+  --acu-btn-bg: #dcd0c0;
+  --acu-btn-hover: #cbbba8;
+  --acu-btn-active-bg: #8d7b6f;
+  --acu-btn-active-text: #fdfaf5;
+
+  // 阴影
+  --acu-shadow: rgba(0, 0, 0, 0.1);
+
+  // 动态配置变量（由 JS 覆盖）
+  --acu-card-width: 280px;
+  --acu-font-size: 13px;
+  --acu-highlight: #d35400;
+  --acu-title-color-bg: rgba(211, 84, 0, 0.08);
+  --acu-title-color: #d35400;
+  --acu-accent: #d35400;
+  --acu-nav-cols: repeat(auto-fill, minmax(90px, 1fr));
+  --acu-text-max-height: 80px;
+  --acu-text-overflow: auto;
+  --acu-win-width: 400px;
+  --acu-win-left: 100px;
+  --acu-win-bottom: 100px;
+}
+
+// 暗色主题: Dark
+.acu-theme-dark {
+  --acu-bg-nav: rgba(43, 43, 43, 0.95);
+  --acu-bg-panel: rgba(37, 37, 37, 0.95);
+  --acu-border: #444;
+  --acu-text-main: #eee;
+  --acu-text-sub: #aaa;
+  --acu-btn-bg: rgba(58, 58, 58, 0.5);
+  --acu-btn-hover: #4a4a4a;
+  --acu-btn-active-bg: #6a5acd;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: rgba(51, 51, 51, 0.8);
+  --acu-table-hover: rgba(58, 58, 58, 0.5);
+  --acu-shadow: rgba(0, 0, 0, 0.6);
+  --acu-card-bg: rgba(45, 48, 53, 0.8);
+  --acu-badge-bg: #3a3f4b;
+  --acu-menu-bg: #333;
+  --acu-menu-text: #eee;
+  --acu-input-bg: rgba(0, 0, 0, 0.3);
+  --acu-overlay-bg: rgba(0, 0, 0, 0.75);
+}
+
+// 现代主题: Modern
+.acu-theme-modern {
+  --acu-bg-nav: #ffffff;
+  --acu-bg-panel: #f8f9fa;
+  --acu-border: #e0e0e0;
+  --acu-text-main: #333;
+  --acu-text-sub: #888;
+  --acu-btn-bg: #f1f3f5;
+  --acu-btn-hover: #e9ecef;
+  --acu-btn-active-bg: #007bff;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: #f8f9fa;
+  --acu-table-hover: #f1f3f5;
+  --acu-shadow: rgba(0, 0, 0, 0.08);
+  --acu-card-bg: #ffffff;
+  --acu-badge-bg: #f1f3f5;
+  --acu-menu-bg: #fff;
+  --acu-menu-text: #333;
+  --acu-input-bg: #ffffff;
+  --acu-overlay-bg: rgba(0, 0, 0, 0.3);
+}
+
+// 森林主题: Forest
+.acu-theme-forest {
+  --acu-bg-nav: #e8f5e9;
+  --acu-bg-panel: #e8f5e9;
+  --acu-border: #c8e6c9;
+  --acu-text-main: #2e7d32;
+  --acu-text-sub: #81c784;
+  --acu-btn-bg: #c8e6c9;
+  --acu-btn-hover: #a5d6a7;
+  --acu-btn-active-bg: #43a047;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: #dcedc8;
+  --acu-table-hover: #f1f8e9;
+  --acu-shadow: rgba(0, 0, 0, 0.1);
+  --acu-card-bg: #ffffff;
+  --acu-badge-bg: #dcedc8;
+  --acu-menu-bg: #fff;
+  --acu-menu-text: #2e7d32;
+  --acu-input-bg: rgba(255, 255, 255, 0.7);
+  --acu-overlay-bg: rgba(46, 125, 50, 0.2);
+}
+
+// 海洋主题: Ocean
+.acu-theme-ocean {
+  --acu-bg-nav: #e3f2fd;
+  --acu-bg-panel: #e3f2fd;
+  --acu-border: #bbdefb;
+  --acu-text-main: #1565c0;
+  --acu-text-sub: #64b5f6;
+  --acu-btn-bg: #bbdefb;
+  --acu-btn-hover: #90caf9;
+  --acu-btn-active-bg: #1976d2;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: #bbdefb;
+  --acu-table-hover: #e1f5fe;
+  --acu-shadow: rgba(0, 0, 0, 0.15);
+  --acu-card-bg: #ffffff;
+  --acu-badge-bg: #e3f2fd;
+  --acu-menu-bg: #fff;
+  --acu-menu-text: #1565c0;
+  --acu-input-bg: rgba(255, 255, 255, 0.7);
+  --acu-overlay-bg: rgba(21, 101, 192, 0.2);
+}
+
+// 赛博朋克主题: Cyber
+.acu-theme-cyber {
+  --acu-bg-nav: #000000;
+  --acu-bg-panel: #0a0a0a;
+  --acu-border: #333;
+  --acu-text-main: #00ffcc;
+  --acu-text-sub: #ff00ff;
+  --acu-btn-bg: #1a1a1a;
+  --acu-btn-hover: #333;
+  --acu-btn-active-bg: #ff00ff;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: #111;
+  --acu-table-hover: #1a1a1a;
+  --acu-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+  --acu-card-bg: #050505;
+  --acu-badge-bg: #222;
+  --acu-menu-bg: #111;
+  --acu-menu-text: #00ffcc;
+  --acu-input-bg: #111;
+  --acu-overlay-bg: rgba(0, 0, 0, 0.85);
+}
+
+// 紫色主题: Purple
+.acu-theme-purple {
+  --acu-bg-nav: #ede7f6;
+  --acu-bg-panel: #ede7f6;
+  --acu-border: #d1c4e9;
+  --acu-text-main: #4a148c;
+  --acu-text-sub: #7b1fa2;
+  --acu-btn-bg: #d1c4e9;
+  --acu-btn-hover: #b39ddb;
+  --acu-btn-active-bg: #7b1fa2;
+  --acu-btn-active-text: #fff;
+  --acu-table-head: #f5f0fa;
+  --acu-table-hover: #f3e5f5;
+  --acu-shadow: rgba(74, 20, 140, 0.1);
+  --acu-card-bg: #faf8fc;
+  --acu-badge-bg: #f5f0fa;
+  --acu-menu-bg: #faf8fc;
+  --acu-menu-text: #4a148c;
+  --acu-input-bg: rgba(255, 255, 255, 0.8);
+  --acu-overlay-bg: rgba(74, 20, 140, 0.3);
+}
+
+// =========================================
+// 3. 高亮颜色预设 (Highlight Colors)
+// =========================================
+$highlight-colors: (
+  'orange': (
+    main: #d35400,
+    bg: rgba(211, 84, 0, 0.08),
+  ),
+  'blue': (
+    main: #3498db,
+    bg: rgba(52, 152, 219, 0.08),
+  ),
+  'green': (
+    main: #27ae60,
+    bg: rgba(39, 174, 96, 0.08),
+  ),
+  'purple': (
+    main: #9b59b6,
+    bg: rgba(155, 89, 182, 0.08),
+  ),
+  'red': (
+    main: #e74c3c,
+    bg: rgba(231, 76, 60, 0.08),
+  ),
+  'teal': (
+    main: #1abc9c,
+    bg: rgba(26, 188, 156, 0.08),
+  ),
+  'gold': (
+    main: #f39c12,
+    bg: rgba(243, 156, 18, 0.08),
+  ),
+  'pink': (
+    main: #e91e63,
+    bg: rgba(233, 30, 99, 0.08),
+  ),
+);
+
+// =========================================
+// 4. 字体配置 (Fonts)
+// =========================================
+$font-map: (
+  'hanchan': (
+    name: 'HanChanQuanYuan',
+    url: 'https://fontsapi.zeoseven.com/3/main/result.css',
+  ),
+  'maple': (
+    name: 'Maple Mono',
+    url: 'https://fontsapi.zeoseven.com/442/main/result.css',
+  ),
+  'huiwen': (
+    name: 'HuiWenMingChao',
+    url: 'https://fontsapi.zeoseven.com/256/main/result.css',
+  ),
+  'cooper': (
+    name: 'Cooper Zhengkai',
+    url: 'https://fontsapi.zeoseven.com/482/main/result.css',
+  ),
+  'yffyt': (
+    name: 'YFFYT',
+    url: 'https://fontsapi.zeoseven.com/446/main/result.css',
+  ),
+  'fusion': (
+    name: 'Fusion Pixel',
+    url: 'https://fontsapi.zeoseven.com/570/main/result.css',
+  ),
+  'lxgw': (
+    name: 'LXGW WenKai',
+    url: 'https://fontsapi.zeoseven.com/292/main/result.css',
+  ),
+  'siyuan': (
+    name: 'Source Han Sans SC',
+    url: 'https://fontsapi.zeoseven.com/69/main/result.css',
+  ),
+  'zhuque': (
+    name: 'Zhuque Fangsong',
+    url: 'https://fontsapi.zeoseven.com/7/main/result.css',
+  ),
+);
+
+// 默认字体栈
+$font-stack-default:
+  'Source Han Sans SC',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif;

@@ -1,0 +1,232 @@
+// =========================================
+// Dialogs - 通用对话框
+// 对应 .acu-modal-* 组件
+// =========================================
+
+// 模态框容器 (全屏遮罩)
+.acu-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important; // 强制全屏宽度
+  height: 100vh !important; // 强制全屏高度
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: acu-fadeIn 0.2s ease;
+  pointer-events: auto !important; // 修复：确保弹窗可以接收点击事件
+}
+
+// 模态框主体
+.acu-modal {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  background: var(--acu-bg-panel);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: acu-slideUp 0.3s ease;
+}
+
+// 模态框头部
+.acu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--acu-border);
+  background: var(--acu-table-head);
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--acu-text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      color: var(--acu-title-color);
+    }
+  }
+}
+
+// 模态框关闭按钮
+.acu-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+  }
+}
+
+// 模态框内容区
+.acu-modal-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // 弹窗内滚动条 - 防御酒馆主题污染
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--acu-border) transparent !important;
+
+  &::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border) !important;
+    border-radius: 3px !important;
+
+    &:hover {
+      background: var(--acu-text-sub) !important;
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
+}
+
+// 模态框底部
+.acu-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--acu-border);
+  background: var(--acu-bg-panel);
+}
+
+// 注意: .acu-modal-btn 已迁移到 components/buttons.scss
+
+// 胶囊式完成按钮
+.acu-close-pill {
+  background-color: var(--acu-text-main, #333) !important;
+  color: var(--acu-bg-panel, #fff) !important;
+  border: none !important;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px var(--acu-title-color-bg, rgba(74, 158, 255, 0.2));
+  transition:
+    transform 0.2s,
+    filter 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+
+  &:hover {
+    filter: brightness(0.85);
+    transform: scale(1.05);
+  }
+}
+
+
+
+// =========================================
+// 动画过渡效果 (Vue Transition)
+// =========================================
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+
+  .acu-modal {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+
+  .acu-modal {
+    transform: scale(0.95) translateY(-20px);
+  }
+}
+
+// =========================================
+// Toast 通知
+// 自定义通知组件，确保不被其他元素遮挡
+// =========================================
+.acu-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647; // 最高层级
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  pointer-events: none; // 不阻挡点击
+  // 统一样式：使用面板背景 + 主文本色
+  background: var(--acu-bg-panel);
+  color: var(--acu-text-main);
+  border: 1px solid var(--acu-border);
+
+  i {
+    font-size: 18px;
+    flex-shrink: 0;
+    color: var(--acu-text-main);
+  }
+
+  .acu-toast-message {
+    max-width: 300px;
+    line-height: 1.4;
+  }
+}
+
+// Toast 动画
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px) scale(0.9);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px) scale(0.95);
+}
