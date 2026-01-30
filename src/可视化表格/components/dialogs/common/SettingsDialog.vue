@@ -3,7 +3,7 @@
     <div v-if="visible" class="acu-modal-container" @click.self="handleCancel">
       <div ref="dialogRef" class="acu-modal acu-settings-modal">
         <!-- 头部 -->
-        <div ref="headerRef" class="acu-modal-header">
+        <div class="acu-modal-header">
           <!-- 返回按钮（仅在子面板时显示） -->
           <button v-if="panelHistory.length > 0" class="acu-modal-back" @click.stop="handleBack">
             <i class="fas fa-arrow-left"></i>
@@ -328,7 +328,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 8.0.1 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.1 ——</div>
       </div>
     </div>
   </Transition>
@@ -370,7 +370,6 @@ const emit = defineEmits<{
 // ============================================================
 
 const dialogRef = ref<HTMLElement>();
-const headerRef = ref<HTMLElement>();
 const configStore = useConfigStore();
 const ballStore = useBallAppearanceStore();
 const uiStore = useUIStore();
@@ -428,27 +427,6 @@ const panelTitle = computed(() => {
       return '随机词库管理';
     default:
       return '设置';
-  }
-});
-
-/** 当前面板图标 */
-const panelIcon = computed(() => {
-  switch (currentPanel.value) {
-    case 'tabConfig':
-      return 'fas fa-table';
-    case 'buttonConfig':
-      return 'fas fa-ellipsis-h';
-    case 'ballAppearance':
-      return 'fas fa-circle';
-    case 'themeConfig':
-      return 'fas fa-palette';
-    case 'divination':
-    case 'divinationDimensions':
-      return 'fas fa-star';
-    case 'divinationWordPool':
-      return 'fas fa-book';
-    default:
-      return 'fas fa-cog';
   }
 });
 
