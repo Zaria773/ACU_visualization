@@ -1,0 +1,429 @@
+// =========================================
+// Responsive - 移动端适配样式
+// 从 dialogs.scss 拆分而来
+// =========================================
+
+// =========================================
+// 移动端底部弹起样式（设置面板专用）
+// =========================================
+
+@media (max-width: 768px) {
+  // 移动端模态框容器 - 默认底部对齐
+  .acu-modal-container {
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
+  // 移动端模态框 - 全宽底部样式
+  .acu-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
+  }
+
+  // 设置弹窗在移动端的特殊处理
+  .acu-settings-modal {
+    max-width: none;
+    max-height: 85vh; // 默认使用高的那一档
+    // 隐藏拖动把手（不再需要高度切换）
+    .acu-drag-handle {
+      display: none;
+    }
+    // 调矮顶栏高度（移除拖动把手后）
+    .acu-modal-header {
+      padding: 10px 16px;
+    }
+  }
+
+  // 移动端动画：从底部滑入
+  .modal-enter-from,
+  .modal-leave-to {
+    .acu-modal {
+      transform: translateY(100%);
+    }
+  }
+
+  // 头部样式在移动端添加拖动指示器
+  .acu-modal-header {
+    position: relative;
+    padding-top: 24px;
+  }
+
+  // 拖动把手区域（真实DOM元素）
+  .acu-drag-handle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 20px;
+    cursor: grab;
+    touch-action: none; // 关键：禁用浏览器默认触摸行为
+    z-index: 10;
+
+    // 视觉小条
+    &::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36px;
+      height: 4px;
+      background: var(--acu-border);
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    &:active::after {
+      background: var(--acu-title-color);
+    }
+  }
+
+  // 拖动中的头部样式
+  .acu-modal-header.dragging .acu-drag-handle::after {
+    background: var(--acu-title-color);
+  }
+
+  // 确保内容区域可以正确滚动
+  .acu-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // =========================================
+  // 强制居中的弹窗（不使用底部弹起样式）
+  // =========================================
+  .acu-modal-container.acu-center-modal {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px;
+
+    .acu-modal {
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      border-radius: 16px;
+      margin: 0;
+    }
+
+    // 居中弹窗不需要拖动指示条
+    .acu-modal-header {
+      padding-top: 16px;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+
+// =========================================
+// 移动端布局（PC端默认隐藏，由媒体查询切换）
+// =========================================
+
+.acu-history-layout.acu-mobile-layout {
+  display: none; // PC端默认隐藏
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+
+  // 列表视图（非编辑模式）
+  .acu-history-mobile-list {
+    flex: 1;
+    min-height: 0; // 允许 flex 子元素收缩
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  // 编辑模式：上下分屏布局（PC端保持隐藏，由移动端媒体查询控制显示）
+  &.acu-mobile-edit-mode {
+    // PC端不显示，移除 display: flex !important
+    // 移动端的显示由下方媒体查询控制
+
+    // 上半部分：历史记录
+    .acu-mobile-history-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-bottom: 1px solid var(--acu-border);
+
+      .acu-section-label {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--acu-text-sub);
+        background: var(--acu-table-head);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+
+        i {
+          color: var(--acu-title-color);
+        }
+      }
+
+      .acu-history-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+      }
+    }
+
+    // 下半部分：当前版本（增加高度比例）
+    .acu-mobile-current-section {
+      flex: 1.5; // 当前版本区域比历史记录更高
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+
+      .acu-section-label {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--acu-text-sub);
+        background: var(--acu-table-head);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+
+        i {
+          color: var(--acu-title-color);
+        }
+
+        .acu-changes-count {
+          color: var(--acu-title-color);
+          font-weight: normal;
+        }
+      }
+
+      .acu-current-scroll {
+        flex: 1;
+        min-height: 0; // 允许 flex 子元素收缩
+        overflow-y: auto;
+        padding: 8px;
+      }
+    }
+  }
+
+  // 底部按钮栏
+  // 使用 flex 布局而非 position: fixed/absolute，避免被 backdrop-filter 影响
+  .acu-mobile-actions {
+    flex-shrink: 0; // 不压缩，保持固定高度
+    padding: 10px 12px;
+    // 底部安全区：使用用户配置的安全区大小
+    padding-bottom: calc(24px + var(--acu-safe-area-bottom, 50px));
+    background: var(--acu-bg-panel);
+    border-top: 1px solid var(--acu-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+
+    button {
+      flex: 1;
+      min-width: 80px;
+      min-height: 42px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--acu-border);
+      background: var(--acu-btn-bg);
+      color: var(--acu-text-main);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.acu-btn-primary {
+        background: var(--acu-title-color);
+        color: #fff;
+        border: none;
+      }
+
+      &.acu-btn-preview {
+        background: var(--acu-table-head);
+      }
+
+      &.acu-btn-done {
+        flex-basis: 100%;
+        background: var(--acu-title-color);
+        color: #fff;
+        border: none;
+      }
+
+      i {
+        font-size: 12px;
+      }
+    }
+  }
+
+  // 预览悬浮层
+  .acu-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 2147483641;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: none;
+
+    :deep(.acu-data-card) {
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: var(--acu-bg-panel);
+      border-radius: 12px;
+      pointer-events: auto;
+    }
+  }
+}
+
+// 移动端历史弹窗适配（媒体查询控制布局切换）
+@media (max-width: 768px) {
+  .acu-history-modal {
+    min-width: unset;
+    max-width: none;
+    width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+
+    // 移动端隐藏 PC 专属元素
+    .acu-pc-only {
+      display: none !important;
+    }
+
+    // 移动端显示移动端专属元素
+    .acu-mobile-only {
+      display: block !important;
+    }
+
+    .acu-modal-header {
+      border-radius: 0;
+    }
+
+    .acu-modal-body {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    // 隐藏 PC 布局，显示移动端布局
+    .acu-history-layout.acu-pc-layout {
+      display: none !important;
+    }
+
+    .acu-history-layout.acu-mobile-layout {
+      display: flex !important;
+      flex-direction: column !important;
+      height: calc(100vh - 60px) !important;
+
+      // 编辑模式：移动端才显示
+      &.acu-mobile-edit-mode {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      // 非编辑模式：列表视图
+      .acu-history-mobile-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        padding-bottom: calc(120px + env(safe-area-inset-bottom, 20px));
+      }
+
+      // 编辑模式：上下分屏布局
+      &.acu-mobile-edit-mode {
+        display: flex !important;
+        flex-direction: column !important;
+
+        // 上半部分：历史记录
+        .acu-mobile-history-section {
+          flex: 1;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0;
+          border-bottom: 1px solid var(--acu-border);
+
+          .acu-section-label {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--acu-text-sub);
+            background: var(--acu-table-head);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+
+            i {
+              color: var(--acu-title-color);
+            }
+          }
+
+          .acu-history-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+          }
+        }
+
+        // 下半部分：当前版本
+        .acu-mobile-current-section {
+          flex: 1.5;
+          display: flex !important;
+          flex-direction: column !important;
+          min-height: 0;
+
+          .acu-section-label {
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--acu-text-sub);
+            background: var(--acu-table-head);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+
+            i {
+              color: var(--acu-title-color);
+            }
+
+            .acu-changes-count {
+              color: var(--acu-title-color);
+              font-weight: normal;
+            }
+          }
+
+          .acu-current-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px;
+          }
+        }
+      }
+    }
+  }
+}

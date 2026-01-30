@@ -1,0 +1,40 @@
+// ============================================
+// 移动端适配 - 仪表盘弹窗放在上部
+// ============================================
+
+@media (max-width: 768px) {
+  // 操作配置弹窗 - 放在上部
+  .acu-modal-container:has(.acu-actions-config-modal) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding-top: 10vh;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .acu-actions-config-modal {
+    width: 95%;
+    max-width: 400px;
+    max-height: 55vh;
+    border-radius: 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+
+    .acu-modal-body {
+      flex: 1;
+      max-height: calc(55vh - 100px);
+      overflow-y: auto;
+    }
+  }
+
+  // 隐藏拖动把手
+  .acu-actions-config-modal .acu-drag-handle {
+    display: none;
+  }
+
+  // 重置头部 padding
+  .acu-actions-config-modal .acu-modal-header {
+    padding-top: 16px;
+  }
+}

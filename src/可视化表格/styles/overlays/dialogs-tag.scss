@@ -1,0 +1,122 @@
+// =========================================
+// Tag - 标签系统样式
+// 从 dialogs.scss 拆分而来
+// =========================================
+
+// ========== 标签系统样式 ==========
+
+// 工具栏
+.acu-tag-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: var(--acu-input-bg);
+  border-radius: 6px;
+}
+
+// 注意: 搜索框和按钮请使用通用样式
+// - 搜索框: .acu-search-input.acu-search-inline (components/data-table.scss)
+// - 按钮: .acu-icon-btn 或 .acu-tool-btn (components/buttons.scss)
+
+// 分类分栏条（通用）
+
+// 一级分类分栏
+
+// 二级分类分栏
+
+// 已展示的标签区
+
+.acu-displayed-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 4px;
+  font-size: 12px;
+
+}
+
+// 标签库滚动区
+
+// 标签编辑区
+
+// 分类选择容器
+
+.acu-wildcard-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+
+  .hint {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+  }
+}
+
+.acu-wildcard-btn {
+  padding: 4px 8px;
+  background: var(--acu-badge-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+  }
+}
+
+// 迷你弹窗
+
+.acu-mini-dialog {
+  background: var(--acu-bg-panel);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 280px;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.acu-mini-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--acu-border);
+
+  span {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--acu-text-main);
+  }
+}
+
+.acu-mini-dialog-body {
+  margin-bottom: 16px;
+}
+
+.acu-mini-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--acu-border);
+}
+
+.acu-input-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--acu-text-sub);
+  opacity: 0.8;
+}

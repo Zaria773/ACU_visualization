@@ -1,0 +1,206 @@
+// =========================================
+// History - 历史记录弹窗样式
+// 从 dialogs.scss 拆分而来
+// =========================================
+
+// =========================================
+// HistoryDialog 历史记录弹窗样式
+// =========================================
+
+.acu-history-modal {
+  min-width: 800px;
+  max-width: 1200px;
+  max-height: 90vh;
+
+  // PC 端才显示的元素
+  .acu-pc-only {
+    display: block;
+  }
+
+  // 移动端才显示的元素
+  .acu-mobile-only {
+    display: none;
+  }
+
+  .acu-modal-body {
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+// PC 端左右布局
+.acu-history-layout.acu-pc-layout {
+  display: flex;
+  height: calc(90vh - 60px);
+  overflow: hidden;
+
+  .acu-history-sidebar {
+    flex: 1;
+    min-width: 320px;
+    max-width: 480px;
+    overflow-y: auto;
+    border-right: 1px solid var(--acu-border);
+    padding: 20px 24px;
+    background: var(--acu-table-head);
+  }
+
+  .acu-history-main {
+    flex: 1;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+    overflow: hidden;
+  }
+}
+
+// 历史记录列表
+.acu-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// 折叠项（使用原生 details）
+.acu-history-item {
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  background: var(--acu-card-bg);
+  overflow: hidden;
+
+  &[open] {
+    .acu-history-summary {
+      border-bottom: 1px solid var(--acu-border);
+    }
+  }
+}
+
+.acu-history-summary {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+  list-style: none; // 移除默认三角
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::before {
+    content: '▶';
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    background: var(--acu-table-hover);
+  }
+}
+
+details[open] > .acu-history-summary::before {
+  transform: rotate(90deg);
+}
+
+.acu-history-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+
+  &.manual {
+    background: var(--acu-highlight-manual-bg, rgba(211, 84, 0, 0.15));
+    color: var(--acu-highlight-manual, #d35400);
+  }
+
+  &.ai {
+    background: var(--acu-highlight-ai-bg, rgba(52, 152, 219, 0.15));
+    color: var(--acu-highlight-ai, #3498db);
+  }
+}
+
+.acu-history-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acu-history-time {
+  font-size: 11px;
+  color: var(--acu-text-sub);
+  font-weight: normal;
+  flex-shrink: 0;
+}
+
+.acu-history-card-wrapper {
+  padding: 8px;
+
+  // 历史弹窗内的卡片使用 100% 宽度，不使用固定宽度
+  .acu-data-card {
+    width: 100% !important;
+    flex: none !important;
+  }
+}
+
+// 当前版本卡片区域也需要覆盖
+.acu-current-card,
+.acu-current-scroll {
+  .acu-data-card {
+    width: 100% !important;
+    flex: none !important;
+  }
+}
+
+// 当前卡片区域
+.acu-current-card-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acu-text-main);
+  background: var(--acu-table-head);
+  border-radius: 8px 8px 0 0;
+  border: 1px solid var(--acu-border);
+  border-bottom: none;
+
+  i {
+    color: var(--acu-title-color);
+  }
+
+  .acu-changes-count {
+    font-weight: normal;
+    color: var(--acu-title-color);
+  }
+}
+
+.acu-current-card {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--acu-border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+// 操作按钮
+.acu-history-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--acu-border);
+  flex-wrap: wrap;
+
+  .acu-btn-start-edit {
+    flex: 1;
+  }
+}
+
+// 历史触发按钮样式已移到 data-card.scss 的 .acu-history-btns 容器内
+// 删除此处旧样式，避免 position: absolute 导致按钮重叠

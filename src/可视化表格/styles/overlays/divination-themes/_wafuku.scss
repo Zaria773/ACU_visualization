@@ -1,0 +1,240 @@
+// ============================================
+// 和风御札主题样式
+// 传统日式御札风格，素雅淡黄纸质
+// ============================================
+
+// 颜色变量
+$wafuku-colors: (
+  paper: #F9F2E6,
+  ink: #4A3728,
+  gold: #C6A664,
+  accent: #8B5E3C,
+  dark: #2C1810,
+);
+
+// 字体
+$wafuku-font-heading: 'ZCOOL XiaoWei', 'Cinzel', serif;
+$wafuku-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
+
+// ============================================
+// 卡背设计
+// ============================================
+.card-back {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 6px solid #4A3222;
+  position: relative;
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(139, 94, 60, 0.5);
+    border-radius: 8px;
+    pointer-events: none;
+  }
+}
+
+// ============================================
+// 卡面设计
+// ============================================
+.card-front {
+  width: 100%;
+  height: 100%;
+  background-color: map-get($wafuku-colors, paper);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border: 6px solid map-get($wafuku-colors, ink);
+  position: relative;
+
+  // 纹理层
+  &__texture {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity: 0.2;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+
+  // 内边框
+  &__border-outer {
+    position: absolute;
+    inset: 12px;
+    border: 1px solid map-get($wafuku-colors, gold);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  &__border-inner {
+    position: absolute;
+    inset: 16px;
+    border: 1px solid rgba(139, 94, 60, 0.3);
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  // 内容区
+  &__content {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
+  // 顶部图标
+  &__top-icon {
+    margin-top: 32px;
+    margin-bottom: 16px;
+    color: map-get($wafuku-colors, accent);
+    animation: divination-pulse 2s ease-in-out infinite;
+  }
+
+  // 运势名称
+  &__luck-name {
+    font-family: $wafuku-font-heading;
+    font-size: 24px;
+    color: map-get($wafuku-colors, ink);
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-bottom: 2px solid map-get($wafuku-colors, gold);
+    padding-bottom: 8px;
+    margin-bottom: 8px; // 减少标题下方间距 (16->8)
+    width: 85%;
+
+    @media (min-width: 768px) {
+      font-size: 28px;
+    }
+  }
+
+  // 维度展示区域
+  &__dimensions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px; // 减少维度下方间距 (24->8)
+    width: 85%;
+  }
+
+  &__dimension-item {
+    font-family: $wafuku-font-body;
+    font-size: 13px;
+    color: map-get($wafuku-colors, ink);
+    background-color: rgba(198, 166, 100, 0.15);
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(198, 166, 100, 0.3);
+
+    @media (min-width: 768px) {
+      font-size: 14px;
+    }
+  }
+
+  // 关键词区域
+  &__keywords {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    padding: 0 16px;
+    flex-grow: 1;
+    justify-content: flex-start;
+    padding-top: 0; // 紧贴顶部
+    overflow-y: auto; // 启用垂直滚动
+
+    // 隐藏滚动条
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  &__keyword {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &-line {
+      height: 1px;
+      width: 32px;
+      background-color: rgba(198, 166, 100, 0.5);
+      margin: 0 8px;
+    }
+
+    &-text {
+      font-family: $wafuku-font-heading;
+      color: map-get($wafuku-colors, accent);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: bold;
+      white-space: nowrap; // 防止换行
+    }
+  }
+}
+
+// ============================================
+// 四角装饰 SVG
+// ============================================
+.card-front__corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  color: map-get($wafuku-colors, gold);
+  z-index: 10;
+
+  &--tl {
+    top: 12px;
+    left: 12px;
+  }
+
+  &--tr {
+    top: 12px;
+    right: 12px;
+    transform: scaleX(-1);
+  }
+
+  &--bl {
+    bottom: 12px;
+    left: 12px;
+    transform: scaleY(-1);
+  }
+
+  &--br {
+    bottom: 12px;
+    right: 12px;
+    transform: scale(-1);
+  }
+}
+
+// 主题特定的塔罗卡片容器样式
+.tarot-card--theme-wafuku {
+  // 未翻转时的卡背浮动动画
+  &:not(.tarot-card--flipped) .tarot-card__back {
+    animation: divination-float 4s ease-in-out infinite;
+  }
+}

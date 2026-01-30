@@ -1,0 +1,145 @@
+// =========================================
+// Options Panel - 选项聚合面板组件
+// 对应 OptionsPanel.vue
+// 样式与原代码 renderOptionsPanel 保持一致
+// =========================================
+
+// 选项面板容器
+.acu-options-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+// 头部 (复用 .acu-panel-header)
+.acu-options-header {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  user-select: none;
+}
+
+.acu-options-title {
+  font-size: 1.2em;
+  font-weight: 800;
+  color: var(--acu-title-color, #333);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i {
+    color: var(--acu-title-color, #667eea);
+  }
+}
+
+.acu-options-count {
+  color: var(--acu-text-sub, #666);
+  font-size: 0.9em;
+}
+
+// 内容滚动区域
+.acu-options-content {
+  flex: 1;
+  overflow-y: auto !important;
+  min-height: 0;
+  padding: 10px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 10;
+}
+
+// 选项表格列表容器
+.acu-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+
+// 空状态
+.acu-empty-state {
+  text-align: center;
+  color: var(--acu-text-sub, #666);
+  padding: 30px;
+  font-size: 0.9em;
+}
+
+// 选项行容器
+.acu-option-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// 选项行 (与原代码 createOptionItemHtml 样式一致)
+.acu-embedded-option-row {
+  display: flex;
+  flex-direction: column; // 改为纵向布局
+  align-items: flex-start;
+  gap: 8px; // 标签和内容之间的间距
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid var(--acu-border, rgba(255, 255, 255, 0.1));
+  cursor: pointer;
+  transition:
+    background 0.1s,
+    transform 0.1s;
+  user-select: none;
+  touch-action: pan-y;
+
+  &:hover {
+    background: var(--acu-table-hover, rgba(255, 255, 255, 0.1));
+    border-color: var(--acu-title-color, #667eea);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+// 选项标签区域
+.acu-embedded-option-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%; // 占满宽度
+  flex-shrink: 0;
+}
+
+// 选项标签样式
+// 注意：HTML中需同时应用 .acu-badge 类
+.acu-option-tag {
+  background: var(--acu-btn-bg, rgba(255, 255, 255, 0.1));
+  color: var(--acu-title-color, #fff);
+  border: 1px solid var(--acu-border);
+  font-weight: bold;
+}
+
+// 选项文本
+.acu-embedded-option-text {
+  width: 100%; // 占满宽度
+  color: var(--acu-text-main, #333);
+  font-weight: 500;
+  font-size: var(--acu-font-size, 14px);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+  // 高度自适应由内容撑开，无需额外设置
+}
+
+// =========================================
+// 旧版兼容样式 (保留以防其他地方使用)
+// =========================================
+
+// 选项网格 (复杂模式)
+
+// 选项组
+
+// 矩阵网格
+
+// 选项列表（复杂模式）
+
+// 快捷操作
+

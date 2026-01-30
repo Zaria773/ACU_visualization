@@ -1,0 +1,316 @@
+// =========================================
+// Ball - 悬浮球外观设置样式
+// 从 dialogs.scss 拆分而来
+// =========================================
+
+// =========================================
+// BallAppearancePanel 悬浮球外观设置面板
+// =========================================
+
+// 预览区固定在顶部（使用 position: sticky）
+.acu-ball-preview-fixed {
+  position: sticky;
+  top: -20px; // 抵消 modal-body 的 padding
+  margin: -20px -20px 16px; // 扩展到边缘，底部留 margin
+  padding: 28px 36px 12px 36px; // 上28 左右36 下12
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--acu-table-head);
+  border-bottom: 1px solid var(--acu-border);
+}
+
+// 重置按钮（预览区右上角）
+// 使用通用 .acu-icon-btn，附加定位样式
+.acu-reset-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+// 标题行（标题与按钮同行）
+.acu-settings-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .acu-settings-title {
+    margin-bottom: 0;
+  }
+}
+
+// 预览按钮组
+.acu-preview-buttons {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+// 注意: .acu-tool-btn 已迁移到 components/buttons.scss
+
+// 悬浮球预览
+.acu-ball-preview {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--ball-size, 48px);
+  height: var(--ball-size, 48px);
+  border-radius: 50%;
+  background: var(--ball-bg-color, rgba(0, 0, 0, 0.5));
+  border: 2px solid var(--ball-border-color-rgba, rgba(255, 255, 255, 0.3));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+
+  // 图标样式
+  i {
+    font-size: calc(var(--ball-size, 48px) * 0.4);
+    color: #fff;
+  }
+
+  // 图片样式
+  img {
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
+
+// 动画类型网格 - 两列并排
+.acu-anim-grid {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.acu-anim-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--acu-btn-bg);
+  border: 2px solid var(--acu-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-text-sub);
+  }
+
+  &.active {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+  }
+
+  .acu-anim-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .acu-anim-name {
+    font-size: 12px;
+    color: var(--acu-text-main);
+  }
+}
+
+// 颜色选择器 - 代码框左+预览右同行
+.acu-color-picker-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acu-color-input {
+  width: auto;
+  min-width: 75px;
+  max-width: 90px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: monospace;
+  text-transform: uppercase;
+  background: var(--acu-btn-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 6px;
+  color: var(--acu-text-main);
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-title-color);
+  }
+}
+
+// 图标类型按钮行 - 图标和文字同行，移动端全部放一行
+.acu-icon-type-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+// 类型选择按钮 - 大按钮用于悬浮球外观类型选择
+// 注意: 通用小图标按钮请用 .acu-icon-btn (components/buttons.scss)
+.acu-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background: var(--acu-btn-bg);
+  border: 2px solid var(--acu-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  input[type='radio'] {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    border-color: var(--acu-text-sub);
+  }
+
+  &.active {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg);
+  }
+
+  i {
+    font-size: 16px;
+    color: var(--acu-text-main);
+  }
+
+  .emoji-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  > span:last-child {
+    font-size: 12px;
+    color: var(--acu-text-main);
+    white-space: nowrap;
+  }
+}
+
+// 图标内容输入区
+
+// 图片预览行 - 缩略图+清除按钮
+.acu-image-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.acu-preview-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--acu-border);
+}
+
+// 图片预览容器 - 支持裁剪参数
+.acu-preview-thumb-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--acu-border);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--acu-title-color);
+
+    .acu-edit-hint {
+      opacity: 1;
+    }
+  }
+
+  .acu-edit-hint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}
+
+// 图片操作按钮组
+.acu-image-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// 调整按钮
+.acu-adjust-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 6px;
+  color: var(--acu-title-color);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-title-color);
+    color: #fff;
+  }
+
+  i {
+    font-size: 10px;
+  }
+}
+
+
+
+// 悬浮球外观面板容器
+.acu-ball-appearance-panel {
+  padding: 0;
+}
+
+
+
+// 预览按钮组（第二处）
+.acu-preview-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+
+// 动画选项图标和名称
+.acu-anim-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.acu-anim-name {
+  font-size: 11px;
+  color: var(--acu-text-sub);
+  margin-top: 4px;
+}

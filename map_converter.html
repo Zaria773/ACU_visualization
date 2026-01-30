@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>现实地图转 SVG (AI 辅助专用)</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; gap: 30px; background-color: #f4f4f9; color: #333; }
+        h2 { margin-top: 0; color: #444; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .column { flex: 1; display: flex; flex-direction: column; gap: 15px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        textarea {
+            height: 300px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        #svg-container {
+            border: 2px dashed #ccc;
+            width: 512px;
+            height: 512px;
+            background: #2E8B57; /* 默认绿地背景 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        label { display: flex; align-items: center; justify-content: space-between; font-weight: 500; }
+        input[type="color"] { border: none; width: 40px; height: 25px; cursor: pointer; }
+
+        button {
+            padding: 12px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0056b3; }
+        button.download { background: #28a745; }
+        button.download:hover { background: #218838; }
+
+        .help {
+            font-size: 0.9em;
+            color: #555;
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            line-height: 1.5;
+        }
+        .help a { color: #007bff; text-decoration: none; }
+        .help a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="column">
+    <h2>1. 数据输入</h2>
+    <div class="help">
+        <strong>第一步：获取数据</strong><br>
+        去 <a href="https://geojson.io/" target="_blank">geojson.io</a> 网站：<br>
+        1. 在地图上找到你想生成的城市区域。<br>
+        2. 用左侧工具栏的矩形或多边形工具框选区域，或者手动画几条路。<br>
+        3. 复制右侧生成的 JSON 代码，粘贴到下方。<br>
+        <br>
+        <em>进阶：也可以去 <a href="http://datav.aliyun.com/portal/school/atlas/area_selector" target="_blank">阿里云 DataV</a> 下载行政区 JSON。</em>
+    </div>
+    <textarea id="geojson-input" placeholder="在此处粘贴 GeoJSON 内容..."></textarea>
+
+    <h3>颜色映射设置 (AI 语义)</h3>
+    <div class="controls">
+        <label>住宅 (Brown): <input type="color" id="color-residential" value="#8B4513" title="居民区，对应 house/residential"></label>
+        <label>商业 (Grey): <input type="color" id="color-commercial" value="#708090" title="高楼/商业区，对应 skyscrapers"></label>
+        <label>绿地 (Green): <input type="color" id="color-park" value="#228B22" title="公园/草地"></label>
+        <label>道路 (Beige): <input type="color" id="color-road" value="#F5DEB3"></label>
+        <label>水域 (Blue): <input type="color" id="color-water" value="#1E90FF"></label>
+        <label>背景 (Green): <input type="color" id="color-bg" value="#2E8B57"></label>
+    </div>
+    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+        <label><input type="checkbox" id="random-variation" checked> 开启随机色差 (防止建筑粘连)</label>
+        <label style="color: #d63384; font-weight: bold;">
+            <input type="checkbox" id="auto-grid" checked>
+            自动填充虚构路网 (专治只有轮廓的大色块)
+        </label>
+        <label style="font-size: 0.8em; margin-left: 20px;">
+            网格密度: <input type="range" id="grid-size" min="10" max="100" value="30" oninput="renderSVG()">
+        </label>
+    </div>
+
+    <button onclick="renderSVG()">⚡ 生成 SVG 预览</button>
+</div>
+
+<div class="column">
+    <h2>2. 结果预览 & 下载</h2>
+    <div id="svg-container">
+        <span style="color: white; font-weight: bold; text-shadow: 0 1px 2px black;">预览区域</span>
+    </div>
+
+    <button class="download" onclick="downloadSVG()">💾 下载 SVG 文件</button>
+
+    <div class="help">
+        <strong>生成的 SVG 怎么用？</strong><br>
+        1. <strong>AI 生图 (ControlNet)</strong>：<br>
+           把 SVG 截图或下载，放入 Stable Diffusion 的 ControlNet (Segmentation 模式)。<br>
+           <em>提示词：top down view map, realistic...</em><br>
+        <br>
+        2. <strong>网页交互</strong>：<br>
+           在网页代码中直接使用这个 SVG，设置为透明，它就是天然的点击热区！
+    </div>
+</div>
+
+<script>
+    let currentSVG = null;
+
+    function renderSVG() {
+        const input = document.getElementById('geojson-input').value;
+        const container = document.getElementById('svg-container');
+
+        // 获取颜色设置
+        const colorResidential = document.getElementById('color-residential').value;
+        const colorCommercial = document.getElementById('color-commercial').value;
+        const colorPark = document.getElementById('color-park').value;
+        const colorRoad = document.getElementById('color-road').value;
+        const colorWater = document.getElementById('color-water').value;
+        const colorBg = document.getElementById('color-bg').value;
+        const useRandom = document.getElementById('random-variation').checked;
+
+        // 辅助函数：颜色微调 (让每个块颜色不一样，AI更好识别边缘)
+        function jitterColor(hex, amount = 20) {
+            if (!useRandom) return hex;
+            const num = parseInt(hex.slice(1), 16);
+            let r = (num >> 16) + (Math.random() * amount - amount/2);
+            let g = ((num >> 8) & 0x00FF) + (Math.random() * amount - amount/2);
+            let b = (num & 0x0000FF) + (Math.random() * amount - amount/2);
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+        }
+
+        // 设置容器背景色
+        container.style.backgroundColor = colorBg;
+
+        if (!input.trim()) {
+            alert("请先粘贴 GeoJSON 数据！");
+            return;
+        }
+
+        try {
+            const geojson = JSON.parse(input);
+            container.innerHTML = ''; // 清空
+
+            const width = 512;
+            const height = 512;
+
+            const useAutoGrid = document.getElementById('auto-grid').checked;
+            const gridSize = parseInt(document.getElementById('grid-size').value);
+
+            // 创建 SVG
+            const svg = d3.select("#svg-container")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("xmlns", "http://www.w3.org/2000/svg");
+
+            // 定义虚构路网纹理 (Pattern)
+            const defs = svg.append("defs");
+
+            // 商业区/高楼纹理
+            const commercialPattern = defs.append("pattern")
+                .attr("id", "pattern-commercial")
+                .attr("patternUnits", "userSpaceOnUse")
+                .attr("width", gridSize)
+                .attr("height", gridSize);
+            // 路底
+            commercialPattern.append("rect")
+                .attr("width", gridSize)
+                .attr("height", gridSize)
+                .attr("fill", colorRoad);
+            // 建筑块 (中间留出路)
+            commercialPattern.append("rect")
+                .attr("x", 2)
+                .attr("y", 2)
+                .attr("width", gridSize - 4)
+                .attr("height", gridSize - 4)
+                .attr("fill", colorCommercial);
+
+            // 住宅区纹理
+            const residentialPattern = defs.append("pattern")
+                .attr("id", "pattern-residential")
+                .attr("patternUnits", "userSpaceOnUse")
+                .attr("width", gridSize * 0.7) // 住宅更密集
+                .attr("height", gridSize * 0.7);
+            residentialPattern.append("rect")
+                .attr("width", gridSize * 0.7)
+                .attr("height", gridSize * 0.7)
+                .attr("fill", colorRoad);
+            residentialPattern.append("rect")
+                .attr("x", 1)
+                .attr("y", 1)
+                .attr("width", gridSize * 0.7 - 2)
+                .attr("height", gridSize * 0.7 - 2)
+                .attr("fill", colorResidential);
+
+
+            // 添加背景矩形 (为了导出时也有背景)
+            svg.append("rect")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("fill", colorBg);
+
+            // 智能投影：自动缩放 GeoJSON 以适应 512x512 画布
+            const projection = d3.geoMercator()
+                .fitSize([width, height], geojson);
+
+            const pathGenerator = d3.geoPath().projection(projection);
+
+            // 绘制路径
+            svg.selectAll("path")
+                .data(geojson.features)
+                .enter()
+                .append("path")
+                .attr("d", pathGenerator)
+                .attr("stroke", "none")
+                .attr("fill", d => {
+                    // 增强的语义猜测逻辑
+                    const props = d.properties || {};
+                    const type = (props.type || props.kind || props.building || props.landuse || props.leisure || props.highway || "").toLowerCase();
+                    const name = (props.name || "").toLowerCase();
+
+                    // 水域
+                    if (type.includes('water') || type.includes('river') || type.includes('lake') || name.includes('河') || name.includes('湖')) return colorWater;
+
+                    // 道路
+                    if (type.includes('road') || type.includes('highway') || type.includes('street') || props.highway) return colorRoad;
+
+                    // 绿地/公园
+                    if (type.includes('park') || type.includes('grass') || type.includes('garden') || type.includes('forest') || type.includes('pitch')) return jitterColor(colorPark, 10);
+
+                    // 商业/高楼 (根据属性或名字猜测)
+                    if (type.includes('commercial') || type.includes('retail') || type.includes('office') || type.includes('school') || type.includes('university') || name.includes('大厦') || name.includes('中心') || name.includes('商场')) {
+                        return jitterColor(colorCommercial);
+                    }
+
+                    // 默认住宅/一般建筑
+                    if (useAutoGrid && !type.includes('water') && !type.includes('park')) {
+                        return "url(#pattern-residential)";
+                    }
+                    return jitterColor(colorResidential);
+                })
+                // 如果是线型数据（如道路），设置描边
+                .attr("stroke", d => {
+                     const type = (d.geometry.type);
+                     // 检查属性是否明确是路
+                     const props = d.properties || {};
+                     if (props.highway || type === 'LineString' || type === 'MultiLineString') return colorRoad;
+                     return "none";
+                })
+                .attr("stroke-width", d => {
+                     // 简单区分主干道
+                     const props = d.properties || {};
+                     if (props.highway === 'primary' || props.highway === 'motorway') return 8;
+                     return 3;
+                });
+
+            currentSVG = svg.node();
+
+        } catch (e) {
+            alert("GeoJSON 解析失败，请检查格式是否正确。\n错误信息: " + e.message);
+            console.error(e);
+        }
+    }
+
+    function downloadSVG() {
+        if (!currentSVG) {
+            alert("请先生成 SVG！");
+            return;
+        }
+
+        const serializer = new XMLSerializer();
+        const source = serializer.serializeToString(currentSVG);
+
+        // 添加 XML 声明
+        const blob = new Blob(['<?xml version="1.0" standalone="no"?>\r\n', source], {type: "image/svg+xml;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "map_base.svg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+</script>
+
+</body>
+</html>

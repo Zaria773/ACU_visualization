@@ -1,0 +1,574 @@
+// ============================================
+// ACU Settings Panel Component Styles
+// ============================================
+// 设置面板组件样式
+// 包含: TabConfigPanel, NavButtonConfigPanel
+
+// --------------------------------------------
+// 通用配置面板样式
+// --------------------------------------------
+
+.acu-tab-config-panel,
+.acu-button-config-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.acu-btn-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub, #999);
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-btn-hover, #cbbba8);
+    color: var(--acu-text-main, #5e4b35);
+  }
+
+  // 全部下移按钮样式
+  &.acu-btn-clear {
+    font-size: 11px;
+
+    &:hover {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+    }
+  }
+}
+
+.acu-config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--acu-text-main, #5e4b35);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .acu-btn-reset {
+      margin-left: auto;
+      font-size: 11px;
+    }
+  }
+}
+
+.acu-config-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--acu-table-head, #efebe4);
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--acu-text-sub, #999);
+
+  i {
+    color: var(--acu-title-color, #d35400);
+  }
+}
+
+// --------------------------------------------
+// Tab 配置面板特有样式 - 双区域布局
+// --------------------------------------------
+
+// 展示区容器
+.acu-visible-area {
+  background: var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px dashed var(--acu-border, #dcd0c0);
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+
+    i {
+      color: var(--acu-title-color, #d35400);
+    }
+  }
+}
+
+// 隐藏区容器
+.acu-hidden-area {
+  background: var(--acu-table-head, #efebe4);
+  border-radius: 8px;
+  padding: 12px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+
+    i {
+      color: var(--acu-text-sub, #999);
+    }
+  }
+}
+
+// 展示区网格布局（复用导航栏Tab样式）
+.acu-tab-visible-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 4px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// 展示区配置按钮
+.acu-tab-config-btn {
+  position: relative;
+  cursor: grab;
+  // 移动端：阻止触摸拖拽时触发滚动
+  touch-action: none;
+
+  &:hover {
+    border-color: #e74c3c !important;
+    background: rgba(231, 76, 60, 0.1) !important;
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    border: 2px dashed var(--acu-title-color, #d35400) !important;
+  }
+
+  .tab-type-badge-mini {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--acu-title-color, #d35400);
+    color: #fff;
+    line-height: 1.2;
+  }
+}
+
+// 隐藏区列表
+.acu-tab-hidden-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 4px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// 隐藏区单项
+.acu-tab-hidden-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: 6px;
+  background: var(--acu-card-bg, #fffef9);
+  color: var(--acu-text-sub, #999);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+
+  &:hover {
+    background: var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
+    border-color: var(--acu-title-color, #d35400);
+    color: var(--acu-title-color, #d35400);
+
+    .add-icon {
+      color: var(--acu-title-color, #d35400);
+    }
+  }
+
+  &.is-special {
+    border-left: 2px solid var(--acu-text-sub, #999);
+  }
+
+  .tab-icon {
+    width: 14px;
+    text-align: center;
+  }
+
+  .tab-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab-type-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .add-icon {
+    font-size: 10px;
+    color: var(--acu-text-sub, #999);
+  }
+}
+
+// 空状态提示
+.acu-empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--acu-text-sub, #999);
+  font-size: 12px;
+  font-style: italic;
+
+  i {
+    font-size: 14px;
+  }
+}
+
+// --------------------------------------------
+// 按钮配置面板特有样式 - 紧凑网格布局
+// --------------------------------------------
+
+// 展示区网格布局
+.acu-btn-visible-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px;
+
+  @media (max-width: 480px) {
+    // 移动端使用固定宽度 + 左对齐，按钮紧密排列
+    grid-template-columns: repeat(auto-fill, 48px);
+    justify-content: flex-start;
+  }
+}
+
+// 展示区按钮项（只显示图标）
+.acu-btn-config-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: 8px;
+  background: var(--acu-card-bg, #fffef9);
+  cursor: grab;
+  // 移动端：阻止触摸拖拽时触发滚动
+  touch-action: none;
+  transition: all 0.2s;
+
+  .btn-icon {
+    font-size: 16px;
+    color: var(--acu-text-main, #5e4b35);
+  }
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+
+    .btn-icon {
+      color: #e74c3c;
+    }
+  }
+
+  &.is-required {
+    cursor: default;
+    border-color: var(--acu-title-color, #d35400);
+
+    &:hover {
+      background: var(--acu-card-bg, #fffef9);
+      border-color: var(--acu-title-color, #d35400);
+
+      .btn-icon {
+        color: var(--acu-text-main, #5e4b35);
+      }
+    }
+  }
+
+  .required-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--acu-title-color, #d35400);
+  }
+
+  .attachment-indicator {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--acu-title-color, #d35400);
+    color: #fff;
+    font-size: 8px;
+    cursor: pointer;
+    border: 2px solid var(--acu-bg-panel, #e6e2d3);
+    transition: all 0.2s;
+
+    &:hover {
+      background: #e74c3c;
+      transform: scale(1.1);
+    }
+  }
+
+  .attachment-add-btn {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px dashed var(--acu-text-sub, #999);
+    background: var(--acu-bg-panel, #e6e2d3);
+    color: var(--acu-text-sub, #999);
+    font-size: 8px;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--acu-title-color, #d35400);
+      color: var(--acu-title-color, #d35400);
+      background: var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
+    }
+  }
+}
+
+// 隐藏区网格布局
+.acu-btn-hidden-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 6px;
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 4px;
+
+  @media (max-width: 480px) {
+    // 移动端使用固定宽度 + 左对齐，按钮紧密排列
+    grid-template-columns: repeat(auto-fill, 40px);
+    justify-content: flex-start;
+  }
+}
+
+// 隐藏区按钮项（只显示图标，更小）
+.acu-btn-hidden-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: 6px;
+  background: var(--acu-card-bg, #fffef9);
+  color: var(--acu-text-sub, #999);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  padding: 0;
+
+  &:hover {
+    background: var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
+    border-color: var(--acu-title-color, #d35400);
+    color: var(--acu-title-color, #d35400);
+  }
+}
+
+// 提示信息固定在底部
+.acu-config-hint-fixed {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  background: var(--acu-bg-panel, #e6e2d3);
+  border-top: 1px solid var(--acu-border, #dcd0c0);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 0;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding: 10px 16px;
+  margin-bottom: -16px;
+}
+
+// --------------------------------------------
+// 附属按钮选择弹窗
+// --------------------------------------------
+
+.acu-attachment-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.acu-attachment-picker {
+  width: 90%;
+  max-width: 300px;
+  max-height: calc(100vh - 100px);
+  background: var(--acu-bg-panel, #e6e2d3);
+  border: 1px solid var(--acu-border, #dcd0c0);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+
+  .picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--acu-table-head, #efebe4);
+    border-bottom: 1px solid var(--acu-border, #dcd0c0);
+
+    h4 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--acu-title-color, #d35400);
+    }
+
+    .btn-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--acu-text-sub, #999);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--acu-btn-hover, #cbbba8);
+        color: var(--acu-text-main, #5e4b35);
+      }
+    }
+  }
+
+  .picker-content {
+    padding: 16px;
+  }
+
+  .picker-hint {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--acu-text-sub, #999);
+  }
+
+  .picker-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .picker-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border: 1px solid var(--acu-border, #dcd0c0);
+    border-radius: 8px;
+    background: var(--acu-card-bg, #fffef9);
+    color: var(--acu-text-main, #5e4b35);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 10px;
+    text-align: center;
+
+    &:hover {
+      background: var(--acu-title-color-bg, rgba(211, 84, 0, 0.08));
+      border-color: var(--acu-title-color, #d35400);
+      color: var(--acu-title-color, #d35400);
+    }
+
+    i {
+      font-size: 18px;
+      color: var(--acu-text-sub, #999);
+    }
+
+    &:hover i {
+      color: var(--acu-title-color, #d35400);
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+  }
+}
+
+// --------------------------------------------
+// 移动端适配
+// --------------------------------------------
+
+@media (max-width: 768px) {
+  .acu-attachment-picker-overlay {
+    padding: 16px;
+  }
+
+  .acu-attachment-picker {
+    width: 100%;
+    max-width: 320px;
+
+    .picker-options {
+      max-height: 250px;
+    }
+  }
+}

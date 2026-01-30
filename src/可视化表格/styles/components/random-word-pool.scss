@@ -1,0 +1,214 @@
+// ============================================
+// Random Word Pool Widget - 随机词表仪表盘组件样式
+// ============================================
+
+.rwp-widget {
+  // 继承 .acu-dash-widget 的基础样式
+}
+
+// ============================================
+// 头部样式
+// ============================================
+
+.rwp-header {
+  // 继承 .acu-dash-title 的样式
+  cursor: pointer;
+}
+
+// ============================================
+// 内容区样式
+// ============================================
+
+.rwp-body {
+  padding: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+// ============================================
+// 列分组样式
+// ============================================
+
+.rwp-column-group {
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: var(--acu-card-bg);
+
+  // 移除 overflow: hidden 以允许 Popover 显示
+  // 仅在折叠时才可能需要隐藏内容，但 v-show 已经处理了内容显示
+  // 为了保证圆角，对 header 和 content 分别处理
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  // 折叠状态
+  &.collapsed {
+    .rwp-group-content {
+      display: none;
+    }
+  }
+}
+
+// 列头样式
+.rwp-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--acu-table-head);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-radius: 8px; // 默认全圆角
+
+  &:hover {
+    background: var(--acu-table-hover);
+  }
+
+  .rwp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--acu-text-main);
+
+    i {
+      font-size: 10px;
+      color: var(--acu-text-sub);
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .rwp-column-name {
+    font-weight: 500;
+  }
+
+  .rwp-word-count {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+  }
+
+  .rwp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+// Limit 设置弹窗容器
+.rwp-limit-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+// Limit 设置浮窗
+.rwp-limit-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: var(--acu-radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  padding: 12px;
+  cursor: default;
+
+  .popover-header {
+    font-size: 12px;
+    color: var(--acu-text-sub);
+    margin-bottom: 8px;
+  }
+
+  .popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .limit-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    input[type='range'] {
+      flex: 1;
+    }
+
+    .limit-value {
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 32px;
+      text-align: right;
+    }
+  }
+
+  .popover-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+// 词列表容器
+.rwp-group-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--acu-card-bg);
+  border-top: 1px solid var(--acu-border);
+}
+
+// 词徽章样式
+.rwp-word-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--acu-text-main);
+  background: var(--acu-btn-bg);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--acu-btn-hover);
+  }
+
+  // 禁用状态（列未启用时）
+  &.disabled {
+    opacity: 0.5;
+    color: var(--acu-text-sub);
+  }
+}
+
+// 空状态提示
+.rwp-empty-hint {
+  font-size: 12px;
+  color: var(--acu-text-sub);
+  font-style: italic;
+}
+
+// ============================================
+// 响应式适配
+// ============================================
+
+@media (max-width: 768px) {
+  .rwp-body {
+    max-height: 300px;
+  }
+
+  .rwp-group-header {
+    padding: 8px 10px;
+  }
+
+  .rwp-group-content {
+    padding: 8px 10px;
+  }
+
+  .rwp-word-badge {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+}

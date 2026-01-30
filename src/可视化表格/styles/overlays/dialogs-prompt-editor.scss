@@ -1,0 +1,28 @@
+// 隐藏提示词编辑弹窗样式
+.acu-prompt-editor-modal {
+  max-width: 600px; // 比默认弹窗稍宽
+
+  @media (max-width: 768px) {
+    max-width: 90vw; // 移动端限制宽度
+  }
+
+  // 覆盖 acu-textarea-scrollable 的部分样式以适应弹窗
+  .acu-textarea-scrollable {
+    background: var(--acu-bg-panel);
+    border: 1px solid var(--acu-border);
+    border-radius: var(--acu-radius-md);
+    padding: 12px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: var(--acu-title-color);
+      box-shadow: none; // 移除默认的 glow
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub);
+      opacity: 0.7;
+    }
+  }
+}

@@ -1,0 +1,248 @@
+// =========================================
+// Overlays - 遮罩层
+// 对应 .acu-edit-overlay 及通用遮罩组件
+// =========================================
+
+// 编辑遮罩层
+
+// 通用遮罩层
+.acu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483640;
+  background: rgba(0, 0, 0, 0.4);
+  animation: acu-fadeIn 0.15s ease;
+
+  &.transparent {
+    background: transparent;
+  }
+
+  &.blur {
+    backdrop-filter: blur(4px);
+  }
+}
+
+// 加载遮罩
+
+// 保存中遮罩
+
+// =========================================
+// Hidden Buttons Popup - 隐藏按钮浮窗
+// =========================================
+.acu-hidden-buttons-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着 action 按钮区域上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100; // 在 actions-area 内，高于其他元素
+  pointer-events: auto;
+
+  .popup-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .popup-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--acu-btn-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 8px;
+    color: var(--acu-text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--acu-btn-hover);
+      border-color: var(--acu-title-color);
+    }
+
+    &.btn-danger {
+      color: #e74c3c;
+    }
+  }
+}
+
+// =========================================
+// Tabs Popup - Tab 收纳浮窗
+// =========================================
+.acu-tabs-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着导航容器上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  pointer-events: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+
+  .popup-tabs-grid {
+    display: grid;
+    grid-template-columns: var(--acu-nav-cols, repeat(auto-fill, minmax(90px, 1fr)));
+    gap: 6px;
+
+    // 复用 TabBar 的按钮样式
+    .acu-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--acu-btn-bg);
+      border: 1px solid var(--acu-border);
+      border-radius: 8px;
+      color: var(--acu-text-main);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      i {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &:hover {
+        background: var(--acu-btn-hover);
+        border-color: var(--acu-title-color);
+      }
+
+      &.active {
+        background: var(--acu-title-color-bg);
+        border-color: var(--acu-title-color);
+        color: var(--acu-title-color);
+        font-weight: 500;
+      }
+
+      &.has-issues {
+        border-color: #e74c3c;
+        box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+      }
+
+      &.has-ai-changes {
+        border-color: var(--acu-highlight-ai-color, #3498db);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+    }
+  }
+}
+
+// 确认弹窗遮罩
+
+// 确认弹窗内容
+
+// =========================================
+// 隐藏按钮浮窗
+// 对应 HiddenButtonsPopup.vue 组件
+// =========================================
+
+.acu-hidden-buttons-popup {
+  position: absolute;
+  bottom: calc(100% + 8px); // 贴着 action 按钮区域上方
+  left: 0;
+  right: 0;
+  background: var(--acu-bg-panel);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  z-index: 100; // 在 actions-area 内，高于其他元素
+  pointer-events: auto;
+
+  // 按钮网格
+  .popup-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  // 浮窗内按钮
+  .popup-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--acu-btn-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 6px;
+    color: var(--acu-text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--acu-btn-hover);
+      border-color: var(--acu-title-color);
+      color: var(--acu-title-color);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    i {
+      font-size: 14px;
+    }
+
+    // 危险按钮样式
+    &.btn-danger {
+      color: #e74c3c;
+
+      &:hover {
+        border-color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+      }
+    }
+
+    // 切换按钮样式（固定面板）
+    &.btn-toggle.active {
+      background: var(--acu-title-color-bg, rgba(52, 152, 219, 0.2));
+      color: var(--acu-title-color, #3498db);
+      border-color: var(--acu-title-color, #3498db);
+    }
+  }
+}
+
+// "更多"按钮样式
+.acu-more-btn {
+  &.active {
+    color: var(--acu-title-color);
+    background: var(--acu-btn-hover);
+
+    i {
+      transform: rotate(180deg);
+    }
+  }
+
+  i {
+    transition: transform 0.2s ease;
+  }
+}
+

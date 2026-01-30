@@ -1,0 +1,427 @@
+// =========================================
+// Floating Ball - 悬浮球
+// 对应 .acu-floating-ball-vue
+// =========================================
+
+.acu-floating-ball-vue {
+  // CSS 变量定义（可被外部覆盖）
+  --ball-size: 50px;
+  --ball-border-color: #ffffff;
+  --ball-border-color-rgba: rgba(255, 255, 255, 0.4);
+  --ball-bg-color: rgba(255, 255, 255, 0.25);
+
+  position: fixed;
+  // 使用 CSS 变量控制尺寸
+  width: var(--ball-size);
+  height: var(--ball-size);
+  font-size: calc(var(--ball-size) * 0.4);
+  // 使用 CSS 变量控制背景
+  background: var(--ball-bg-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  // 使用 CSS 变量控制边框
+  border: 2px solid var(--ball-border-color-rgba);
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  color: var(--acu-text-main, #333);
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  pointer-events: auto !important;
+  overflow: visible;
+  box-sizing: border-box;
+
+  // 悬浮球内图标居中
+  i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    position: relative;
+    z-index: 2;
+  }
+
+  // Emoji 图标样式
+  .ball-emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: calc(var(--ball-size) * 0.46);
+    position: relative;
+    z-index: 2;
+  }
+
+  // 图片图标样式 (img 标签，保留兼容)
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+  }
+
+  // 图片图标样式 (div + background-image，支持裁剪参数)
+  .ball-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+    // background-image, background-position, background-size 由内联样式设置
+
+    // 反色效果
+    &.ball-image-invert {
+      filter: invert(1);
+    }
+  }
+
+  &:active {
+    transform: scale(0.9);
+    background: var(--ball-bg-color);
+    filter: brightness(1.2);
+  }
+
+  // 问题警告动效
+  &.has-issues {
+    animation: pulse-warning 1.5s ease-in-out infinite;
+    border-color: rgba(245, 108, 108, 0.6);
+    box-shadow: 0 4px 15px rgba(245, 108, 108, 0.4);
+
+    // 问题徽章
+    .acu-issue-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
+      background: #f56c6c;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(245, 108, 108, 0.5);
+      animation: badge-bounce 1s ease-in-out infinite;
+    }
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(245, 108, 108, 0.5);
+    }
+  }
+
+  // 停靠模式
+  &.docked {
+    left: 0 !important;
+    width: 20px !important;
+    height: 50px !important;
+    border-radius: 0 8px 8px 0 !important;
+    opacity: 0.3;
+    background: #000;
+    border: 1px solid #666;
+    border-left: none;
+    font-size: 0 !important;
+    transform: none !important;
+
+    &::after {
+      content: '›';
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      display: block;
+    }
+
+    &:hover,
+    &:active {
+      opacity: 0.8;
+      width: 30px !important;
+    }
+
+    // 停靠模式下隐藏徽章
+    .acu-issue-badge {
+      display: none;
+    }
+  }
+}
+
+// 警告脉冲动画
+@keyframes pulse-warning {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 15px rgba(245, 108, 108, 0.4),
+      0 0 0 0 rgba(245, 108, 108, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 4px 15px rgba(245, 108, 108, 0.4),
+      0 0 0 10px rgba(245, 108, 108, 0);
+  }
+}
+
+// 徽章弹跳动画
+@keyframes badge-bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+// =========================================
+// AI 填表完成通知动画
+// =========================================
+
+// ===== 动画 1: 脉冲波纹 (Ripple) =====
+@keyframes acu-notify-ripple-1 {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes acu-notify-ripple-2 {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes acu-notify-ripple-3 {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.acu-floating-ball-vue.ai-notify.anim-ripple {
+  border-color: var(--ball-border-color-rgba);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--ball-border-color, #90cdf4);
+    animation: acu-notify-ripple-1 1.5s ease-out infinite;
+    pointer-events: none;
+  }
+
+  &::after {
+    animation: acu-notify-ripple-2 1.5s ease-out 0.5s infinite;
+  }
+}
+
+// ===== 动画 2: 电磁闪烁 (Arc Flash) =====
+@keyframes acu-arc-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes acu-arc-flash-1 {
+  0%,
+  90%,
+  100% {
+    opacity: 0;
+  }
+  92%,
+  95% {
+    opacity: 1;
+  }
+}
+
+@keyframes acu-arc-flash-2 {
+  0%,
+  80%,
+  100% {
+    opacity: 0;
+  }
+  82%,
+  88% {
+    opacity: 1;
+  }
+}
+
+.acu-floating-ball-vue.ai-notify.anim-arc {
+  border-color: var(--ball-border-color-rgba);
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 20% 0%, var(--ball-border-color, #a29bfe) 0%, transparent 30%),
+      radial-gradient(circle at 80% 100%, var(--ball-border-color, #a29bfe) 0%, transparent 30%);
+    animation:
+      acu-arc-rotate 1s linear infinite,
+      acu-arc-flash-1 0.3s ease infinite;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 130%;
+    height: 130%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 0%, var(--ball-border-color, #74b9ff) 0%, transparent 25%),
+      radial-gradient(circle at 50% 100%, var(--ball-border-color, #74b9ff) 0%, transparent 25%);
+    animation:
+      acu-arc-rotate 1.5s linear infinite reverse,
+      acu-arc-flash-2 0.5s ease infinite;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// =========================================
+// 预览球样式 (设置面板中使用)
+// =========================================
+.acu-ball-preview {
+  // 继承主球体样式
+  --ball-size: 56px;
+  --ball-border-color: #90cdf4;
+  --ball-border-color-rgba: rgba(144, 205, 244, 1);
+  --ball-bg-color: rgba(43, 43, 43, 1);
+
+  width: var(--ball-size);
+  height: var(--ball-size);
+  font-size: calc(var(--ball-size) * 0.46);
+  background: var(--ball-bg-color);
+  border: 2px solid var(--ball-border-color-rgba);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+
+  i {
+    position: relative;
+    z-index: 2;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    position: relative;
+    z-index: 2;
+  }
+
+  // 预览动画类 - 脉冲波纹
+  &.p-anim-ripple {
+    border-color: var(--ball-border-color-rgba);
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--ball-border-color);
+      animation: acu-notify-ripple-1 1.5s ease-out infinite;
+      pointer-events: none;
+    }
+
+    &::after {
+      animation: acu-notify-ripple-2 1.5s ease-out 0.5s infinite;
+    }
+  }
+
+  // 预览动画类 - 电磁闪烁
+  &.p-anim-arc {
+    border-color: var(--ball-border-color-rgba);
+
+    &::before {
+      content: '';
+      position: absolute;
+      width: 120%;
+      height: 120%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 20% 0%, var(--ball-border-color) 0%, transparent 30%),
+        radial-gradient(circle at 80% 100%, var(--ball-border-color) 0%, transparent 30%);
+      animation:
+        acu-arc-rotate 1s linear infinite,
+        acu-arc-flash-1 0.3s ease infinite;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 130%;
+      height: 130%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 0%, var(--ball-border-color) 0%, transparent 25%),
+        radial-gradient(circle at 50% 100%, var(--ball-border-color) 0%, transparent 25%);
+      animation:
+        acu-arc-rotate 1.5s linear infinite reverse,
+        acu-arc-flash-2 0.5s ease infinite;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  // 预览通知效果
+  &.p-notify {
+    animation: acu-notify-glow 2s infinite ease-in-out;
+  }
+}
+
+// 通知呼吸灯动画
+@keyframes acu-notify-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px var(--ball-border-color, #55efc4);
+    border-color: var(--ball-border-color, #55efc4);
+  }
+  50% {
+    box-shadow: 0 0 25px var(--ball-border-color, #55efc4);
+    border-color: var(--ball-border-color, #55efc4);
+  }
+}

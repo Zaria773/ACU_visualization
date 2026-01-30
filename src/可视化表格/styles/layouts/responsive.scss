@@ -1,0 +1,87 @@
+// =========================================
+// Responsive - 响应式布局
+// 移动端适配与媒体查询
+// =========================================
+
+// 移动端适配 (max-width: 768px)
+@media (max-width: 768px) {
+  // 隐藏固定按钮
+  #acu-btn-pin {
+    display: none !important;
+  }
+
+  // 标题栏压扁
+  .acu-panel-header {
+    padding: 4px 10px !important;
+    min-height: 38px !important;
+  }
+
+  .acu-panel-title {
+    font-size: 13px !important;
+    margin-right: auto;
+  }
+
+  .acu-search-input {
+    height: 28px !important;
+    width: 80px !important;
+    font-size: 12px !important;
+
+    &:focus {
+      width: 120px !important;
+    }
+  }
+
+  // 导航容器恢复大触摸区
+  .acu-nav-container {
+    padding: 8px 6px !important;
+    gap: 0 !important;
+  }
+
+  .acu-nav-separator {
+    margin: 1px 0 !important;
+    opacity: 0.2;
+  }
+
+  .acu-nav-tabs-area {
+    gap: 1px !important;
+  }
+
+  .acu-nav-btn {
+    padding: 6px 2px !important;
+    font-size: 12px !important;
+    min-height: 32px !important;
+  }
+
+  // 底部按钮大方块化
+  .acu-nav-actions-area {
+    padding-top: 2px !important;
+    gap: 8px !important;
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .acu-action-btn {
+    width: auto !important;
+    flex: 1 !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+    background: var(--acu-btn-bg);
+    margin: 0 !important;
+
+    i {
+      font-size: 18px !important;
+    }
+
+    &:active {
+      background: var(--acu-btn-active-bg);
+      color: #fff;
+    }
+  }
+}
+
+// 仪表盘响应式布局
+@media (max-width: 700px) {
+  .acu-dash-container {
+    grid-template-columns: 1fr;
+  }
+}

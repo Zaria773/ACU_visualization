@@ -1,0 +1,648 @@
+// ============================================
+// 抽签系统公共样式
+// ============================================
+
+// 公共颜色变量
+$divination-colors: (
+  paper: #F9F2E6,
+  ink: #4A3728,
+  gold: #C6A664,
+  accent: #8B5E3C,
+  dark: #2C1810,
+  bg: #0F0A08,
+  deep-bg: #1a1a1a,
+);
+
+// 公共字体
+$divination-font-heading: 'ZCOOL XiaoWei', 'Cinzel', serif;
+$divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
+
+// 导入主题样式
+@import 'divination-themes/index';
+
+// ============================================
+// 全屏覆盖层
+// ============================================
+.divination-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; // 适配移动端动态视口
+  z-index: 200000; // 高于表格主界面 (10000) 和所有弹窗 (100000)
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #2a1b15 0%, #1a0f0e 40%, #050505 100%);
+  overflow: hidden;
+  font-family: $divination-font-body;
+  color: map-get($divination-colors, paper);
+
+  // 星尘纹理背景
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+// 噪点纹理层
+.divination-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+  opacity: 0.15;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+// ============================================
+// 动态星空
+// ============================================
+.divination-starfield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.divination-star {
+  position: absolute;
+  border-radius: 50%;
+  background-color: #F5E6D3;
+  opacity: 0.6;
+  animation: divination-twinkle var(--duration, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes divination-twinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+// ============================================
+// 流动星云
+// ============================================
+.divination-nebula {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+
+  &--purple {
+    top: -10%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: #3d2b4a;
+    filter: blur(100px);
+    opacity: 0.3;
+    mix-blend-mode: screen;
+    animation: divination-nebula-pulse 15s ease-in-out infinite;
+  }
+
+  &--golden {
+    bottom: -10%;
+    right: -10%;
+    width: 70%;
+    height: 70%;
+    background: #4a3728;
+    filter: blur(120px);
+    opacity: 0.2;
+    mix-blend-mode: screen;
+    animation: divination-nebula-drift 20s ease-in-out infinite;
+  }
+}
+
+@keyframes divination-nebula-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.4;
+  }
+}
+
+@keyframes divination-nebula-drift {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translateX(50px) scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+// 中心光晕
+.divination-central-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(198, 166, 100, 0.1) 0%, transparent 70%);
+  filter: blur(48px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+// ============================================
+// 神圣几何背景
+// ============================================
+.divination-geometry {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+
+  &--outer {
+    width: 140vmin;
+    height: 140vmin;
+    opacity: 0.15;
+    animation: divination-spin-slow 60s linear infinite;
+  }
+
+  &--inner {
+    width: 90vmin;
+    height: 90vmin;
+    opacity: 0.1;
+    animation: divination-spin-reverse 80s linear infinite;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+@keyframes divination-spin-slow {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes divination-spin-reverse {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+// ============================================
+// 装饰边框
+// ============================================
+.divination-frame {
+  position: absolute; // 改为 absolute，相对于 overlay 定位
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  z-index: 50;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  // 四角装饰
+  &__corner {
+    position: absolute;
+    width: 128px;
+    height: 128px;
+    border-color: rgba(212, 175, 55, 0.6);
+    border-style: solid;
+    border-width: 0;
+
+    &--tl {
+      top: 0;
+      left: 0;
+      border-top-width: 2px;
+      border-left-width: 2px;
+      border-top-left-radius: 24px;
+    }
+
+    &--tr {
+      top: 0;
+      right: 0;
+      border-top-width: 2px;
+      border-right-width: 2px;
+      border-top-right-radius: 24px;
+    }
+
+    &--bl {
+      bottom: 0;
+      left: 0;
+      border-bottom-width: 2px;
+      border-left-width: 2px;
+      border-bottom-left-radius: 24px;
+    }
+
+    &--br {
+      bottom: 0;
+      right: 0;
+      border-bottom-width: 2px;
+      border-right-width: 2px;
+      border-bottom-right-radius: 24px;
+    }
+  }
+
+  // 顶部装饰线
+  &__top-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    opacity: 0.8;
+  }
+
+  // 底部装饰线
+  &__bottom-line {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    opacity: 0.8;
+  }
+}
+
+// ============================================
+// 内容容器
+// ============================================
+.divination-content {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  height: 100%;
+  justify-content: center;
+  padding: 16px 24px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+// ============================================
+// 标题区域（简化版，仅保留装饰）
+// ============================================
+.divination-header {
+  text-align: center;
+  animation: divination-fade-in-down 1s ease-out;
+  flex-shrink: 0;
+
+  &__title {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  // 静态居中的星星装饰
+  &__sparkle--static {
+    position: relative;
+    display: block;
+    color: #D4AF37;
+    opacity: 0.8;
+    animation: divination-twinkle 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+  }
+
+  &__divider {
+    height: 2px;
+    width: 120px;
+    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    margin-top: 8px;
+    opacity: 0.5;
+  }
+}
+
+@keyframes divination-fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// 卡片容器
+// ============================================
+.divination-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+// ============================================
+// 塔罗卡片
+// ============================================
+.tarot-card {
+  position: relative;
+  cursor: pointer;
+  perspective: 1000px;
+  // aspect-ratio 由内联样式动态控制
+
+  // 移动端：宽度占 90% 居中
+  width: 90vw;
+  height: auto;
+  max-height: 80vh; // 稍微减小最大高度，留出更多空间
+
+  // PC 端：高度占 80% 居中
+  @media (min-width: 768px) {
+    width: auto;
+    height: 80vh;
+    max-width: 90vw; // 限制最大宽度，防止过宽
+  }
+
+  &__inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.8s ease-in-out;
+  }
+
+  &--flipped &__inner {
+    transform: rotateY(180deg);
+  }
+
+  &__face {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  &__back {
+    z-index: 2;
+  }
+
+  &__front {
+    transform: rotateY(180deg);
+    z-index: 1;
+  }
+}
+
+// 卡片浮动动画
+.tarot-card:not(.tarot-card--flipped) .tarot-card__back {
+  animation: divination-float 4s ease-in-out infinite;
+}
+
+@keyframes divination-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+// 注意：卡面和卡背样式已移至 divination-themes/ 目录
+// - wafuku 主题：_wafuku.scss（和风御札）
+// - mystic 主题：_mystic.scss（神秘塔罗）
+
+// ============================================
+// 提示文字
+// ============================================
+.divination-hint {
+  position: absolute;
+  bottom: -64px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  animation: divination-fade-in 0.8s ease-out;
+
+  &__text {
+    font-family: $divination-font-heading;
+    color: #F5E6D3;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    animation: divination-bounce 2s ease-in-out infinite;
+  }
+}
+
+@keyframes divination-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes divination-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+// ============================================
+// 操作按钮区
+// ============================================
+.divination-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: divination-fade-in 0.5s ease-out;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 24px;
+  }
+}
+
+.divination-btn {
+  padding: 12px 32px;
+  font-family: $divination-font-heading;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  position: relative;
+  overflow: hidden;
+
+  // 斜切效果
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: skewX(-10deg);
+    z-index: -1;
+  }
+
+  &--primary {
+    color: #D4AF37;
+    border-color: #D4AF37;
+    background: rgba(26, 15, 14, 0.6);
+
+    &::before {
+      background: transparent;
+    }
+
+    &:hover {
+      color: #F9F2E6;
+      background: rgba(212, 175, 55, 0.2);
+    }
+  }
+
+  &--secondary {
+    color: rgba(212, 175, 55, 0.7);
+    border-color: rgba(212, 175, 55, 0.4);
+    background: transparent;
+
+    &:hover {
+      color: #D4AF37;
+      border-color: #D4AF37;
+    }
+  }
+
+  &--retry {
+    font-family: $divination-font-heading;
+    color: #F5E6D3; /* 与提示词一致 */
+    font-size: 18px; /* 与提示词一致 */
+    letter-spacing: 0.2em; /* 与提示词一致 */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); /* 与提示词一致 */
+    animation: divination-bounce 2s ease-in-out infinite; /* 与提示词一致 */
+
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 32px;
+
+    &::before {
+      display: none;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #fff;
+      // 移除 transform: scale 以避免与 bounce 动画冲突
+    }
+  }
+}
+
+// ============================================
+// 底部控制区
+// ============================================
+.divination-footer {
+  height: auto;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+// ============================================
+// 关闭按钮
+// ============================================
+.divination-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(212, 175, 55, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 50%;
+  background: rgba(15, 10, 8, 0.5);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #D4AF37;
+    border-color: #D4AF37;
+    background: rgba(212, 175, 55, 0.1);
+  }
+}
+
+// ============================================
+// 进入/离开动画
+// ============================================
+.divination-overlay-enter-active {
+  animation: divination-overlay-in 0.5s ease-out;
+}
+
+.divination-overlay-leave-active {
+  animation: divination-overlay-out 0.3s ease-in forwards;
+}
+
+@keyframes divination-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes divination-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

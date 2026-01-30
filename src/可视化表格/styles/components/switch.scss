@@ -1,0 +1,106 @@
+// =========================================
+// Switch - 开关控件
+// iOS 风格开关，无边框，圆点垂直居中
+// =========================================
+
+// 开关控件
+// 用法1 (推荐): <label class="acu-switch"><input type="checkbox"><span class="slider"></span></label>
+// 用法2 (兼容): <button class="acu-switch active"></button>
+.acu-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  // 隐藏原生 checkbox
+  input[type='checkbox'] {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  // 滑块背景 - 无边框（支持 .slider 和 .acu-switch-slider）
+  .slider,
+  .acu-switch-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--acu-btn-bg);
+    border: none;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+
+    // 小圆滑块 - 垂直居中
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 2px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      background: var(--acu-text-sub);
+      border: none;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // 选中状态
+  input[type='checkbox']:checked + .slider,
+  input[type='checkbox']:checked + .acu-switch-slider {
+    background: var(--acu-title-color);
+
+    &::after {
+      left: calc(100% - 22px);
+      background: #fff;
+    }
+  }
+
+  // Hover 效果
+  &:hover .slider,
+  &:hover .acu-switch-slider {
+    opacity: 0.85;
+  }
+
+  // 兼容旧用法：纯元素 + .active 类
+  &:not(:has(input)) {
+    background: var(--acu-btn-bg);
+    border: none;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 2px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      background: var(--acu-text-sub);
+      border: none;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    &.active {
+      background: var(--acu-title-color);
+
+      &::after {
+        left: calc(100% - 22px);
+        background: #fff;
+      }
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}

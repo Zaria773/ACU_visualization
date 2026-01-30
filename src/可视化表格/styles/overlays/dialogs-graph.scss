@@ -1,0 +1,704 @@
+// =========================================
+// Graph - 关系图相关弹窗样式
+// 从 dialogs-settings.scss 迁移而来
+// =========================================
+
+// =========================================
+// 关系图设置弹窗
+// =========================================
+
+.acu-graph-settings-modal {
+  max-width: 480px;
+
+  .acu-modal-body {
+    padding: 0;
+  }
+}
+
+// =========================================
+// 背景配置专用样式
+// =========================================
+
+// 背景配置详细设置区域
+.acu-background-config-section {
+  margin-top: 12px;
+}
+
+// 背景预览容器
+.acu-background-preview-container {
+  margin-bottom: 12px;
+}
+
+// 背景预览区域（可拖动）
+.acu-background-preview {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  background: var(--acu-table-head);
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  transition: border-color 0.2s ease;
+
+  &.dragging {
+    cursor: grabbing;
+    border-color: var(--acu-title-color);
+  }
+
+  &.has-image {
+    background: transparent;
+  }
+
+  &:hover {
+    border-color: var(--acu-title-color);
+  }
+}
+
+// 预览图片
+.acu-preview-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-position 0.05s ease;
+}
+
+// 无图片提示
+.acu-no-image-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  color: var(--acu-text-sub);
+
+  i {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  span {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+}
+
+// 操作按钮行
+.acu-background-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .acu-action-btn {
+    flex: 1;
+    height: 36px;
+    font-size: 13px;
+    gap: 6px;
+
+    i {
+      font-size: 14px;
+    }
+  }
+}
+
+// URL 输入行
+.acu-url-input-row {
+  margin-bottom: 12px;
+
+  .acu-background-url-input {
+    width: 100%;
+    padding: 10px 12px !important;
+    background: var(--acu-btn-bg) !important;
+    border: 1px solid var(--acu-border) !important;
+    border-radius: 8px !important;
+    color: var(--acu-text-main) !important;
+    font-size: 12px !important;
+    font-family: monospace !important;
+
+    &:focus {
+      border-color: var(--acu-title-color) !important;
+      box-shadow: 0 0 0 2px var(--acu-title-color-bg) !important;
+    }
+
+    &::placeholder {
+      color: var(--acu-text-sub) !important;
+      opacity: 0.7 !important;
+    }
+  }
+}
+
+
+// =========================================
+// 势力颜色配置专用样式
+// =========================================
+
+// 势力颜色提示区
+.acu-faction-color-hint {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--acu-text-sub);
+
+  .hint-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .hint-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+
+    &.dashed {
+      border: 2px dashed var(--acu-text-sub);
+      background: transparent;
+    }
+
+    &.solid {
+      background: var(--acu-text-sub);
+      opacity: 0.3;
+    }
+  }
+}
+
+// 可滚动的势力颜色列表
+.acu-faction-color-group {
+  padding: 12px 16px;
+  background: var(--acu-table-head);
+  border-radius: 12px;
+  border: none;
+
+  &.acu-faction-color-scrollable {
+    max-height: 200px;
+    overflow-y: auto;
+
+    // 滚动条样式
+    scrollbar-width: thin;
+    scrollbar-color: var(--acu-border) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--acu-border);
+      border-radius: 3px;
+
+      &:hover {
+        background: var(--acu-text-sub);
+      }
+    }
+  }
+}
+
+// 势力颜色行
+.acu-faction-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--acu-border);
+  }
+
+  .acu-settings-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--acu-text-main);
+  }
+}
+
+// 势力颜色控制区
+.acu-faction-color-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+
+  // 颜色选择器 - 尺寸（基础样式来自 inputs.scss）
+  input[type='color'] {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  // 透明度滑块样式
+  .acu-opacity-slider {
+    width: 60px !important;
+    height: 14px !important;
+  }
+
+  // 透明度数值显示
+  .acu-opacity-value {
+    font-size: 11px;
+    color: var(--acu-text-sub);
+    width: 32px;
+    text-align: right;
+  }
+}
+
+
+
+// =========================================
+// 图例配置专用样式
+// =========================================
+
+// 图例项列表区域
+.acu-legend-items-section {
+  margin-top: 12px;
+}
+
+// 图例项头部（标题 + 添加按钮）
+.acu-legend-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acu-text-sub);
+}
+
+// 图例项列表容器
+.acu-legend-items-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px 16px;
+  background: var(--acu-table-head);
+  border-radius: 12px;
+  margin: 0 16px;
+
+  // 滚动条样式
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--acu-text-sub);
+    }
+  }
+}
+
+// 单个图例项行
+.acu-legend-item-row {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--acu-border);
+  }
+}
+
+// 图例项显示模式
+.acu-legend-item-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+// 图例颜色点
+.acu-legend-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+// 图例 Emoji
+.acu-legend-emoji {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+// 图例标签名称
+.acu-legend-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acu-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 图例关键词区域
+.acu-legend-keywords {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+// 图例关键词标签
+.acu-legend-keyword-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--acu-btn-bg);
+  color: var(--acu-text-sub);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+// 更多关键词提示
+.acu-legend-keyword-more {
+  font-size: 10px;
+  color: var(--acu-text-sub);
+}
+
+// 图例项操作按钮区
+.acu-legend-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+// 图例操作按钮
+.acu-legend-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--acu-text-sub);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--acu-btn-bg);
+    color: var(--acu-text-main);
+  }
+
+  &.acu-legend-action-btn-danger:hover {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+// 图例项编辑模式
+.acu-legend-item-edit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acu-legend-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// 图例名称输入
+.acu-legend-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+// 图例颜色输入
+.acu-legend-color-input {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 2px !important;
+  flex-shrink: 0;
+}
+
+// 图例 Emoji 输入
+.acu-legend-emoji-input {
+  width: 48px !important;
+  padding: 6px 8px !important;
+  font-size: 14px !important;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+// 图例关键词输入
+.acu-legend-keywords-input {
+  flex: 1;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+// 图例编辑操作按钮区
+.acu-legend-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+// 图例空状态
+.acu-legend-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--acu-text-sub);
+  font-size: 12px;
+}
+
+// 重置图例按钮容器
+.acu-legend-reset-wrapper {
+  margin-top: 12px;
+  padding: 0 16px;
+  display: flex;
+  justify-content: center;
+}
+
+// 小按钮样式
+.acu-action-btn-small {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+
+  i {
+    font-size: 11px !important;
+  }
+}
+
+.acu-action-btn-primary {
+  background: var(--acu-title-color) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+// =========================================
+// 势力设置弹窗专用
+// =========================================
+
+.acu-faction-settings-modal {
+  max-width: 400px;
+
+  .acu-modal-body {
+    padding: 0;
+    // 增加底部安全区
+    padding-bottom: var(--acu-safe-area-bottom, 20px);
+  }
+
+  // 操作按钮行
+  .acu-action-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+
+    .acu-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      i {
+        font-size: 12px;
+      }
+    }
+
+    .acu-action-btn-primary {
+      background: var(--acu-title-color);
+      color: #fff;
+
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
+
+    .acu-action-btn-secondary {
+      background: var(--acu-btn-bg);
+      color: var(--acu-text-main);
+
+      &:hover {
+        background: var(--acu-btn-hover);
+      }
+    }
+  }
+}
+
+// =========================================
+// 节点配置弹窗专用
+// =========================================
+
+.acu-node-config-modal {
+  max-width: 420px;
+
+  .acu-modal-body {
+    padding: 0;
+    // 增加底部安全区
+    padding-bottom: var(--acu-safe-area-bottom, 20px);
+  }
+
+  // 显示名称区域
+  .acu-node-hint {
+    font-size: 12px;
+    color: var(--acu-text-sub);
+    margin-bottom: 12px;
+  }
+
+  .acu-char-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .acu-char-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border: 2px solid var(--acu-border);
+    border-radius: 8px;
+    background: var(--acu-btn-bg);
+    color: var(--acu-text-main);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--acu-title-color);
+      background: var(--acu-btn-hover);
+    }
+
+    &.active {
+      border-color: var(--acu-title-color);
+      background: var(--acu-title-color);
+      color: #fff;
+    }
+  }
+
+  .acu-node-preview {
+    font-size: 13px;
+    color: var(--acu-text-main);
+    padding: 8px 12px;
+    background: var(--acu-card-bg);
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .acu-node-config-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    .acu-action-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.secondary {
+        background: var(--acu-btn-bg);
+        color: var(--acu-text-main);
+
+        &:hover {
+          background: var(--acu-btn-hover);
+        }
+      }
+
+      &.primary {
+        background: var(--acu-title-color);
+        color: #fff;
+
+        &:hover {
+          filter: brightness(1.1);
+        }
+      }
+    }
+  }
+
+  // 操作按钮行（与势力设置弹窗共用样式）
+  .acu-action-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+
+    .acu-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      i {
+        font-size: 12px;
+      }
+    }
+
+    .acu-action-btn-primary {
+      background: var(--acu-title-color);
+      color: #fff;
+
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
+
+    .acu-action-btn-secondary {
+      background: var(--acu-btn-bg);
+      color: var(--acu-text-main);
+
+      &:hover {
+        background: var(--acu-btn-hover);
+      }
+    }
+  }
+}

@@ -1,0 +1,1186 @@
+// =========================================
+// Dashboard - 仪表盘 (重构版)
+// 参考 6.4.1.ts 样式
+// =========================================
+
+// 容器布局
+.acu-dash-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  height: 100%;
+  padding: 5px;
+  overflow-y: auto;
+  font-size: var(--acu-font-size);
+  touch-action: pan-y;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// 看板卡片
+.acu-dash-card {
+  background: var(--acu-card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--acu-border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px var(--acu-shadow);
+}
+
+// 看板标题
+.acu-dash-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--acu-title-color);
+  border-bottom: 1px dashed var(--acu-border);
+  padding: 0 16px 2px 16px;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  gap: 8px;
+  user-select: none; // 防止拖拽时选中文本
+
+  // 确保子元素继承字体大小
+  * {
+    font-size: inherit;
+  }
+
+  // 可点击状态（非编辑态）- 点击折叠/展开
+  &.acu-dash-title-clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--acu-table-hover);
+      border-radius: 6px 6px 0 0;
+    }
+  }
+}
+
+// 折叠指示器图标 - 垂直居中
+.acu-dash-collapse-icon {
+  font-size: 0.7em;
+  color: var(--acu-text-sub);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px; // 与按钮同高
+}
+
+// 标题文字区 - 点击跳转到表格
+.acu-dash-title-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  border-radius: 4px;
+  transition:
+    color 0.2s,
+    background 0.2s;
+
+  i {
+    font-size: 0.9em;
+  }
+
+  // 可点击状态时的 hover 效果
+  .acu-dash-title-clickable & {
+    &:hover {
+      color: var(--acu-highlight, var(--acu-title-color));
+      background: rgba(var(--acu-highlight-rgb, 144, 205, 244), 0.15);
+    }
+  }
+}
+
+// 快捷按钮区
+.acu-dash-actions {
+  display: flex;
+  gap: 2px;
+}
+
+// 注意: 图标按钮请使用通用类 .acu-icon-btn (components/buttons.scss)
+
+// 主角信息区
+
+.acu-dash-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: var(--acu-btn-bg);
+  border-radius: 8px;
+}
+
+.acu-dash-stat-label {
+  color: var(--acu-text-sub);
+  font-size: 0.9em;
+}
+
+.acu-dash-stat-val {
+  color: var(--acu-text-main);
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+// NPC 网格
+.acu-dash-npc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.acu-dash-npc-item {
+  background: var(--acu-table-head);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: default;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  font-weight: 500;
+  color: var(--acu-text-main);
+  font-size: 1em;
+  // 改为 flex 布局以支持编辑按钮
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    border-color: var(--acu-highlight);
+    color: var(--acu-highlight);
+    background: var(--acu-btn-bg);
+  }
+}
+
+// NPC 项文本（溢出省略只作用于文本部分）
+.acu-dash-npc-text {
+  flex: 1;
+  min-width: 0; // 重要：允许 flex 子元素收缩
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+// 子网格布局
+
+// 列表项
+.acu-dash-list-item {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--acu-border);
+  color: var(--acu-text-sub);
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+
+  &:hover {
+    color: var(--acu-text-main);
+    padding-left: 20px;
+  }
+
+  i {
+    font-size: 0.8em;
+    color: var(--acu-highlight);
+  }
+}
+
+// 交互状态
+.acu-dash-interactive {
+  cursor: pointer !important;
+  position: relative;
+}
+
+// 内部 Tab
+
+.acu-tab-btn {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--acu-text-sub);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+
+  &:hover {
+    color: var(--acu-text-main);
+    background: var(--acu-table-hover);
+    border-radius: 4px 4px 0 0;
+  }
+
+  &.active {
+    color: var(--acu-highlight);
+    border-bottom-color: var(--acu-highlight);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// 变动高亮
+.acu-dash-npc-item.acu-highlight-changed,
+.acu-dash-list-item.acu-highlight-changed {
+  color: var(--acu-highlight) !important;
+  background-color: var(--acu-highlight-bg);
+  font-weight: bold;
+  animation: pulse-highlight 2s infinite;
+}
+
+// =========================================
+// AI 填表高亮样式
+// =========================================
+
+// 组件标题 AI 高亮
+.acu-dash-widget.acu-highlight-ai-table {
+  .acu-dash-title-text {
+    color: var(--acu-highlight-ai);
+
+    i {
+      color: var(--acu-highlight-ai);
+    }
+  }
+
+  .acu-dash-count {
+    background: var(--acu-highlight-ai-bg);
+    color: var(--acu-highlight-ai);
+  }
+}
+
+// 行级别 AI 高亮
+.acu-dash-npc-item.acu-highlight-ai,
+.acu-dash-list-item.acu-highlight-ai {
+  color: var(--acu-highlight-ai) !important;
+  background: var(--acu-highlight-ai-bg) !important;
+  font-weight: 600;
+  border-color: var(--acu-highlight-ai) !important;
+}
+
+// 展示标签 (纯展示徽章)
+.acu-dash-display-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--acu-text-sub);
+  background: var(--acu-table-head);
+  border: 1px solid var(--acu-border);
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 互动标签 (可点击徽章)
+.acu-dash-interactive-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--acu-title-color);
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--acu-title-color);
+    color: #fff;
+  }
+
+  &.fixed {
+    border-style: dashed;
+  }
+
+  // 全局标签库的标签（新系统）- 使用实线边框和略微不同的背景
+  &.acu-dash-global-tag {
+    border-width: 1.5px;
+    font-weight: 600;
+
+    // 悬浮时添加轻微放大效果
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+// 分类按钮 (点击弹出分类下的标签选择)
+.acu-dash-category-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--acu-text-sub);
+  background: var(--acu-table-head);
+  border: 1px dashed var(--acu-border);
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  i {
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  &:hover {
+    background: var(--acu-title-color-bg);
+    border-color: var(--acu-title-color);
+    color: var(--acu-title-color);
+
+    i {
+      opacity: 1;
+    }
+  }
+}
+
+// 查看更多
+
+// 空状态
+.acu-dash-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--acu-text-sub);
+  text-align: center;
+
+  i {
+    font-size: 24px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+}
+
+// 添加按钮
+
+// =========================================
+// 编辑态样式
+// =========================================
+
+// 组件基础样式
+.acu-dash-widget {
+  position: relative;
+  background: var(--acu-card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--acu-border);
+  padding: 4px 0; // 减小间距
+  display: flex;
+  flex-direction: column;
+  gap: 2px; // 减小间距
+  box-shadow: 0 4px 12px var(--acu-shadow);
+  transition: all 0.2s ease;
+  // 修复：允许 flex 子元素收缩（不使用 overflow: hidden，避免截断内容）
+  min-width: 0;
+  max-height: 250px; // 限制最大高度，防止内容过多撑破布局
+
+  &.acu-dash-widget-wide {
+    grid-column: span 2;
+
+    @media (max-width: 700px) {
+      grid-column: span 1;
+    }
+  }
+
+  // 全局状态组件：移除内边距（紫色斜线区域），让滚动区贴合容器边缘
+  // 使用 :has 选择器精准定位包含全局组件的卡片
+  &:has(.acu-global-widget) {
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+}
+
+// 编辑态组件 (移除抖动动画 - 伤眼睛)
+.acu-dash-widget-editing {
+  border: 2px dashed var(--acu-title-color);
+  cursor: grab;
+  // 编辑态使用渐变边框效果代替抖动
+  background:
+    linear-gradient(var(--acu-card-bg), var(--acu-card-bg)) padding-box,
+    linear-gradient(45deg, var(--acu-title-color), var(--acu-border)) border-box;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// 移除按钮 (左上)
+.acu-widget-remove {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: white;
+  border: 2px solid var(--acu-card-bg);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+// 配置按钮 (右上)
+.acu-widget-config {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--acu-title-color);
+  color: white;
+  border: 2px solid var(--acu-card-bg);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+// 调整大小手柄 (右下)
+.acu-widget-resize {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--acu-btn-bg);
+  color: var(--acu-text-sub);
+  border: 2px solid var(--acu-border);
+  cursor: nwse-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--acu-title-color);
+    color: white;
+    border-color: var(--acu-title-color);
+  }
+}
+
+// 组件内容可滚动
+.acu-dash-body-scrollable {
+  flex: 1; // 自动填充剩余空间 (Plan B)
+  min-height: 0; // 允许 flex 子项收缩
+  max-height: 100%; // 配合父容器限制
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--acu-text-sub);
+  }
+}
+
+// 数量徽章
+.acu-dash-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acu-title-color);
+  background: var(--acu-title-color-bg, rgba(var(--acu-title-color-rgb), 0.15));
+  border-radius: 9px;
+}
+
+// 列表项文本
+.acu-dash-list-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 列表项徽章
+
+// 紧凑式布局
+.acu-dash-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// =========================================
+// 顶栏样式
+// =========================================
+
+.acu-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--acu-border);
+  background: var(--acu-bg-nav);
+  flex-shrink: 0;
+}
+
+.acu-dash-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.acu-dash-header-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--acu-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  i {
+    color: var(--acu-title-color);
+  }
+}
+
+// 弹性空间
+.acu-dash-header-spacer {
+  flex: 1;
+  min-width: 16px;
+}
+
+.acu-dash-header-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// 注意: 顶栏按钮请使用通用类 .acu-icon-btn (components/buttons.scss)
+
+// 主题色按钮
+.acu-dash-header-actions .acu-icon-btn.acu-btn-primary {
+  background: var(--acu-title-color) !important;
+  color: white !important;
+  border-color: var(--acu-title-color) !important;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// =========================================
+// 网格布局
+// =========================================
+
+.acu-dash-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px; // 减小间距
+  padding: 8px; // 减小间距
+  align-content: start;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// 拖拽时的占位效果
+.acu-dash-widget-dragging {
+  opacity: 0.5;
+}
+
+.acu-dash-widget-drop-target {
+  border: 2px dashed var(--acu-title-color);
+  background: var(--acu-title-color-bg, rgba(var(--acu-title-color-rgb), 0.1));
+}
+
+// =========================================
+// 新容器样式
+// =========================================
+
+.acu-dash-container-new {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+// =========================================
+// 空状态
+// =========================================
+
+.acu-dash-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--acu-text-sub);
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0 0 16px;
+    font-size: 14px;
+  }
+}
+
+.acu-dash-add-first-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--acu-title-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// =========================================
+// 添加组件弹窗
+// =========================================
+
+// =========================================
+// 快捷按钮配置弹窗
+// =========================================
+
+.acu-actions-config-modal {
+  max-width: 320px;
+
+  @media (max-width: 400px) {
+    max-width: 95%;
+  }
+}
+
+.acu-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acu-action-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--acu-card-bg);
+  border: 1px solid var(--acu-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--acu-title-color);
+  }
+
+  i {
+    width: 24px;
+    color: var(--acu-text-sub);
+    text-align: center;
+  }
+
+  span {
+    flex: 1;
+    font-size: 13px;
+    color: var(--acu-text-main);
+  }
+
+  &:hover {
+    border-color: var(--acu-title-color);
+  }
+
+  &.active {
+    border-color: var(--acu-title-color);
+    background: var(--acu-title-color-bg, rgba(var(--acu-title-color-rgb), 0.1));
+
+    i {
+      color: var(--acu-title-color);
+    }
+  }
+}
+
+// =========================================
+// 配置弹窗相关 (旧版兼容)
+// =========================================
+
+// =========================================
+// 行编辑按钮
+// =========================================
+
+// 行末编辑按钮
+.acu-dash-row-edit-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+
+  i {
+    font-size: 11px;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-title-color);
+  }
+}
+
+// NPC 网格项悬浮时显示编辑按钮
+// 注意：不要覆盖原有的 .acu-dash-npc-item 样式，只添加编辑按钮相关的规则
+.acu-dash-npc-item {
+  &:hover .acu-dash-row-edit-btn {
+    opacity: 1;
+  }
+}
+
+// 列表项悬浮时显示编辑按钮
+.acu-dash-list-item {
+  &:hover .acu-dash-row-edit-btn {
+    opacity: 1;
+  }
+}
+
+// =========================================
+// 行编辑弹窗
+// =========================================
+
+// 行编辑弹窗容器 - 移动端需要上部放置策略
+.acu-row-edit-modal-container {
+  // 继承 .acu-modal-container 的样式，但移动端使用上部放置
+  @media (max-width: 768px) {
+    align-items: flex-start !important;
+    padding-top: 8vh;
+    padding-bottom: 0;
+  }
+}
+
+.acu-row-edit-modal {
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    width: 100%;
+    max-height: 60vh; // 移动端限制高度，避免遮挡过多
+    border-radius: 16px 16px 0 0;
+    margin-bottom: auto; // 配合上部放置
+  }
+
+  .acu-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+}
+
+.acu-row-edit-content {
+  .acu-data-card {
+    background: var(--acu-card-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 12px;
+    padding: 12px;
+    // 修复：强制使用 100% 宽度，防止卡片右侧被截断
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+}
+
+// =========================================
+// 表格更新状态看板 (TableStatusBoard)
+// =========================================
+
+.acu-status-board {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acu-status-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-bottom: 1px dashed var(--acu-border);
+}
+
+.acu-status-board-summary {
+  font-size: 11px;
+  color: var(--acu-text-sub);
+}
+
+.acu-status-table-wrapper {
+  overflow-x: auto;
+}
+
+// 表格状态表
+.acu-status-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--acu-border);
+    // 修复：显式继承自定义字体，防止被酒馆主题覆盖
+    font-family: var(--acu-font-family) !important;
+  }
+
+  th {
+    font-weight: 600;
+    color: var(--acu-text-sub);
+    background: var(--acu-table-head);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  td {
+    color: var(--acu-text-main);
+  }
+
+  // 可点击行
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: var(--acu-table-hover);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+// 表格名称列
+.acu-status-name {
+  font-weight: 500;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+}
+
+// 数值列居中
+.acu-status-freq,
+.acu-status-unrecorded,
+.acu-status-last-update {
+  text-align: center !important;
+}
+
+// 表头对应列也居中
+.acu-status-col-freq,
+.acu-status-col-unrecorded,
+.acu-status-col-last {
+  text-align: center !important;
+}
+
+// 禁用状态
+.acu-status-disabled {
+  color: var(--acu-text-sub);
+  opacity: 0.6;
+}
+
+// 全局频率标识
+.acu-status-global-hint {
+  font-size: 10px;
+  color: var(--acu-text-sub);
+  margin-left: 2px;
+}
+
+// 空/加载状态
+.acu-status-empty,
+.acu-status-loading {
+  text-align: center;
+  padding: 20px !important;
+  color: var(--acu-text-sub);
+
+  i {
+    margin-right: 6px;
+  }
+}
+
+// 未记录楼层状态
+
+// TableStatusBoard AI 高亮
+.acu-status-table tbody tr.acu-highlight-ai {
+  td {
+    color: var(--acu-highlight-ai) !important;
+    font-weight: 600;
+  }
+
+  .acu-status-name {
+    color: var(--acu-highlight-ai) !important;
+    font-weight: 700;
+  }
+}
+
+// =========================================
+// 嵌入式选项面板 (EmbeddedOptionsPanel)
+// =========================================
+
+.acu-embedded-options {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acu-embedded-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acu-embedded-option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acu-embedded-option-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--acu-text-sub);
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--acu-border);
+}
+
+.acu-embedded-option-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acu-embedded-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--acu-table-head);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--acu-table-hover);
+    color: var(--acu-title-color);
+  }
+}
+
+.acu-embedded-option-tags {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.acu-option-tag {
+  font-size: 10px !important;
+  padding: 1px 5px !important;
+  background: var(--acu-title-color-bg, rgba(var(--acu-title-color-rgb), 0.15)) !important;
+  color: var(--acu-title-color) !important;
+}
+
+.acu-embedded-option-text {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// =========================================
+// 特殊组件选择区 (添加弹窗)
+// =========================================
+
+// =========================================
+// 编辑模式添加面板
+// =========================================
+
+// 添加区域 - 横跨所有列
+.acu-dash-add-section {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  // 按钮宽度撑满
+  .acu-action-btn {
+    width: 100%;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 10px 16px;
+  }
+
+  // 按钮展开时的圆角调整
+  .acu-action-btn.active {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: var(--acu-title-color);
+    color: var(--acu-title-color);
+  }
+}
+
+// 添加列表 - 连接按钮
+.acu-dash-add-list {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+
+  .acu-switch-list-body {
+    max-height: 200px;
+  }
+
+  // 已添加项图标颜色
+  .acu-switch-list-item.is-selected .item-label i {
+    color: var(--acu-title-color);
+  }
+}
+
+// =========================================
+// 已选标签展示 (WidgetSettingsDialog)
+// 用于展示多选后的已选列标签
+// =========================================
+
+.acu-selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: var(--acu-table-head);
+  border-radius: 8px;
+  min-height: 40px;
+}
+
+.acu-selected-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--acu-title-color-bg);
+  border: 1px solid var(--acu-title-color);
+  border-radius: 6px;
+  color: var(--acu-title-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.acu-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--acu-title-color);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+
+  i {
+    font-size: 10px;
+  }
+}

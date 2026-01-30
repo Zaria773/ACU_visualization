@@ -1,0 +1,94 @@
+.acu-interaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.acu-interaction-item {
+  background: var(--acu-table-head);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column; // 改为纵向布局
+  gap: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-btn-bg);
+    border-color: var(--acu-border);
+  }
+
+  &.acu-highlight-ai {
+    background: var(--acu-highlight-ai-bg);
+    border-color: var(--acu-highlight-ai);
+  }
+}
+
+.acu-interaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.acu-interaction-target {
+  font-weight: bold;
+  color: var(--acu-text-main);
+  font-size: 1em;
+}
+
+.acu-interaction-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.acu-interaction-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  flex-wrap: wrap;
+}
+
+.acu-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+
+  &.acu-badge-primary {
+    background: var(--acu-title-color-bg);
+    color: var(--acu-title-color);
+    border: 1px solid var(--acu-title-color);
+  }
+
+  &.acu-badge-secondary {
+    background: var(--acu-table-head);
+    color: var(--acu-text-sub);
+    border: 1px solid var(--acu-border);
+  }
+
+}
+
+.acu-interaction-text {
+  font-size: 0.95em;
+  color: var(--acu-text-main);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 6px 8px;
+  border-radius: 6px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.acu-btn-success {
+  color: #2ecc71 !important;
+  border-color: #2ecc71 !important;
+
+  &:hover {
+    background: rgba(46, 204, 113, 0.1) !important;
+  }
+}
