@@ -4,12 +4,12 @@
 
 // 公共颜色变量
 $divination-colors: (
-  paper: #F9F2E6,
-  ink: #4A3728,
-  gold: #C6A664,
-  accent: #8B5E3C,
-  dark: #2C1810,
-  bg: #0F0A08,
+  paper: #f9f2e6,
+  ink: #4a3728,
+  gold: #c6a664,
+  accent: #8b5e3c,
+  dark: #2c1810,
+  bg: #0f0a08,
   deep-bg: #1a1a1a,
 );
 
@@ -79,14 +79,15 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 .divination-star {
   position: absolute;
   border-radius: 50%;
-  background-color: #F5E6D3;
+  background-color: #f5e6d3;
   opacity: 0.6;
   animation: divination-twinkle var(--duration, 3s) ease-in-out infinite;
   animation-delay: var(--delay, 0s);
 }
 
 @keyframes divination-twinkle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.2;
     transform: scale(0.8);
   }
@@ -131,7 +132,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 @keyframes divination-nebula-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.2;
   }
@@ -142,7 +144,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 @keyframes divination-nebula-drift {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0) scale(1);
     opacity: 0.1;
   }
@@ -200,13 +203,21 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 @keyframes divination-spin-slow {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes divination-spin-reverse {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(-360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
 }
 
 // ============================================
@@ -283,7 +294,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     transform: translateX(-50%);
     width: 160px;
     height: 1px;
-    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    background: linear-gradient(to right, transparent, #d4af37, transparent);
     opacity: 0.8;
   }
 
@@ -295,7 +306,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     transform: translateX(-50%);
     width: 160px;
     height: 1px;
-    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    background: linear-gradient(to right, transparent, #d4af37, transparent);
     opacity: 0.8;
   }
 }
@@ -337,7 +348,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   &__sparkle--static {
     position: relative;
     display: block;
-    color: #D4AF37;
+    color: #d4af37;
     opacity: 0.8;
     animation: divination-twinkle 4s ease-in-out infinite;
     filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
@@ -346,7 +357,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   &__divider {
     height: 2px;
     width: 120px;
-    background: linear-gradient(to right, transparent, #D4AF37, transparent);
+    background: linear-gradient(to right, transparent, #d4af37, transparent);
     margin-top: 8px;
     opacity: 0.5;
   }
@@ -435,7 +446,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 @keyframes divination-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -460,7 +472,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 
   &__text {
     font-family: $divination-font-heading;
-    color: #F5E6D3;
+    color: #f5e6d3;
     font-size: 18px;
     letter-spacing: 0.2em;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -480,7 +492,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 @keyframes divination-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -528,8 +541,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   }
 
   &--primary {
-    color: #D4AF37;
-    border-color: #D4AF37;
+    color: #d4af37;
+    border-color: #d4af37;
     background: rgba(26, 15, 14, 0.6);
 
     &::before {
@@ -537,7 +550,7 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     }
 
     &:hover {
-      color: #F9F2E6;
+      color: #f9f2e6;
       background: rgba(212, 175, 55, 0.2);
     }
   }
@@ -548,14 +561,14 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     background: transparent;
 
     &:hover {
-      color: #D4AF37;
-      border-color: #D4AF37;
+      color: #d4af37;
+      border-color: #d4af37;
     }
   }
 
   &--retry {
     font-family: $divination-font-heading;
-    color: #F5E6D3; /* 与提示词一致 */
+    color: #f5e6d3; /* 与提示词一致 */
     font-size: 18px; /* 与提示词一致 */
     letter-spacing: 0.2em; /* 与提示词一致 */
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); /* 与提示词一致 */
@@ -612,8 +625,8 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   transition: all 0.3s ease;
 
   &:hover {
-    color: #D4AF37;
-    border-color: #D4AF37;
+    color: #d4af37;
+    border-color: #d4af37;
     background: rgba(212, 175, 55, 0.1);
   }
 }

@@ -43,11 +43,7 @@
 
         <!-- 维度标签 -->
         <div v-if="dimensions.length > 0" class="mystic-card-front__dimensions">
-          <span
-            v-for="(dimValue, idx) in dimensions"
-            :key="idx"
-            class="mystic-card-front__dimension-tag"
-          >
+          <span v-for="(dimValue, idx) in dimensions" :key="idx" class="mystic-card-front__dimension-tag">
             {{ dimValue }}
           </span>
         </div>
@@ -56,11 +52,7 @@
         <div class="mystic-card-front__message-box">
           <template v-if="words.length > 0">
             <div class="mystic-card-front__word-list">
-              <div
-                v-for="(word, idx) in words"
-                :key="idx"
-                class="mystic-card-front__word-item"
-              >
+              <div v-for="(word, idx) in words" :key="idx" class="mystic-card-front__word-item">
                 {{ word }}
               </div>
             </div>
@@ -97,5 +89,4 @@ const props = withDefaults(defineProps<Props>(), {
   dimensions: () => [],
   loading: false,
 });
-
 </script>

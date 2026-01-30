@@ -7,11 +7,7 @@
   - 点击标签触发 select 事件，由外部处理 allowPreEdit 逻辑
 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-category-select-modal" :class="{ 'has-subcategories': hasSubCategories }">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -62,12 +58,7 @@
 
           <!-- 右侧：标签网格 -->
           <div class="acu-category-tags-grid">
-            <button
-              v-for="tag in displayedTags"
-              :key="tag.id"
-              class="acu-tag-btn"
-              @click.stop="handleTagClick(tag)"
-            >
+            <button v-for="tag in displayedTags" :key="tag.id" class="acu-tag-btn" @click.stop="handleTagClick(tag)">
               {{ tag.label }}
             </button>
 
@@ -82,12 +73,7 @@
         <!-- 无子分类：只显示标签滚动框 -->
         <div v-else class="acu-category-tags-only">
           <div class="acu-tags-scroll">
-            <button
-              v-for="tag in allTags"
-              :key="tag.id"
-              class="acu-tag-btn"
-              @click.stop="handleTagClick(tag)"
-            >
+            <button v-for="tag in allTags" :key="tag.id" class="acu-tag-btn" @click.stop="handleTagClick(tag)">
               {{ tag.label }}
             </button>
           </div>
@@ -101,7 +87,10 @@
       </div>
 
       <!-- 底部：管理入口 -->
-      <div class="acu-modal-footer" style="justify-content: flex-start; margin-top: 0; padding-top: 12px; border-top: 1px solid var(--acu-border);">
+      <div
+        class="acu-modal-footer"
+        style="justify-content: flex-start; margin-top: 0; padding-top: 12px; border-top: 1px solid var(--acu-border)"
+      >
         <button class="acu-modal-btn secondary" @click.stop="handleManageTags">
           <i class="fas fa-tags"></i> 管理标签
         </button>
@@ -298,18 +287,18 @@ function handleManageTags() {
           });
         }
       }
-    }
+    },
   );
 }
 
 // 监听弹窗打开，重置状态
 watch(
   () => props.visible,
-  (visible) => {
+  visible => {
     if (visible) {
       selectedSubCategoryId.value = null;
     }
-  }
+  },
 );
 
 function isFontAwesome(icon: string): boolean {

@@ -1,10 +1,6 @@
 <!-- TagManagerDialog.vue - 标签管理器主容器 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-tag-manager-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -41,12 +37,7 @@
         <!-- 搜索栏 -->
         <div class="acu-tag-search">
           <i class="fas fa-search"></i>
-          <input
-            v-model="searchKeyword"
-            type="text"
-            placeholder="搜索标签..."
-            @input="handleSearch"
-          />
+          <input v-model="searchKeyword" type="text" placeholder="搜索标签..." @input="handleSearch" />
           <button v-if="searchKeyword" class="acu-clear-search" @click.stop="clearSearch">
             <i class="fas fa-times"></i>
           </button>
@@ -64,11 +55,7 @@
             <i class="fas fa-eye"></i>
             <span class="btn-label">展示</span>
           </button>
-          <button
-            class="acu-mode-btn"
-            title="新建标签"
-            @click.stop="handleCreateTag"
-          >
+          <button class="acu-mode-btn" title="新建标签" @click.stop="handleCreateTag">
             <i class="fas fa-plus"></i>
             <span class="btn-label">新建</span>
           </button>
@@ -90,11 +77,7 @@
             <i class="fas fa-arrows-alt"></i>
             <span class="btn-label">迁移</span>
           </button>
-          <button
-            class="acu-mode-btn"
-            title="导入标签库"
-            @click.stop="handleImport"
-          >
+          <button class="acu-mode-btn" title="导入标签库" @click.stop="handleImport">
             <i class="fas fa-file-import"></i>
             <span class="btn-label">导入</span>
           </button>
@@ -120,11 +103,7 @@
                 <i class="fas fa-download"></i>
                 全部导出
               </button>
-              <button
-                class="acu-mode-btn"
-                :disabled="selectedTagIds.size === 0"
-                @click.stop="exportSelected"
-              >
+              <button class="acu-mode-btn" :disabled="selectedTagIds.size === 0" @click.stop="exportSelected">
                 <i class="fas fa-check"></i>
                 导出选中 ({{ selectedTagIds.size }})
               </button>
@@ -166,11 +145,7 @@
     />
 
     <!-- 导入弹窗 -->
-    <TagImportDialog
-      v-if="showImportDialog"
-      v-model:visible="showImportDialog"
-      @imported="handleImported"
-    />
+    <TagImportDialog v-if="showImportDialog" v-model:visible="showImportDialog" @imported="handleImported" />
   </div>
 </template>
 
@@ -519,7 +494,6 @@ function toggleSelectAllCurrent() {
 function isFontAwesome(icon: string): boolean {
   return icon.startsWith('fa') || icon.includes(' fa-');
 }
-
 
 // 导出
 function exportAll() {

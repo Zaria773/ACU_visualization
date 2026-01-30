@@ -140,17 +140,41 @@
 // 兼容性别名 (逐步废弃)
 // ------------------------------------------------------------
 
-.acu-badge-default { @extend .acu-badge; background: transparent; }
-.acu-badge-number  { @extend .acu-badge-primary; }
-.acu-badge-tag     { @extend .acu-badge-pill; @extend .acu-badge-outline; }
+.acu-badge-default {
+  @extend .acu-badge;
+  background: transparent;
+}
+.acu-badge-number {
+  @extend .acu-badge-primary;
+}
+.acu-badge-tag {
+  @extend .acu-badge-pill;
+  @extend .acu-badge-outline;
+}
 
 // 旧的状态色 -> 映射到 Primary 或保持原样(如果不希望报错)
 // 这里暂时映射为空，或者映射到 secondary，具体取决于使用场景
-.acu-badge-success { @extend .acu-badge-primary; }
-.acu-badge-warning { @extend .acu-badge-primary; }
-.acu-badge-danger  { @extend .acu-badge-primary; }
-.acu-badge-info    { @extend .acu-badge-secondary; }
-.acu-badge-level   { @extend .acu-badge-primary; }
-.acu-badge-percent { @extend .acu-badge-primary; }
-.acu-badge-male    { @extend .acu-badge-default; }
-.acu-badge-female  { @extend .acu-badge-default; }
+.acu-badge-success {
+  @extend .acu-badge-primary;
+}
+.acu-badge-warning {
+  @extend .acu-badge-primary;
+}
+.acu-badge-danger {
+  @extend .acu-badge-primary;
+}
+.acu-badge-info {
+  @extend .acu-badge-secondary;
+}
+.acu-badge-level {
+  @extend .acu-badge-primary;
+}
+.acu-badge-percent {
+  @extend .acu-badge-primary;
+}
+.acu-badge-male {
+  @extend .acu-badge-default;
+}
+.acu-badge-female {
+  @extend .acu-badge-default;
+}

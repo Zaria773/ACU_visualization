@@ -1,11 +1,7 @@
 <template>
   <div class="acu-relationship-graph">
     <!-- 背景层 -->
-    <div
-      v-if="backgroundStyle.enabled"
-      class="acu-graph-background"
-      :style="backgroundStyle.style"
-    ></div>
+    <div v-if="backgroundStyle.enabled" class="acu-graph-background" :style="backgroundStyle.style"></div>
 
     <!-- 图例（顶部） -->
     <div v-if="graphConfigStore.config.showLegend" class="acu-graph-legend">
@@ -115,7 +111,7 @@ import {
   getRelationLegend,
   isEnglishName,
   parseEmbeddedRelationships,
-  parseRelationshipTable
+  parseRelationshipTable,
 } from '../utils';
 
 // 注册布局扩展
@@ -472,10 +468,7 @@ const hasData = computed(() => {
 
 /** 当前解析出的势力列表（至少有 1 个节点归属的势力） */
 const currentFactions = computed(() => {
-  const { factionList, characterToFaction } = extractFactionMapping(
-    props.allTables || [],
-    props.characterTables || [],
-  );
+  const { factionList, characterToFaction } = extractFactionMapping(props.allTables || [], props.characterTables || []);
 
   // 只返回至少有 1 个节点归属的势力
   const factionsWithMembers = factionList.filter(faction => {
@@ -1136,9 +1129,7 @@ function setupFactionContainers(): boolean {
     // 确保源和目标容器都存在
     if (cy.getElementById(sourceId).length > 0 && cy.getElementById(targetId).length > 0) {
       // 检查是否存在反向边且关系词相同
-      const reverseRel = factionRelations.find(
-        r => r.source === rel.target && r.target === rel.source
-      );
+      const reverseRel = factionRelations.find(r => r.source === rel.target && r.target === rel.source);
       const isBidirectional = reverseRel && reverseRel.relation === rel.relation;
 
       if (isBidirectional) {
@@ -1159,7 +1150,9 @@ function setupFactionContainers(): boolean {
         },
         classes: 'faction-edge',
       });
-      console.info(`[RelationshipGraph] 势力边: "${rel.source}" ${isBidirectional ? '↔' : '→'} "${rel.target}" (${rel.relation})`);
+      console.info(
+        `[RelationshipGraph] 势力边: "${rel.source}" ${isBidirectional ? '↔' : '→'} "${rel.target}" (${rel.relation})`,
+      );
     }
   }
 
@@ -1569,8 +1562,8 @@ function handleNodeStyleUpdate(nodeId: string) {
 
   // 更新 cytoscape 节点的大小
   node.style({
-    'width': newSize,
-    'height': newSize,
+    width: newSize,
+    height: newSize,
   });
 
   // 更新节点的 data，以便 nodeHtmlLabel 能够使用新的样式
@@ -1583,7 +1576,9 @@ function handleNodeStyleUpdate(nodeId: string) {
   // nodeHtmlLabel 通过监听节点变化来更新，更新 data 后需要触发重绘
   node.trigger('data');
 
-  console.info(`[RelationshipGraph] 应用节点样式覆盖: ${nodeId}, size=${newSize}, border=${newBorderWidth}px ${newBorderColor}, shape=${newShape}`);
+  console.info(
+    `[RelationshipGraph] 应用节点样式覆盖: ${nodeId}, size=${newSize}, border=${newBorderWidth}px ${newBorderColor}, shape=${newShape}`,
+  );
 }
 
 /** 应用所有保存的节点样式覆盖（使用 batch 优化性能） */
@@ -1604,8 +1599,8 @@ function applyAllNodeStyleOverrides() {
       // 更新节点大小
       if (override.size !== undefined) {
         node.style({
-          'width': override.size,
-          'height': override.size,
+          width: override.size,
+          height: override.size,
         });
         node.data('nodeSize', override.size);
       }
@@ -1629,7 +1624,9 @@ function applyAllNodeStyleOverrides() {
 /**
  * 将标签位置配置转换为 Cytoscape 的 text-valign 值
  */
-function labelPositionToTextValign(position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none'): string {
+function labelPositionToTextValign(
+  position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none',
+): string {
   switch (position) {
     case 'top':
     case 'top-left':
@@ -1649,7 +1646,9 @@ function labelPositionToTextValign(position?: 'top' | 'bottom' | 'top-left' | 't
 /**
  * 将标签位置配置转换为 Cytoscape 的 text-halign 值
  */
-function labelPositionToTextHalign(position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none'): string {
+function labelPositionToTextHalign(
+  position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none',
+): string {
   switch (position) {
     case 'top-left':
     case 'bottom-left':
@@ -1685,10 +1684,7 @@ function applyAllFactionStyles() {
   if (factionContainers.length === 0) return;
 
   const colors = getThemeColors();
-  const { factionList } = extractFactionMapping(
-    props.allTables || [],
-    props.characterTables || [],
-  );
+  const { factionList } = extractFactionMapping(props.allTables || [], props.characterTables || []);
 
   // 使用 batch 批量更新，提升性能
   cy.batch(() => {
@@ -1697,8 +1693,8 @@ function applyAllFactionStyles() {
       const factionName = containerId.replace('faction-container-', '');
 
       // 获取势力配置
-      const factionConfig: FactionColorConfig = graphConfigStore.getFactionOverride(containerId)
-        || graphConfigStore.getFactionColor(factionName, factionList);
+      const factionConfig: FactionColorConfig =
+        graphConfigStore.getFactionOverride(containerId) || graphConfigStore.getFactionColor(factionName, factionList);
 
       // 更新节点 data（用于样式中的 data() 引用）
       containerNode.data('borderColor', factionConfig.border);
@@ -1890,7 +1886,8 @@ function updateGraphStyles() {
   // 使用 batch 批量更新全局样式
   cy.batch(() => {
     // 更新全局节点样式
-    cy!.style()
+    cy!
+      .style()
       .selector('node')
       .style({
         width: config.nodeSize,
@@ -1989,10 +1986,7 @@ watch(
 
 /** 监听背景配置变化，重新加载背景图片 */
 watch(
-  () => [
-    themeStore.backgroundConfig.hasIndexedDBImage,
-    themeStore.backgroundConfig.externalUrl,
-  ],
+  () => [themeStore.backgroundConfig.hasIndexedDBImage, themeStore.backgroundConfig.externalUrl],
   () => {
     loadBackgroundImage();
   },
@@ -2122,10 +2116,7 @@ async function loadBackgroundImage(): Promise<void> {
 
 onMounted(async () => {
   // 先加载别名映射和背景图片
-  await Promise.all([
-    loadAliasMap(),
-    loadBackgroundImage(),
-  ]);
+  await Promise.all([loadAliasMap(), loadBackgroundImage()]);
 
   // 如果数据已准备好，预加载头像和字体后再初始化
   if (hasData.value) {
@@ -2219,7 +2210,7 @@ function updateNodeColors() {
       // 基础样式
       const baseStyles: Record<string, string | number> = {
         'font-family': colors.fontFamily,
-        'color': colors.textMain,
+        color: colors.textMain,
         'border-width': 1.5,
         'border-color': colors.textMain,
       };
@@ -2266,5 +2257,3 @@ defineExpose({
 /* 样式通过 useParentStyleInjection 注入到父窗口 */
 /* 详见 styles/components/relationship-graph.scss */
 </style>
-
-

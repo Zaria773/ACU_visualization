@@ -24,12 +24,7 @@
                   <span class="hint">虚线框颜色</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model="localConfig.borderColor"
-                    type="color"
-                    class="acu-dashed"
-                    title="边框颜色"
-                  />
+                  <input v-model="localConfig.borderColor" type="color" class="acu-dashed" title="边框颜色" />
                 </div>
               </div>
 
@@ -40,11 +35,7 @@
                   <span class="hint">容器填充色</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model="localConfig.backgroundColor"
-                    type="color"
-                    title="背景颜色"
-                  />
+                  <input v-model="localConfig.backgroundColor" type="color" title="背景颜色" />
                 </div>
               </div>
 
@@ -55,13 +46,7 @@
                   <span class="hint">{{ localConfig.backgroundOpacity }}%</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="localConfig.backgroundOpacity"
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                  />
+                  <input v-model.number="localConfig.backgroundOpacity" type="range" min="0" max="100" step="5" />
                 </div>
               </div>
             </div>
@@ -100,13 +85,7 @@
                   <span class="hint">{{ localConfig.labelFontSize }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="localConfig.labelFontSize"
-                    type="range"
-                    min="10"
-                    max="24"
-                    step="1"
-                  />
+                  <input v-model.number="localConfig.labelFontSize" type="range" min="10" max="24" step="1" />
                 </div>
               </div>
             </div>
@@ -236,7 +215,7 @@ function hexToRgba(hex: string, opacity: number): string {
 
 watch(
   () => props.visible,
-  (newVisible) => {
+  newVisible => {
     if (newVisible && props.factionId) {
       loadConfig();
     }
@@ -245,7 +224,7 @@ watch(
 
 watch(
   () => props.factionId,
-  (newId) => {
+  newId => {
     if (newId && props.visible) {
       loadConfig();
     }

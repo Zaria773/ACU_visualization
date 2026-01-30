@@ -39,7 +39,13 @@ const DEFAULT_SANITY_DIMENSION: Dimension = {
   enabled: true,
   tiers: [
     { id: 'normal', name: '正常逻辑', weight: 50, prompt: '' },
-    { id: 'absurd', name: '“天然合理”', weight: 50, prompt: '特别要求：若需要融合非日常要素，场景中的所有角色必须将其视为日常生活中理所当然的一部分，绝不要有特殊反应。' },
+    {
+      id: 'absurd',
+      name: '“天然合理”',
+      weight: 50,
+      prompt:
+        '特别要求：若需要融合非日常要素，场景中的所有角色必须将其视为日常生活中理所当然的一部分，绝不要有特殊反应。',
+    },
   ],
 };
 
@@ -51,15 +57,15 @@ const DEFAULT_CONFIG: DivinationConfig = {
   autoSync: true,
   cardBackImage: '',
   themeColor: '#6b4c9a',
-  themeId: 'wafuku',  // 默认使用和风御札主题
+  themeId: 'wafuku', // 默认使用和风御札主题
   flipMode: 'auto',
   dimensions: [DEFAULT_LUCK_DIMENSION, DEFAULT_SANITY_DIMENSION],
   customTemplate: '',
   // 词库设置
-  enableWordDrawing: true,    // @deprecated
-  enableTableWords: true,     // 默认启用表格随机词
-  enableWordPool: false,      // 默认关闭世界书词库
-  wordDrawMode: 'perItem',    // 默认每项抽1个
+  enableWordDrawing: true, // @deprecated
+  enableTableWords: true, // 默认启用表格随机词
+  enableWordPool: false, // 默认关闭世界书词库
+  wordDrawMode: 'perItem', // 默认每项抽1个
   wordsPerItem: 1,
   tableColumnConfig: {},
   categoryConfig: {},
@@ -152,11 +158,15 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   }
 
   // 监听配置变化自动保存
-  watch([config, presets, activePresetId], () => {
-    if (isLoaded.value) {
-      saveConfig();
-    }
-  }, { deep: true });
+  watch(
+    [config, presets, activePresetId],
+    () => {
+      if (isLoaded.value) {
+        saveConfig();
+      }
+    },
+    { deep: true },
+  );
 
   // ============================================================
   // Preset Management
@@ -307,7 +317,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         await createOrReplaceWorldbook(WORLDBOOK_NAME, allEntries, { render: 'debounced' });
         console.info('[Divination] Category updated in worldbook');
       }
-
     } catch (e) {
       console.error('[Divination] Failed to update category:', e);
     }
@@ -372,7 +381,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 检查世界书是否存在
-      const names = await getWorldbookNames?.() || []; // 安全调用
+      const names = (await getWorldbookNames?.()) || []; // 安全调用
       // 实际上 getWorldbook 会抛出错误如果不存在，所以直接 try-catch 即可
       // 但这里我们假设如果 names 列表里没有就不尝试获取了
       // 注意: worldbook.d.ts 定义了 getWorldbookNames, 但不一定总是可用，需防御性编程
@@ -381,7 +390,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
       categories.value = entries.map(entry => {
         const { name, bias, limit } = parseEntryName(entry.name);
-        const words = entry.content.split(/[,，、\n]/).map(w => w.trim()).filter(w => w);
+        const words = entry.content
+          .split(/[,，、\n]/)
+          .map(w => w.trim())
+          .filter(w => w);
 
         return {
           id: entry.uid,
@@ -431,13 +443,16 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 2. 解析表格内容并构建新的条目列表
-      const newEntriesMap = new Map<string, {
-        name: string;
-        bias: BiasType;
-        limit: number;
-        words: Set<string>;
-        keys: string[];
-      }>();
+      const newEntriesMap = new Map<
+        string,
+        {
+          name: string;
+          bias: BiasType;
+          limit: number;
+          words: Set<string>;
+          keys: string[];
+        }
+      >();
 
       for (const table of randomTables) {
         // 获取列头 (第一行)
@@ -509,7 +524,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         // 增量合并逻辑：
         // 1. 获取现有词汇
         const existingWords = existingEntry
-          ? existingEntry.content.split(/[,，、\n]/).map((w: string) => w.trim()).filter((w: string) => w)
+          ? existingEntry.content
+              .split(/[,，、\n]/)
+              .map((w: string) => w.trim())
+              .filter((w: string) => w)
           : [];
 
         // 2. 合并新词汇 (Set 去重)
@@ -525,7 +543,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
             strategy: {
               ...existingEntry.strategy,
               // keys: _.uniq([...existingEntry.strategy.keys, ...data.keys]) // 如果需要合并 keys
-            }
+            },
           });
         } else {
           // 创建新条目
@@ -569,7 +587,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       } else {
         console.warn('[Divination] createOrReplaceWorldbook API unavailable');
       }
-
     } catch (e) {
       console.error('[Divination] Sync failed:', e);
     }
@@ -596,7 +613,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     maxCount: number,
     cats: DivinationCategory[],
     categoryConfig: Record<string, { enabled: boolean; limit: number }>,
-    selectedLuck: DimensionTier | null
+    selectedLuck: DimensionTier | null,
   ): string[] {
     const result: string[] = [];
 
@@ -760,7 +777,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         config.value.wordDrawMode,
         config.value.wordsPerItem,
         config.value.drawCount,
-        config.value.tableColumnConfig as Record<string, ColumnConfig>
+        config.value.tableColumnConfig as Record<string, ColumnConfig>,
       );
       drawnWords.push(...tableWords);
       console.info(`[Divination] 从表格抽词，模式: ${config.value.wordDrawMode}，结果:`, tableWords);
@@ -769,9 +786,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     // ========== 2. 世界书词库 ==========
     if (config.value.enableWordPool) {
       // 计算剩余抽词名额
-      const remainingCount = config.value.wordDrawMode === 'perItem'
-        ? config.value.wordsPerItem  // perItem 模式每项抽固定数，不受已抽数量影响
-        : Math.max(0, config.value.drawCount - drawnWords.length); // 其他模式用剩余名额
+      const remainingCount =
+        config.value.wordDrawMode === 'perItem'
+          ? config.value.wordsPerItem // perItem 模式每项抽固定数，不受已抽数量影响
+          : Math.max(0, config.value.drawCount - drawnWords.length); // 其他模式用剩余名额
 
       const poolWords = drawFromWorldbookWithConfig(
         config.value.wordDrawMode,
@@ -779,7 +797,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         remainingCount,
         categories.value,
         config.value.categoryConfig,
-        selectedLuck
+        selectedLuck,
       );
       drawnWords.push(...poolWords);
       console.info(`[Divination] 从世界书抽词，模式: ${config.value.wordDrawMode}，结果:`, poolWords);
@@ -801,22 +819,24 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       .map(r => ({
         name: r.dimension.name,
         value: r.tier.name,
-        prompt: r.tier.prompt
+        prompt: r.tier.prompt,
       }));
 
     return {
-      luck: luckResult ? {
-        name: luckResult.tier.name,
-        color: luckResult.tier.color || '#808080',
-        prompt: luckResult.tier.prompt
-      } : {
-        name: '未知',
-        color: '#808080',
-        prompt: ''
-      },
+      luck: luckResult
+        ? {
+            name: luckResult.tier.name,
+            color: luckResult.tier.color || '#808080',
+            prompt: luckResult.tier.prompt,
+          }
+        : {
+            name: '未知',
+            color: '#808080',
+            prompt: '',
+          },
       dimensions: otherDimensions,
       words: drawnWords,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 

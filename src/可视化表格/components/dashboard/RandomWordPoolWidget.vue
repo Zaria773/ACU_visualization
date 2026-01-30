@@ -40,19 +40,11 @@
       </span>
       <div v-show="!isEditing" class="acu-dash-actions">
         <!-- 一键展开/折叠 -->
-        <button
-          class="acu-icon-btn"
-          :title="allExpanded ? '全部折叠' : '全部展开'"
-          @click.stop="toggleAllExpanded"
-        >
+        <button class="acu-icon-btn" :title="allExpanded ? '全部折叠' : '全部展开'" @click.stop="toggleAllExpanded">
           <i class="fas" :class="allExpanded ? 'fa-compress-alt' : 'fa-expand-alt'"></i>
         </button>
         <!-- 设置按钮 -->
-        <button
-          class="acu-icon-btn"
-          title="抽词设置"
-          @click.stop="handleSettingsClick"
-        >
+        <button class="acu-icon-btn" title="抽词设置" @click.stop="handleSettingsClick">
           <i class="fas fa-cog"></i>
         </button>
         <!-- 自定义快捷按钮 -->
@@ -102,16 +94,12 @@
                 title="点击设置抽取数量限制"
                 @click.stop="toggleLimitPopup(column.name)"
               >
-                <i class="fas fa-filter" style="margin-right: 4px; font-size: 11px;"></i>
+                <i class="fas fa-filter" style="margin-right: 4px; font-size: 11px"></i>
                 <span>{{ getColumnLimitText(column.name) }}</span>
               </div>
 
               <!-- Limit 设置 Popover -->
-              <div
-                v-if="activeLimitPopup === column.name"
-                class="rwp-limit-popover"
-                @click.stop
-              >
+              <div v-if="activeLimitPopup === column.name" class="rwp-limit-popover" @click.stop>
                 <div class="popover-header">抽取数量限制 (0=不限)</div>
                 <div class="popover-body">
                   <div class="limit-control">
@@ -122,17 +110,12 @@
                       max="10"
                       step="1"
                       :value="getColumnLimit(column.name)"
-                      @input="(e) => setColumnLimit(column.name, +(e.target as HTMLInputElement).value)"
+                      @input="e => setColumnLimit(column.name, +(e.target as HTMLInputElement).value)"
                     />
                     <span class="limit-value">{{ getColumnLimit(column.name) || '不限' }}</span>
                   </div>
                   <div class="popover-actions">
-                    <button
-                      class="acu-tool-btn small"
-                      @click="setColumnLimit(column.name, 0)"
-                    >
-                      重置为不限
-                    </button>
+                    <button class="acu-tool-btn small" @click="setColumnLimit(column.name, 0)">重置为不限</button>
                   </div>
                 </div>
               </div>
@@ -159,9 +142,7 @@
           >
             {{ word }}
           </span>
-          <span v-if="column.words.length === 0" class="rwp-empty-hint">
-            暂无词条
-          </span>
+          <span v-if="column.words.length === 0" class="rwp-empty-hint"> 暂无词条 </span>
         </div>
       </div>
     </div>
@@ -170,10 +151,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import {
-  detectWordPoolTables,
-  getWordPoolTableData,
-} from '../../composables/useWordPool';
+import { detectWordPoolTables, getWordPoolTableData } from '../../composables/useWordPool';
 import { useDataStore } from '../../stores/useDataStore';
 import { useDivinationStore } from '../../stores/useDivinationStore';
 import { useUIStore } from '../../stores/useUIStore';
@@ -191,7 +169,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   widgetId: 'random-word-pool',
   colSpan: 1,
-  config: () => ({} as DashboardWidgetConfig),
+  config: () => ({}) as DashboardWidgetConfig,
 });
 
 // Emits
@@ -263,16 +241,23 @@ onUnmounted(() => {
 });
 
 // 监听表格配置变化，刷新数据
-watch(() => divinationStore.config.tableColumnConfig, () => {
-  // 配置变化时无需重新加载数据，只需触发视图更新
-}, { deep: true });
+watch(
+  () => divinationStore.config.tableColumnConfig,
+  () => {
+    // 配置变化时无需重新加载数据，只需触发视图更新
+  },
+  { deep: true },
+);
 
 // 监听编辑模式变化，进入编辑模式时自动折叠
-watch(() => props.isEditing, (newVal) => {
-  if (newVal) {
-    isCollapsed.value = true;
-  }
-});
+watch(
+  () => props.isEditing,
+  newVal => {
+    if (newVal) {
+      isCollapsed.value = true;
+    }
+  },
+);
 
 // 监听数据变化，自动刷新词库
 watch(
@@ -281,7 +266,7 @@ watch(
     console.log('[RandomWordPoolWidget] 检测到数据变更，刷新词库...');
     loadColumnData();
   },
-  { deep: false } // tables 引用变化即触发，无需 deep
+  { deep: false }, // tables 引用变化即触发，无需 deep
 );
 
 // ============================================================

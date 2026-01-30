@@ -193,7 +193,6 @@ function hasTabAiChanges(tabName: string): boolean {
   return dataStore.hasTableAiChanges(tabName);
 }
 
-
 /**
  * 获取 Tab 的 tooltip
  * @param tab Tab 配置

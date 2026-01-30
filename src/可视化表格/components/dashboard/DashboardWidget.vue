@@ -118,7 +118,9 @@
               :key="newTag.id"
               class="acu-dash-interactive-tag acu-dash-global-tag"
               :title="getNewTagTooltip(newTag)"
-              @click.stop="handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+              @click.stop="
+                handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+              "
             >
               {{ newTag.label }}
             </span>
@@ -171,7 +173,9 @@
               :key="newTag.id"
               class="acu-dash-interactive-tag acu-dash-global-tag"
               :title="getNewTagTooltip(newTag)"
-              @click.stop="handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })"
+              @click.stop="
+                handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+              "
             >
               {{ newTag.label }}
             </span>
@@ -262,7 +266,7 @@ let previousCollapsedState = false;
 // 监听编辑模式变化：进入时自动收起，退出时恢复
 watch(
   () => props.isEditing,
-  (editing) => {
+  editing => {
     if (editing) {
       // 进入编辑模式：记录当前状态，然后收起
       previousCollapsedState = isCollapsed.value;
@@ -412,7 +416,9 @@ const bodyClass = computed(() => ({
 const displayedInteractiveTags = computed<InteractiveTag[]>(() => {
   const config = props.config;
   const displayedIds = config?.widgetTagConfig?.displayedTagIds || [];
-  return displayedIds.map(id => tagLibraryStore.getTagById(id)).filter((tag): tag is InteractiveTag => tag !== undefined);
+  return displayedIds
+    .map(id => tagLibraryStore.getTagById(id))
+    .filter((tag): tag is InteractiveTag => tag !== undefined);
 });
 
 /**
@@ -710,7 +716,7 @@ function handleNewInteractiveTagClick(tag: InteractiveTag, rowData?: { title: st
 
   // 检查是否为地点类标签（需要显示同伴选择器）
   const category = tagLibraryStore.getCategoryById(tag.categoryId);
-  const isLocation = category ? (category.path.includes('地点') || category.path.includes('Location')) : false;
+  const isLocation = category ? category.path.includes('地点') || category.path.includes('Location') : false;
 
   // 检查是否需要二次编辑
   // 如果是地点标签，强制打开二次编辑弹窗以选择同伴
@@ -835,7 +841,6 @@ function handleAction(actionId: WidgetActionId): void {
   // App.vue 中有些动作不需要 tableId (如 manualUpdate)
   emit('action', actionId, props.config.tableId || '');
 }
-
 
 /**
  * 打开数据库原生编辑器

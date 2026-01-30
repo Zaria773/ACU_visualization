@@ -128,12 +128,12 @@ const parsedData = computed(() => {
     timeCols: {
       current: null as TableCell | null,
       passed: null as TableCell | null,
-      last: null as TableCell | null
+      last: null as TableCell | null,
     },
     weatherCol: null as TableCell | null,
     peopleCol: null as TableCell | null,
     attributes: [] as TableCell[],
-    footer: null as TableCell | null
+    footer: null as TableCell | null,
   };
 
   // 1. 遍历所有单元格进行归类
@@ -216,7 +216,8 @@ const locationText = computed(() => {
   const cols = parsedData.value?.locationCols;
   if (!cols || cols.length === 0) return '';
   // 按列索引排序
-  return cols.sort((a, b) => a.colIndex - b.colIndex)
+  return cols
+    .sort((a, b) => a.colIndex - b.colIndex)
     .map(c => c.value)
     .join(' › ');
 });
@@ -231,7 +232,7 @@ const locationParts = computed(() => {
 const timeData = computed(() => ({
   current: parsedData.value?.timeCols.current?.value,
   passed: parsedData.value?.timeCols.passed?.value,
-  last: parsedData.value?.timeCols.last?.value
+  last: parsedData.value?.timeCols.last?.value,
 }));
 
 // Weather Display
@@ -273,7 +274,7 @@ const attributes = computed(() => {
   return parsedData.value.attributes.map(cell => ({
     key: cell.key,
     value: String(cell.value),
-    isLong: String(cell.value).length > 15
+    isLong: String(cell.value).length > 15,
   }));
 });
 
@@ -291,5 +292,4 @@ function getAttributeIcon(key: string): string {
   if (['级', 'level', 'lv', 'rank'].some(w => k.includes(w))) return 'fa-layer-group';
   return 'fa-info-circle';
 }
-
 </script>

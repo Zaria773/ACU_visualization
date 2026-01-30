@@ -16,22 +16,13 @@
             <span class="hint">切换游戏数据结构</span>
           </div>
           <div class="acu-settings-control" style="display: flex; gap: 8px; align-items: center">
-            <select
-              class="acu-select"
-              :value="currentTemplate"
-              style="flex: 1"
-              @change="handleTemplateChange"
-            >
+            <select class="acu-select" :value="currentTemplate" style="flex: 1" @change="handleTemplateChange">
               <option value="" disabled>选择模板...</option>
               <option v-for="name in templatePresets" :key="name" :value="name">
                 {{ name }}
               </option>
             </select>
-            <button
-              class="acu-tool-btn"
-              title="粘贴导入模板配置"
-              @click.stop="handleImportTemplate"
-            >
+            <button class="acu-tool-btn" title="粘贴导入模板配置" @click.stop="handleImportTemplate">
               <i class="fas fa-file-import"></i>
             </button>
           </div>
@@ -44,22 +35,13 @@
             <span class="hint">切换 AI 叙事风格</span>
           </div>
           <div class="acu-settings-control" style="display: flex; gap: 8px; align-items: center">
-            <select
-              class="acu-select"
-              :value="currentPlot"
-              style="flex: 1"
-              @change="handlePlotChange"
-            >
+            <select class="acu-select" :value="currentPlot" style="flex: 1" @change="handlePlotChange">
               <option value="" disabled>选择预设...</option>
               <option v-for="name in plotPresets" :key="name" :value="name">
                 {{ name }}
               </option>
             </select>
-            <button
-              class="acu-tool-btn"
-              title="粘贴导入剧情预设"
-              @click.stop="handleImportPlot"
-            >
+            <button class="acu-tool-btn" title="粘贴导入剧情预设" @click.stop="handleImportPlot">
               <i class="fas fa-file-import"></i>
             </button>
           </div>
@@ -136,13 +118,16 @@ const loadData = async (retries = 0) => {
 };
 
 // Watch visibility to reload data
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    // 每次打开时，如果数据为空或者想刷新，都重新加载
-    // 这里简单起见每次都重试
-    loadData();
-  }
-});
+watch(
+  () => props.visible,
+  newVal => {
+    if (newVal) {
+      // 每次打开时，如果数据为空或者想刷新，都重新加载
+      // 这里简单起见每次都重试
+      loadData();
+    }
+  },
+);
 
 // Handlers
 const handleTemplateChange = async (e: Event) => {
@@ -237,4 +222,3 @@ onMounted(() => {
   }
 });
 </script>
-

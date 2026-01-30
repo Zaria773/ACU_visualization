@@ -50,13 +50,7 @@
                   <span class="hint">{{ localStyleConfig.size }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="localStyleConfig.size"
-                    type="range"
-                    min="30"
-                    max="120"
-                    step="5"
-                  />
+                  <input v-model.number="localStyleConfig.size" type="range" min="30" max="120" step="5" />
                 </div>
               </div>
 
@@ -67,12 +61,7 @@
                   <span class="hint">头像边框色</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model="localStyleConfig.borderColor"
-                    type="color"
-                    class="acu-dashed"
-                    title="边框颜色"
-                  />
+                  <input v-model="localStyleConfig.borderColor" type="color" class="acu-dashed" title="边框颜色" />
                 </div>
               </div>
 
@@ -83,13 +72,7 @@
                   <span class="hint">{{ localStyleConfig.borderWidth }}px</span>
                 </div>
                 <div class="acu-settings-control">
-                  <input
-                    v-model.number="localStyleConfig.borderWidth"
-                    type="range"
-                    min="0"
-                    max="10"
-                    step="0.5"
-                  />
+                  <input v-model.number="localStyleConfig.borderWidth" type="range" min="0" max="10" step="0.5" />
                 </div>
               </div>
 
@@ -271,13 +254,17 @@ function loadStyleConfig(): void {
     localStyleConfig.size = override.size ?? DEFAULT_NODE_STYLE.size ?? 60;
     localStyleConfig.borderColor = override.borderColor ?? defaultBorderColor;
     localStyleConfig.borderWidth = override.borderWidth ?? DEFAULT_NODE_STYLE.borderWidth ?? 2;
-    localStyleConfig.shape = (override.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ?? DEFAULT_NODE_STYLE.shape ?? 'ellipse';
+    localStyleConfig.shape =
+      (override.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ??
+      DEFAULT_NODE_STYLE.shape ??
+      'ellipse';
   } else {
     // 使用默认值
     localStyleConfig.size = DEFAULT_NODE_STYLE.size ?? 60;
     localStyleConfig.borderColor = defaultBorderColor;
     localStyleConfig.borderWidth = DEFAULT_NODE_STYLE.borderWidth ?? 2;
-    localStyleConfig.shape = (DEFAULT_NODE_STYLE.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ?? 'ellipse';
+    localStyleConfig.shape =
+      (DEFAULT_NODE_STYLE.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ?? 'ellipse';
   }
 }
 
@@ -404,7 +391,8 @@ function handleResetStyle(): void {
   localStyleConfig.size = DEFAULT_NODE_STYLE.size ?? 60;
   localStyleConfig.borderColor = getThemeTextColor();
   localStyleConfig.borderWidth = DEFAULT_NODE_STYLE.borderWidth ?? 2;
-  localStyleConfig.shape = (DEFAULT_NODE_STYLE.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ?? 'ellipse';
+  localStyleConfig.shape =
+    (DEFAULT_NODE_STYLE.shape as 'ellipse' | 'rectangle' | 'round-rectangle' | 'hexagon') ?? 'ellipse';
 
   emit('style-update', props.nodeId);
 }

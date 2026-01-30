@@ -107,14 +107,14 @@ export interface GraphConfig {
 
 /** 预设势力颜色调色板 */
 export const FACTION_COLOR_PALETTE: Array<{ border: string; background: string; opacity: number }> = [
-  { border: '#E91E63', background: 'rgba(233, 30, 99, 0.1)', opacity: 10 },    // 粉红
-  { border: '#2196F3', background: 'rgba(33, 150, 243, 0.1)', opacity: 10 },   // 蓝
-  { border: '#4CAF50', background: 'rgba(76, 175, 80, 0.1)', opacity: 10 },    // 绿
-  { border: '#FF9800', background: 'rgba(255, 152, 0, 0.1)', opacity: 10 },    // 橙
-  { border: '#9C27B0', background: 'rgba(156, 39, 176, 0.1)', opacity: 10 },   // 紫
-  { border: '#00BCD4', background: 'rgba(0, 188, 212, 0.1)', opacity: 10 },    // 青
-  { border: '#795548', background: 'rgba(121, 85, 72, 0.1)', opacity: 10 },    // 棕
-  { border: '#607D8B', background: 'rgba(96, 125, 139, 0.1)', opacity: 10 },   // 蓝灰
+  { border: '#E91E63', background: 'rgba(233, 30, 99, 0.1)', opacity: 10 }, // 粉红
+  { border: '#2196F3', background: 'rgba(33, 150, 243, 0.1)', opacity: 10 }, // 蓝
+  { border: '#4CAF50', background: 'rgba(76, 175, 80, 0.1)', opacity: 10 }, // 绿
+  { border: '#FF9800', background: 'rgba(255, 152, 0, 0.1)', opacity: 10 }, // 橙
+  { border: '#9C27B0', background: 'rgba(156, 39, 176, 0.1)', opacity: 10 }, // 紫
+  { border: '#00BCD4', background: 'rgba(0, 188, 212, 0.1)', opacity: 10 }, // 青
+  { border: '#795548', background: 'rgba(121, 85, 72, 0.1)', opacity: 10 }, // 棕
+  { border: '#607D8B', background: 'rgba(96, 125, 139, 0.1)', opacity: 10 }, // 蓝灰
 ];
 
 /** 默认势力样式（未配置颜色的势力使用） */
@@ -138,11 +138,35 @@ export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
   enabled: false,
   position: 'top-right',
   items: [
-    { id: 'legend-love', label: '恋爱/暧昧', color: '#E91E63', emoji: '❤️', keywords: ['恋', '爱', '暧昧', '情人', '伴侣'] },
-    { id: 'legend-family', label: '亲属', color: '#2196F3', emoji: '💙', keywords: ['父', '母', '兄', '弟', '姐', '妹', '亲'] },
-    { id: 'legend-friend', label: '友好/同伴', color: '#4CAF50', emoji: '💚', keywords: ['友', '朋', '伙伴', '同伴', '盟'] },
+    {
+      id: 'legend-love',
+      label: '恋爱/暧昧',
+      color: '#E91E63',
+      emoji: '❤️',
+      keywords: ['恋', '爱', '暧昧', '情人', '伴侣'],
+    },
+    {
+      id: 'legend-family',
+      label: '亲属',
+      color: '#2196F3',
+      emoji: '💙',
+      keywords: ['父', '母', '兄', '弟', '姐', '妹', '亲'],
+    },
+    {
+      id: 'legend-friend',
+      label: '友好/同伴',
+      color: '#4CAF50',
+      emoji: '💚',
+      keywords: ['友', '朋', '伙伴', '同伴', '盟'],
+    },
     { id: 'legend-neutral', label: '中立/一般', color: '#9E9E9E', emoji: '⚪', keywords: ['同事', '邻居', '认识'] },
-    { id: 'legend-interest', label: '利益关系', color: '#FF9800', emoji: '🟡', keywords: ['合作', '雇佣', '交易', '利用'] },
+    {
+      id: 'legend-interest',
+      label: '利益关系',
+      color: '#FF9800',
+      emoji: '🟡',
+      keywords: ['合作', '雇佣', '交易', '利用'],
+    },
     { id: 'legend-enemy', label: '敌对/仇恨', color: '#F44336', emoji: '🔴', keywords: ['敌', '仇', '对手', '竞争'] },
     { id: 'legend-complex', label: '复杂/未知', color: '#9C27B0', emoji: '🟣', keywords: [] },
   ],
@@ -236,7 +260,11 @@ export const useGraphConfigStore = defineStore('graphConfig', () => {
    * @param existingFactions 已存在的势力列表（用于分配新颜色）
    * @param useDefault 如果为 true，未配置时返回默认灰色样式；否则从调色板分配
    */
-  function getFactionColor(factionName: string, existingFactions: string[] = [], useDefault = false): FactionColorConfig {
+  function getFactionColor(
+    factionName: string,
+    existingFactions: string[] = [],
+    useDefault = false,
+  ): FactionColorConfig {
     // 如果已配置，直接返回
     if (config.value.factionColors[factionName]) {
       return config.value.factionColors[factionName];

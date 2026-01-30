@@ -34,7 +34,7 @@
     </div>
 
     <!-- 外观设置 -->
-    <div class="acu-settings-title" style="margin-top: 16px;">
+    <div class="acu-settings-title" style="margin-top: 16px">
       <i class="fas fa-palette"></i>
       外观与行为
     </div>
@@ -78,12 +78,7 @@
         <div class="acu-settings-control">
           <div class="acu-image-upload-container">
             <!-- URL 输入 -->
-            <input
-              v-model="config.cardBackImage"
-              type="text"
-              class="acu-settings-input"
-              placeholder="输入图片 URL"
-            />
+            <input v-model="config.cardBackImage" type="text" class="acu-settings-input" placeholder="输入图片 URL" />
 
             <!-- 上传按钮 -->
             <button class="acu-tool-btn" title="上传图片" @click="triggerUpload">
@@ -91,13 +86,7 @@
             </button>
 
             <!-- 隐藏的文件输入 -->
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              class="acu-hidden-input"
-              @change="handleFileUpload"
-            />
+            <input ref="fileInput" type="file" accept="image/*" class="acu-hidden-input" @change="handleFileUpload" />
           </div>
         </div>
       </div>
@@ -105,7 +94,7 @@
 
     <!-- 抽词设置 -->
     <div class="acu-settings-section" data-section="word-drawing">
-      <div class="acu-settings-title" style="margin-top: 16px;">
+      <div class="acu-settings-title" style="margin-top: 16px">
         <i class="fas fa-font"></i>
         抽词设置
       </div>
@@ -231,10 +220,14 @@ const themeList = computed(() => getAllThemes());
 // 抽词模式提示文本
 const modeHintText = computed(() => {
   switch (config.value.wordDrawMode) {
-    case 'perItem': return '每项固定抽取，不受总数限制';
-    case 'custom': return '按 limit 控制，受总数限制';
-    case 'mixed': return '所有开启项混合抽取';
-    default: return '';
+    case 'perItem':
+      return '每项固定抽取，不受总数限制';
+    case 'custom':
+      return '按 limit 控制，受总数限制';
+    case 'mixed':
+      return '所有开启项混合抽取';
+    default:
+      return '';
   }
 });
 

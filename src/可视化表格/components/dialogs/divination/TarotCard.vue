@@ -3,21 +3,14 @@
 <template>
   <div
     class="tarot-card"
-    :class="[
-      `tarot-card--theme-${themeId}`,
-      { 'tarot-card--flipped': isFlipped }
-    ]"
+    :class="[`tarot-card--theme-${themeId}`, { 'tarot-card--flipped': isFlipped }]"
     :style="cardStyle"
     @click.stop="handleClick"
   >
     <div class="tarot-card__inner">
       <!-- 卡背（初始显示） -->
       <div class="tarot-card__face tarot-card__back">
-        <component
-          :is="theme.CardBack"
-          :image-url="effectiveBackImage"
-          @load="handleCardBackLoad"
-        />
+        <component :is="theme.CardBack" :image-url="effectiveBackImage" @load="handleCardBackLoad" />
       </div>
 
       <!-- 卡面（翻转后显示） -->

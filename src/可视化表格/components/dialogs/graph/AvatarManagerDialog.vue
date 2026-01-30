@@ -55,7 +55,7 @@
         <!-- 空状态 -->
         <div v-else-if="filteredList.length === 0" class="acu-avatar-empty">
           <i :class="activeTab === 'character' ? 'fas fa-user-slash' : 'fas fa-users-slash'"></i>
-          <p>{{ searchQuery ? '未找到匹配的数据' : (activeTab === 'character' ? '暂无角色数据' : '暂无势力数据') }}</p>
+          <p>{{ searchQuery ? '未找到匹配的数据' : activeTab === 'character' ? '暂无角色数据' : '暂无势力数据' }}</p>
         </div>
 
         <!-- 统一头像列表 -->
@@ -80,7 +80,9 @@
                 :style="getAvatarStyle(item)"
                 @click.stop="openCropDialog(item)"
               >
-                <span v-if="!item.avatarUrl" class="acu-avatar-initial">{{ item.displayLabel || getInitial(item.name) }}</span>
+                <span v-if="!item.avatarUrl" class="acu-avatar-initial">{{
+                  item.displayLabel || getInitial(item.name)
+                }}</span>
                 <i v-if="!item.avatarUrl" class="fas fa-camera acu-avatar-camera-hint"></i>
               </div>
               <!-- 来源标签 -->

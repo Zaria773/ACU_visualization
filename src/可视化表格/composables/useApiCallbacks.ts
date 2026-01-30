@@ -52,8 +52,7 @@ export function useApiCallbacks() {
    */
   function getCurrentChatId(): string {
     try {
-      const ST =
-        (window as any).SillyTavern || (window.parent as any)?.SillyTavern || (window.top as any)?.SillyTavern;
+      const ST = (window as any).SillyTavern || (window.parent as any)?.SillyTavern || (window.top as any)?.SillyTavern;
       if (ST?.getCurrentChatId) {
         const chatId = ST.getCurrentChatId();
         if (chatId) return chatId;
@@ -70,10 +69,7 @@ export function useApiCallbacks() {
   /**
    * 比较两行数据是否有变化
    */
-  function hasRowChanged(
-    oldRow: (string | number)[] | undefined,
-    newRow: (string | number)[] | undefined,
-  ): boolean {
+  function hasRowChanged(oldRow: (string | number)[] | undefined, newRow: (string | number)[] | undefined): boolean {
     if (!oldRow && !newRow) return false;
     if (!oldRow || !newRow) return true;
     if (oldRow.length !== newRow.length) return true;
@@ -93,10 +89,7 @@ export function useApiCallbacks() {
    * 保存 AI 填表变更到行历史
    * 在 tableUpdateCallback 中调用，对比快照与新数据，将变更行的旧值保存到 IndexedDB
    */
-  async function saveAiChangesToHistory(
-    oldData: RawDatabaseData,
-    newData: RawDatabaseData,
-  ): Promise<void> {
+  async function saveAiChangesToHistory(oldData: RawDatabaseData, newData: RawDatabaseData): Promise<void> {
     const chatId = getCurrentChatId();
     if (!chatId) {
       console.warn('[ACU] 无法获取 chatId，跳过 AI 变更历史保存');

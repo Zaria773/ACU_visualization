@@ -5,11 +5,11 @@
 
 // 颜色变量
 $wafuku-colors: (
-  paper: #F9F2E6,
-  ink: #4A3728,
-  gold: #C6A664,
-  accent: #8B5E3C,
-  dark: #2C1810,
+  paper: #f9f2e6,
+  ink: #4a3728,
+  gold: #c6a664,
+  accent: #8b5e3c,
+  dark: #2c1810,
 );
 
 // 字体
@@ -25,7 +25,7 @@ $wafuku-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  border: 6px solid #4A3222;
+  border: 6px solid #4a3222;
   position: relative;
 
   &__image {

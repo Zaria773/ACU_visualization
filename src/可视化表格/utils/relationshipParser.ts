@@ -379,10 +379,7 @@ export function findCharacterTables(tables: ProcessedTable[]): ProcessedTable[] 
  * @param config 解析配置
  * @returns 解析结果
  */
-export function parseAttributeTableToElements(
-  tables: ProcessedTable[],
-  config: ParserConfig,
-): ParseResult {
+export function parseAttributeTableToElements(tables: ProcessedTable[], config: ParserConfig): ParseResult {
   const warnings: string[] = [];
   const nodes: ElementDefinition[] = [];
   const edges: ElementDefinition[] = [];
@@ -920,10 +917,7 @@ function extractFactionList(allTables: ProcessedTable[]): string[] {
  * 使用**包含匹配**：如果单元格值包含某个势力名称，则记录该势力
  * 例如："洪盛骨干/铜锣湾坐馆" 包含 "洪盛"，则匹配到 "洪盛" 势力
  */
-function extractCharacterFactions(
-  characterTables: ProcessedTable[],
-  factionList: string[],
-): Map<string, string> {
+function extractCharacterFactions(characterTables: ProcessedTable[], factionList: string[]): Map<string, string> {
   const characterToFaction = new Map<string, string>();
 
   // 势力归属可能的列名
@@ -969,10 +963,7 @@ function extractCharacterFactions(
  * @param characterTables 人物表列表
  * @returns 势力映射结果
  */
-export function extractFactionMapping(
-  allTables: ProcessedTable[],
-  characterTables: ProcessedTable[],
-): FactionMapping {
+export function extractFactionMapping(allTables: ProcessedTable[], characterTables: ProcessedTable[]): FactionMapping {
   // 1. 从势力表提取势力列表
   const factionList = extractFactionList(allTables);
 
@@ -1128,4 +1119,3 @@ export function parseEmbeddedRelationships(
     warnings,
   };
 }
-

@@ -20,12 +20,7 @@
       <button class="acu-widget-config" title="配置快捷按钮" @click.stop="handleConfigActions">
         <i class="fas fa-plus"></i>
       </button>
-      <div
-        class="acu-widget-resize"
-        title="拖动改变大小"
-        @mousedown.stop="startResize"
-        @touchstart.stop="startResize"
-      >
+      <div class="acu-widget-resize" title="拖动改变大小" @mousedown.stop="startResize" @touchstart.stop="startResize">
         <i class="fas fa-expand-alt"></i>
       </div>
     </template>
@@ -40,19 +35,11 @@
       <!-- 按钮区 -->
       <div v-if="!isEditing" class="acu-dash-actions">
         <!-- 全部存入按钮 -->
-        <button
-          class="acu-icon-btn"
-          title="将所有交互存入标签库"
-          @click.stop="handleImportAll"
-        >
+        <button class="acu-icon-btn" title="将所有交互存入标签库" @click.stop="handleImportAll">
           <i class="fas fa-save"></i>
         </button>
 
-        <button
-          class="acu-icon-btn"
-          :title="getActionTooltip('settings')"
-          @click.stop="handleAction('settings')"
-        >
+        <button class="acu-icon-btn" :title="getActionTooltip('settings')" @click.stop="handleAction('settings')">
           <i class="fas fa-cog"></i>
         </button>
 
@@ -79,11 +66,7 @@
 
             <div class="acu-interaction-actions">
               <!-- 追加到输入框 -->
-              <button
-                class="acu-icon-btn"
-                title="追加到输入框"
-                @click.stop="handleAppendToInput(row)"
-              >
+              <button class="acu-icon-btn" title="追加到输入框" @click.stop="handleAppendToInput(row)">
                 <i class="fas fa-reply"></i>
               </button>
               <!-- 单条存入 -->
@@ -103,7 +86,9 @@
           <div class="acu-interaction-meta">
             <span class="acu-badge acu-badge-primary">{{ getRowValue(row, '交互名称') }}</span>
             <span class="acu-badge acu-badge-secondary">{{ getRowValue(row, '交互类型') }}</span>
-            <span v-if="getRowValue(row, '交互简介')" class="acu-badge acu-badge-secondary">{{ getRowValue(row, '交互简介') }}</span>
+            <span v-if="getRowValue(row, '交互简介')" class="acu-badge acu-badge-secondary">{{
+              getRowValue(row, '交互简介')
+            }}</span>
           </div>
 
           <!-- 第三行：内容 -->
@@ -198,9 +183,7 @@ const displayRows = computed(() => {
 
   if (props.searchTerm) {
     const searchLower = props.searchTerm.toLowerCase().trim();
-    rows = rows.filter(row =>
-      row.cells.some(cell => String(cell.value).toLowerCase().includes(searchLower))
-    );
+    rows = rows.filter(row => row.cells.some(cell => String(cell.value).toLowerCase().includes(searchLower)));
   }
 
   return rows;
@@ -352,7 +335,7 @@ function handleImportAll() {
 // 监听 AI 更新，自动导入
 watch(
   () => props.aiDiffMap,
-  (newAiDiff) => {
+  newAiDiff => {
     if (!newAiDiff || !props.tableData) return;
 
     // 检查是否有当前表格的 AI 更新
@@ -379,7 +362,7 @@ watch(
       }
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 /** 记录进入编辑模式前的折叠状态 */
@@ -388,7 +371,7 @@ let previousCollapsedState = false;
 // Watchers
 watch(
   () => props.isEditing,
-  (val) => {
+  val => {
     if (val) {
       previousCollapsedState = isCollapsed.value;
       isCollapsed.value = true;

@@ -5,17 +5,24 @@
 
 // 颜色变量
 $mystic-colors: (
-  bg-dark: #0B1026,
+  bg-dark: #0b1026,
   bg-gradient-from: #1e293b,
   bg-gradient-via: #0f172a,
   bg-gradient-to: #020617,
-  gold-light: #fcd34d,   // amber-300
-  gold: #f59e0b,         // amber-500
-  gold-dark: #b45309,    // amber-700
-  indigo-light: #c7d2fe, // indigo-200
-  indigo: #818cf8,       // indigo-400
-  indigo-dark: #1e1b4b,  // indigo-950
-  text-light: #fef3c7,   // amber-100
+  gold-light: #fcd34d,
+  // amber-300
+  gold: #f59e0b,
+  // amber-500
+  gold-dark: #b45309,
+  // amber-700
+  indigo-light: #c7d2fe,
+  // indigo-200
+  indigo: #818cf8,
+  // indigo-400
+  indigo-dark: #1e1b4b,
+  // indigo-950
+  text-light: #fef3c7,
+  // amber-100
   text-dark: #1c1917,
 );
 
@@ -44,12 +51,7 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   &__sheen {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      to top right,
-      rgba(0, 0, 0, 0.2),
-      transparent,
-      rgba(255, 255, 255, 0.1)
-    );
+    background: linear-gradient(to top right, rgba(0, 0, 0, 0.2), transparent, rgba(255, 255, 255, 0.1));
     pointer-events: none;
   }
 }
@@ -150,11 +152,7 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     width: 128px;
     height: 128px;
     opacity: 0.2;
-    background: radial-gradient(
-      circle,
-      rgba(251, 191, 36, 0.4) 0%,
-      transparent 70%
-    );
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 70%);
     filter: blur(40px);
     pointer-events: none;
     z-index: 5;
@@ -221,11 +219,7 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     font-size: 32px;
     font-weight: bold;
     letter-spacing: 0.2em;
-    background: linear-gradient(
-      to bottom,
-      map-get($mystic-colors, text-light),
-      map-get($mystic-colors, gold)
-    );
+    background: linear-gradient(to bottom, map-get($mystic-colors, text-light), map-get($mystic-colors, gold));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -240,12 +234,7 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   &__divider {
     width: 64px;
     height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      map-get($mystic-colors, indigo),
-      transparent
-    );
+    background: linear-gradient(to right, transparent, map-get($mystic-colors, indigo), transparent);
     margin: 8px auto 0;
   }
 
@@ -291,16 +280,15 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
       left: 20%;
       right: 20%;
       height: 1px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(245, 158, 11, 0.3),
-        transparent
-      );
+      background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.3), transparent);
     }
 
-    &::before { top: 0; }
-    &::after { bottom: 0; }
+    &::before {
+      top: 0;
+    }
+    &::after {
+      bottom: 0;
+    }
   }
 
   &__word-list {
@@ -314,7 +302,8 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     padding: 0 8px; // 给滚动条留点位置
 
     // 使得内容少时居中，内容多时可滚动
-    &::before, &::after {
+    &::before,
+    &::after {
       content: '';
       flex-shrink: 0; // 防止被压缩
       margin: auto;
@@ -390,18 +379,28 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 
 // 动画
 @keyframes mystic-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes mystic-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 // 浮动动画（用于未翻转状态的卡背）
 @keyframes mystic-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -411,7 +410,8 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 
 // 发光动画
 @keyframes mystic-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(199, 210, 254, 0.3);
   }
   50% {

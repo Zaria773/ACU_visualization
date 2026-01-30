@@ -6,11 +6,7 @@
   - 点击"追加"按钮将内容追加到酒馆输入框
 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-pre-edit-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -31,9 +27,7 @@
         <div class="acu-pre-edit-content">
           <!-- 标签信息 -->
           <div class="acu-pre-edit-info-row">
-            <div class="acu-pre-edit-label">
-              标签：{{ tagLabel }}
-            </div>
+            <div class="acu-pre-edit-label">标签：{{ tagLabel }}</div>
           </div>
 
           <!-- 编辑区 -->
@@ -65,9 +59,7 @@
                 </div>
                 <span class="acu-avatar-name">{{ avatar.name }}</span>
               </div>
-              <div v-if="avatars.length === 0 && !isLoadingAvatars" class="acu-avatar-empty">
-                暂无头像数据
-              </div>
+              <div v-if="avatars.length === 0 && !isLoadingAvatars" class="acu-avatar-empty">暂无头像数据</div>
             </div>
           </div>
 
@@ -76,7 +68,6 @@
             <i class="fas fa-lightbulb"></i>
             <span>按 Ctrl+Enter 快速追加</span>
           </div>
-
         </div>
       </div>
     </div>
@@ -139,7 +130,7 @@ const isLoadingAvatars = ref(false);
 // 监听弹窗打开
 watch(
   () => props.visible,
-  async (visible) => {
+  async visible => {
     if (visible) {
       // 初始化编辑内容
       editedPrompt.value = props.resolvedPrompt;
@@ -153,12 +144,9 @@ watch(
       await nextTick();
       textareaRef.value?.focus();
       // 光标移到末尾
-      textareaRef.value?.setSelectionRange(
-        editedPrompt.value.length,
-        editedPrompt.value.length
-      );
+      textareaRef.value?.setSelectionRange(editedPrompt.value.length, editedPrompt.value.length);
     }
-  }
+  },
 );
 
 async function loadAvatars() {
@@ -178,9 +166,7 @@ async function loadAvatars() {
         if (isCharacterTable(table.name, table.id)) {
           console.log('[TagPreEditDialog] Found character table:', table.name);
           // 查找名称列：优先找 "Name"/"名称"/"姓名"，否则用第二列(index 1)
-          const nameColIndex = table.headers.findIndex(h =>
-            ['name', '名称', '姓名', '角色'].includes(h.toLowerCase())
-          );
+          const nameColIndex = table.headers.findIndex(h => ['name', '名称', '姓名', '角色'].includes(h.toLowerCase()));
 
           // 确定目标列：优先用找到的列，否则如果有第2列用第2列，否则用第1列
           let targetColIndex = nameColIndex;
@@ -205,7 +191,7 @@ async function loadAvatars() {
 
     // 3. 构建显示列表
     const displayAvatars = await Promise.all(
-      Array.from(charNames).map(async (name) => {
+      Array.from(charNames).map(async name => {
         const url = await getAvatarUrl(name);
         const config = labelsConfig[name];
 
@@ -223,7 +209,7 @@ async function loadAvatars() {
           displayUrl: url || '',
           textAvatar,
         };
-      })
+      }),
     );
 
     avatars.value = displayAvatars;
@@ -263,10 +249,7 @@ function handleAvatarClick(avatar: AvatarDisplay) {
     // 找到最后一个 {{user}} 的位置
     const lastIndex = currentText.lastIndexOf('{{user}}');
     const insertPos = lastIndex + '{{user}}'.length;
-    editedPrompt.value =
-      currentText.slice(0, insertPos) +
-      companionText +
-      currentText.slice(insertPos);
+    editedPrompt.value = currentText.slice(0, insertPos) + companionText + currentText.slice(insertPos);
   } else {
     // 插入在最前面
     editedPrompt.value = companionText + currentText;

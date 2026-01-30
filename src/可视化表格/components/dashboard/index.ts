@@ -6,4 +6,3 @@
 export { default as DashboardWidget } from './DashboardWidget.vue';
 export { default as InteractionTableWidget } from './InteractionTableWidget.vue';
 export { default as RandomWordPoolWidget } from './RandomWordPoolWidget.vue';
-

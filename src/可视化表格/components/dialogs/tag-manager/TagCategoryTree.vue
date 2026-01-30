@@ -117,11 +117,7 @@
         @click="handleCategoryClick(cat)"
       >
         <!-- 展开/折叠按钮 -->
-        <span
-          v-if="cat.hasChildren"
-          class="acu-tree-toggle"
-          @click.stop="toggleExpand(cat.id)"
-        >
+        <span v-if="cat.hasChildren" class="acu-tree-toggle" @click.stop="toggleExpand(cat.id)">
           {{ expandedCategories.has(cat.id) ? '▼' : '▶' }}
         </span>
         <span v-else class="acu-tree-toggle-placeholder"></span>
@@ -139,12 +135,7 @@
         <span class="acu-tree-count">({{ cat.tagCount }})</span>
 
         <!-- 添加模式：添加按钮（常驻） -->
-        <button
-          v-if="mode === 'add'"
-          class="acu-add-btn"
-          title="添加到展示区"
-          @click.stop="handleAddCategory(cat.id)"
-        >
+        <button v-if="mode === 'add'" class="acu-add-btn" title="添加到展示区" @click.stop="handleAddCategory(cat.id)">
           <i class="fas fa-plus"></i>
         </button>
 
@@ -158,11 +149,7 @@
           >
             <i :class="selectedCategoryIds.has(cat.id) ? 'fas fa-check-square' : 'far fa-square'"></i>
           </button>
-          <button
-            class="acu-migrate-btn"
-            title="迁入到此分类"
-            @click.stop="handleMigrateToCategory(cat.id)"
-          >
+          <button class="acu-migrate-btn" title="迁入到此分类" @click.stop="handleMigrateToCategory(cat.id)">
             <i class="fas fa-sign-in-alt"></i>
           </button>
         </template>
@@ -333,11 +320,11 @@ function openRootIconSelect() {
   uiStore.openIconSelectDialog(
     { currentIcon: rootIcon.value },
     {
-      onSelect: (icon) => {
+      onSelect: icon => {
         rootIcon.value = icon;
         localStorage.setItem(ROOT_ICON_KEY, icon);
       },
-    }
+    },
   );
 }
 

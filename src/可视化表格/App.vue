@@ -334,7 +334,6 @@
       @save="handlePromptEditorSave"
     />
 
-
     <!-- 全局图标选择弹窗 -->
     <IconSelectDialog
       :visible="uiStore.iconSelectDialog.visible"
@@ -389,15 +388,8 @@ import {
   WidgetActionsDialog,
   WidgetSettingsDialog,
 } from './components/dialogs';
-import {
-  DivinationOverlay,
-  PromptEditorDialog,
-} from './components/dialogs/divination';
-import {
-  CategorySelectPopup,
-  TagManagerDialog,
-  TagPreEditDialog,
-} from './components/dialogs/tag-manager';
+import { DivinationOverlay, PromptEditorDialog } from './components/dialogs/divination';
+import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog } from './components/dialogs/tag-manager';
 
 // Store 导入
 import { useConfigStore } from './stores/useConfigStore';
@@ -951,7 +943,7 @@ function handleCategoryTagSelect(tag: InteractiveTag, rowContext: { title: strin
 
   // 检查是否为地点类标签（需要显示同伴选择器）
   const category = tagLibraryStore.getCategoryById(tag.categoryId);
-  const isLocation = category ? (category.path.includes('地点') || category.path.includes('Location')) : false;
+  const isLocation = category ? category.path.includes('地点') || category.path.includes('Location') : false;
 
   // 检查是否需要二次编辑
   // 如果是地点标签，强制打开二次编辑弹窗以选择同伴

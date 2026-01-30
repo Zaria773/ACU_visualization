@@ -8,7 +8,16 @@
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { GLOBAL_THEME_BG_KEY, loadBackground } from '../composables/useBackgroundStorage';
-import { type ACUScriptVariables, type BackgroundConfig, DEFAULT_BACKGROUND_CONFIG, type HighlightConfig, THEME_VAR_CSS_MAP, type ThemePreset, type ThemeVariables, type ThemeVarOpacities } from '../types';
+import {
+  type ACUScriptVariables,
+  type BackgroundConfig,
+  DEFAULT_BACKGROUND_CONFIG,
+  type HighlightConfig,
+  THEME_VAR_CSS_MAP,
+  type ThemePreset,
+  type ThemeVariables,
+  type ThemeVarOpacities,
+} from '../types';
 import { HIGHLIGHT_COLORS, useConfigStore } from './useConfigStore';
 
 /** 脚本 ID - 用于脚本变量存储 (旧数据迁移用) */
@@ -397,17 +406,19 @@ export const useThemeStore = defineStore('acu-theme', () => {
 
     // 尝试恢复背景图片 (仅当标记为使用 IndexedDB 图片时)
     if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
-      loadBackground(GLOBAL_THEME_BG_KEY).then(blobUrl => {
-        if (blobUrl) {
-          backgroundConfig.value.imageUrl = blobUrl;
-          console.info('[ACU Theme] 预设应用：已恢复背景图片');
-        } else {
-          backgroundConfig.value.imageUrl = ''; // 清除可能的无效 URL
-          console.warn('[ACU Theme] 预设应用：IndexedDB 中未找到背景图片');
-        }
-      }).catch(err => {
-        console.warn('[ACU Theme] 预设应用：恢复背景图片失败', err);
-      });
+      loadBackground(GLOBAL_THEME_BG_KEY)
+        .then(blobUrl => {
+          if (blobUrl) {
+            backgroundConfig.value.imageUrl = blobUrl;
+            console.info('[ACU Theme] 预设应用：已恢复背景图片');
+          } else {
+            backgroundConfig.value.imageUrl = ''; // 清除可能的无效 URL
+            console.warn('[ACU Theme] 预设应用：IndexedDB 中未找到背景图片');
+          }
+        })
+        .catch(err => {
+          console.warn('[ACU Theme] 预设应用：恢复背景图片失败', err);
+        });
     }
 
     // 应用自定义 CSS

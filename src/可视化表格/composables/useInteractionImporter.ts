@@ -110,9 +110,7 @@ export function useInteractionImporter() {
 
       // 3. 存入 Store
       // 检查是否已存在同名标签（在同分类下）
-      const existingTag = tagStore.library.tags.find(
-        t => t.label === label && t.categoryId === categoryId
-      );
+      const existingTag = tagStore.library.tags.find(t => t.label === label && t.categoryId === categoryId);
 
       if (existingTag) {
         // 更新现有标签
@@ -163,6 +161,6 @@ export function useInteractionImporter() {
 
   return {
     importFromRow,
-    importAll
+    importAll,
   };
 }

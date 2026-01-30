@@ -14,11 +14,7 @@
           </button>
           <div v-show="isDropdownOpen" class="acu-preset-dropdown-menu">
             <!-- 默认配置 -->
-            <div
-              class="acu-preset-option"
-              :class="{ active: !activePresetId }"
-              @click.stop="handleSelectDefault"
-            >
+            <div class="acu-preset-option" :class="{ active: !activePresetId }" @click.stop="handleSelectDefault">
               <span class="acu-preset-option-name">默认配置</span>
             </div>
             <!-- 用户预设 -->

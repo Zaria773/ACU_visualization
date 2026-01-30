@@ -63,7 +63,7 @@ const TEMPLATE_PARTS = {
   LUCK: '{{luck}}',
   WORDS: `在接下来的描写中，必须自然地融入以下每个要素：[ {{words}} ]，让这些要素成为推动或阻碍剧情的关键节点。
   要素=叙事素材，运势才锚定最终成败`,
-  DIMENSIONS: '{{dimensions}}'
+  DIMENSIONS: '{{dimensions}}',
 };
 
 /**
@@ -94,7 +94,7 @@ export function buildPrompt(result: DrawResult): string {
   return buildFullPrompt({
     luck: result.luck,
     words: result.words,
-    dimensions: []
+    dimensions: [],
   });
 }
 

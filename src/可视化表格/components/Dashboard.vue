@@ -199,14 +199,19 @@
         <template v-else>
           <i class="fas fa-layer-group"></i>
           <p>还没有配置任何看板</p>
-          <button class="acu-dash-add-first-btn" @click.stop="enterEditMode(); isAddPanelOpen = true">
+          <button
+            class="acu-dash-add-first-btn"
+            @click.stop="
+              enterEditMode();
+              isAddPanelOpen = true;
+            "
+          >
             <i class="fas fa-plus"></i>
             添加第一个看板
           </button>
         </template>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -340,7 +345,6 @@ const aiHighlightedTableIds = computed(() => {
 // ============================================================
 // 搜索相关
 // ============================================================
-
 
 /** 检查组件是否有匹配搜索的内容（全局搜索） */
 function widgetMatchesSearch(widget: DashboardWidgetConfig): boolean {

@@ -45,28 +45,19 @@
 
       <!-- 维度展示区域 -->
       <div v-if="dimensions.length > 0" class="card-front__dimensions">
-        <div
-          v-for="(dimValue, idx) in dimensions"
-          :key="idx"
-          class="card-front__dimension-item"
-        >
+        <div v-for="(dimValue, idx) in dimensions" :key="idx" class="card-front__dimension-item">
           {{ dimValue }}
         </div>
       </div>
 
       <!-- 关键词区域 -->
       <div class="card-front__keywords">
-        <div
-          v-for="(word, idx) in words"
-          :key="idx"
-          class="card-front__keyword"
-        >
+        <div v-for="(word, idx) in words" :key="idx" class="card-front__keyword">
           <span class="card-front__keyword-line"></span>
           <span class="card-front__keyword-text">{{ word }}</span>
           <span class="card-front__keyword-line"></span>
         </div>
       </div>
-
     </div>
   </div>
 </template>

@@ -8,4 +8,3 @@
 export { default as CardBack } from './CardBack.vue';
 export { default as CardFront } from './CardFront.vue';
 export { default as CornerOrnament } from './CornerOrnament.vue';
-

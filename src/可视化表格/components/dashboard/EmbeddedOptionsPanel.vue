@@ -105,9 +105,7 @@ function getOptionItems(table: ProcessedTable): OptionItem[] {
         return { tags: [], text: String(validCells[0].value) };
       }
 
-      const tags = validCells
-        .slice(0, -1)
-        .map(c => String(c.value));
+      const tags = validCells.slice(0, -1).map(c => String(c.value));
       const text = String(validCells[validCells.length - 1].value);
       return { tags, text };
     }

@@ -1,9 +1,6 @@
 <!-- TagBadgeGrid.vue - 右侧标签网格组件 -->
 <template>
-  <div
-    class="acu-tag-grid"
-    @click="handleGridClick"
-  >
+  <div class="acu-tag-grid" @click="handleGridClick">
     <!-- 标签列表 -->
     <template v-for="tag in displayedTags" :key="tag.id">
       <div

@@ -25,14 +25,15 @@ export function useDivinationAction() {
     const dimensionsForPrompt = result.dimensions.map(d => ({
       dimensionName: d.name,
       tierName: d.value,
-      prompt: d.prompt
+      prompt: d.prompt,
     }));
 
     // 检查是否有自定义模板
     const config = divinationStore.config;
-    const customTemplate = (config && typeof config === 'object' && 'value' in config)
-      ? (config as any).value?.customTemplate
-      : config?.customTemplate;
+    const customTemplate =
+      config && typeof config === 'object' && 'value' in config
+        ? (config as any).value?.customTemplate
+        : config?.customTemplate;
 
     if (customTemplate && customTemplate.trim()) {
       let prompt = customTemplate;
@@ -86,7 +87,7 @@ export function useDivinationAction() {
     return buildFullPrompt({
       luck: result.luck,
       words: result.words,
-      dimensions: dimensionsForPrompt
+      dimensions: dimensionsForPrompt,
     });
   }
 
@@ -144,9 +145,8 @@ export function useDivinationAction() {
       // 但在 setup 中使用 storeToRefs 解构后可能是 ref，直接使用 store.config 则是对象
       // 这里为了安全起见，处理两种情况
       const config = divinationStore.config;
-      const flipMode = (config && typeof config === 'object' && 'value' in config)
-        ? (config as any).value?.flipMode
-        : config?.flipMode;
+      const flipMode =
+        config && typeof config === 'object' && 'value' in config ? (config as any).value?.flipMode : config?.flipMode;
 
       if (flipMode === 'skip') {
         const prompt = buildPromptFromResult(result);
@@ -163,6 +163,6 @@ export function useDivinationAction() {
 
   return {
     performDivination,
-    confirmDivination
+    confirmDivination,
   };
 }

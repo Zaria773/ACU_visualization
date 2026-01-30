@@ -1,12 +1,12 @@
 <template>
-  <div v-if="visible" class="acu-modal-container" style="z-index: 2147483647;" @click.self="handleClose">
+  <div v-if="visible" class="acu-modal-container" style="z-index: 2147483647" @click.self="handleClose">
     <div class="acu-modal acu-node-config-modal">
       <div class="acu-modal-header">
         <span class="acu-modal-title">选择显示的字符</span>
         <button class="acu-close-pill" @click.stop="handleClose">取消</button>
       </div>
       <div class="acu-modal-body">
-        <p class="acu-node-fullname" style="margin-bottom: 8px; font-weight: 600;">全名：{{ fullName }}</p>
+        <p class="acu-node-fullname" style="margin-bottom: 8px; font-weight: 600">全名：{{ fullName }}</p>
         <p class="acu-node-hint">点击选择要显示的字符（可多选）</p>
         <div class="acu-char-selector">
           <button

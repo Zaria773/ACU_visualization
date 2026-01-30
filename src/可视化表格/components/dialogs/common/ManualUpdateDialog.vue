@@ -366,7 +366,6 @@ const hasIntegrityIssues = computed(() => dataStore.hasIntegrityIssues);
 /** 完整性问题摘要 */
 const integritySummary = computed(() => dataStore.getIntegritySummary());
 
-
 /** 是否全选了所有表格 */
 const isAllSelected = computed(() => {
   if (availableTables.value.length === 0) return false;

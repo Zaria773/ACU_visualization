@@ -65,11 +65,7 @@ async function initDB(): Promise<IDBDatabase> {
  * @param imageData 图片 Blob 数据
  * @param mimeType 图片类型
  */
-export async function saveBackground(
-  chatId: string,
-  imageData: Blob,
-  mimeType: string = 'image/png'
-): Promise<void> {
+export async function saveBackground(chatId: string, imageData: Blob, mimeType: string = 'image/png'): Promise<void> {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');

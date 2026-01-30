@@ -85,12 +85,12 @@ export function detectWordPoolTables(): string[] {
 
     // 检查显示名称
     const nameMatch = ['随机', '随机词', 'random', 'dict', 'chaos'].some(keyword =>
-      displayName.toLowerCase().includes(keyword.toLowerCase())
+      displayName.toLowerCase().includes(keyword.toLowerCase()),
     );
 
     // 检查 ID
     const idMatch = ['随机', '随机词', 'random', 'dict', 'chaos'].some(keyword =>
-      sheetId.toLowerCase().includes(keyword.toLowerCase())
+      sheetId.toLowerCase().includes(keyword.toLowerCase()),
     );
 
     if (nameMatch || idMatch) {
@@ -98,7 +98,10 @@ export function detectWordPoolTables(): string[] {
     }
   }
 
-  console.info(`[useWordPool] 扫描了 ${Object.keys(tableData).length} 个表，检测到 ${wordPoolTables.length} 个词库表:`, wordPoolTables);
+  console.info(
+    `[useWordPool] 扫描了 ${Object.keys(tableData).length} 个表，检测到 ${wordPoolTables.length} 个词库表:`,
+    wordPoolTables,
+  );
   return wordPoolTables;
 }
 
@@ -331,7 +334,7 @@ export function getWordPoolStats(pools: WordPool[]): {
  */
 export function drawFromLatestRow(
   mode: 'perColumn' | 'mixed' | 'perItem' | 'custom' = 'perColumn',
-  count: number = 4
+  count: number = 4,
 ): string[] {
   const tables = detectWordPoolTables();
   const result: string[] = [];
@@ -438,7 +441,7 @@ export function drawFromLatestRowWithConfig(
   mode: 'perItem' | 'custom' | 'mixed',
   wordsPerItem: number,
   drawCount: number,
-  columnConfig: Record<string, ColumnConfig>
+  columnConfig: Record<string, ColumnConfig>,
 ): string[] {
   const tables = detectWordPoolTables();
   const result: string[] = [];

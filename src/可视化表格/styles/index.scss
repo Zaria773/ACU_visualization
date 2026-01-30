@@ -14,7 +14,7 @@
 @use 'layouts/container';
 @use 'layouts/panel';
 @use 'layouts/responsive';
-@use 'layouts/settings';       // 设置面板通用布局
+@use 'layouts/settings'; // 设置面板通用布局
 
 // 3. 组件样式
 @use 'components/floating-ball';
@@ -23,7 +23,7 @@
 @use 'components/data-table';
 @use 'components/buttons';
 @use 'components/inputs';
-@use 'components/switch';      // 开关控件
+@use 'components/switch'; // 开关控件
 @use 'components/badges';
 @use 'components/pagination';
 @use 'components/dashboard';
@@ -31,26 +31,26 @@
 @use 'components/options-panel';
 @use 'components/settings-panel';
 @use 'components/table-selector';
-@use 'components/switch-list';      // 通用多选开关列表
+@use 'components/switch-list'; // 通用多选开关列表
 @use 'components/relationship-graph';
 @use 'components/interaction-widget'; // 交互表组件
 @use 'components/divination-settings'; // 抽签系统设置面板
-@use 'components/preset-header';       // 预设管理头部
-@use 'components/global-status';       // 全局状态组件
-@use 'components/random-word-pool';    // 随机词表组件
+@use 'components/preset-header'; // 预设管理头部
+@use 'components/global-status'; // 全局状态组件
+@use 'components/random-word-pool'; // 随机词表组件
 
 // 4. 覆盖层样式 - 弹窗模块
-@use 'overlays/dialogs';           // 通用弹窗基础
-@use 'overlays/dialogs-graph';     // 关系图弹窗
-@use 'overlays/dialogs-purge';     // 清除弹窗
-@use 'overlays/dialogs-update';    // 更新弹窗
-@use 'overlays/dialogs-preset';    // 预设管理
-@use 'overlays/dialogs-history';   // 历史记录
-@use 'overlays/dialogs-responsive';// 移动端适配
-@use 'overlays/dialogs-ball';      // 悬浮球外观
-@use 'overlays/dialogs-theme';     // 主题美化
-@use 'overlays/dialogs-font';      // 字体弹窗
-@use 'overlays/dialogs-tag';       // 标签系统
+@use 'overlays/dialogs'; // 通用弹窗基础
+@use 'overlays/dialogs-graph'; // 关系图弹窗
+@use 'overlays/dialogs-purge'; // 清除弹窗
+@use 'overlays/dialogs-update'; // 更新弹窗
+@use 'overlays/dialogs-preset'; // 预设管理
+@use 'overlays/dialogs-history'; // 历史记录
+@use 'overlays/dialogs-responsive'; // 移动端适配
+@use 'overlays/dialogs-ball'; // 悬浮球外观
+@use 'overlays/dialogs-theme'; // 主题美化
+@use 'overlays/dialogs-font'; // 字体弹窗
+@use 'overlays/dialogs-tag'; // 标签系统
 
 // 4. 覆盖层样式 - 其他
 @use 'overlays/context-menu';
@@ -58,9 +58,7 @@
 @use 'overlays/avatar-dialogs';
 @use 'overlays/dashboard-dialogs';
 @use 'overlays/tag-manager';
-@use 'overlays/divination';       // 抽签卡片覆盖层
+@use 'overlays/divination'; // 抽签卡片覆盖层
 @use 'overlays/dialogs-prompt-editor'; // 隐藏提示词编辑弹窗
-@use 'overlays/dialogs-icon';          // 图标选择弹窗
-@use 'overlays/dialogs-pre-edit';      // 标签二次编辑弹窗
-
-
+@use 'overlays/dialogs-icon'; // 图标选择弹窗
+@use 'overlays/dialogs-pre-edit'; // 标签二次编辑弹窗

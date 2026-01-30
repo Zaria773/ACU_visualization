@@ -3,7 +3,7 @@
     <div class="acu-settings-title">
       <i class="fas fa-image"></i>
       背景配置
-      <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto;">
+      <span style="font-weight: 400; font-size: 11px; color: var(--acu-text-sub); margin-left: auto">
         自定义背景图片
       </span>
     </div>
@@ -30,16 +30,13 @@
         <div
           ref="previewRef"
           class="acu-background-preview"
-          :class="{ 'dragging': isPreviewDragging, 'has-image': !!localConfig.imageUrl }"
+          :class="{ dragging: isPreviewDragging, 'has-image': !!localConfig.imageUrl }"
           @mousedown.prevent="handlePreviewDragStart"
           @touchstart.prevent="handlePreviewDragStart"
         >
           <!-- 有图片时显示预览 -->
           <template v-if="localConfig.imageUrl">
-            <div
-              class="acu-preview-image"
-              :style="previewImageStyle"
-            ></div>
+            <div class="acu-preview-image" :style="previewImageStyle"></div>
           </template>
           <!-- 无图片时显示提示 -->
           <template v-else>
@@ -70,7 +67,7 @@
           ref="fileInputRef"
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
-          style="display: none;"
+          style="display: none"
           @change="handleFileSelect"
         />
       </div>
@@ -160,7 +157,14 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { deleteBackground, fileToBlob, loadBackground, revokeBlobUrl, saveBackground, urlToBlob } from '../../composables/useBackgroundStorage';
+import {
+  deleteBackground,
+  fileToBlob,
+  loadBackground,
+  revokeBlobUrl,
+  saveBackground,
+  urlToBlob,
+} from '../../composables/useBackgroundStorage';
 import type { BackgroundConfig } from '../../types';
 
 const props = defineProps<{
@@ -219,13 +223,13 @@ const previewImageStyle = computed(() => {
 // 监听 props 变化，更新本地状态
 watch(
   () => props.modelValue,
-  (newVal) => {
+  newVal => {
     Object.assign(localConfig, newVal);
     if (newVal.externalUrl) {
       backgroundUrlInput.value = newVal.externalUrl;
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // 组件挂载时加载背景图片

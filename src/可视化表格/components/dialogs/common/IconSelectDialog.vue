@@ -1,10 +1,6 @@
 <!-- IconSelectDialog.vue - 全局图标选择弹窗 -->
 <template>
-  <div
-    v-if="visible"
-    class="acu-modal-container acu-center-modal"
-    @click.self="handleClose"
-  >
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-icon-select-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">
@@ -16,32 +12,17 @@
 
       <!-- 顶部 Tab 栏 -->
       <div class="acu-icon-tabs">
-        <div
-          class="acu-icon-tab"
-          :class="{ active: activeTab === 'emoji' }"
-          @click="activeTab = 'emoji'"
-        >
+        <div class="acu-icon-tab" :class="{ active: activeTab === 'emoji' }" @click="activeTab = 'emoji'">
           Emoji 表情
         </div>
-        <div
-          class="acu-icon-tab"
-          :class="{ active: activeTab === 'fa' }"
-          @click="activeTab = 'fa'"
-        >
-          FontAwesome
-        </div>
+        <div class="acu-icon-tab" :class="{ active: activeTab === 'fa' }" @click="activeTab = 'fa'">FontAwesome</div>
       </div>
 
       <!-- 搜索栏 -->
       <div class="acu-icon-search-bar">
         <div class="acu-search-input-wrapper">
           <i class="fas fa-search"></i>
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="搜索图标..."
-            @input="handleSearch"
-          />
+          <input v-model="searchTerm" type="text" placeholder="搜索图标..." @input="handleSearch" />
         </div>
       </div>
 
@@ -119,7 +100,7 @@ const manualInput = ref('');
 // 初始化
 watch(
   () => props.visible,
-  (visible) => {
+  visible => {
     if (visible) {
       manualInput.value = props.currentIcon;
       searchTerm.value = '';
@@ -131,7 +112,7 @@ watch(
         activeTab.value = 'emoji';
       }
     }
-  }
+  },
 );
 
 // Helpers

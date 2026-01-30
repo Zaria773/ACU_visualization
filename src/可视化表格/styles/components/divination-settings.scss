@@ -158,71 +158,71 @@
 
   &.prompt-editor {
     .acu-edit-textarea {
-        min-height: 48px;
-        font-size: 12px;
-        padding: 6px;
-        border-color: var(--acu-border);
-        background: var(--acu-input-bg);
+      min-height: 48px;
+      font-size: 12px;
+      padding: 6px;
+      border-color: var(--acu-border);
+      background: var(--acu-input-bg);
 
-        &:focus {
-          border-color: var(--acu-title-color);
-          min-height: 80px; // 聚焦时变高
-        }
+      &:focus {
+        border-color: var(--acu-title-color);
+        min-height: 80px; // 聚焦时变高
       }
     }
   }
+}
 
-  // 档位名称输入框 (极简风格)
-  .tier-name-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
+// 档位名称输入框 (极简风格)
+.tier-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.tier-name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--acu-border);
+  color: var(--acu-text-main);
+  font-size: 13px;
+  padding: 2px 4px;
+  width: 100%;
+  max-width: 150px;
+  border-radius: 0;
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-bottom-color: var(--acu-title-color);
+  }
+}
+
+// 迷你颜色选择器
+.acu-color-picker-mini {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--acu-border) !important;
+  padding: 0 !important;
+  // 重要：确保颜色选择器显示正确
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
   }
 
-  .tier-name-input {
-    background: transparent;
+  &::-webkit-color-swatch {
+    border-radius: 3px;
     border: none;
-    border-bottom: 1px solid var(--acu-border);
-    color: var(--acu-text-main);
-    font-size: 13px;
-    padding: 2px 4px;
-    width: 100%;
-    max-width: 150px;
-    border-radius: 0;
-    transition: border-color 0.2s;
-
-    &:focus {
-      outline: none;
-      border-bottom-color: var(--acu-title-color);
-    }
   }
+}
 
-  // 迷你颜色选择器
-  .acu-color-picker-mini {
-    width: 20px !important;
-    height: 20px !important;
-    border-radius: 4px !important;
-    border: 1px solid var(--acu-border) !important;
-    padding: 0 !important;
-    // 重要：确保颜色选择器显示正确
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: transparent;
-    cursor: pointer;
-
-    &::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
-
-    &::-webkit-color-swatch {
-      border-radius: 3px;
-      border: none;
-    }
-  }
-
-  // --------------------------------------------
-  // 按钮样式
+// --------------------------------------------
+// 按钮样式
 // --------------------------------------------
 
 .acu-btn-dashed {

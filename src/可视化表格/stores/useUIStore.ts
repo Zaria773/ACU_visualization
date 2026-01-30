@@ -343,9 +343,9 @@ export const useUIStore = defineStore('acu-ui', () => {
   });
 
   /** 头像裁剪弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
-  const avatarCropOnApply = shallowRef<((data: { offsetX: number; offsetY: number; scale: number; invert?: boolean }) => void) | null>(
-    null,
-  );
+  const avatarCropOnApply = shallowRef<
+    ((data: { offsetX: number; offsetY: number; scale: number; invert?: boolean }) => void) | null
+  >(null);
   const avatarCropOnUpload = shallowRef<((file: File) => void) | null>(null);
 
   /** 快捷按钮配置弹窗状态 */
@@ -642,7 +642,6 @@ export const useUIStore = defineStore('acu-ui', () => {
       prompt: '',
     },
   });
-
 
   // ============================================================
   // Getters
@@ -1565,7 +1564,6 @@ export const useUIStore = defineStore('acu-ui', () => {
       await divinationStore.loadFromWorldbook();
     }
   }
-
 
   /**
    * 同步新表格到可见列表

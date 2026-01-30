@@ -14,7 +14,12 @@
       <!-- Emoji -->
       <span v-else-if="appearance.type === 'emoji'" class="ball-emoji">{{ appearance.content }}</span>
       <!-- 图片 - 使用 div + background-image 支持裁剪参数 -->
-      <div v-else-if="appearance.type === 'image' && appearance.content" class="ball-image" :class="{ 'ball-image-invert': appearance.imageInvert }" :style="imageStyle"></div>
+      <div
+        v-else-if="appearance.type === 'image' && appearance.content"
+        class="ball-image"
+        :class="{ 'ball-image-invert': appearance.imageInvert }"
+        :style="imageStyle"
+      ></div>
     </template>
     <!-- 问题徽章 -->
     <span v-if="hasIntegrityIssues && !isDocked" class="acu-issue-badge">!</span>

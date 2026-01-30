@@ -109,7 +109,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
             hasMigration = true;
           }
         }
-
       });
 
       // 临时强制迁移: 检查是否所有匹配 globalKeywords 的组件都已设置为 global 样式
@@ -266,7 +265,10 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
 
     // 确定默认样式
     let displayStyle = template?.displayStyle || 'list';
-    if (!template && (tableName?.includes('交互') || tableName?.includes('互动') || tableId === 'sheet_Interaction_CN')) {
+    if (
+      !template &&
+      (tableName?.includes('交互') || tableName?.includes('互动') || tableId === 'sheet_Interaction_CN')
+    ) {
       displayStyle = 'interaction';
     }
 

@@ -287,8 +287,9 @@ watch(
 function saveConfig(): void {
   if (!props.widgetId) return;
 
-  const hasTagConfig = (localConfig.widgetTagConfig.displayedTagIds?.length || 0) > 0 ||
-                        (localConfig.widgetTagConfig.displayedCategoryIds?.length || 0) > 0;
+  const hasTagConfig =
+    (localConfig.widgetTagConfig.displayedTagIds?.length || 0) > 0 ||
+    (localConfig.widgetTagConfig.displayedCategoryIds?.length || 0) > 0;
 
   dashboardStore.updateWidget(props.widgetId, {
     titleColumn: localConfig.titleColumn || undefined,
