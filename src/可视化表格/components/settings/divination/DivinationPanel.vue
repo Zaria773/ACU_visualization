@@ -182,13 +182,17 @@
                 :class="{ active: config.autoSync }"
                 @click.stop="config.autoSync = !config.autoSync"
               ></button>
-              <i class="fas" :class="showTableSyncList ? 'fa-chevron-up' : 'fa-chevron-down'" style="margin-left: 8px; font-size: 12px; color: var(--acu-text-sub);"></i>
+              <i
+                class="fas"
+                :class="showTableSyncList ? 'fa-chevron-up' : 'fa-chevron-down'"
+                style="margin-left: 8px; font-size: 12px; color: var(--acu-text-sub)"
+              ></i>
             </div>
           </div>
 
           <!-- 同步表格列表 (可折叠) -->
-          <div v-if="showTableSyncList" style="padding: 0 16px 16px 16px;">
-             <SwitchList
+          <div v-if="showTableSyncList" style="padding: 0 16px 16px 16px">
+            <SwitchList
               v-model="enabledSyncTables"
               :items="randomTableItems"
               empty-text="没有找到包含'随机'的表格"
@@ -291,14 +295,14 @@ const enabledSyncTables = computed({
       if (shouldEnable) {
         // 如果是 true，删除条目 (恢复默认)
         if (config.value.tableSyncConfig[tableId] !== undefined) {
-           delete config.value.tableSyncConfig[tableId];
+          delete config.value.tableSyncConfig[tableId];
         }
       } else {
         // 如果是 false，显式设置为 false
         config.value.tableSyncConfig[tableId] = false;
       }
     });
-  }
+  },
 });
 
 // 主题列表

@@ -30,7 +30,7 @@
               :class="{
                 active: activePresetId === preset.id,
                 'migrate-target': isMigrating && activePresetId !== preset.id,
-                'migrate-disabled': isMigrating && activePresetId === preset.id
+                'migrate-disabled': isMigrating && activePresetId === preset.id,
               }"
               @click.stop="!isMigrating && handleSelect(preset.id)"
             >

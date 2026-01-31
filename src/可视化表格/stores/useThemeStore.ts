@@ -215,7 +215,10 @@ export const useThemeStore = defineStore('acu-theme', () => {
                   }
                   if (blobUrl) {
                     backgroundConfig.value.imageUrl = blobUrl;
-                    console.info('[ACU Theme] 已从 IndexedDB 恢复背景图片, key:', blobUrl ? preset.id : GLOBAL_THEME_BG_KEY);
+                    console.info(
+                      '[ACU Theme] 已从 IndexedDB 恢复背景图片, key:',
+                      blobUrl ? preset.id : GLOBAL_THEME_BG_KEY,
+                    );
                   }
                 } catch (err) {
                   console.warn('[ACU Theme] 恢复背景图片失败:', err);

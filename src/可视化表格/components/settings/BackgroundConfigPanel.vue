@@ -245,7 +245,7 @@ watch(
 // 当 store 的 applyPreset 更新了 backgroundConfig.imageUrl 后，这里会自动同步
 watch(
   () => props.modelValue.imageUrl,
-  (newUrl) => {
+  newUrl => {
     // 如果新 URL 与本地不同，更新本地状态
     if (newUrl !== localConfig.imageUrl) {
       // 如果旧的是 blob URL 且与新的不同，释放它

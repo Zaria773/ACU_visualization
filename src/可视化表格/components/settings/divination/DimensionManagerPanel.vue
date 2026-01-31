@@ -30,7 +30,7 @@
       class="acu-settings-section dimension-container"
       :class="{
         'is-collapsed': collapsedDimensions[dim.id],
-        'is-selected': isMigrating && selectedDimensionIds.has(dim.id)
+        'is-selected': isMigrating && selectedDimensionIds.has(dim.id),
       }"
       @click="isMigrating ? toggleDimensionSelection(dim.id) : null"
     >
@@ -413,9 +413,7 @@ function handleMigrateTo(targetPresetId: string) {
   if (!targetPreset) return;
 
   // 执行迁移
-  const selectedDims = divinationStore.config.dimensions.filter((d: any) =>
-    selectedDimensionIds.value.has(d.id),
-  );
+  const selectedDims = divinationStore.config.dimensions.filter((d: any) => selectedDimensionIds.value.has(d.id));
 
   divinationStore.migrateDimensionsToPreset(selectedDims, targetPresetId);
 
