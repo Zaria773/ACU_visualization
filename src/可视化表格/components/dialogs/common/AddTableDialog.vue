@@ -14,16 +14,10 @@
       <div class="acu-modal-body">
         <!-- Tab 切换：粘贴 JSON / 导入文件 -->
         <div class="acu-add-table-tabs">
-          <button
-            :class="['acu-tab-btn', { active: mode === 'paste' }]"
-            @click.stop="mode = 'paste'"
-          >
+          <button :class="['acu-tab-btn', { active: mode === 'paste' }]" @click.stop="mode = 'paste'">
             <i class="fas fa-paste"></i> 粘贴 JSON
           </button>
-          <button
-            :class="['acu-tab-btn', { active: mode === 'file' }]"
-            @click.stop="mode = 'file'"
-          >
+          <button :class="['acu-tab-btn', { active: mode === 'file' }]" @click.stop="mode = 'file'">
             <i class="fas fa-file-import"></i> 导入文件
           </button>
         </div>
@@ -36,20 +30,13 @@
             class="acu-textarea-scrollable"
             rows="8"
           ></textarea>
-          <button class="acu-modal-btn primary" @click.stop="parseJson">
-            <i class="fas fa-search"></i> 解析
-          </button>
+          <button class="acu-modal-btn primary" @click.stop="parseJson"><i class="fas fa-search"></i> 解析</button>
         </div>
 
         <!-- 文件导入模式 -->
         <div v-else class="acu-add-table-file">
           <label class="acu-file-label">
-            <input
-              type="file"
-              accept=".json"
-              @change="handleFileSelect"
-              style="display: none"
-            />
+            <input type="file" accept=".json" @change="handleFileSelect" style="display: none" />
             <i class="fas fa-upload"></i>
             <span>{{ selectedFileName || '点击选择 JSON 文件' }}</span>
           </label>
@@ -79,11 +66,7 @@
       <!-- 底部按钮 -->
       <div class="acu-modal-footer">
         <button class="acu-modal-btn secondary" @click.stop="handleClose">取消</button>
-        <button
-          class="acu-modal-btn primary"
-          :disabled="selectedTableKeys.length === 0"
-          @click.stop="handleConfirm"
-        >
+        <button class="acu-modal-btn primary" :disabled="selectedTableKeys.length === 0" @click.stop="handleConfirm">
           <i class="fas fa-plus"></i>
           添加 ({{ selectedTableKeys.length }})
         </button>
@@ -165,16 +148,19 @@ const parsedTableItems = computed<SwitchListItem[]>(() => {
 // ============================================================
 
 // 当弹窗打开时重置状态
-watch(() => props.visible, (visible) => {
-  if (visible) {
-    jsonInput.value = '';
-    selectedFileName.value = '';
-    parseError.value = '';
-    parsedTables.value = [];
-    selectedTableKeys.value = [];
-    mode.value = 'paste';
-  }
-});
+watch(
+  () => props.visible,
+  visible => {
+    if (visible) {
+      jsonInput.value = '';
+      selectedFileName.value = '';
+      parseError.value = '';
+      parsedTables.value = [];
+      selectedTableKeys.value = [];
+      mode.value = 'paste';
+    }
+  },
+);
 
 // 点击外部关闭
 onClickOutside(dialogRef, () => {
@@ -217,7 +203,7 @@ function handleFileSelect(event: Event) {
   selectedTableKeys.value = [];
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     try {
       const content = e.target?.result as string;
       const data = JSON.parse(content);
@@ -284,9 +270,7 @@ function handleClose() {
 function handleConfirm() {
   if (selectedTableKeys.value.length === 0) return;
 
-  const tablesToAdd = parsedTables.value
-    .filter(t => selectedTableKeys.value.includes(t.key))
-    .map(t => t.template);
+  const tablesToAdd = parsedTables.value.filter(t => selectedTableKeys.value.includes(t.key)).map(t => t.template);
 
   emit('confirm', tablesToAdd);
   handleClose();

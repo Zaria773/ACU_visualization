@@ -21,7 +21,12 @@
           <button class="acu-tool-btn" title="添加" @click.stop="showAddDialog = true">
             <i class="fas fa-plus"></i>
           </button>
-          <button class="acu-tool-btn" :disabled="selectedKeys.size === 0" title="清除" @click.stop="handleOpenPurgeDialog">
+          <button
+            class="acu-tool-btn"
+            :disabled="selectedKeys.size === 0"
+            title="清除"
+            @click.stop="handleOpenPurgeDialog"
+          >
             <i class="fas fa-eraser"></i>
           </button>
           <button
@@ -70,7 +75,7 @@
             :key="item.sheetKey"
             :class="{
               'acu-row-selected': isEditing && selectedKeys.has(item.sheetKey),
-              'acu-highlight-ai': hasTableAiChanges(item.name) && !isEditing
+              'acu-highlight-ai': hasTableAiChanges(item.name) && !isEditing,
             }"
             @click="handleRowClick(item)"
           >
@@ -204,9 +209,9 @@ const toggleButtonState = computed(() => {
   const allDisabled = currentFrequencies.every(freq => freq === 0);
   const allEnabled = currentFrequencies.every(freq => freq !== 0);
 
-  if (allDisabled) return 'enable';   // 全是禁用 → 显示"启用"按钮
-  if (allEnabled) return 'disable';   // 全是启用 → 显示"禁用"按钮
-  return 'mixed';                      // 混合状态 → 禁止操作
+  if (allDisabled) return 'enable'; // 全是禁用 → 显示"启用"按钮
+  if (allEnabled) return 'disable'; // 全是启用 → 显示"禁用"按钮
+  return 'mixed'; // 混合状态 → 禁止操作
 });
 
 // 是否有待保存的变更

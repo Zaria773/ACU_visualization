@@ -35,12 +35,7 @@
 
     <!-- 工具栏（底部） -->
     <div class="acu-graph-toolbar">
-      <button
-        class="acu-graph-btn"
-        :class="{ active: isSearchMode }"
-        title="搜索模式"
-        @click="toggleSearchMode"
-      >
+      <button class="acu-graph-btn" :class="{ active: isSearchMode }" title="搜索模式" @click="toggleSearchMode">
         <i class="fas fa-search"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
@@ -1062,13 +1057,16 @@ function handleSearchInput(term: string) {
   }
 
   // 查找匹配的节点
-  const matchedNode = cy.nodes().filter(node => {
-    if (node.hasClass('faction-container') || node.hasClass('hidden-in-cola')) return false;
-    const id = (node.id() || '').toLowerCase();
-    const label = (node.data('label') || '').toLowerCase();
-    const fullName = (node.data('fullName') || '').toLowerCase();
-    return id.includes(query) || label.includes(query) || fullName.includes(query);
-  }).first();
+  const matchedNode = cy
+    .nodes()
+    .filter(node => {
+      if (node.hasClass('faction-container') || node.hasClass('hidden-in-cola')) return false;
+      const id = (node.id() || '').toLowerCase();
+      const label = (node.data('label') || '').toLowerCase();
+      const fullName = (node.data('fullName') || '').toLowerCase();
+      return id.includes(query) || label.includes(query) || fullName.includes(query);
+    })
+    .first();
 
   if (matchedNode && matchedNode.length > 0) {
     focusOnNode(matchedNode.id());

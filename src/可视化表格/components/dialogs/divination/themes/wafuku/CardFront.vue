@@ -50,9 +50,7 @@
         </div>
       </div>
       <div v-else-if="peepMode && dimensions.length > 0" class="card-front__dimensions">
-        <div v-for="(dimValue, idx) in dimensions" :key="idx" class="card-front__dimension-item">
-          ???
-        </div>
+        <div v-for="(dimValue, idx) in dimensions" :key="idx" class="card-front__dimension-item">???</div>
       </div>
 
       <!-- 关键词区域 -->

@@ -1414,10 +1414,7 @@ export const useUIStore = defineStore('acu-ui', () => {
    * @param props 弹窗参数
    * @param callbacks 回调函数
    */
-  function openAdvancedPurgeDialog(
-    props: AdvancedPurgeDialogProps,
-    callbacks: AdvancedPurgeDialogCallbacks,
-  ): void {
+  function openAdvancedPurgeDialog(props: AdvancedPurgeDialogProps, callbacks: AdvancedPurgeDialogCallbacks): void {
     advancedPurgeDialog.props = { ...props };
     advancedPurgeOnConfirm.value = callbacks.onConfirm;
     advancedPurgeDialog.visible = true;

@@ -122,11 +122,7 @@
             </div>
 
             <label class="acu-switch small">
-              <input
-                type="checkbox"
-                :checked="isTableEnabled(table.id)"
-                @change.stop="toggleTableEnabled(table.id)"
-              />
+              <input type="checkbox" :checked="isTableEnabled(table.id)" @change.stop="toggleTableEnabled(table.id)" />
               <span class="slider"></span>
             </label>
           </div>

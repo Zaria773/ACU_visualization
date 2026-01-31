@@ -204,10 +204,7 @@
                   handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
                 "
               >
-                <i
-                  v-if="isFontAwesome(getCategoryButtonLabel(category))"
-                  :class="getCategoryButtonLabel(category)"
-                ></i>
+                <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
                 <span v-else>{{ getCategoryButtonLabel(category) }}</span>
               </span>
             </div>
@@ -331,10 +328,7 @@
                   handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
                 "
               >
-                <i
-                  v-if="isFontAwesome(getCategoryButtonLabel(category))"
-                  :class="getCategoryButtonLabel(category)"
-                ></i>
+                <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
                 <span v-else>{{ getCategoryButtonLabel(category) }}</span>
               </span>
             </div>
@@ -355,11 +349,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useCoreActions } from '../../composables/useCoreActions';
 import { useDivinationAction } from '../../composables/useDivinationAction';
-import {
-  LIST_ITEM_HEIGHT,
-  useGridVirtualScroll,
-  useListVirtualScroll
-} from '../../composables/useVirtualScroll';
+import { LIST_ITEM_HEIGHT, useGridVirtualScroll, useListVirtualScroll } from '../../composables/useVirtualScroll';
 import { useTagLibraryStore } from '../../stores/useTagLibraryStore';
 import { getSmartTabIcon, useUIStore } from '../../stores/useUIStore';
 import type {

@@ -220,10 +220,7 @@ export function getWordPoolTableData(tableName: string): TableRow[] {
  * // { tableId: '随机事件', tableName: '随机事件表', words: ['苹果', '香蕉', '橙子'] }
  * ```
  */
-export function parseWordPoolByTable(
-  tableId: string,
-  tableData: TableRow[],
-): WordPool {
+export function parseWordPoolByTable(tableId: string, tableData: TableRow[]): WordPool {
   const words: string[] = [];
 
   // 取最新一行（每表只有一行）

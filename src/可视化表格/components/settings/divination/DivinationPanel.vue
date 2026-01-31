@@ -270,4 +270,3 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 </script>
-

@@ -2,34 +2,34 @@
   <div class="acu-action-bar">
     <!-- 普通模式：常规按钮 -->
     <div v-for="btnId in sortedVisibleButtonIds" :key="btnId" class="acu-action-btn-wrapper">
-        <button
-          class="acu-action-btn"
-          :class="getButtonClass(btnId)"
-          :title="getButtonTitle(btnId)"
-          @click="handleClick(btnId)"
-          @mousedown="startLongPress(btnId)"
-          @mouseup="endLongPress"
-          @mouseleave="endLongPress"
-          @touchstart.passive="startLongPress(btnId)"
-          @touchend="endLongPress"
-        >
-          <i :class="['fas', getButtonIcon(btnId)]"></i>
-          <!-- 附属按钮指示点 -->
-          <span v-if="hasSecondary(btnId)" class="secondary-indicator"></span>
-        </button>
+      <button
+        class="acu-action-btn"
+        :class="getButtonClass(btnId)"
+        :title="getButtonTitle(btnId)"
+        @click="handleClick(btnId)"
+        @mousedown="startLongPress(btnId)"
+        @mouseup="endLongPress"
+        @mouseleave="endLongPress"
+        @touchstart.passive="startLongPress(btnId)"
+        @touchend="endLongPress"
+      >
+        <i :class="['fas', getButtonIcon(btnId)]"></i>
+        <!-- 附属按钮指示点 -->
+        <span v-if="hasSecondary(btnId)" class="secondary-indicator"></span>
+      </button>
 
-        <!-- 长按弹出的附属按钮 -->
-        <transition name="popup">
-          <button
-            v-if="popupButtonId === btnId && getSecondaryId(btnId)"
-            class="acu-action-btn acu-popup-btn"
-            :title="getButtonLabel(getSecondaryId(btnId)!)"
-            @click.stop="handleSecondaryClick(btnId)"
-          >
-            <i :class="['fas', getButtonIcon(getSecondaryId(btnId)!)]"></i>
-          </button>
-        </transition>
-      </div>
+      <!-- 长按弹出的附属按钮 -->
+      <transition name="popup">
+        <button
+          v-if="popupButtonId === btnId && getSecondaryId(btnId)"
+          class="acu-action-btn acu-popup-btn"
+          :title="getButtonLabel(getSecondaryId(btnId)!)"
+          @click.stop="handleSecondaryClick(btnId)"
+        >
+          <i :class="['fas', getButtonIcon(getSecondaryId(btnId)!)]"></i>
+        </button>
+      </transition>
+    </div>
   </div>
 </template>
 

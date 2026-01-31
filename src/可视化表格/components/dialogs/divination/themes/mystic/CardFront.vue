@@ -48,9 +48,7 @@
           </span>
         </div>
         <div v-else-if="peepMode && dimensions.length > 0" class="mystic-card-front__dimensions">
-          <span v-for="(dimValue, idx) in dimensions" :key="idx" class="mystic-card-front__dimension-tag">
-            ???
-          </span>
+          <span v-for="(dimValue, idx) in dimensions" :key="idx" class="mystic-card-front__dimension-tag"> ??? </span>
         </div>
 
         <!-- 主信息区 -->
