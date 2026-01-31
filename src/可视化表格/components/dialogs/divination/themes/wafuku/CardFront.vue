@@ -40,22 +40,25 @@
 
       <!-- 运势名称 -->
       <h2 class="card-front__luck-name" :style="{ color: luckColor }">
-        {{ luckName }}
+        {{ displayLuckName }}
       </h2>
 
       <!-- 维度展示区域 -->
-      <div v-if="dimensions.length > 0" class="card-front__dimensions">
+      <div v-if="!peepMode && dimensions.length > 0" class="card-front__dimensions">
         <div v-for="(dimValue, idx) in dimensions" :key="idx" class="card-front__dimension-item">
           {{ dimValue }}
+        </div>
+      </div>
+      <div v-else-if="peepMode && dimensions.length > 0" class="card-front__dimensions">
+        <div v-for="(dimValue, idx) in dimensions" :key="idx" class="card-front__dimension-item">
+          ???
         </div>
       </div>
 
       <!-- 关键词区域 -->
       <div class="card-front__keywords">
-        <div v-for="(word, idx) in words" :key="idx" class="card-front__keyword">
-          <span class="card-front__keyword-line"></span>
+        <div v-for="(word, idx) in displayWords" :key="idx" class="card-front__keyword">
           <span class="card-front__keyword-text">{{ word }}</span>
-          <span class="card-front__keyword-line"></span>
         </div>
       </div>
     </div>
@@ -74,10 +77,41 @@ interface Props {
   dimensions?: string[];
   /** 关键词列表 */
   words: string[];
+  /** 偷看模式 */
+  peepMode?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   luckColor: '#4A3728',
   dimensions: () => [],
+  peepMode: false,
+});
+
+import { computed } from 'vue';
+
+// 运势名称显示逻辑
+const displayLuckName = computed(() => {
+  if (!props.peepMode) return props.luckName;
+  return '???';
+});
+
+// 遮罩算法
+function maskText(text: string): string {
+  if (!text) return '';
+  // 60% 概率遮罩
+  return text
+    .split('')
+    .map(char => {
+      // 保留标点符号
+      if (/[\p{P}\s]/u.test(char)) return char;
+      return Math.random() < 0.6 ? '...' : char;
+    })
+    .join('');
+}
+
+// 关键词显示逻辑
+const displayWords = computed(() => {
+  if (!props.peepMode) return props.words;
+  return props.words.map(maskText);
 });
 </script>

@@ -504,18 +504,6 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 // ============================================
 // 操作按钮区
 // ============================================
-.divination-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  animation: divination-fade-in 0.5s ease-out;
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-    gap: 24px;
-  }
-}
 
 .divination-btn {
   padding: 12px 32px;

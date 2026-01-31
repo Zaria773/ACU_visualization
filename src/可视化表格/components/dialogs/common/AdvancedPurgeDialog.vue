@@ -43,6 +43,9 @@
               <i class="fas fa-info-circle"></i>
               输入 Chat 索引（从 0 开始）
             </div>
+            <div class="acu-purge-quick-actions">
+              <button class="acu-tool-btn small" @click="setRangeAll">所有楼层</button>
+            </div>
           </div>
         </div>
 
@@ -173,14 +176,66 @@ const canConfirm = computed(() => {
 // 生命周期 & 监听
 // ============================================================
 
+/**
+ * 计算默认清除楼层范围
+ * 策略：优先寻找最近的有数据痕迹的楼层，否则使用最后一楼
+ */
+function getDefaultFloorRange(): { start: number; end: number } {
+  let ST = (window as any).SillyTavern || (window.parent ? (window.parent as any).SillyTavern : null);
+  if (!ST && (window as any).top && (window as any).top.SillyTavern) {
+    ST = (window as any).top.SillyTavern;
+  }
+
+  let targetIdx = -1;
+  let lastIdx = 0;
+
+  if (ST && ST.chat) {
+    lastIdx = Math.max(0, ST.chat.length - 1);
+    // 策略: 优先寻找最近的有真实数据的楼层（跳过空结构）
+    for (let i = ST.chat.length - 1; i >= 0; i--) {
+      const msg = ST.chat[i];
+      if (!msg.is_user && msg.TavernDB_ACU_IsolatedData) {
+        // 检查是否真的有数据（不是空结构）
+        const tags = Object.keys(msg.TavernDB_ACU_IsolatedData);
+        let hasRealData = false;
+        for (const tag of tags) {
+          const tagData = msg.TavernDB_ACU_IsolatedData[tag];
+          if (tagData && tagData.independentData && Object.keys(tagData.independentData).length > 0) {
+            hasRealData = true;
+            break;
+          }
+        }
+        if (hasRealData) {
+          targetIdx = i;
+          break;
+        }
+      }
+    }
+  }
+
+  // 默认范围逻辑：找到有数据的楼层就用它，否则用最后一楼
+  const defaultStart = targetIdx !== -1 ? targetIdx : lastIdx;
+  const defaultEnd = targetIdx !== -1 ? targetIdx : lastIdx;
+
+  return { start: defaultStart, end: defaultEnd };
+}
+
 // 当弹窗打开时初始化
 watch(
   () => props.visible,
   visible => {
     if (visible) {
       // 设置初始楼层范围
-      startFloor.value = props.initialStartFloor ?? null;
-      endFloor.value = props.initialEndFloor ?? null;
+      if (props.initialStartFloor !== undefined && props.initialEndFloor !== undefined) {
+        startFloor.value = props.initialStartFloor;
+        endFloor.value = props.initialEndFloor;
+      } else {
+        // 如果没有传入初始值，则自动计算默认范围
+        const defaultRange = getDefaultFloorRange();
+        startFloor.value = defaultRange.start;
+        endFloor.value = defaultRange.end;
+      }
+
       selectedTableKeys.value = [];
       isExecuting.value = false;
 
@@ -202,6 +257,12 @@ onClickOutside(dialogRef, () => {
 // ============================================================
 // 方法
 // ============================================================
+
+/** 设置为所有楼层 */
+function setRangeAll() {
+  startFloor.value = 0;
+  endFloor.value = 9999999;
+}
 
 /** 加载可用表格列表 */
 function loadAvailableTables() {

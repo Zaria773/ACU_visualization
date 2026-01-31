@@ -36,7 +36,7 @@
       <span class="acu-dash-title-text">
         <i class="fas fa-dice"></i>
         随机词表
-        <span v-if="columnCount > 0" class="acu-dash-count">{{ columnCount }}</span>
+        <span v-if="tableCount > 0" class="acu-dash-count">{{ tableCount }}</span>
       </span>
       <div v-show="!isEditing" class="acu-dash-actions">
         <!-- 一键展开/折叠 -->
@@ -65,41 +65,41 @@
     <!-- 内容区 -->
     <div v-show="!isCollapsed" class="acu-dash-body rwp-body">
       <!-- 空状态 -->
-      <div v-if="columnCount === 0" class="acu-dash-empty">
+      <div v-if="tableCount === 0" class="acu-dash-empty">
         <i class="fas fa-dice"></i>
         <span>未检测到随机表</span>
         <span class="hint">表名需包含"随机"、"Random"等关键词</span>
       </div>
 
-      <!-- 列分组 -->
+      <!-- 表分组 (V2: 按表名分组) -->
       <div
-        v-for="column in columns"
-        :key="column.name"
+        v-for="table in tables"
+        :key="table.id"
         class="rwp-column-group"
-        :class="{ collapsed: !expandedColumns[column.name] }"
+        :class="{ collapsed: !expandedTables[table.id] }"
       >
-        <!-- 列头 -->
-        <div class="rwp-group-header" @click="toggleColumn(column.name)">
+        <!-- 表头 -->
+        <div class="rwp-group-header" @click="toggleTable(table.id)">
           <div class="rwp-header-left">
-            <i class="fas" :class="expandedColumns[column.name] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-            <span class="rwp-column-name">{{ column.name }}</span>
-            <span class="rwp-word-count">({{ column.words.length }})</span>
+            <i class="fas" :class="expandedTables[table.id] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            <span class="rwp-column-name">{{ table.name }}</span>
+            <span class="rwp-word-count">({{ table.words.length }})</span>
           </div>
           <div class="rwp-header-right" @click.stop>
             <!-- Limit 设置 Badge -->
             <div class="rwp-limit-wrapper">
               <div
                 class="acu-badge-pill acu-badge-interactive"
-                :class="activeLimitPopup === column.name ? 'acu-badge-primary' : 'acu-badge-secondary'"
+                :class="activeLimitPopup === table.id ? 'acu-badge-primary' : 'acu-badge-secondary'"
                 title="点击设置抽取数量限制"
-                @click.stop="toggleLimitPopup(column.name)"
+                @click.stop="toggleLimitPopup(table.id)"
               >
                 <i class="fas fa-filter" style="margin-right: 4px; font-size: 11px"></i>
-                <span>{{ getColumnLimitText(column.name) }}</span>
+                <span>{{ getTableLimitText(table.id) }}</span>
               </div>
 
               <!-- Limit 设置 Popover -->
-              <div v-if="activeLimitPopup === column.name" class="rwp-limit-popover" @click.stop>
+              <div v-if="activeLimitPopup === table.id" class="rwp-limit-popover" @click.stop>
                 <div class="popover-header">抽取数量限制 (0=不限)</div>
                 <div class="popover-body">
                   <div class="limit-control">
@@ -109,13 +109,13 @@
                       min="0"
                       max="10"
                       step="1"
-                      :value="getColumnLimit(column.name)"
-                      @input="e => setColumnLimit(column.name, +(e.target as HTMLInputElement).value)"
+                      :value="getTableLimit(table.id)"
+                      @input="e => setTableLimit(table.id, +(e.target as HTMLInputElement).value)"
                     />
-                    <span class="limit-value">{{ getColumnLimit(column.name) || '不限' }}</span>
+                    <span class="limit-value">{{ getTableLimit(table.id) || '不限' }}</span>
                   </div>
                   <div class="popover-actions">
-                    <button class="acu-tool-btn small" @click="setColumnLimit(column.name, 0)">重置为不限</button>
+                    <button class="acu-tool-btn small" @click="setTableLimit(table.id, 0)">重置为不限</button>
                   </div>
                 </div>
               </div>
@@ -124,8 +124,8 @@
             <label class="acu-switch small">
               <input
                 type="checkbox"
-                :checked="isColumnEnabled(column.name)"
-                @change.stop="toggleColumnEnabled(column.name)"
+                :checked="isTableEnabled(table.id)"
+                @change.stop="toggleTableEnabled(table.id)"
               />
               <span class="slider"></span>
             </label>
@@ -133,16 +133,16 @@
         </div>
 
         <!-- 词列表 -->
-        <div v-show="expandedColumns[column.name]" class="rwp-group-content">
+        <div v-show="expandedTables[table.id]" class="rwp-group-content">
           <span
-            v-for="word in column.words"
-            :key="word"
+            v-for="(word, idx) in table.words"
+            :key="idx"
             class="rwp-word-badge"
-            :class="{ disabled: !isColumnEnabled(column.name) }"
+            :class="{ disabled: !isTableEnabled(table.id) }"
           >
             {{ word }}
           </span>
-          <span v-if="column.words.length === 0" class="rwp-empty-hint"> 暂无词条 </span>
+          <span v-if="table.words.length === 0" class="rwp-empty-hint"> 暂无词条 </span>
         </div>
       </div>
     </div>
@@ -151,7 +151,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { detectWordPoolTables, getWordPoolTableData } from '../../composables/useWordPool';
+import { detectWordPoolTables, getTableDisplayName, getWordPoolTableData } from '../../composables/useWordPool';
 import { useDataStore } from '../../stores/useDataStore';
 import { useDivinationStore } from '../../stores/useDivinationStore';
 import { useUIStore } from '../../stores/useUIStore';
@@ -194,25 +194,32 @@ const dataStore = useDataStore();
 /** 组件是否折叠 */
 const isCollapsed = ref(false);
 
-/** 展开的列（本地状态） */
-const expandedColumns = reactive<Record<string, boolean>>({});
+/** 编辑模式前的折叠状态 */
+const wasCollapsedBeforeEditing = ref(false);
 
-/** 当前激活的 Limit 设置弹窗（列名） */
+/** 展开的表（本地状态，按表ID） */
+const expandedTables = reactive<Record<string, boolean>>({});
+
+/** 当前激活的 Limit 设置弹窗（表ID） */
 const activeLimitPopup = ref<string | null>(null);
 
-/** 列数据缓存 */
-interface ColumnData {
+/** 表数据缓存 (V2: 按表分组) */
+interface TableData {
+  /** 表ID（不含 sheet_ 前缀） */
+  id: string;
+  /** 表显示名称 */
   name: string;
+  /** 该表所有词（每个单元格为一个词，不拆分） */
   words: string[];
 }
-const columns = ref<ColumnData[]>([]);
+const tables = ref<TableData[]>([]);
 
 // ============================================================
 // 计算属性
 // ============================================================
 
-/** 列数量 */
-const columnCount = computed(() => columns.value.length);
+/** 表数量 */
+const tableCount = computed(() => tables.value.length);
 
 /** 过滤后的快捷按钮 */
 const filteredActions = computed(() => {
@@ -223,8 +230,8 @@ const filteredActions = computed(() => {
 
 /** 是否全部展开 */
 const allExpanded = computed(() => {
-  if (columns.value.length === 0) return false;
-  return columns.value.every(col => expandedColumns[col.name]);
+  if (tables.value.length === 0) return false;
+  return tables.value.every(t => expandedTables[t.id]);
 });
 
 // ============================================================
@@ -232,7 +239,7 @@ const allExpanded = computed(() => {
 // ============================================================
 
 onMounted(() => {
-  loadColumnData();
+  loadTableData();
   window.addEventListener('click', closePopups);
 });
 
@@ -242,19 +249,22 @@ onUnmounted(() => {
 
 // 监听表格配置变化，刷新数据
 watch(
-  () => divinationStore.config.tableColumnConfig,
+  () => divinationStore.config.tablePoolConfig,
   () => {
     // 配置变化时无需重新加载数据，只需触发视图更新
   },
   { deep: true },
 );
 
-// 监听编辑模式变化，进入编辑模式时自动折叠
+// 监听编辑模式变化，进入编辑模式时自动折叠，退出时恢复
 watch(
   () => props.isEditing,
   newVal => {
     if (newVal) {
+      wasCollapsedBeforeEditing.value = isCollapsed.value;
       isCollapsed.value = true;
+    } else {
+      isCollapsed.value = wasCollapsedBeforeEditing.value;
     }
   },
 );
@@ -264,7 +274,7 @@ watch(
   () => dataStore.tables,
   () => {
     console.log('[RandomWordPoolWidget] 检测到数据变更，刷新词库...');
-    loadColumnData();
+    loadTableData();
   },
   { deep: false }, // tables 引用变化即触发，无需 deep
 );
@@ -274,100 +284,97 @@ watch(
 // ============================================================
 
 /**
- * 加载列数据
+ * 加载表数据 (V2: 按表分组，单元格不拆分)
  */
-function loadColumnData(): void {
-  const tables = detectWordPoolTables();
-  const columnsMap = new Map<string, Set<string>>();
+function loadTableData(): void {
+  const detectedTables = detectWordPoolTables();
+  const result: TableData[] = [];
 
-  for (const tableName of tables) {
-    const rows = getWordPoolTableData(tableName);
+  for (const tableId of detectedTables) {
+    const rows = getWordPoolTableData(tableId);
     if (rows.length === 0) continue;
 
-    // 取最后一行（最新生成的数据）
+    // 取最后一行（最新生成的数据 / 每表唯一行）
     const latestRow = rows[rows.length - 1];
+    const words: string[] = [];
 
-    for (const [columnName, cellValue] of Object.entries(latestRow)) {
-      if (!cellValue || typeof cellValue !== 'string') continue;
-
-      if (!columnsMap.has(columnName)) {
-        columnsMap.set(columnName, new Set());
+    // V2: 每个单元格是一个完整的词（不再按逗号拆分）
+    for (const cellValue of Object.values(latestRow)) {
+      if (cellValue && typeof cellValue === 'string') {
+        const trimmed = cellValue.trim();
+        if (trimmed) {
+          words.push(trimmed);
+        }
       }
+    }
 
-      // 按分隔符拆分词
-      const words = cellValue
-        .split(/[,，·]/)
-        .map(w => w.trim())
-        .filter(Boolean);
+    result.push({
+      id: tableId,
+      name: getTableDisplayName(tableId),
+      words,
+    });
+  }
 
-      words.forEach(word => columnsMap.get(columnName)!.add(word));
+  tables.value = result;
+
+  // 初始化展开状态（默认全部折叠）
+  for (const t of tables.value) {
+    if (expandedTables[t.id] === undefined) {
+      expandedTables[t.id] = false;
     }
   }
 
-  // 转换为数组格式
-  columns.value = Array.from(columnsMap.entries()).map(([name, wordSet]) => ({
-    name,
-    words: Array.from(wordSet),
-  }));
-
-  // 初始化展开状态（默认全部展开）
-  for (const col of columns.value) {
-    if (expandedColumns[col.name] === undefined) {
-      expandedColumns[col.name] = true;
-    }
-  }
-
-  console.info(`[RandomWordPoolWidget] 加载了 ${columns.value.length} 列数据`);
+  console.info(`[RandomWordPoolWidget] 加载了 ${tables.value.length} 个表数据`);
 }
 
 /**
- * 检查列是否启用
+ * 检查表是否启用
  */
-function isColumnEnabled(columnName: string): boolean {
-  const config = divinationStore.config.tableColumnConfig[columnName];
+function isTableEnabled(tableId: string): boolean {
+  const config = divinationStore.config.tablePoolConfig[tableId];
   // 默认启用
   return config ? config.enabled : true;
 }
 
 /**
- * 切换列启用状态
+ * 切换表启用状态
  */
-function toggleColumnEnabled(columnName: string): void {
-  const currentConfig = divinationStore.config.tableColumnConfig[columnName] || {
+function toggleTableEnabled(tableId: string): void {
+  const currentConfig = divinationStore.config.tablePoolConfig[tableId] || {
     enabled: true,
     limit: 0,
   };
 
-  divinationStore.config.tableColumnConfig[columnName] = {
+  divinationStore.config.tablePoolConfig[tableId] = {
     ...currentConfig,
     enabled: !currentConfig.enabled,
   };
 }
 
 /**
- * 获取列的 Limit 值
+ * 获取表的 Limit 值
  */
-function getColumnLimit(columnName: string): number {
-  return divinationStore.config.tableColumnConfig[columnName]?.limit || 0;
+function getTableLimit(tableId: string): number {
+  return divinationStore.config.tablePoolConfig[tableId]?.limit || 0;
 }
 
 /**
- * 获取列的 Limit 显示文本
+ * 获取表的 Limit 显示文本
  */
-function getColumnLimitText(columnName: string): string {
-  const limit = getColumnLimit(columnName);
+function getTableLimitText(tableId: string): string {
+  const limit = getTableLimit(tableId);
   return limit > 0 ? `限 ${limit}` : '不限';
 }
 
 /**
- * 设置列的 Limit
+ * 设置表的 Limit
  */
-function setColumnLimit(columnName: string, limit: number): void {
-  const currentConfig = divinationStore.config.tableColumnConfig[columnName] || {
+function setTableLimit(tableId: string, limit: number): void {
+  const currentConfig = divinationStore.config.tablePoolConfig[tableId] || {
     enabled: true,
     limit: 0,
   };
-  divinationStore.config.tableColumnConfig[columnName] = {
+  divinationStore.config.tablePoolConfig[tableId] = {
     ...currentConfig,
     limit,
   };
@@ -376,11 +383,11 @@ function setColumnLimit(columnName: string, limit: number): void {
 /**
  * 切换 Limit 弹窗显示
  */
-function toggleLimitPopup(columnName: string): void {
-  if (activeLimitPopup.value === columnName) {
+function toggleLimitPopup(tableId: string): void {
+  if (activeLimitPopup.value === tableId) {
     activeLimitPopup.value = null;
   } else {
-    activeLimitPopup.value = columnName;
+    activeLimitPopup.value = tableId;
   }
 }
 
@@ -392,19 +399,19 @@ function closePopups(): void {
 }
 
 /**
- * 切换列展开状态
+ * 切换表展开状态
  */
-function toggleColumn(columnName: string): void {
-  expandedColumns[columnName] = !expandedColumns[columnName];
+function toggleTable(tableId: string): void {
+  expandedTables[tableId] = !expandedTables[tableId];
 }
 
 /**
- * 一键展开/折叠所有列
+ * 一键展开/折叠所有表
  */
 function toggleAllExpanded(): void {
   const newState = !allExpanded.value;
-  for (const col of columns.value) {
-    expandedColumns[col.name] = newState;
+  for (const t of tables.value) {
+    expandedTables[t.id] = newState;
   }
 }
 

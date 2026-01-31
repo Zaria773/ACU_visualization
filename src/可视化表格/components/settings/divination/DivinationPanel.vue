@@ -69,6 +69,21 @@
         </div>
       </div>
 
+      <!-- 偷看模式 -->
+      <div class="acu-settings-row">
+        <div class="acu-settings-label">
+          偷看模式
+          <span class="hint">模糊显示运势和内容</span>
+        </div>
+        <div class="acu-settings-control">
+          <button
+            class="acu-switch"
+            :class="{ active: config.peepMode }"
+            @click="config.peepMode = !config.peepMode"
+          ></button>
+        </div>
+      </div>
+
       <!-- 卡背图片 -->
       <div class="acu-settings-row">
         <div class="acu-settings-label">
@@ -144,15 +159,17 @@
               </select>
               <!-- perItem 模式：拖动条在同一行 -->
               <template v-if="config.wordDrawMode === 'perItem'">
-                <input
-                  v-model.number="config.wordsPerItem"
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  class="acu-inline-range"
-                />
-                <span class="acu-range-value">{{ config.wordsPerItem }}</span>
+                <div class="acu-range-wrapper">
+                  <input
+                    v-model.number="config.wordsPerItem"
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    class="acu-inline-range"
+                  />
+                  <span class="acu-range-value">{{ config.wordsPerItem }}</span>
+                </div>
               </template>
             </div>
           </div>
@@ -254,75 +271,3 @@ const handleFileUpload = async (event: Event) => {
 };
 </script>
 
-<style lang="scss">
-/* 使用全局样式，不使用 scoped */
-.acu-image-upload-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  flex-wrap: nowrap !important; /* 强制不换行 */
-
-  .acu-settings-input {
-    flex: 1;
-    min-width: 50px; /* 允许缩小但保留最小宽度 */
-    width: 0; /* 关键：配合 flex: 1 确保能缩小 */
-  }
-
-  /* 移动端适配 */
-  @media (max-width: 600px) {
-    gap: 4px;
-
-    .acu-settings-input {
-      font-size: 12px !important;
-      padding: 6px 8px !important;
-    }
-
-    .acu-tool-btn {
-      padding: 6px 8px;
-    }
-  }
-}
-
-.acu-hidden-input {
-  display: none;
-}
-
-/* 抽词模式控件（选择框 + 拖动条同行） */
-.acu-mode-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-
-  .acu-select {
-    min-width: 100px;
-  }
-
-  .acu-inline-range {
-    width: 80px;
-    margin: 0;
-  }
-
-  .acu-range-value {
-    min-width: 24px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--acu-text-sub);
-  }
-
-  /* 移动端适配 */
-  @media (max-width: 600px) {
-    gap: 4px;
-
-    .acu-inline-range {
-      width: 60px;
-    }
-
-    .acu-range-value {
-      min-width: 20px;
-      font-size: 11px;
-    }
-  }
-}
-</style>

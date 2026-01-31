@@ -246,17 +246,6 @@
                   </div>
                 </div>
 
-                <!-- 锁定单元格入口 -->
-                <div class="acu-settings-row acu-nav-row" @click="handleEnterLockMode">
-                  <div class="acu-settings-label">
-                    锁定单元格
-                    <span class="hint">点击单元格，保护数据不被 AI 修改</span>
-                  </div>
-                  <div class="acu-settings-control">
-                    <i class="fas fa-chevron-right"></i>
-                  </div>
-                </div>
-
                 <!-- Swipe 时清除表格 -->
                 <div class="acu-settings-row">
                   <div class="acu-settings-label">
@@ -328,7 +317,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.1 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.3 ——</div>
       </div>
     </div>
   </Transition>

@@ -8,7 +8,7 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { DEFAULT_LUCK_TIERS } from '../composables/useDraw';
-import { drawFromLatestRowWithConfig, shuffleArray, type ColumnConfig } from '../composables/useWordPool';
+import { drawFromLatestRowWithConfig, shuffleArray, type TableConfig } from '../composables/useWordPool';
 import type {
   BiasType,
   Dimension,
@@ -59,6 +59,7 @@ const DEFAULT_CONFIG: DivinationConfig = {
   themeColor: '#6b4c9a',
   themeId: 'wafuku', // 默认使用和风御札主题
   flipMode: 'auto',
+  peepMode: false, // 偷看模式
   dimensions: [DEFAULT_LUCK_DIMENSION, DEFAULT_SANITY_DIMENSION],
   customTemplate: '',
   // 词库设置
@@ -67,7 +68,8 @@ const DEFAULT_CONFIG: DivinationConfig = {
   enableWordPool: false, // 默认关闭世界书词库
   wordDrawMode: 'perItem', // 默认每项抽1个
   wordsPerItem: 1,
-  tableColumnConfig: {},
+  tableColumnConfig: undefined, // @deprecated
+  tablePoolConfig: {}, // 表词库配置（表ID -> 配置）
   categoryConfig: {},
 };
 
@@ -121,7 +123,21 @@ export const useDivinationStore = defineStore('acu-divination', () => {
             ...globalVars.divinationConfig,
             // 确保 dimensions 存在
             dimensions: globalVars.divinationConfig.dimensions || DEFAULT_CONFIG.dimensions,
+            // 确保 tablePoolConfig 存在
+            tablePoolConfig: globalVars.divinationConfig.tablePoolConfig || {},
           };
+
+          // 迁移旧配置：tableColumnConfig → tablePoolConfig
+          if (
+            globalVars.divinationConfig.tableColumnConfig &&
+            Object.keys(globalVars.divinationConfig.tableColumnConfig).length > 0 &&
+            Object.keys(config.value.tablePoolConfig).length === 0
+          ) {
+            config.value.tablePoolConfig = { ...globalVars.divinationConfig.tableColumnConfig };
+            config.value.tableColumnConfig = undefined;
+            console.info('[Divination] Migrated tableColumnConfig → tablePoolConfig');
+          }
+
           console.info('[Divination] Config loaded from global variables');
         }
       }
@@ -291,8 +307,8 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       // 找到对应的 entry
       const entryIndex = allEntries.findIndex(e => e.uid === category.id);
 
-      // 构建 content 字符串
-      const content = category.words.join(',');
+      // 构建 content 字符串（用换行符分隔，支持句子或段落作为词条）
+      const content = category.words.join('\n');
 
       if (entryIndex !== -1) {
         // 更新现有条目
@@ -532,7 +548,8 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
         // 2. 合并新词汇 (Set 去重)
         const mergedWords = new Set([...existingWords, ...data.words]);
-        const content = Array.from(mergedWords).join(',');
+        // 用换行符分隔，支持句子或段落作为词条
+        const content = Array.from(mergedWords).join('\n');
 
         if (existingEntry) {
           // 更新现有条目
@@ -777,7 +794,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         config.value.wordDrawMode,
         config.value.wordsPerItem,
         config.value.drawCount,
-        config.value.tableColumnConfig as Record<string, ColumnConfig>,
+        config.value.tablePoolConfig as Record<string, TableConfig>,
       );
       drawnWords.push(...tableWords);
       console.info(`[Divination] 从表格抽词，模式: ${config.value.wordDrawMode}，结果:`, tableWords);

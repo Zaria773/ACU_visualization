@@ -1,29 +1,7 @@
 <template>
   <div class="acu-action-bar">
-    <!-- 锁定编辑模式：完成按钮 -->
-    <div v-if="uiStore.isLockEditMode" class="acu-action-btn-wrapper acu-lock-mode-btns">
-      <button class="acu-action-btn acu-btn-primary" title="完成锁定编辑" @click.stop="handleFinishLockEdit">
-        <i class="fas fa-check"></i>
-      </button>
-      <button class="acu-action-btn acu-btn-secondary" title="取消锁定编辑" @click.stop="handleCancelLockEdit">
-        <i class="fas fa-times"></i>
-      </button>
-      <button
-        class="acu-action-btn"
-        :class="{ 'acu-btn-active': uiStore.showLockedOnly }"
-        title="只显示锁定的卡片"
-        @click.stop="toggleShowLockedOnly"
-      >
-        <i class="fas fa-filter"></i>
-      </button>
-      <span v-if="cellLock.pendingLockCount.value > 0" class="acu-lock-count">
-        {{ cellLock.pendingLockCount.value }}
-      </span>
-    </div>
-
     <!-- 普通模式：常规按钮 -->
-    <template v-else>
-      <div v-for="btnId in sortedVisibleButtonIds" :key="btnId" class="acu-action-btn-wrapper">
+    <div v-for="btnId in sortedVisibleButtonIds" :key="btnId" class="acu-action-btn-wrapper">
         <button
           class="acu-action-btn"
           :class="getButtonClass(btnId)"
@@ -52,7 +30,6 @@
           </button>
         </transition>
       </div>
-    </template>
   </div>
 </template>
 

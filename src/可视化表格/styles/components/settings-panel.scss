@@ -572,3 +572,38 @@
     }
   }
 }
+
+
+// --------------------------------------------
+// 抽签设置面板特有样式
+// --------------------------------------------
+.acu-mode-control {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  width: 100%;
+  .acu-select {
+    width: auto !important;
+    min-width: 120px;
+  }
+  .acu-range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .acu-inline-range {
+    width: 120px !important;
+    flex-shrink: 0;
+  }
+  .acu-range-value {
+    min-width: 24px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--acu-title-color, #d35400);
+    font-weight: bold;
+  }
+}

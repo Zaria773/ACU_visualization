@@ -43,27 +43,6 @@
 
       <!-- 动作按钮区（横排） -->
       <div class="acu-nav-actions-area">
-        <!-- 锁定编辑模式：在最前面添加确认/取消/筛选按钮 -->
-        <div v-if="uiStore.isLockEditMode" class="acu-action-btn-wrapper acu-lock-mode-btns">
-          <button class="acu-action-btn acu-btn-success" title="完成锁定编辑" @click.stop="handleFinishLockEdit">
-            <i class="fas fa-check"></i>
-          </button>
-          <button class="acu-action-btn acu-btn-cancel" title="取消锁定编辑" @click.stop="handleCancelLockEdit">
-            <i class="fas fa-times"></i>
-          </button>
-          <button
-            class="acu-action-btn"
-            :class="{ 'acu-btn-active': uiStore.showLockedOnly }"
-            title="只显示锁定的卡片"
-            @click.stop="toggleShowLockedOnly"
-          >
-            <i class="fas fa-filter"></i>
-          </button>
-          <span v-if="cellLock.pendingLockCount.value > 0" class="acu-lock-count">
-            {{ cellLock.pendingLockCount.value }}
-          </span>
-        </div>
-
         <!-- 常规按钮（始终显示） -->
         <div v-for="btn in visibleButtons" :key="btn.id" class="acu-action-btn-wrapper">
           <button
@@ -144,7 +123,7 @@
 import { useEventListener, useStorage } from '@vueuse/core';
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import type { PanelType } from '../composables';
-import { toast, useCellLock, useSmartHeight } from '../composables';
+import { useCellLock, useSmartHeight } from '../composables';
 import { NAV_BUTTONS, useConfigStore, useUIStore } from '../stores';
 import type { NavButtonConfig, WindowConfig } from '../types';
 import HiddenButtonsPopup from './HiddenButtonsPopup.vue';
@@ -532,31 +511,6 @@ const handleButtonClick = (buttonId: string) => {
   }
 
   emitButtonAction(buttonId);
-};
-
-// ============================================================
-// 锁定编辑模式处理
-// ============================================================
-
-/** 完成锁定编辑 */
-const handleFinishLockEdit = () => {
-  // 在保存前记录计数（因为保存后 pendingLocks 会被重置）
-  const count = cellLock.pendingLockCount.value;
-  cellLock.savePendingLocks();
-  uiStore.isLockEditMode = false;
-  toast.success(`已保存 ${count} 个单元格锁定`);
-};
-
-/** 取消锁定编辑 */
-const handleCancelLockEdit = () => {
-  cellLock.discardPendingLocks();
-  uiStore.isLockEditMode = false;
-  toast.info('已取消锁定编辑');
-};
-
-/** 切换只显示锁定卡片筛选 */
-const toggleShowLockedOnly = () => {
-  uiStore.showLockedOnly = !uiStore.showLockedOnly;
 };
 
 // ============================================================

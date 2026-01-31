@@ -84,114 +84,262 @@
 
       <!-- 普通表格组件 -->
       <template v-else-if="tableData && displayRows.length > 0">
-        <!-- 网格式展示 (NPC风格) -->
-        <div v-if="config.displayStyle === 'grid'" class="acu-dash-npc-grid">
-          <div
-            v-for="row in displayRows"
-            :key="row.key"
-            class="acu-dash-npc-item acu-dash-interactive"
-            :class="{
-              'acu-highlight-changed': isRowChanged(row),
-              'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
-            }"
-            @click.stop="handleRowClick(row)"
-          >
-            <span class="acu-dash-npc-text">{{ getDisplayValue(row) }}</span>
-            <!-- 展示标签 -->
-            <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
-              {{ tag.value }}
-            </span>
-            <!-- 互动标签（旧系统） -->
-            <span
-              v-for="item in getInteractiveTags(row)"
-              :key="item.tag.id"
-              class="acu-dash-interactive-tag"
-              :class="{ fixed: item.tag.isFixed }"
-              :title="getTagTooltip(item.tag)"
-              @click.stop="handleInteractiveTagClick(item.tag, row)"
-            >
-              {{ item.value }}
-            </span>
-            <!-- 互动标签（新系统 - 从全局标签库） -->
-            <span
-              v-for="newTag in displayedInteractiveTags"
-              :key="newTag.id"
-              class="acu-dash-interactive-tag acu-dash-global-tag"
-              :title="getNewTagTooltip(newTag)"
-              @click.stop="
-                handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
-              "
-            >
-              {{ newTag.label }}
-            </span>
-            <!-- 分类按钮（点击弹出该分类下的标签选择） -->
-            <span
-              v-for="category in displayedCategories"
-              :key="category.id"
-              class="acu-dash-category-btn"
-              :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
-              @click.stop="handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })"
-            >
-              <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
-              <span v-else>{{ getCategoryButtonLabel(category) }}</span>
-            </span>
+        <!-- ============================================================ -->
+        <!-- 网格式展示 (NPC风格) - 虚拟滚动版 -->
+        <!-- ============================================================ -->
+        <template v-if="config.displayStyle === 'grid'">
+          <!-- 虚拟滚动模式 -->
+          <div v-if="useVirtual" v-bind="gridContainerProps" class="acu-dash-virtual-container">
+            <div v-bind="gridWrapperProps">
+              <div
+                v-for="{ data: rowGroup, index: groupIndex } in virtualGridRowGroups"
+                :key="groupIndex"
+                class="acu-dash-npc-grid"
+              >
+                <div
+                  v-for="row in rowGroup"
+                  :key="row.key"
+                  class="acu-dash-npc-item acu-dash-interactive"
+                  :class="{
+                    'acu-highlight-changed': isRowChanged(row),
+                    'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+                  }"
+                  @click.stop="handleRowClick(row)"
+                >
+                  <span class="acu-dash-npc-text">{{ getDisplayValue(row) }}</span>
+                  <!-- 展示标签 -->
+                  <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
+                    {{ tag.value }}
+                  </span>
+                  <!-- 互动标签（旧系统） -->
+                  <span
+                    v-for="item in getInteractiveTags(row)"
+                    :key="item.tag.id"
+                    class="acu-dash-interactive-tag"
+                    :class="{ fixed: item.tag.isFixed }"
+                    :title="getTagTooltip(item.tag)"
+                    @click.stop="handleInteractiveTagClick(item.tag, row)"
+                  >
+                    {{ item.value }}
+                  </span>
+                  <!-- 互动标签（新系统 - 从全局标签库） -->
+                  <span
+                    v-for="newTag in displayedInteractiveTags"
+                    :key="newTag.id"
+                    class="acu-dash-interactive-tag acu-dash-global-tag"
+                    :title="getNewTagTooltip(newTag)"
+                    @click.stop="
+                      handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                    "
+                  >
+                    {{ newTag.label }}
+                  </span>
+                  <!-- 分类按钮 -->
+                  <span
+                    v-for="category in displayedCategories"
+                    :key="category.id"
+                    class="acu-dash-category-btn"
+                    :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+                    @click.stop="
+                      handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                    "
+                  >
+                    <i
+                      v-if="isFontAwesome(getCategoryButtonLabel(category))"
+                      :class="getCategoryButtonLabel(category)"
+                    ></i>
+                    <span v-else>{{ getCategoryButtonLabel(category) }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+          <!-- 普通模式（数据量小时不使用虚拟滚动） -->
+          <div v-else class="acu-dash-npc-grid">
+            <div
+              v-for="row in displayRows"
+              :key="row.key"
+              class="acu-dash-npc-item acu-dash-interactive"
+              :class="{
+                'acu-highlight-changed': isRowChanged(row),
+                'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+              }"
+              @click.stop="handleRowClick(row)"
+            >
+              <span class="acu-dash-npc-text">{{ getDisplayValue(row) }}</span>
+              <!-- 展示标签 -->
+              <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
+                {{ tag.value }}
+              </span>
+              <!-- 互动标签（旧系统） -->
+              <span
+                v-for="item in getInteractiveTags(row)"
+                :key="item.tag.id"
+                class="acu-dash-interactive-tag"
+                :class="{ fixed: item.tag.isFixed }"
+                :title="getTagTooltip(item.tag)"
+                @click.stop="handleInteractiveTagClick(item.tag, row)"
+              >
+                {{ item.value }}
+              </span>
+              <!-- 互动标签（新系统 - 从全局标签库） -->
+              <span
+                v-for="newTag in displayedInteractiveTags"
+                :key="newTag.id"
+                class="acu-dash-interactive-tag acu-dash-global-tag"
+                :title="getNewTagTooltip(newTag)"
+                @click.stop="
+                  handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                "
+              >
+                {{ newTag.label }}
+              </span>
+              <!-- 分类按钮 -->
+              <span
+                v-for="category in displayedCategories"
+                :key="category.id"
+                class="acu-dash-category-btn"
+                :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+                @click.stop="
+                  handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                "
+              >
+                <i
+                  v-if="isFontAwesome(getCategoryButtonLabel(category))"
+                  :class="getCategoryButtonLabel(category)"
+                ></i>
+                <span v-else>{{ getCategoryButtonLabel(category) }}</span>
+              </span>
+            </div>
+          </div>
+        </template>
 
-        <!-- 列表式展示 (任务风格) -->
-        <div v-else class="acu-dash-list">
-          <div
-            v-for="row in displayRows"
-            :key="row.key"
-            class="acu-dash-list-item acu-dash-interactive"
-            :class="{
-              'acu-highlight-changed': isRowChanged(row),
-              'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
-            }"
-            @click.stop="handleRowClick(row)"
-          >
-            <i class="fas fa-circle" style="font-size: 6px"></i>
-            <span class="acu-dash-list-text">{{ getDisplayValue(row) }}</span>
-            <!-- 展示标签 -->
-            <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
-              {{ tag.value }}
-            </span>
-            <!-- 互动标签（旧系统） -->
-            <span
-              v-for="item in getInteractiveTags(row)"
-              :key="item.tag.id"
-              class="acu-dash-interactive-tag"
-              :class="{ fixed: item.tag.isFixed }"
-              :title="getTagTooltip(item.tag)"
-              @click.stop="handleInteractiveTagClick(item.tag, row)"
-            >
-              {{ item.value }}
-            </span>
-            <!-- 互动标签（新系统 - 从全局标签库） -->
-            <span
-              v-for="newTag in displayedInteractiveTags"
-              :key="newTag.id"
-              class="acu-dash-interactive-tag acu-dash-global-tag"
-              :title="getNewTagTooltip(newTag)"
-              @click.stop="
-                handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
-              "
-            >
-              {{ newTag.label }}
-            </span>
-            <!-- 分类按钮（点击弹出该分类下的标签选择） -->
-            <span
-              v-for="category in displayedCategories"
-              :key="category.id"
-              class="acu-dash-interactive-tag acu-dash-global-tag"
-              :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
-              @click.stop="handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })"
-            >
-              <i v-if="isFontAwesome(getCategoryButtonLabel(category))" :class="getCategoryButtonLabel(category)"></i>
-              <span v-else>{{ getCategoryButtonLabel(category) }}</span>
-            </span>
+        <!-- ============================================================ -->
+        <!-- 列表式展示 (任务风格) - 虚拟滚动版 -->
+        <!-- ============================================================ -->
+        <template v-else>
+          <!-- 虚拟滚动模式 -->
+          <div v-if="useVirtual" v-bind="listContainerProps" class="acu-dash-virtual-container">
+            <div v-bind="listWrapperProps" class="acu-dash-list">
+              <div
+                v-for="{ data: row, index } in virtualListRows"
+                :key="row.key"
+                class="acu-dash-list-item acu-dash-interactive"
+                :class="{
+                  'acu-highlight-changed': isRowChanged(row),
+                  'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+                }"
+                :style="{ height: LIST_ITEM_HEIGHT + 'px' }"
+                @click.stop="handleRowClick(row)"
+              >
+                <i class="fas fa-circle" style="font-size: 6px"></i>
+                <span class="acu-dash-list-text">{{ getDisplayValue(row) }}</span>
+                <!-- 展示标签 -->
+                <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
+                  {{ tag.value }}
+                </span>
+                <!-- 互动标签（旧系统） -->
+                <span
+                  v-for="item in getInteractiveTags(row)"
+                  :key="item.tag.id"
+                  class="acu-dash-interactive-tag"
+                  :class="{ fixed: item.tag.isFixed }"
+                  :title="getTagTooltip(item.tag)"
+                  @click.stop="handleInteractiveTagClick(item.tag, row)"
+                >
+                  {{ item.value }}
+                </span>
+                <!-- 互动标签（新系统 - 从全局标签库） -->
+                <span
+                  v-for="newTag in displayedInteractiveTags"
+                  :key="newTag.id"
+                  class="acu-dash-interactive-tag acu-dash-global-tag"
+                  :title="getNewTagTooltip(newTag)"
+                  @click.stop="
+                    handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                  "
+                >
+                  {{ newTag.label }}
+                </span>
+                <!-- 分类按钮 -->
+                <span
+                  v-for="category in displayedCategories"
+                  :key="category.id"
+                  class="acu-dash-interactive-tag acu-dash-global-tag"
+                  :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+                  @click.stop="
+                    handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                  "
+                >
+                  <i
+                    v-if="isFontAwesome(getCategoryButtonLabel(category))"
+                    :class="getCategoryButtonLabel(category)"
+                  ></i>
+                  <span v-else>{{ getCategoryButtonLabel(category) }}</span>
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+          <!-- 普通模式（数据量小时不使用虚拟滚动） -->
+          <div v-else class="acu-dash-list">
+            <div
+              v-for="row in displayRows"
+              :key="row.key"
+              class="acu-dash-list-item acu-dash-interactive"
+              :class="{
+                'acu-highlight-changed': isRowChanged(row),
+                'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+              }"
+              @click.stop="handleRowClick(row)"
+            >
+              <i class="fas fa-circle" style="font-size: 6px"></i>
+              <span class="acu-dash-list-text">{{ getDisplayValue(row) }}</span>
+              <!-- 展示标签 -->
+              <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
+                {{ tag.value }}
+              </span>
+              <!-- 互动标签（旧系统） -->
+              <span
+                v-for="item in getInteractiveTags(row)"
+                :key="item.tag.id"
+                class="acu-dash-interactive-tag"
+                :class="{ fixed: item.tag.isFixed }"
+                :title="getTagTooltip(item.tag)"
+                @click.stop="handleInteractiveTagClick(item.tag, row)"
+              >
+                {{ item.value }}
+              </span>
+              <!-- 互动标签（新系统 - 从全局标签库） -->
+              <span
+                v-for="newTag in displayedInteractiveTags"
+                :key="newTag.id"
+                class="acu-dash-interactive-tag acu-dash-global-tag"
+                :title="getNewTagTooltip(newTag)"
+                @click.stop="
+                  handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                "
+              >
+                {{ newTag.label }}
+              </span>
+              <!-- 分类按钮 -->
+              <span
+                v-for="category in displayedCategories"
+                :key="category.id"
+                class="acu-dash-interactive-tag acu-dash-global-tag"
+                :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
+                @click.stop="
+                  handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
+                "
+              >
+                <i
+                  v-if="isFontAwesome(getCategoryButtonLabel(category))"
+                  :class="getCategoryButtonLabel(category)"
+                ></i>
+                <span v-else>{{ getCategoryButtonLabel(category) }}</span>
+              </span>
+            </div>
+          </div>
+        </template>
       </template>
 
       <!-- 空状态 -->
@@ -207,6 +355,11 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useCoreActions } from '../../composables/useCoreActions';
 import { useDivinationAction } from '../../composables/useDivinationAction';
+import {
+  LIST_ITEM_HEIGHT,
+  useGridVirtualScroll,
+  useListVirtualScroll
+} from '../../composables/useVirtualScroll';
 import { useTagLibraryStore } from '../../stores/useTagLibraryStore';
 import { getSmartTabIcon, useUIStore } from '../../stores/useUIStore';
 import type {
@@ -399,6 +552,30 @@ const displayRows = computed(() => {
     return a.index - b.index;
   });
 });
+
+// ============================================================
+// 虚拟滚动
+// ============================================================
+
+/** 虚拟滚动阈值：超过此数量启用虚拟滚动 */
+const VIRTUAL_SCROLL_THRESHOLD = 30;
+
+/** 是否启用虚拟滚动 */
+const useVirtual = computed(() => displayRows.value.length > VIRTUAL_SCROLL_THRESHOLD);
+
+// 列表模式虚拟滚动
+const {
+  list: virtualListRows,
+  containerProps: listContainerProps,
+  wrapperProps: listWrapperProps,
+} = useListVirtualScroll(displayRows);
+
+// 网格模式虚拟滚动（数据按行分组）
+const {
+  list: virtualGridRowGroups,
+  containerProps: gridContainerProps,
+  wrapperProps: gridWrapperProps,
+} = useGridVirtualScroll(displayRows);
 
 /** 内容区 class */
 const bodyClass = computed(() => ({

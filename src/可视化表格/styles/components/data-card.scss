@@ -533,19 +533,6 @@
 // =========================================
 
 // 锁定模式下的单元格基础样式
-.acu-lock-mode {
-  // 所有单元格在锁定模式下可点击
-  .acu-card-row {
-    cursor: pointer;
-    transition:
-      background-color 0.15s ease,
-      border-color 0.15s ease;
-
-    &:hover {
-      background: rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.08);
-    }
-  }
-}
 
 // 已锁定的单元格样式
 .acu-cell-locked {

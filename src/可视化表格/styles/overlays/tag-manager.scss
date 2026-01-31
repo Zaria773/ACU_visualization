@@ -184,11 +184,6 @@
     }
   }
 
-  .export-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 6px;
-  }
 }
 
 // ==================== 双栏布局 ====================
@@ -466,20 +461,6 @@
       }
     }
     &.mode-migrate,
-    &.mode-export {
-      .tap-icon {
-        font-size: 10px;
-        color: var(--acu-text-sub);
-        opacity: 0;
-        transition: all 0.2s;
-        transform: rotate(-30deg);
-      }
-      &:hover .tap-icon,
-      &.selected .tap-icon {
-        opacity: 1;
-        color: var(--acu-title-color);
-      }
-    }
 
     &.mode-delete:hover {
       background: rgba(231, 76, 60, 0.1);
@@ -572,32 +553,36 @@
     align-items: center;
     gap: 8px;
 
-    .acu-close-x {
-      padding: 6px 8px;
-      border: none;
-      background: transparent;
-      color: var(--acu-text-sub);
-      cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.2s;
-      font-size: 14px;
-
-      &:hover {
-        color: var(--acu-text-main);
-        background: var(--acu-btn-hover);
-      }
-    }
   }
 
   // 使用设置面板的标准结构，覆盖一些特定样式
   .acu-modal-body {
     padding: 0;
+
+    // 修复标签文本输入框被挤压
+    input[type='text'] {
+      min-width: 0;
+      flex: 1;
+      width: 100%;
+    }
   }
 
   // 分类选择控件：select + 新增按钮
   .acu-category-control {
     display: flex;
     gap: 6px;
+
+    // 移动端/空间不足时自动换行并靠右
+    @media (max-width: 400px) {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      width: 100%;
+
+      .acu-custom-select {
+        flex: 1;
+        min-width: 140px;
+      }
+    }
 
     select {
       flex: 1;
@@ -617,6 +602,32 @@
       &:hover {
         background: var(--acu-btn-hover);
         color: var(--acu-title-color);
+      }
+    }
+  }
+
+  // 强制标签文本输入框在小屏幕下优化显示
+  .acu-settings-row {
+    @media (max-width: 400px) {
+      flex-wrap: wrap;
+
+      .acu-settings-label {
+        width: 100%;
+        margin-bottom: 4px;
+      }
+
+      .acu-settings-control {
+        width: 100%;
+        justify-content: flex-start;
+
+        input {
+          width: 100%;
+        }
+      }
+
+      // 针对分类选择行的特殊处理
+      &.acu-category-row .acu-settings-control {
+        justify-content: flex-end;
       }
     }
   }
@@ -1218,14 +1229,6 @@
     }
   }
 
-  .acu-pre-edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-    padding-top: 8px;
-    border-top: 1px solid var(--acu-border);
-  }
 }
 
 // ==================== 同伴选择器 ====================

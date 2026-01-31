@@ -11,4 +11,6 @@ export interface CardDisplayData {
   dimensions: string[];
   /** 抽到的随机词列表 */
   words: string[];
+  /** 偷看模式 */
+  peepMode?: boolean;
 }

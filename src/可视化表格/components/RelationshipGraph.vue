@@ -18,8 +18,32 @@
     <!-- 图容器（中间） -->
     <div ref="containerRef" class="acu-graph-container"></div>
 
+    <!-- 搜索框（工具栏上方，仅搜索模式显示） -->
+    <Transition name="acu-slide-up">
+      <SearchBox
+        v-if="isSearchMode"
+        ref="searchInputRef"
+        v-model="searchTerm"
+        class="acu-graph-search-input"
+        placeholder="搜索人物..."
+        :autofocus="true"
+        :show-result-count="false"
+        @search="handleSearchInput"
+        @clear="handleClearFocus"
+      />
+    </Transition>
+
     <!-- 工具栏（底部） -->
     <div class="acu-graph-toolbar">
+      <button
+        class="acu-graph-btn"
+        :class="{ active: isSearchMode }"
+        title="搜索模式"
+        @click="toggleSearchMode"
+      >
+        <i class="fas fa-search"></i>
+      </button>
+      <span class="acu-toolbar-divider"></span>
       <button class="acu-graph-btn" title="适应视图" @click="fitToView">
         <i class="fas fa-compress-arrows-alt"></i>
       </button>
@@ -113,6 +137,7 @@ import {
   parseEmbeddedRelationships,
   parseRelationshipTable,
 } from '../utils';
+import SearchBox from './SearchBox.vue';
 
 // 注册布局扩展
 cytoscape.use(fcose); // fcose: 自由模式（边交叉优化好）
@@ -188,6 +213,15 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLElement | null>(null);
 let cy: Core | null = null;
+
+/** 搜索模式相关 */
+const isSearchMode = ref(false);
+const searchTerm = ref('');
+const searchInputRef = ref<InstanceType<typeof SearchBox> | null>(null);
+const focusedNodeId = ref<string | null>(null);
+
+/** 保存搜索前被 hidden-in-cola 隐藏的元素 ID（用于恢复） */
+const hiddenInColaBeforeSearch = ref<Set<string>>(new Set());
 
 /** 布局类型 */
 type LayoutType = 'fcose' | 'cola' | 'circle' | 'dagre';
@@ -828,6 +862,13 @@ function initCytoscape() {
           'target-arrow-color': '#FFC107',
         },
       },
+      // 搜索模式：非聚焦元素隐藏
+      {
+        selector: '.search-dimmed',
+        style: {
+          display: 'none',
+        },
+      },
     ],
     // 如果有保存的位置，使用 preset 布局（保持当前位置）；否则使用默认布局
     layout: hasPositions ? { name: 'preset' } : getLayoutConfig(layoutMode.value),
@@ -844,6 +885,12 @@ function initCytoscape() {
     const node = evt.target;
     const nodeId = node.id();
     const nodeType = node.data('type') || 'unknown';
+
+    // 搜索模式下，点击节点触发聚焦
+    if (isSearchMode.value) {
+      focusOnNode(nodeId);
+      return;
+    }
 
     // 在环形布局模式下，点击节点切换为中心
     if (layoutMode.value === 'circle') {
@@ -984,6 +1031,151 @@ function updateGraph() {
   cy.elements().remove();
   cy.add(parsedData.value.elements);
   cy.layout(getLayoutConfig(layoutMode.value)).run();
+}
+
+// ============================================================
+// 搜索模式
+// ============================================================
+
+/** 切换搜索模式 */
+function toggleSearchMode() {
+  isSearchMode.value = !isSearchMode.value;
+  if (!isSearchMode.value) {
+    // 退出搜索模式时清除聚焦
+    handleClearFocus();
+  } else {
+    // 进入搜索模式时聚焦输入框
+    setTimeout(() => {
+      searchInputRef.value?.focus();
+    }, 100);
+  }
+}
+
+/** 处理搜索输入 */
+function handleSearchInput(term: string) {
+  if (!cy) return;
+
+  const query = term.trim().toLowerCase();
+  if (!query) {
+    handleClearFocus();
+    return;
+  }
+
+  // 查找匹配的节点
+  const matchedNode = cy.nodes().filter(node => {
+    if (node.hasClass('faction-container') || node.hasClass('hidden-in-cola')) return false;
+    const id = (node.id() || '').toLowerCase();
+    const label = (node.data('label') || '').toLowerCase();
+    const fullName = (node.data('fullName') || '').toLowerCase();
+    return id.includes(query) || label.includes(query) || fullName.includes(query);
+  }).first();
+
+  if (matchedNode && matchedNode.length > 0) {
+    focusOnNode(matchedNode.id());
+  }
+}
+
+/** 聚焦到指定节点（显示该节点及其直接相连的节点和边） */
+function focusOnNode(nodeId: string) {
+  if (!cy) return;
+
+  const targetNode = cy.getElementById(nodeId);
+  if (!targetNode || targetNode.length === 0) return;
+
+  focusedNodeId.value = nodeId;
+  searchTerm.value = targetNode.data('label') || nodeId;
+
+  cy.batch(() => {
+    // 1. 首次聚焦时，保存当前 hidden-in-cola 元素状态
+    if (hiddenInColaBeforeSearch.value.size === 0) {
+      cy!.elements('.hidden-in-cola').forEach(el => {
+        hiddenInColaBeforeSearch.value.add(el.id());
+      });
+    }
+
+    // 2. 获取目标节点的邻居（直接相连的节点）
+    //    排除 hidden-in-cola 的节点（它们本来就应该隐藏）
+    const neighbors = targetNode.neighborhood('node').filter(n => !n.hasClass('hidden-in-cola'));
+
+    // 3. 聚焦节点集合 = 目标节点 + 有效邻居节点
+    let focusedNodes = neighbors.add(targetNode);
+
+    // 4. 获取直接相连的边（排除 hidden-in-cola 的）
+    let focusedEdges = targetNode.connectedEdges().filter(e => !e.hasClass('hidden-in-cola'));
+
+    // 5. 【关键】如果是 cola 布局，处理复合节点层级
+    if (layoutMode.value === 'cola') {
+      // 5a. 收集聚焦节点的父容器（势力容器）
+      const parentContainerIds = new Set<string>();
+      focusedNodes.forEach(node => {
+        const parent = node.parent();
+        if (parent.length > 0 && parent.hasClass('faction-container')) {
+          parentContainerIds.add(parent.id());
+        }
+      });
+
+      // 5b. 将相关的父容器也加入聚焦集合（否则子节点无法正常显示）
+      parentContainerIds.forEach(containerId => {
+        const containerNode = cy!.getElementById(containerId);
+        if (containerNode.length > 0) {
+          focusedNodes = focusedNodes.add(containerNode);
+        }
+      });
+
+      // 5c. 添加父容器之间的势力边（仅当两端容器都在聚焦集合中时）
+      cy!.edges('.faction-edge').forEach(edge => {
+        const sourceId = edge.source().id();
+        const targetId = edge.target().id();
+        if (parentContainerIds.has(sourceId) && parentContainerIds.has(targetId)) {
+          focusedEdges = focusedEdges.add(edge);
+        }
+      });
+    }
+
+    // 6. 所有元素先添加隐藏类
+    cy!.elements().addClass('search-dimmed');
+
+    // 7. 聚焦的节点和边移除隐藏类
+    focusedNodes.removeClass('search-dimmed');
+    focusedEdges.removeClass('search-dimmed');
+  });
+
+  // 8. 动画移动视图到聚焦区域
+  const focusedEles = cy.elements().not('.search-dimmed');
+  cy.animate({
+    fit: {
+      eles: focusedEles,
+      padding: 50,
+    },
+    duration: 400,
+  });
+}
+
+/** 清除聚焦，恢复全图 */
+function handleClearFocus() {
+  if (!cy) return;
+
+  focusedNodeId.value = null;
+  searchTerm.value = '';
+
+  cy.batch(() => {
+    // 1. 移除所有 search-dimmed 类
+    cy!.elements().removeClass('search-dimmed');
+
+    // 2. 【关键】恢复 hidden-in-cola 状态
+    //    在 cola 布局中，某些节点/边原本就应该隐藏
+    if (hiddenInColaBeforeSearch.value.size > 0) {
+      hiddenInColaBeforeSearch.value.forEach(eleId => {
+        const ele = cy!.getElementById(eleId);
+        if (ele.length > 0) {
+          ele.addClass('hidden-in-cola');
+        }
+      });
+    }
+  });
+
+  // 3. 清空保存的状态
+  hiddenInColaBeforeSearch.value.clear();
 }
 
 // ============================================================

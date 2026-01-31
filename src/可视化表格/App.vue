@@ -159,6 +159,14 @@
       @advanced-confirm="handleAdvancedPurgeConfirm"
     />
 
+    <!-- 高级清除弹窗 (全局) -->
+    <AdvancedPurgeDialog
+      v-model:visible="uiStore.advancedPurgeDialog.visible"
+      :initial-start-floor="uiStore.advancedPurgeDialog.props.initialStartFloor"
+      :initial-end-floor="uiStore.advancedPurgeDialog.props.initialEndFloor"
+      @confirm="uiStore.handleAdvancedPurgeConfirm"
+    />
+
     <!-- 手动更新配置弹窗 -->
     <ManualUpdateDialog v-model:visible="uiStore.manualUpdateDialog" />
 
@@ -370,6 +378,7 @@ import {
   Toast,
 } from './components';
 import {
+  AdvancedPurgeDialog,
   AvatarCropDialog,
   AvatarManagerDialog,
   DirectorDialog,
@@ -393,6 +402,7 @@ import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog } from './compo
 
 // Store 导入
 import { useConfigStore } from './stores/useConfigStore';
+import { useDashboardStore } from './stores/useDashboardStore';
 import { useDataStore } from './stores/useDataStore';
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useTagLibraryStore } from './stores/useTagLibraryStore';
@@ -423,6 +433,7 @@ import type { InteractiveTag, ProcessedTable, TabItem, TableRow } from './types'
 
 const uiStore = useUIStore();
 const dataStore = useDataStore();
+const dashboardStore = useDashboardStore();
 const configStore = useConfigStore();
 const tagLibraryStore = useTagLibraryStore();
 const divinationStore = useDivinationStore() as any;
@@ -867,6 +878,10 @@ function handleDashboardAction(actionId: string, tableId: string) {
       // 手动更新
       handleManualUpdate();
       break;
+    case 'console':
+      // 打开导演控制台
+      uiStore.openDirectorDialog();
+      break;
     default:
       console.log('[ACU Dashboard] 未处理的动作:', actionId, tableId);
   }
@@ -977,10 +992,10 @@ function getPlayerName(): string {
 }
 
 /** 高度拖拽开始 - 调用 MainPanel 的高度拖拽逻辑 */
-function handleHeightDragStart(event: PointerEvent, handleEl: HTMLElement) {
+function handleHeightDragStart(event: PointerEvent, handleEl: HTMLElement | null) {
   // 获取 MainPanel 暴露的数据区元素
   const dataAreaEl = mainPanelRef.value?.getDataAreaElement();
-  if (!dataAreaEl) return;
+  if (!dataAreaEl || !handleEl) return;
 
   // 只响应左键
   if (event.button !== 0) return;
@@ -1266,10 +1281,10 @@ function tableRowToCells(row: TableRow): Record<number, string> {
 /**
  * 处理抽签确认
  */
-function handleDivinationConfirm() {
+function handleDivinationConfirm(action: 'reveal' | 'hide' = 'reveal') {
   const result = uiStore.divinationOverlay.result;
   if (result) {
-    confirmDivination(result);
+    confirmDivination(result, action);
   } else {
     console.error('[ACU] Confirm divination failed: No result found');
   }
@@ -1386,6 +1401,15 @@ onMounted(async () => {
   // 加载数据
   try {
     await loadData();
+
+    // 初始化仪表盘配置 (需在数据加载后执行，以便自动添加默认组件时能获取到表格数据)
+    await dashboardStore.loadConfig();
+
+    // 初始化抽签系统配置
+    divinationStore.loadConfig();
+    // 加载世界书词库 (如果存在)
+    await divinationStore.loadFromWorldbook();
+
     uiStore.setInitialized(true);
 
     // 设置默认活跃 Tab
@@ -1519,10 +1543,6 @@ onMounted(() => {
 
   // 在父窗口文档上监听点击事件
   parentDoc.addEventListener('click', handleClickOutside);
-
-  // 初始化抽签系统配置
-  // 确保在应用加载时就读取配置，以便后续操作能获取到正确数据
-  divinationStore.loadConfig();
 
   // 清理函数
   onUnmounted(() => {

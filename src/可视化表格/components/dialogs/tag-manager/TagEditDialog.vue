@@ -36,7 +36,7 @@
             </div>
 
             <!-- 分类选择 -->
-            <div class="acu-settings-row">
+            <div class="acu-settings-row acu-category-row">
               <div class="acu-settings-label">
                 所属分类
                 <span class="hint">选择或创建分类</span>

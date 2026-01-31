@@ -22,6 +22,7 @@
           :luck-color="displayData.luckColor"
           :dimensions="displayData.dimensions"
           :words="displayData.words"
+          :peep-mode="displayData.peepMode"
         />
       </div>
     </div>
@@ -45,11 +46,14 @@ interface Props {
   result: DivinationResult | null;
   /** 卡背图片 URL（优先级高于主题默认） */
   cardBackImage?: string;
+  /** 偷看模式 */
+  peepMode?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   themeId: 'wafuku',
   cardBackImage: '',
+  peepMode: false,
 });
 
 const emit = defineEmits<{
@@ -92,6 +96,7 @@ const displayData = computed<CardDisplayData | null>(() => {
     // 提取维度值：store 返回的是 { name, value } 结构
     dimensions: props.result.dimensions.map(d => d.value),
     words: props.result.words,
+    peepMode: props.peepMode,
   };
 });
 

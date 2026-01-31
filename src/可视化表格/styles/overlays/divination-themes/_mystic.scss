@@ -340,32 +340,14 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     letter-spacing: 0.05em;
     line-height: 1.4;
     position: relative;
-    white-space: nowrap; // 防止换行
+    white-space: normal; // 允许换行
+    text-align: center;
 
     // 单个词时字号更大
     &:only-child {
       font-size: 20px;
       color: map-get($mystic-colors, gold-light);
       text-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-    }
-
-    // 装饰点缀
-    &::before,
-    &::after {
-      content: '✦';
-      display: inline-block;
-      font-size: 0.6em;
-      color: rgba(245, 158, 11, 0.4);
-      vertical-align: middle;
-      margin: 0 12px;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-
-    // 仅在非唯一子元素时显示装饰
-    &:not(:only-child)::before,
-    &:not(:only-child)::after {
-      opacity: 1;
     }
   }
 
@@ -420,14 +402,4 @@ $mystic-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 // 主题特定的塔罗卡片容器样式
-.tarot-card--theme-mystic {
-  // 未翻转时的卡背浮动动画
-  &:not(.tarot-card--flipped) .tarot-card__back {
-    animation: mystic-float 4s ease-in-out infinite;
-  }
 
-  // 发光效果
-  .mystic-card-back {
-    animation: mystic-glow 4s ease-in-out infinite;
-  }
-}

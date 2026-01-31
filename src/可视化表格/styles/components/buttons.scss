@@ -391,15 +391,6 @@
 // =========================================
 
 // 锁定模式按钮容器
-.acu-lock-mode-btns {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: none;
-  margin-right: 8px;
-  padding-right: 8px;
-  border-right: 1px solid var(--acu-border);
-}
 
 // 成功按钮（完成锁定）
 .acu-btn-success {
@@ -414,29 +405,6 @@
 }
 
 // 取消按钮
-.acu-btn-cancel {
-  color: #e74c3c !important;
-  background: rgba(231, 76, 60, 0.15) !important;
-  border: 1px solid rgba(231, 76, 60, 0.3) !important;
-
-  &:hover {
-    background: rgba(231, 76, 60, 0.25) !important;
-    color: #ff6b6b !important;
-  }
-}
 
 // 锁定计数徽章
-.acu-lock-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  background: var(--acu-title-color);
-  color: #fff;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  margin-left: 4px;
-}
+

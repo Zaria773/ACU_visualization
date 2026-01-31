@@ -161,7 +161,7 @@ $wafuku-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     width: 100%;
     padding: 0 16px;
     flex-grow: 1;
-    justify-content: flex-start;
+    justify-content: center; // 垂直居中
     padding-top: 0; // 紧贴顶部
     overflow-y: auto; // 启用垂直滚动
 
@@ -178,21 +178,16 @@ $wafuku-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     align-items: center;
     justify-content: center;
 
-    &-line {
-      height: 1px;
-      width: 32px;
-      background-color: rgba(198, 166, 100, 0.5);
-      margin: 0 8px;
-    }
-
     &-text {
       font-family: $wafuku-font-heading;
       color: map-get($wafuku-colors, accent);
-      font-size: 13px;
+      font-size: 18px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       font-weight: bold;
-      white-space: nowrap; // 防止换行
+      white-space: normal; // 允许换行
+      text-align: center;
+      line-height: 1.4;
     }
   }
 }
@@ -232,9 +227,4 @@ $wafuku-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 }
 
 // 主题特定的塔罗卡片容器样式
-.tarot-card--theme-wafuku {
-  // 未翻转时的卡背浮动动画
-  &:not(.tarot-card--flipped) .tarot-card__back {
-    animation: divination-float 4s ease-in-out infinite;
-  }
-}
+

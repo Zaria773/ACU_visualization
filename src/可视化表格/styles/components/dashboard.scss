@@ -29,6 +29,8 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 4px 12px var(--acu-shadow);
+  min-height: 0; // 允许 flex 子元素收缩
+  overflow: hidden; // 确保内容溢出时显示滚动条（配合内部滚动容器）
 }
 
 // 看板标题
@@ -109,26 +111,6 @@
 // 注意: 图标按钮请使用通用类 .acu-icon-btn (components/buttons.scss)
 
 // 主角信息区
-
-.acu-dash-stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  background: var(--acu-btn-bg);
-  border-radius: 8px;
-}
-
-.acu-dash-stat-label {
-  color: var(--acu-text-sub);
-  font-size: 0.9em;
-}
-
-.acu-dash-stat-val {
-  color: var(--acu-text-main);
-  font-weight: bold;
-  font-size: 1.1em;
-}
 
 // NPC 网格
 .acu-dash-npc-grid {
@@ -563,11 +545,6 @@
 // 列表项徽章
 
 // 紧凑式布局
-.acu-dash-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
 // =========================================
 // 顶栏样式
@@ -728,55 +705,6 @@
   }
 }
 
-.acu-actions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.acu-action-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--acu-card-bg);
-  border: 1px solid var(--acu-border);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--acu-title-color);
-  }
-
-  i {
-    width: 24px;
-    color: var(--acu-text-sub);
-    text-align: center;
-  }
-
-  span {
-    flex: 1;
-    font-size: 13px;
-    color: var(--acu-text-main);
-  }
-
-  &:hover {
-    border-color: var(--acu-title-color);
-  }
-
-  &.active {
-    border-color: var(--acu-title-color);
-    background: var(--acu-title-color-bg, rgba(var(--acu-title-color-rgb), 0.1));
-
-    i {
-      color: var(--acu-title-color);
-    }
-  }
-}
-
 // =========================================
 // 配置弹窗相关 (旧版兼容)
 // =========================================
@@ -894,11 +822,14 @@
   justify-content: space-between;
   padding: 4px 8px;
   border-bottom: 1px dashed var(--acu-border);
+  flex-wrap: wrap; // 允许换行
+  gap: 8px; // 换行后的间距
 }
 
 .acu-status-board-summary {
   font-size: 11px;
   color: var(--acu-text-sub);
+  white-space: nowrap; // 防止文字换行
 }
 
 .acu-status-table-wrapper {
@@ -1011,6 +942,116 @@
 }
 
 // =========================================
+// TableStatusBoard 编辑模式样式
+// =========================================
+
+// 编辑模式选中行高亮
+.acu-status-table tbody tr.acu-row-selected {
+  background: var(--acu-title-color-bg) !important;
+
+  td {
+    color: var(--acu-title-color);
+  }
+
+  // 选中状态下的名称列
+  .acu-status-name {
+    font-weight: 600;
+  }
+}
+
+// 工具栏容器
+.acu-status-board-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto; // 确保靠右对齐
+}
+
+// 编辑模式工具栏
+.acu-status-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-right: 1px solid var(--acu-border);
+  margin-right: 4px;
+}
+
+// 频率输入框
+.acu-freq-input {
+  width: 60px;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--acu-border);
+  border-radius: 4px;
+  background: var(--acu-btn-bg);
+  color: var(--acu-text-main);
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acu-title-color);
+    background: var(--acu-card-bg);
+  }
+
+  // 隐藏 number 输入框的增减按钮
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+// 表格行在编辑模式下的交互提示
+.acu-status-table tbody tr {
+  // 编辑模式下显示可点击光标
+}
+
+// 编辑模式下的表格名称列样式调整
+.acu-status-table td.acu-status-name {
+  span {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// 编辑按钮激活状态（变成保存按钮时）
+.acu-icon-btn.acu-edit-active {
+  background: var(--acu-title-color-bg);
+  border-color: var(--acu-title-color);
+  color: var(--acu-title-color);
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .acu-status-toolbar {
+    flex-wrap: wrap;
+    gap: 2px;
+    padding-right: 4px;
+    margin-right: 2px;
+  }
+
+  .acu-freq-input {
+    width: 50px;
+    padding: 3px 4px;
+    font-size: 12px;
+  }
+
+  .acu-status-board-actions {
+    gap: 4px;
+  }
+}
+
+// =========================================
 // 嵌入式选项面板 (EmbeddedOptionsPanel)
 // =========================================
 
@@ -1031,14 +1072,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.acu-embedded-option-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--acu-text-sub);
-  padding-bottom: 4px;
-  border-bottom: 1px dashed var(--acu-border);
 }
 
 .acu-embedded-option-rows {
@@ -1129,6 +1162,44 @@
   // 已添加项图标颜色
   .acu-switch-list-item.is-selected .item-label i {
     color: var(--acu-title-color);
+  }
+}
+
+// =========================================
+// 虚拟滚动容器
+// =========================================
+
+.acu-dash-virtual-container {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; // 移动端平滑滚动
+
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--acu-text-sub);
+  }
+
+  // 虚拟滚动的网格行容器
+  .acu-dash-npc-grid {
+    margin-bottom: 8px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 

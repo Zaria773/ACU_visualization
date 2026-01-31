@@ -37,22 +37,27 @@
       <template v-else>
         <!-- 运势标题 -->
         <div class="mystic-card-front__title">
-          <h2 class="mystic-card-front__luck-name">{{ luckName }}</h2>
+          <h2 class="mystic-card-front__luck-name">{{ displayLuckName }}</h2>
           <div class="mystic-card-front__divider"></div>
         </div>
 
         <!-- 维度标签 -->
-        <div v-if="dimensions.length > 0" class="mystic-card-front__dimensions">
+        <div v-if="!peepMode && dimensions.length > 0" class="mystic-card-front__dimensions">
           <span v-for="(dimValue, idx) in dimensions" :key="idx" class="mystic-card-front__dimension-tag">
             {{ dimValue }}
+          </span>
+        </div>
+        <div v-else-if="peepMode && dimensions.length > 0" class="mystic-card-front__dimensions">
+          <span v-for="(dimValue, idx) in dimensions" :key="idx" class="mystic-card-front__dimension-tag">
+            ???
           </span>
         </div>
 
         <!-- 主信息区 -->
         <div class="mystic-card-front__message-box">
-          <template v-if="words.length > 0">
+          <template v-if="displayWords.length > 0">
             <div class="mystic-card-front__word-list">
-              <div v-for="(word, idx) in words" :key="idx" class="mystic-card-front__word-item">
+              <div v-for="(word, idx) in displayWords" :key="idx" class="mystic-card-front__word-item">
                 {{ word }}
               </div>
             </div>
@@ -82,11 +87,42 @@ interface Props {
   words: string[];
   /** 是否加载中 */
   loading?: boolean;
+  /** 偷看模式 */
+  peepMode?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   luckColor: '#ffd700',
   dimensions: () => [],
   loading: false,
+  peepMode: false,
+});
+
+import { computed } from 'vue';
+
+// 运势名称显示逻辑
+const displayLuckName = computed(() => {
+  if (!props.peepMode) return props.luckName;
+  return '???';
+});
+
+// 遮罩算法
+function maskText(text: string): string {
+  if (!text) return '';
+  // 60% 概率遮罩
+  return text
+    .split('')
+    .map(char => {
+      // 保留标点符号
+      if (/[\p{P}\s]/u.test(char)) return char;
+      return Math.random() < 0.6 ? '...' : char;
+    })
+    .join('');
+}
+
+// 关键词显示逻辑
+const displayWords = computed(() => {
+  if (!props.peepMode) return props.words;
+  return props.words.map(maskText);
 });
 </script>

@@ -55,6 +55,16 @@
   flex-direction: column;
   gap: 12px;
   padding-bottom: 20px;
+  flex: 1;
+  min-height: 0;
+
+  // 选项面板中的看板卡片需要正确的 flex 布局
+  .acu-dash-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 // 空状态
@@ -70,6 +80,28 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow-y: auto; // 允许垂直滚动
+  min-height: 0; // 允许 flex 收缩
+  flex: 1; // 占据剩余空间
+  padding-right: 4px; // 给滚动条留点空间
+
+  // 滚动条样式
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--acu-text-sub);
+  }
 }
 
 // 选项行 (与原代码 createOptionItemHtml 样式一致)

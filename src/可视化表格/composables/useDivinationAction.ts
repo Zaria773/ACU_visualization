@@ -93,11 +93,22 @@ export function useDivinationAction() {
 
   /**
    * 确认抽签结果（注入提示词）
+   * @param result 抽签结果
+   * @param action 注入动作 ('reveal' | 'hide')，默认为 'reveal'
    */
-  function confirmDivination(result: DivinationResult) {
+  function confirmDivination(result: DivinationResult, action: 'reveal' | 'hide' = 'reveal') {
     const prompt = buildPromptFromResult(result);
-    // 使用所见即所得的追加方式
-    appendPromptToInput(prompt);
+
+    if (action === 'hide') {
+      // 注入隐藏提示词
+      setHiddenPrompt(prompt);
+      setupSendIntercept();
+      toast.success('提示词已注入隐藏编辑框');
+    } else {
+      // 使用所见即所得的追加方式 (reveal)
+      appendPromptToInput(prompt);
+    }
+
     uiStore.closeDivinationOverlay();
   }
 

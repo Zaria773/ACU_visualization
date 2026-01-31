@@ -55,7 +55,7 @@ export {
   useCardGestures,
   useIsMobile,
   useMobileGestures as useMobileGesturesNew,
-  useSelectionGuardEnhanced,
+  useSelectionGuardEnhanced
 } from './useMobileGesturesNew';
 
 // 类型导出 - 手势系统
@@ -63,7 +63,7 @@ export type {
   CardGestureOptions,
   GestureIndicatorConfig,
   GestureState,
-  MobileGestureOptions,
+  MobileGestureOptions
 } from './useMobileGesturesNew';
 
 // ============================================
@@ -92,7 +92,7 @@ export {
   useStorage,
   useTextSelection,
   useThrottleFn,
-  watchDebounced,
+  watchDebounced
 } from './useVueUseIntegration';
 
 // 类型导出 - VueUse 集成
@@ -101,7 +101,7 @@ export type {
   DebouncedSaveOptions,
   DraggableWithSnapOptions,
   PanelType,
-  SmartHeightOptions,
+  SmartHeightOptions
 } from './useVueUseIntegration';
 
 // ============================================
@@ -117,14 +117,14 @@ export {
   checkTableIntegrity,
   extractNumber,
   isSummaryOrOutlineTable,
-  useTableIntegrityCheck,
+  useTableIntegrityCheck
 } from './useTableIntegrityCheck';
 
 export type {
   IntegrityCheckConfig,
   IntegrityIssue,
   IntegrityIssueType,
-  TableCheckResult,
+  TableCheckResult
 } from './useTableIntegrityCheck';
 
 // ============================================
@@ -135,7 +135,7 @@ export {
   PresetStorageSchema,
   UpdatePresetSchema,
   UpdateSettingsSchema,
-  useUpdatePresets,
+  useUpdatePresets
 } from './useUpdatePresets';
 
 export type { AutoTriggerConfig, PresetStorage, UpdatePreset, UpdateSettings } from './useUpdatePresets';
@@ -154,7 +154,7 @@ export {
   deleteSnapshot,
   getStats as getDBStats,
   getSnapshots as getSnapshotsFromDB,
-  initDB,
+  initDB
 } from './useIndexedDB';
 export type { RowSnapshot as IndexedDBRowSnapshot } from './useIndexedDB';
 
@@ -191,7 +191,7 @@ export {
   loadBackground,
   revokeBlobUrl,
   saveBackground,
-  urlToBlob,
+  urlToBlob
 } from './useBackgroundStorage';
 export type { BackgroundRecord } from './useBackgroundStorage';
 
@@ -223,7 +223,7 @@ export {
   drawLuck,
   getTierProbability,
   useDraw,
-  validateLuckTiers,
+  validateLuckTiers
 } from './useDraw';
 export type { LuckTier, UseDrawOptions, UseDrawReturn } from './useDraw';
 
@@ -232,15 +232,28 @@ export type { LuckTier, UseDrawOptions, UseDrawReturn } from './useDraw';
 // ============================================
 export {
   detectWordPoolTables,
+  drawFromLatestRowWithConfig,
   drawOneFromEachPool,
   drawOneFromPool,
   drawWords,
+  getAvailableTables,
+  getTableDisplayName,
   getWordPoolStats,
   getWordPoolTableData,
   parseWordPool,
-  useWordPool,
+  parseWordPoolByTable,
+  shuffleArray,
+  useWordPool
 } from './useWordPool';
-export type { TableRow, UseWordPoolOptions, UseWordPoolReturn, WordPool } from './useWordPool';
+export type {
+  ColumnConfig,
+  LegacyWordPool,
+  TableConfig,
+  TableRow,
+  UseWordPoolOptions,
+  UseWordPoolReturn,
+  WordPool
+} from './useWordPool';
 
 // ============================================
 // 抽签系统 - 提示词拼装
@@ -256,6 +269,21 @@ export {
   TEMPLATE_SIMPLE,
   TEMPLATE_WITH_DIMENSIONS,
   usePromptBuild,
-  validateTemplate,
+  validateTemplate
 } from './usePromptBuild';
 export type { DrawResult, FullDrawResult, UsePromptBuildOptions, UsePromptBuildReturn } from './usePromptBuild';
+
+// ============================================
+// 虚拟滚动（性能优化）
+// ============================================
+export {
+  GRID_COLUMNS,
+  GRID_ITEM_HEIGHT,
+  groupIntoRows,
+  LIST_ITEM_HEIGHT,
+  OVERSCAN,
+  useGridVirtualScroll,
+  useListVirtualScroll
+} from './useVirtualScroll';
+export type { UseVirtualListReturn } from './useVirtualScroll';
+

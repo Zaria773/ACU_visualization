@@ -10,15 +10,27 @@
         <span v-if="deletingCount > 0" class="acu-table-badge acu-badge-deleting">{{ deletingCount }}</span>
       </div>
 
-      <!-- 右侧：从右到左 - 关闭、搜索、高度拖手、倒序、视图切换 -->
+      <!-- 右侧：从右到左 - 关闭、搜索、高度拖手、倒序、锁定 -->
       <div class="acu-toolbar-right">
-        <!-- 视图切换按钮 -->
+        <!-- 锁定模式筛选按钮 -->
+        <button
+          v-if="uiStore.isLockEditMode"
+          class="acu-icon-btn"
+          :class="{ active: uiStore.showLockedOnly }"
+          title="只显示锁定的卡片"
+          @click.stop="toggleShowLockedOnly"
+        >
+          <i class="fas fa-filter"></i>
+        </button>
+
+        <!-- 锁定单元格按钮 -->
         <button
           class="acu-icon-btn"
-          :title="viewMode === 'card' ? '切换到列表视图' : '切换到卡片视图'"
-          @click="toggleViewMode"
+          :class="{ active: uiStore.isLockEditMode }"
+          :title="uiStore.isLockEditMode ? '保存并退出锁定模式' : '进入批量锁定模式'"
+          @click.stop="toggleLockMode"
         >
-          <i :class="viewMode === 'card' ? 'fas fa-list' : 'fas fa-th-large'"></i>
+          <i class="fas fa-lock"></i>
         </button>
 
         <!-- 倒序按钮 -->
@@ -139,7 +151,7 @@
  */
 
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { useCellLock } from '../composables';
+import { toast, useCellLock } from '../composables';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
@@ -428,10 +440,29 @@ function toggleReverse() {
 }
 
 /**
- * 切换视图模式
+ * 切换锁定模式
  */
-function toggleViewMode() {
-  viewMode.value = viewMode.value === 'card' ? 'list' : 'card';
+function toggleLockMode() {
+  const cellLock = useCellLock();
+  if (uiStore.isLockEditMode) {
+    // 当前开启 -> 关闭 (保存)
+    const count = cellLock.pendingLockCount.value;
+    cellLock.savePendingLocks();
+    uiStore.isLockEditMode = false;
+    toast.success(`已保存 ${count} 个单元格锁定`);
+  } else {
+    // 当前关闭 -> 开启 (初始化)
+    cellLock.initPendingLocks();
+    uiStore.isLockEditMode = true;
+    toast.info('已进入批量锁定模式，请点击单元格进行锁定');
+  }
+}
+
+/**
+ * 切换只显示锁定
+ */
+function toggleShowLockedOnly() {
+  uiStore.showLockedOnly = !uiStore.showLockedOnly;
 }
 
 /**

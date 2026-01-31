@@ -29,7 +29,7 @@
           <div class="acu-option-rows">
             <template v-for="(optionItem, optIdx) in getOptionItems(table)" :key="optIdx">
               <div
-                class="acu-option-row"
+                class="acu-embedded-option-row"
                 :title="'点击追加'"
                 @click="handleOptionClick(optionItem.text)"
                 @mouseover="handleOptionHover($event, true)"
@@ -38,13 +38,13 @@
                 @mouseup="handleOptionMouseUp($event)"
               >
                 <!-- 标签区域 -->
-                <div class="acu-option-tags">
+                <div class="acu-embedded-option-tags">
                   <span v-for="(tag, tagIdx) in optionItem.tags" :key="tagIdx" class="acu-badge acu-option-tag">
                     {{ tag }}
                   </span>
                 </div>
                 <!-- 选项文本 -->
-                <div class="acu-option-text">{{ optionItem.text }}</div>
+                <div class="acu-embedded-option-text">{{ optionItem.text }}</div>
               </div>
             </template>
           </div>

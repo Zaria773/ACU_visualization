@@ -59,10 +59,9 @@ export interface FullDrawResult extends DrawResult {
  * 用于在没有自定义模板时动态构建提示词
  */
 const TEMPLATE_PARTS = {
-  HEADER: '剧情发展指导：',
+  HEADER: '<user>行动顺利度：',
   LUCK: '{{luck}}',
-  WORDS: `在接下来的描写中，必须自然地融入以下每个要素：[ {{words}} ]，让这些要素成为推动或阻碍剧情的关键节点。
-  要素=叙事素材，运势才锚定最终成败`,
+  WORDS: `在接下来的描写中，请自然地融入以下要素：[ {{words}} ]`,
   DIMENSIONS: '{{dimensions}}',
 };
 

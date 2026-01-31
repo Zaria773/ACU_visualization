@@ -29,10 +29,6 @@
   cursor: move;
   z-index: 10; // 确保导航栏在数据面板之上，用于浮窗显示
 
-  &.lock-mode {
-    cursor: default !important;
-  }
-
   &.editing-order .acu-nav-btn {
     border: 1px dashed #f0ad4e;
     cursor: grab;

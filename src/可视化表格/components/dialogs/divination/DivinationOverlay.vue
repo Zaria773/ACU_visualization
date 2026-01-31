@@ -4,7 +4,15 @@
       enter-active-class="divination-overlay-enter-active"
       leave-active-class="divination-overlay-leave-active"
     >
-      <div v-if="visible" class="divination-overlay" style="z-index: 2147483647" @click="handleOverlayClick">
+      <div
+        v-if="visible"
+        class="divination-overlay"
+        :style="{
+          zIndex: 2147483647,
+          paddingBottom: `${configStore.config.mobileSafeAreaBottom ?? 50}px`,
+        }"
+        @click="handleOverlayClick"
+      >
         <!-- 噪点纹理层 -->
         <div class="divination-grain"></div>
 
@@ -110,8 +118,9 @@
               :result="result"
               :card-back-image="divinationStore.config.cardBackImage"
               :theme-id="divinationStore.config.themeId"
+              :peep-mode="divinationStore.config.peepMode"
               @flip="handleFlip"
-              @confirm="handleConfirm('reveal')"
+              @confirm="handleConfirm(divinationStore.config.peepMode ? 'hide' : 'reveal')"
             />
 
             <!-- 翻牌前提示 -->
@@ -134,6 +143,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useConfigStore } from '../../../stores/useConfigStore';
 import { useDivinationStore } from '../../../stores/useDivinationStore';
 import type { DivinationResult } from '../../../types';
 import TarotCard from './TarotCard.vue';
@@ -154,6 +164,7 @@ const emit = defineEmits<{
 }>();
 
 const divinationStore = useDivinationStore();
+const configStore = useConfigStore();
 
 // 获取父窗口 body 用于 Teleport
 const parentBody = window.parent.document.body;
@@ -197,7 +208,7 @@ function handleClose() {
 
 function handleOverlayClick() {
   if (isFlipped.value) {
-    handleConfirm('reveal');
+    handleConfirm(divinationStore.config.peepMode ? 'hide' : 'reveal');
   }
 }
 

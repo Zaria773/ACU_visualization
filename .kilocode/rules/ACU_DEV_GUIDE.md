@@ -17,17 +17,17 @@
 ## 核心约束
 
 ### 1. 样式规则（最重要）
-**Vue `<style scoped>` 完全失效**，因为：
+**禁止在 Vue 文件中使用 `<style>` 或 `<style scoped>`**，完全失效，因为：
 - Vue 将样式注入到 iframe 的 `<head>`
-- 实际 DOM 渲染在 `window.parent.document`
+- 实际 DOM 渲染在 `window.parent.document`（通过 Teleport 或 jQuery 挂载）
+- 父窗口无法读取 iframe 中的样式定义
 - 两个 document 不同，选择器无法匹配
 
 **正确做法**：
-```
-组件样式 → styles/components/*.scss
-弹窗样式 → styles/overlays/*.scss
-通过 useParentStyleInjection 注入到父窗口
-```
+1. **所有样式必须写在 `styles/` 目录下的 SCSS 文件中**
+2. 组件样式 → `styles/components/*.scss`
+3. 弹窗样式 → `styles/overlays/*.scss`
+4. 系统会自动通过 `useParentStyleInjection` 将这些全局样式注入到父窗口
 
 **Vue 其他功能正常**：响应式、组件化、模板语法、Pinia、VueUse 均不受影响。
 

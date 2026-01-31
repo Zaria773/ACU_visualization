@@ -3,21 +3,26 @@
 /**
  * 词库扫描与预处理 Composable
  *
- * 功能：扫描 ACU 数据库中表名含"随机词"的表，解析词库并支持随机抽取
+ * 功能：扫描 ACU 数据库中表名含"随机"的表，解析词库并支持随机抽取
+ *
+ * ## 核心概念变更 (v2)
+ * - **分类** = 表名（而非列名）
+ * - 每个表只有一行数据
+ * - 一个单元格 = 一个完整的词（不再按逗号拆分）
  *
  * @example
  * ```typescript
- * import { detectWordPoolTables, parseWordPool, drawWords } from './useWordPool';
+ * import { detectWordPoolTables, getAvailableTables, drawFromLatestRowWithConfig } from './useWordPool';
  *
  * // 检测可用的词库表
  * const tables = detectWordPoolTables();
  * console.log('找到词库表:', tables);
  *
- * // 解析词库数据
- * const pools = parseWordPool(tableData);
+ * // 获取表信息（含显示名称）
+ * const tableInfos = getAvailableTables();
  *
- * // 随机抽取关键词
- * const words = drawWords(pools, 4);
+ * // 从最新行抽词（带配置）
+ * const words = drawFromLatestRowWithConfig('perItem', 1, 4, {});
  * console.log('抽取结果:', words);
  * ```
  */
@@ -30,9 +35,21 @@ import { getCore } from '../utils';
 // ============================================
 
 /**
- * 词库分组
+ * 词库分组（按表）
  */
 export interface WordPool {
+  /** 表ID（不含 sheet_ 前缀） */
+  tableId: string;
+  /** 表显示名称 */
+  tableName: string;
+  /** 该表第一行所有非空单元格（每格一个词） */
+  words: string[];
+}
+
+/**
+ * @deprecated 使用 WordPool.tableId 代替
+ */
+export interface LegacyWordPool {
   /** 分组名称（列名） */
   category: string;
   /** 该分组下的所有词（已去重） */
@@ -45,9 +62,40 @@ export interface WordPool {
  */
 export type TableRow = Record<string, string>;
 
+/**
+ * 表配置
+ */
+export interface TableConfig {
+  enabled: boolean;
+  limit: number; // 0 = 不限
+}
+
+/**
+ * @deprecated 使用 TableConfig 代替
+ */
+export interface ColumnConfig {
+  enabled: boolean;
+  limit: number; // 0 表示不限制
+}
+
 // ============================================
 // 核心函数
 // ============================================
+
+/**
+ * 获取表的显示名称
+ * @param tableId 表ID（不含 sheet_ 前缀）
+ * @returns 显示名称，若无则返回 tableId
+ */
+export function getTableDisplayName(tableId: string): string {
+  const api = getCore().getDB();
+  const tableData = api?.exportTableAsJson?.();
+  if (!tableData) return tableId;
+
+  const sheetKey = `sheet_${tableId}`;
+  const data = tableData[sheetKey];
+  return (data as any)?.name || tableId;
+}
 
 /**
  * 检测是否有可用的词库表
@@ -160,30 +208,50 @@ export function getWordPoolTableData(tableName: string): TableRow[] {
 }
 
 /**
- * 解析词库表数据
+ * 解析词库表数据（按表分组，单元格不拆分）
  *
- * 将 ACU 表格数据转换为词库格式：
- * - 按列分组
- * - 按逗号拆分单元格内容
- * - 自动去重
- *
+ * @param tableId - 表ID（不含 sheet_ 前缀）
  * @param tableData - 表格数据行数组
- * @returns 词库分组列表
+ * @returns 词库分组
  *
  * @example
  * ```typescript
- * const tableData = [
- *   { '环境氛围': '静电噪音,刺眼的白炽灯', '交互物品': '半截粉笔' },
- *   { '环境氛围': '阴冷的穿堂风', '交互物品': '一卷胶带,生锈的手术刀' },
- * ];
- * const pools = parseWordPool(tableData);
- * // [
- * //   { category: '环境氛围', words: ['静电噪音', '刺眼的白炽灯', '阴冷的穿堂风'] },
- * //   { category: '交互物品', words: ['半截粉笔', '一卷胶带', '生锈的手术刀'] },
- * // ]
+ * const pool = parseWordPoolByTable('随机事件', tableData);
+ * // { tableId: '随机事件', tableName: '随机事件表', words: ['苹果', '香蕉', '橙子'] }
  * ```
  */
-export function parseWordPool(tableData: TableRow[]): WordPool[] {
+export function parseWordPoolByTable(
+  tableId: string,
+  tableData: TableRow[],
+): WordPool {
+  const words: string[] = [];
+
+  // 取最新一行（每表只有一行）
+  const row = tableData[tableData.length - 1];
+  if (row) {
+    for (const cellValue of Object.values(row)) {
+      if (cellValue && typeof cellValue === 'string') {
+        const trimmed = cellValue.trim();
+        if (trimmed) {
+          words.push(trimmed);
+        }
+      }
+    }
+  }
+
+  return {
+    tableId,
+    tableName: getTableDisplayName(tableId),
+    words,
+  };
+}
+
+/**
+ * @deprecated 使用 parseWordPoolByTable 代替
+ *
+ * 解析词库表数据（旧版：按列分组，逗号拆分）
+ */
+export function parseWordPool(tableData: TableRow[]): LegacyWordPool[] {
   const pools: Map<string, Set<string>> = new Map();
 
   for (const row of tableData) {
@@ -229,7 +297,7 @@ export function parseWordPool(tableData: TableRow[]): WordPool[] {
  * // ['静电噪音', '半截粉笔', '偏头痛', '阴冷的穿堂风']
  * ```
  */
-export function drawWords(pools: WordPool[], count: number): string[] {
+export function drawWords(pools: (WordPool | LegacyWordPool)[], count: number): string[] {
   // 合并所有词
   const allWords = pools.flatMap(p => p.words);
 
@@ -257,7 +325,7 @@ export function drawWords(pools: WordPool[], count: number): string[] {
  * @param pool - 词库分组
  * @returns 抽取的词，如果分组为空则返回 null
  */
-export function drawOneFromPool(pool: WordPool): string | null {
+export function drawOneFromPool(pool: WordPool | LegacyWordPool): string | null {
   if (pool.words.length === 0) {
     return null;
   }
@@ -269,15 +337,17 @@ export function drawOneFromPool(pool: WordPool): string | null {
  * 从每个分组各抽取一个词
  *
  * @param pools - 词库分组列表
- * @returns 每个分组抽取的词（分组名 -> 词）
+ * @returns 每个分组抽取的词（分组名/表名 -> 词）
  */
-export function drawOneFromEachPool(pools: WordPool[]): Map<string, string> {
+export function drawOneFromEachPool(pools: (WordPool | LegacyWordPool)[]): Map<string, string> {
   const result = new Map<string, string>();
 
   for (const pool of pools) {
     const word = drawOneFromPool(pool);
     if (word) {
-      result.set(pool.category, word);
+      // 兼容新旧格式
+      const key = 'tableId' in pool ? pool.tableName : (pool as LegacyWordPool).category;
+      result.set(key, word);
     }
   }
 
@@ -290,7 +360,7 @@ export function drawOneFromEachPool(pools: WordPool[]): Map<string, string> {
  * @param pools - 词库分组列表
  * @returns 统计信息
  */
-export function getWordPoolStats(pools: WordPool[]): {
+export function getWordPoolStats(pools: (WordPool | LegacyWordPool)[]): {
   totalCategories: number;
   totalWords: number;
   categorySizes: Map<string, number>;
@@ -298,7 +368,9 @@ export function getWordPoolStats(pools: WordPool[]): {
   const categorySizes = new Map<string, number>();
 
   for (const pool of pools) {
-    categorySizes.set(pool.category, pool.words.length);
+    // 兼容新旧格式
+    const key = 'tableId' in pool ? pool.tableName : (pool as LegacyWordPool).category;
+    categorySizes.set(key, pool.words.length);
   }
 
   return {
@@ -309,28 +381,13 @@ export function getWordPoolStats(pools: WordPool[]): {
 }
 
 // ============================================
-// 从最新行抽词（新功能）
+// 从最新行抽词（按表分组，单元格不拆分）
 // ============================================
 
 /**
- * 从最新行（最后一行）抽词
+ * @deprecated 使用 drawFromLatestRowWithConfig 代替
  *
- * @param mode 抽词模式
- *   - 'perColumn': 每列抽1个词
- *   - 'mixed': 所有词混一起抽 count 个
- * @param count 混合模式下抽取数量
- * @returns 抽取的词数组
- *
- * @example
- * ```typescript
- * // 每列抽1个
- * const words = drawFromLatestRow('perColumn');
- * // ['静电噪音', '半截粉笔', '偏头痛']
- *
- * // 混合抽4个
- * const words = drawFromLatestRow('mixed', 4);
- * // ['静电噪音', '半截粉笔', '阴冷的穿堂风', '偏头痛']
- * ```
+ * 从最新行（最后一行）抽词（旧版：按列分组，逗号拆分）
  */
 export function drawFromLatestRow(
   mode: 'perColumn' | 'mixed' | 'perItem' | 'custom' = 'perColumn',
@@ -393,47 +450,44 @@ export function drawFromLatestRow(
 }
 
 // ============================================
-// 从最新行抽词（支持列配置）
+// 从最新行抽词（按表分组，单元格不拆分）- V2
 // ============================================
 
 /**
- * 列配置类型
- */
-export interface ColumnConfig {
-  enabled: boolean;
-  limit: number; // 0 表示不限制
-}
-
-/**
- * 从最新行抽词（带列配置）
+ * 从最新行抽词（按表分组，单元格不拆分）
+ *
+ * ## V2 核心变更
+ * - 分类 = 表名（而非列名）
+ * - 每个单元格 = 一个完整的词（不再按逗号拆分）
+ * - 每表只有一行数据
  *
  * @param mode 抽词模式
- *   - 'perItem': 每个开启的列抽 wordsPerItem 个（不受总数限制）
- *   - 'custom': 每列最多抽 limit 个，总数不超过 drawCount
- *   - 'mixed': 所有开启列的词混合池抽取（受总数限制）
- * @param wordsPerItem perItem 模式下每列抽取数量
+ *   - 'perItem': 每个开启的表抽 wordsPerItem 个词（不受总数限制）
+ *   - 'custom': 每表最多抽 limit 个，总数不超过 drawCount
+ *   - 'mixed': 所有开启表的词混合后随机抽取（受总数限制）
+ * @param wordsPerItem perItem 模式下每表抽取数量
  * @param drawCount 抽词总数上限（custom/mixed 模式使用）
- * @param columnConfig 列配置（列名 -> {enabled, limit}）
+ * @param tableConfig 表配置（表ID -> {enabled, limit}）
  * @returns 抽取的词数组
  *
  * @example
  * ```typescript
- * // perItem 模式：每个开启的列抽 2 个
+ * // perItem 模式：每个开启的表抽 2 个
  * const words = drawFromLatestRowWithConfig('perItem', 2, 10, {
- *   '环境氛围': { enabled: true, limit: 0 },
- *   '交互物品': { enabled: true, limit: 0 },
+ *   '随机事件': { enabled: true, limit: 0 },
+ *   '随机物品': { enabled: true, limit: 0 },
  * });
  *
- * // custom 模式：每列最多抽 limit 个，总计不超过 drawCount
+ * // custom 模式：每表最多抽 limit 个，总计不超过 drawCount
  * const words = drawFromLatestRowWithConfig('custom', 1, 4, {
- *   '环境氛围': { enabled: true, limit: 2 },
- *   '交互物品': { enabled: true, limit: 3 },
+ *   '随机事件': { enabled: true, limit: 2 },
+ *   '随机物品': { enabled: true, limit: 3 },
  * });
  *
- * // mixed 模式：所有开启列混合抽取
+ * // mixed 模式：所有开启表混合抽取
  * const words = drawFromLatestRowWithConfig('mixed', 1, 4, {
- *   '环境氛围': { enabled: true, limit: 0 },
- *   '交互物品': { enabled: true, limit: 0 },
+ *   '随机事件': { enabled: true, limit: 0 },
+ *   '随机物品': { enabled: true, limit: 0 },
  * });
  * ```
  */
@@ -441,64 +495,60 @@ export function drawFromLatestRowWithConfig(
   mode: 'perItem' | 'custom' | 'mixed',
   wordsPerItem: number,
   drawCount: number,
-  columnConfig: Record<string, ColumnConfig>,
+  tableConfig: Record<string, TableConfig>,
 ): string[] {
   const tables = detectWordPoolTables();
   const result: string[] = [];
 
-  // 收集所有列的词（按列分组）
-  const columnWords: Map<string, string[]> = new Map();
+  // 收集所有表的词（按表分组）
+  const tableWords: Map<string, string[]> = new Map();
 
-  for (const tableName of tables) {
-    const rows = getWordPoolTableData(tableName);
+  for (const tableId of tables) {
+    // 检查表是否启用（如果配置中没有该表，默认启用）
+    const cfg = tableConfig[tableId];
+    if (cfg && !cfg.enabled) continue;
+
+    const rows = getWordPoolTableData(tableId);
     if (rows.length === 0) continue;
 
-    // 取最后一行（最新生成的）
+    // 取最后一行（最新生成的 / 每表唯一行）
     const latestRow = rows[rows.length - 1];
+    const words: string[] = [];
 
-    for (const [column, cellValue] of Object.entries(latestRow)) {
-      if (!cellValue || typeof cellValue !== 'string') continue;
-
-      // 检查列是否启用（如果配置中没有该列，默认启用）
-      const colConfig = columnConfig[column];
-      if (colConfig && !colConfig.enabled) continue;
-
-      // 按 , · ， 分隔
-      const words = cellValue
-        .split(/[,，·]/)
-        .map(w => w.trim())
-        .filter(Boolean);
-
-      if (words.length > 0) {
-        if (!columnWords.has(column)) {
-          columnWords.set(column, []);
-        }
-        columnWords.get(column)!.push(...words);
+    // 每个单元格是一个词（不再按逗号拆分）
+    for (const cellValue of Object.values(latestRow)) {
+      if (cellValue && typeof cellValue === 'string') {
+        const trimmed = cellValue.trim();
+        if (trimmed) words.push(trimmed);
       }
+    }
+
+    if (words.length > 0) {
+      tableWords.set(tableId, words);
     }
   }
 
   // 根据模式抽词
   if (mode === 'perItem') {
-    // perItem 模式：每个开启的列抽 wordsPerItem 个（不受总数限制）
-    for (const [column, words] of columnWords) {
+    // perItem 模式：每个开启的表抽 wordsPerItem 个（不受总数限制）
+    for (const [tableId, words] of tableWords) {
       const count = Math.min(wordsPerItem, words.length);
       const shuffled = shuffleArray([...words]);
       result.push(...shuffled.slice(0, count));
     }
     console.info(`[useWordPool] perItem 模式从表格抽取 ${result.length} 个词:`, result);
   } else if (mode === 'custom') {
-    // custom 模式：每列最多抽 limit 个，总数不超过 drawCount
+    // custom 模式：每表最多抽 limit 个，总数不超过 drawCount
     let remaining = drawCount;
 
-    for (const [column, words] of columnWords) {
+    for (const [tableId, words] of tableWords) {
       if (remaining <= 0) break;
 
-      const colConfig = columnConfig[column];
-      const limit = colConfig?.limit || 0;
+      const cfg = tableConfig[tableId];
+      const limit = cfg?.limit || 0;
       // limit 为 0 表示不限制，使用 wordsPerItem 作为默认值
-      const maxFromThisColumn = limit > 0 ? Math.min(limit, remaining) : Math.min(wordsPerItem, remaining);
-      const count = Math.min(maxFromThisColumn, words.length);
+      const maxFromThisTable = limit > 0 ? Math.min(limit, remaining) : Math.min(wordsPerItem, remaining);
+      const count = Math.min(maxFromThisTable, words.length);
 
       const shuffled = shuffleArray([...words]);
       result.push(...shuffled.slice(0, count));
@@ -506,9 +556,9 @@ export function drawFromLatestRowWithConfig(
     }
     console.info(`[useWordPool] custom 模式从表格抽取 ${result.length} 个词:`, result);
   } else {
-    // mixed 模式：所有开启列的词混合池抽取
+    // mixed 模式：所有开启表的词混合池抽取
     const allWords: string[] = [];
-    for (const words of columnWords.values()) {
+    for (const words of tableWords.values()) {
       allWords.push(...words);
     }
 
@@ -534,26 +584,25 @@ export function shuffleArray<T>(array: T[]): T[] {
 }
 
 /**
- * 获取所有可用的列名（用于 UI 配置）
+ * 获取所有可用的词库表（用于 UI 配置）
  *
- * @returns 列名数组
+ * @returns 表信息数组
+ */
+export function getAvailableTables(): { id: string; name: string }[] {
+  const tables = detectWordPoolTables();
+  return tables.map(tableId => ({
+    id: tableId,
+    name: getTableDisplayName(tableId),
+  }));
+}
+
+/**
+ * @deprecated 使用 getAvailableTables 代替
+ *
+ * 获取所有可用的列名（旧版）
  */
 export function getAvailableColumns(): string[] {
-  const tables = detectWordPoolTables();
-  const columns = new Set<string>();
-
-  for (const tableName of tables) {
-    const rows = getWordPoolTableData(tableName);
-    if (rows.length === 0) continue;
-
-    // 从最后一行获取列名
-    const latestRow = rows[rows.length - 1];
-    for (const column of Object.keys(latestRow)) {
-      columns.add(column);
-    }
-  }
-
-  return Array.from(columns);
+  return getAvailableTables().map(t => t.id);
 }
 
 // ============================================
@@ -628,21 +677,18 @@ export function useWordPool(options: UseWordPoolOptions = {}): UseWordPoolReturn
     return detected;
   }
 
-  // 加载指定表
-  function loadTable(tableName: string): void {
-    const data = getWordPoolTableData(tableName);
-    const parsed = parseWordPool(data);
+  // 加载指定表（V2：按表分组）
+  function loadTable(tableId: string): void {
+    const data = getWordPoolTableData(tableId);
+    const parsed = parseWordPoolByTable(tableId, data);
 
-    // 合并到现有词库（避免重复）
-    for (const newPool of parsed) {
-      const existing = pools.value.find(p => p.category === newPool.category);
-      if (existing) {
-        // 合并词（去重）
-        const wordSet = new Set([...existing.words, ...newPool.words]);
-        existing.words = Array.from(wordSet);
-      } else {
-        pools.value.push(newPool);
-      }
+    // 检查是否已存在同 ID 的表
+    const existingIndex = pools.value.findIndex(p => p.tableId === tableId);
+    if (existingIndex >= 0) {
+      // 更新现有词库
+      pools.value[existingIndex] = parsed;
+    } else {
+      pools.value.push(parsed);
     }
   }
 
@@ -652,11 +698,11 @@ export function useWordPool(options: UseWordPoolOptions = {}): UseWordPoolReturn
     pools.value = [];
 
     try {
-      const tableNames = detect();
-      for (const tableName of tableNames) {
-        const data = getWordPoolTableData(tableName);
-        const parsed = parseWordPool(data);
-        pools.value.push(...parsed);
+      const tableIds = detect();
+      for (const tableId of tableIds) {
+        const data = getWordPoolTableData(tableId);
+        const parsed = parseWordPoolByTable(tableId, data);
+        pools.value.push(parsed);
       }
       console.info(`[useWordPool] 加载完成，共 ${totalWords.value} 个词`);
     } finally {

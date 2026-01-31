@@ -52,6 +52,7 @@
                   :show-history-button="false"
                   :title-col-index="computedTitleColIndex"
                   :custom-highlights="isEditMode ? getSnapshotDiff(snapshot) : undefined"
+                  :allow-edit="false"
                   @cell-click="(rowIndex: number, colIndex: number) => handleHistoryCellClick(snapshot, colIndex)"
                 />
               </div>
@@ -144,6 +145,7 @@
                     :show-index="false"
                     :show-history-button="false"
                     :title-col-index="computedTitleColIndex"
+                    :allow-edit="false"
                   />
                 </div>
               </details>
@@ -203,6 +205,7 @@
                       :show-history-button="false"
                       :title-col-index="computedTitleColIndex"
                       :custom-highlights="getSnapshotDiff(snapshot)"
+                      :allow-edit="false"
                       @cell-click="(rowIndex: number, colIndex: number) => handleHistoryCellClick(snapshot, colIndex)"
                     />
                   </div>

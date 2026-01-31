@@ -227,7 +227,7 @@ import { useDashboardStore } from '../stores/useDashboardStore';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
 import type { DashboardWidgetConfig, ProcessedTable, TableRow, WidgetActionId } from '../types';
-import { TABLE_KEYWORD_RULES, WIDGET_ACTIONS } from '../types';
+import { TABLE_KEYWORD_RULES } from '../types';
 import { DashboardWidget, InteractionTableWidget, RandomWordPoolWidget } from './dashboard';
 
 const toast = useToast();

@@ -247,6 +247,8 @@ interface Props {
   showHistoryButton?: boolean;
   /** 自定义高亮列（用于历史对比） */
   customHighlights?: Set<number>;
+  /** 是否允许点击单元格编辑（默认 true） */
+  allowEdit?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -258,6 +260,7 @@ const props = withDefaults(defineProps<Props>(), {
   titleColIndex: 1, // Skip first null column (original code uses 1, not 0)
   showHistoryButton: true,
   customHighlights: undefined,
+  allowEdit: true,
 });
 
 const emit = defineEmits<{
@@ -590,6 +593,12 @@ const handleCellClick = (colIndex: number) => {
     return;
   }
 
+  // 如果不允许编辑，直接返回（但仍触发点击事件供外部处理）
+  if (!props.allowEdit) {
+    emit('cellClick', props.data.index, colIndex);
+    return;
+  }
+
   // ========================================
   // 锁定编辑模式：切换单元格锁定状态
   // ========================================
@@ -628,6 +637,12 @@ const handleTitleClick = () => {
   // 待删除行不能操作
   if (isDeleting.value) {
     console.info('[ACU] 待删除行不能操作标题');
+    return;
+  }
+
+  // 如果不允许编辑，直接返回（但仍触发点击事件供外部处理）
+  if (!props.allowEdit) {
+    emit('cellClick', props.data.index, props.titleColIndex);
     return;
   }
 

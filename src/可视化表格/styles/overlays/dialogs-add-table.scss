@@ -1,0 +1,115 @@
+// =========================================
+// AddTableDialog - 添加表格弹窗样式
+// =========================================
+
+.acu-add-table-modal {
+  max-width: 520px;
+  max-height: 85vh;
+
+  .acu-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+// Tab 切换
+.acu-add-table-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--acu-border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+// 粘贴区域
+.acu-add-table-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .acu-textarea-scrollable {
+    min-height: 150px;
+    font-family: monospace;
+    font-size: 12px;
+  }
+}
+
+// 文件导入区域
+.acu-add-table-file {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+
+  .acu-file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 30px;
+    border: 2px dashed var(--acu-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 300px;
+    background: var(--acu-bg-panel);
+
+    &:hover {
+      border-color: var(--acu-title-color);
+      background: var(--acu-btn-hover);
+    }
+
+    i {
+      font-size: 32px;
+      color: var(--acu-text-sub);
+    }
+
+    span {
+      font-size: 14px;
+      color: var(--acu-text-main);
+    }
+  }
+}
+
+// 错误提示
+.acu-add-table-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #e74c3c;
+  word-break: break-all;
+
+  i {
+    flex-shrink: 0;
+  }
+}
+
+// 表格列表
+.acu-add-table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--acu-border);
+  padding-top: 16px;
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .acu-add-table-modal {
+    max-width: none;
+    max-height: 70vh;
+
+    .acu-modal-body {
+      max-height: calc(70vh - 120px);
+    }
+  }
+}

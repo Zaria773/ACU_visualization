@@ -513,6 +513,7 @@ export interface DivinationConfig {
 
   // 行为设置
   flipMode: 'auto' | 'manual' | 'skip'; // 翻牌模式
+  peepMode?: boolean; // 偷看模式
 
   // 维度配置 (包含运势，运势通常为第一个维度 id='luck')
   dimensions: Dimension[];
@@ -534,8 +535,23 @@ export interface DivinationConfig {
   /** 每项抽取数（perItem模式使用），1-10 */
   wordsPerItem: number;
 
-  /** 表格列配置（存储每列的开关和limit） */
-  tableColumnConfig: Record<
+  /**
+   * @deprecated 使用 tablePoolConfig 代替
+   * 表格列配置（旧版：按列分组）
+   */
+  tableColumnConfig?: Record<
+    string,
+    {
+      enabled: boolean;
+      limit: number; // 0 表示不限制
+    }
+  >;
+
+  /**
+   * 表词库配置（按表ID分组）
+   * key = 表ID（不含 sheet_ 前缀）
+   */
+  tablePoolConfig: Record<
     string,
     {
       enabled: boolean;
@@ -800,7 +816,8 @@ export type WidgetActionId =
   | 'relationshipGraph' // 人物关系图
   | 'settings' // 设置
   | 'nativeEdit' // 打开原生编辑器
-  | 'divination'; // 抽签
+  | 'divination' // 抽签
+  | 'console'; // 导演控制台
 
 /** 看板快捷按钮配置 */
 export interface WidgetAction {
@@ -904,6 +921,7 @@ export const WIDGET_ACTIONS: Record<WidgetActionId, WidgetAction> = {
   settings: { id: 'settings', icon: 'fa-cog', label: '设置', tooltip: '看板设置' },
   nativeEdit: { id: 'nativeEdit', icon: 'fa-external-link-alt', label: '原生编辑器', tooltip: '打开原生编辑器' },
   divination: { id: 'divination', icon: 'fa-dice', label: '抽签', tooltip: '赛博算卦 - 注入隐藏提示词' },
+  console: { id: 'console', icon: 'fa-solid fa-clapperboard', label: '导演控制台', tooltip: '打开导演控制台' },
 };
 
 /** 看板模板 - 用于快速添加 */

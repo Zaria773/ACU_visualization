@@ -64,6 +64,36 @@
   background: transparent; // 透明背景以显示背景层
 }
 
+// 搜索框 - 工具栏上方
+.acu-graph-search-input {
+  position: absolute;
+  bottom: 56px; // 工具栏高度 (48px) + 间距 (8px)
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  z-index: 10;
+
+  // 覆盖 SearchBox 默认样式
+  .acu-search-input-wrapper {
+    background: var(--acu-card-bg);
+    border: 1px solid var(--acu-border);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// 搜索框滑入动画
+.acu-slide-up-enter-active,
+.acu-slide-up-leave-active {
+  transition: all 0.2s ease;
+}
+
+.acu-slide-up-enter-from,
+.acu-slide-up-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
 // 工具栏 - 绝对定位固定在底部
 .acu-graph-toolbar {
   position: absolute;
@@ -222,64 +252,6 @@
 }
 
 // 节点配置弹窗
-.acu-node-config-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.acu-node-config-panel {
-  background: var(--acu-card-bg);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  min-width: 280px;
-  max-width: 90vw;
-  overflow: hidden;
-}
-
-.acu-node-config-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--acu-table-head);
-  border-bottom: 1px solid var(--acu-border);
-
-  span {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--acu-text-main);
-  }
-
-  .acu-close-btn {
-    width: 28px;
-    height: 28px;
-    border: none;
-    background: transparent;
-    color: var(--acu-text-sub);
-    cursor: pointer;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: var(--acu-table-hover);
-      color: var(--acu-text-main);
-    }
-  }
-}
-
-.acu-node-config-body {
-  padding: 16px;
-}
 
 .acu-node-fullname {
   margin: 0 0 6px 0;

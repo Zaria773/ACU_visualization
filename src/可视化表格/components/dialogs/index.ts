@@ -12,6 +12,7 @@
 // ============================================
 // 通用弹窗 (common/)
 // ============================================
+export { default as AddTableDialog } from './common/AddTableDialog.vue';
 export { default as AdvancedPurgeDialog } from './common/AdvancedPurgeDialog.vue';
 export { default as DirectorDialog } from './common/DirectorDialog.vue';
 export { default as HistoryDialog } from './common/HistoryDialog.vue';
@@ -47,3 +48,4 @@ export { default as CardFront } from './divination/CardFront.vue';
 export { default as CornerOrnament } from './divination/CornerOrnament.vue';
 export { default as DivinationOverlay } from './divination/DivinationOverlay.vue';
 export { default as TarotCard } from './divination/TarotCard.vue';
+

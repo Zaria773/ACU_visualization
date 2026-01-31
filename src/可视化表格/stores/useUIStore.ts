@@ -166,6 +166,17 @@ export interface PurgeRangeDialogProps {
   maxFloor: number;
 }
 
+/** 高级清除弹窗 Props */
+export interface AdvancedPurgeDialogProps {
+  initialStartFloor?: number;
+  initialEndFloor?: number;
+}
+
+/** 高级清除弹窗回调 */
+export interface AdvancedPurgeDialogCallbacks {
+  onConfirm: (result: { changedCount: number; tables: string[] }) => void;
+}
+
 // 注意：看板管理弹窗直接通过组件 props 传递 tables 数据，不需要在 store 中定义 Props 接口
 
 /** 存储键常量 (保持与原代码兼容) */
@@ -503,6 +514,23 @@ export const useUIStore = defineStore('acu-ui', () => {
       maxFloor: 0,
     },
   });
+
+  /** 高级清除弹窗 */
+  const advancedPurgeDialog = reactive<{
+    visible: boolean;
+    props: AdvancedPurgeDialogProps;
+  }>({
+    visible: false,
+    props: {
+      initialStartFloor: undefined,
+      initialEndFloor: undefined,
+    },
+  });
+
+  /** 高级清除弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const advancedPurgeOnConfirm = shallowRef<((result: { changedCount: number; tables: string[] }) => void) | null>(
+    null,
+  );
 
   /** 手动更新弹窗 */
   const manualUpdateDialog = ref(false);
@@ -1336,6 +1364,20 @@ export const useUIStore = defineStore('acu-ui', () => {
   }
 
   /**
+   * 打开导演控制台弹窗
+   */
+  function openDirectorDialog(): void {
+    directorDialog.value = true;
+  }
+
+  /**
+   * 关闭导演控制台弹窗
+   */
+  function closeDirectorDialog(): void {
+    directorDialog.value = false;
+  }
+
+  /**
    * 打开输入楼层弹窗
    * @param currentFloor 当前目标楼层
    */
@@ -1365,6 +1407,39 @@ export const useUIStore = defineStore('acu-ui', () => {
    */
   function closePurgeRangeDialog(): void {
     purgeRangeDialog.visible = false;
+  }
+
+  /**
+   * 打开高级清除弹窗
+   * @param props 弹窗参数
+   * @param callbacks 回调函数
+   */
+  function openAdvancedPurgeDialog(
+    props: AdvancedPurgeDialogProps,
+    callbacks: AdvancedPurgeDialogCallbacks,
+  ): void {
+    advancedPurgeDialog.props = { ...props };
+    advancedPurgeOnConfirm.value = callbacks.onConfirm;
+    advancedPurgeDialog.visible = true;
+  }
+
+  /**
+   * 关闭高级清除弹窗
+   */
+  function closeAdvancedPurgeDialog(): void {
+    advancedPurgeDialog.visible = false;
+    advancedPurgeOnConfirm.value = null;
+  }
+
+  /**
+   * 处理高级清除确认
+   * @param result 清除结果
+   */
+  function handleAdvancedPurgeConfirm(result: { changedCount: number; tables: string[] }): void {
+    if (advancedPurgeOnConfirm.value) {
+      advancedPurgeOnConfirm.value(result);
+    }
+    closeAdvancedPurgeDialog();
   }
 
   /**
@@ -1711,6 +1786,7 @@ export const useUIStore = defineStore('acu-ui', () => {
     directorDialog,
     inputFloorDialog,
     purgeRangeDialog,
+    advancedPurgeDialog,
     manualUpdateDialog,
     historyDialog,
     tabsPopup,
@@ -1750,10 +1826,15 @@ export const useUIStore = defineStore('acu-ui', () => {
     // 通用弹窗 Actions（从 App.vue 迁移）
     openSettingsDialog,
     closeSettingsDialog,
+    openDirectorDialog,
+    closeDirectorDialog,
     openInputFloorDialog,
     closeInputFloorDialog,
     openPurgeRangeDialog,
     closePurgeRangeDialog,
+    openAdvancedPurgeDialog,
+    closeAdvancedPurgeDialog,
+    handleAdvancedPurgeConfirm,
     openManualUpdateDialog,
     closeManualUpdateDialog,
     openHistoryDialog,

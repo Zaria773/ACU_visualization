@@ -14,7 +14,7 @@ import * as wafuku from './wafuku';
 /** 和风御札主题 */
 const wafukuTheme: CardTheme = {
   id: 'wafuku',
-  name: '和风御札',
+  name: '白塔罗',
   description: '传统日式御札风格，素雅淡黄纸质',
   defaultBackImage: 'https://i.postimg.cc/j2MPbGv3/IMG-1590.jpg',
   CardFront: wafuku.CardFront,
