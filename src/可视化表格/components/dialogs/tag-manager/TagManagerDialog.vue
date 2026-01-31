@@ -1,7 +1,10 @@
 <!-- TagManagerDialog.vue - 标签管理器主容器 -->
 <template>
   <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
-    <div class="acu-modal acu-tag-manager-modal">
+    <div
+      class="acu-modal acu-tag-manager-modal"
+      :style="{ paddingBottom: `${configStore.config.mobileSafeAreaBottom ?? 0}px` }"
+    >
       <!-- 头部 -->
       <div class="acu-modal-header">
         <span class="acu-modal-title">
@@ -151,6 +154,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { useConfigStore } from '../../../stores/useConfigStore';
 import { useTagLibraryStore } from '../../../stores/useTagLibraryStore';
 import type { InteractiveTag, TagCategory, TagManagerMode } from '../../../types';
 import TagBadgeGrid from './TagBadgeGrid.vue';
@@ -179,6 +183,7 @@ const emit = defineEmits<{
 
 // Store
 const tagStore = useTagLibraryStore();
+const configStore = useConfigStore();
 
 // 本地状态
 const searchKeyword = ref('');

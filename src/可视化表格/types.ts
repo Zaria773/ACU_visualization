@@ -567,6 +567,13 @@ export interface DivinationConfig {
       limit: number;
     }
   >;
+
+  /**
+   * 自动同步的表格配置
+   * key = 表 ID
+   * value = 是否启用自动同步
+   */
+  tableSyncConfig?: Record<string, boolean>;
 }
 
 export interface DivinationResult {

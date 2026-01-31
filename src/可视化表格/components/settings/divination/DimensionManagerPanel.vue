@@ -4,6 +4,9 @@
     <PresetManagerHeader
       :presets="divinationStore.presets"
       :active-preset-id="divinationStore.activePresetId"
+      :show-toolbar="true"
+      :is-migrating="isMigrating"
+      :selected-count="selectedDimensionIds.size"
       title="维度预设"
       hint="保存和加载维度配置"
       @select="handleSelectPreset"
@@ -11,6 +14,13 @@
       @delete="handleDeletePreset"
       @save="handleQuickSave"
       @save-as="openSaveDialog"
+      @collapse-all="collapseAll"
+      @expand-all="expandAll"
+      @import="triggerImport"
+      @export-current="handleExportCurrentPreset"
+      @export-all="handleExportPresets"
+      @toggle-migrate="toggleMigrateMode"
+      @migrate-to="handleMigrateTo"
     />
 
     <!-- 维度列表 -->
@@ -18,10 +28,14 @@
       v-for="(dim, dimIndex) in divinationStore.config.dimensions"
       :key="dim.id"
       class="acu-settings-section dimension-container"
-      :class="{ 'is-collapsed': collapsedDimensions[dim.id] }"
+      :class="{
+        'is-collapsed': collapsedDimensions[dim.id],
+        'is-selected': isMigrating && selectedDimensionIds.has(dim.id)
+      }"
+      @click="isMigrating ? toggleDimensionSelection(dim.id) : null"
     >
       <!-- 维度标题行 -->
-      <div class="acu-settings-title dimension-header" @click="toggleCollapse(dim.id)">
+      <div class="acu-settings-title dimension-header" @click="!isMigrating && toggleCollapse(dim.id)">
         <div class="header-left">
           <i class="fas fa-chevron-right collapse-icon" :class="{ 'is-expanded': !collapsedDimensions[dim.id] }"></i>
           <input v-model="dim.name" class="acu-input-minimal dimension-name-input" placeholder="维度名称" @click.stop />
@@ -153,33 +167,6 @@
       </div>
     </div>
 
-    <!-- 导入/导出操作 (移至底部以适应移动端布局) -->
-    <div class="acu-settings-section">
-      <div class="acu-settings-title">
-        <i class="fas fa-exchange-alt"></i>
-        数据管理
-      </div>
-      <div class="acu-settings-group">
-        <div class="acu-settings-row column">
-          <div class="acu-settings-label">
-            预设数据
-            <span class="hint">导入或导出维度预设</span>
-          </div>
-          <div class="acu-settings-control" style="justify-content: flex-end; flex-wrap: wrap">
-            <button class="acu-tool-btn" title="导出当前预设" @click.stop="handleExportCurrentPreset">
-              <i class="fas fa-file-export"></i> 导出当前
-            </button>
-            <button class="acu-tool-btn" title="备份所有预设" @click.stop="handleExportPresets">
-              <i class="fas fa-archive"></i> 备份所有
-            </button>
-            <button class="acu-tool-btn" title="导入预设" @click.stop="triggerImport">
-              <i class="fas fa-upload"></i> 导入
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 隐藏的文件输入 -->
     <input ref="fileInputRef" type="file" accept=".json" style="display: none" @change="handleImportPresets" />
   </div>
@@ -205,6 +192,10 @@ const collapsedDimensions = ref<Record<string, boolean>>({});
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const templateInputRef = ref<HTMLTextAreaElement | null>(null);
 const showHelp = ref(true);
+
+// 迁移模式状态
+const isMigrating = ref(false);
+const selectedDimensionIds = ref<Set<string>>(new Set());
 
 // 自动调整高度
 const customTemplateRef = toRef(divinationStore.config, 'customTemplate');
@@ -374,6 +365,66 @@ function handleImportPresets(event: Event) {
 const toggleCollapse = (id: string) => {
   collapsedDimensions.value[id] = !collapsedDimensions.value[id];
 };
+
+// 全部折叠
+function collapseAll() {
+  divinationStore.config.dimensions.forEach((dim: any) => {
+    collapsedDimensions.value[dim.id] = true;
+  });
+}
+
+// 全部展开
+function expandAll() {
+  divinationStore.config.dimensions.forEach((dim: any) => {
+    collapsedDimensions.value[dim.id] = false;
+  });
+}
+
+// 切换迁移模式
+function toggleMigrateMode() {
+  isMigrating.value = !isMigrating.value;
+  if (isMigrating.value) {
+    selectedDimensionIds.value.clear();
+    toast.info('迁移模式：点击选中要迁移的维度，然后选择目标预设');
+  } else {
+    selectedDimensionIds.value.clear();
+  }
+}
+
+// 切换维度选中
+function toggleDimensionSelection(dimId: string) {
+  if (selectedDimensionIds.value.has(dimId)) {
+    selectedDimensionIds.value.delete(dimId);
+  } else {
+    selectedDimensionIds.value.add(dimId);
+  }
+  // 强制触发响应式更新
+  selectedDimensionIds.value = new Set(selectedDimensionIds.value);
+}
+
+// 迁移到目标预设
+function handleMigrateTo(targetPresetId: string) {
+  if (selectedDimensionIds.value.size === 0) {
+    toast.warning('请先选中要迁移的维度');
+    return;
+  }
+
+  const targetPreset = divinationStore.presets.find((p: any) => p.id === targetPresetId);
+  if (!targetPreset) return;
+
+  // 执行迁移
+  const selectedDims = divinationStore.config.dimensions.filter((d: any) =>
+    selectedDimensionIds.value.has(d.id),
+  );
+
+  divinationStore.migrateDimensionsToPreset(selectedDims, targetPresetId);
+
+  toast.success(`已迁移 ${selectedDims.length} 个维度到「${targetPreset.name}」`);
+
+  // 退出迁移模式
+  isMigrating.value = false;
+  selectedDimensionIds.value.clear();
+}
 
 // 添加新维度
 const handleAddDimension = () => {

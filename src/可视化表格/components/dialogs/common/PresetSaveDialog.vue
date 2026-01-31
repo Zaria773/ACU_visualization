@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="acu-modal-container" @click.self="handleClose">
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="handleClose">
     <div class="acu-modal acu-preset-save-modal">
       <!-- 头部 -->
       <div class="acu-modal-header">

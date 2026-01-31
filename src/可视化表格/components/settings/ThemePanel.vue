@@ -342,9 +342,9 @@ const selectedPresetName = computed(() => {
 // 初始化
 // ============================================================
 
-onMounted(() => {
-  // 加载主题配置
-  themeStore.loadFromStorage();
+onMounted(async () => {
+  // 加载主题配置 (如果已加载则跳过)
+  await themeStore.loadFromStorage();
 
   // 同步高亮颜色
   syncColorInputs();
@@ -462,6 +462,12 @@ function openSaveDialog() {
 
 function onThemeChange() {
   configStore.setTheme(selectedTheme.value);
+  // 切换主题后，强制刷新一下 UI，以便重新读取新的 CSS 变量值
+  setTimeout(() => {
+    // 触发一次更新
+    const temp = manualColorHex.value;
+    manualColorHex.value = temp;
+  }, 100);
 }
 
 // ============================================================
@@ -514,7 +520,11 @@ function getVarColorValue(key: keyof ThemeVariables): string {
   if (value && value.startsWith('#') && (value.length === 4 || value.length === 7)) {
     return value;
   }
-  return '#888888'; // 默认灰色
+
+  // 【关键修复】不再从 DOM 读取 CSS 变量值，避免预设之间的颜色污染
+  // 如果没有自定义值，直接返回默认灰色
+  // 用户需要点击颜色选择器才能设置值，这样更清晰
+  return '#888888';
 }
 
 function setVar(key: keyof ThemeVariables, value: string) {

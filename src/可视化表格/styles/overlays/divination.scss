@@ -399,13 +399,17 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   // 移动端：宽度占 90% 居中
   width: 90vw;
   height: auto;
-  max-height: 80vh; // 稍微减小最大高度，留出更多空间
+  // 限制最大高度，防止突破屏幕，留出上下空间 (header + footer + safe-area)
+  // header ~60px, footer ~80px, safe-area ~50px => ~190px
+  max-height: calc(100vh - 200px);
+  max-height: calc(100dvh - 200px);
 
   // PC 端：高度占 80% 居中
   @media (min-width: 768px) {
     width: auto;
     height: 80vh;
     max-width: 90vw; // 限制最大宽度，防止过宽
+    max-height: 800px; // PC端也加个最大高度限制
   }
 
   &__inner {

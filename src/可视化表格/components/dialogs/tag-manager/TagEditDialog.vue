@@ -332,9 +332,9 @@ watch(
       newCategoryParentId.value = '';
 
       // 聚焦输入框
-      nextTick(() => {
-        labelInput.value?.focus();
-      });
+      // nextTick(() => {
+      //   labelInput.value?.focus();
+      // });
     }
   },
 );

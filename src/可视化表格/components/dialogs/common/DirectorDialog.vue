@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="acu-modal-container" @click.self="close">
+  <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="close">
     <div class="acu-modal" style="max-width: 500px">
       <!-- 头部 -->
       <div class="acu-modal-header">

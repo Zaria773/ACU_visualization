@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="acu-modal-container" style="z-index: 2147483647" @click.self="handleClose">
+  <div v-if="visible" class="acu-modal-container acu-center-modal" style="z-index: 2147483647" @click.self="handleClose">
     <div class="acu-modal acu-node-config-modal">
       <div class="acu-modal-header">
         <span class="acu-modal-title">选择显示的字符</span>

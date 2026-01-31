@@ -77,7 +77,7 @@
               'acu-row-selected': isEditing && selectedKeys.has(item.sheetKey),
               'acu-highlight-ai': hasTableAiChanges(item.name) && !isEditing,
             }"
-            @click="handleRowClick(item)"
+            @click.stop="handleRowClick(item)"
           >
             <td class="acu-status-name" :class="{ 'acu-highlight-ai': hasTableAiChanges(item.name) && !isEditing }">
               <span

@@ -165,6 +165,7 @@
   align-items: center;
   gap: 6px;
   cursor: default;
+  flex-wrap: wrap; // 允许换行
 
   &:hover {
     color: var(--acu-text-main);
@@ -269,9 +270,6 @@
   border-radius: 10px;
   white-space: nowrap;
   flex-shrink: 0;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 // 互动标签 (可点击徽章)

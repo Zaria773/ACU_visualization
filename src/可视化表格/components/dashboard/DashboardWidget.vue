@@ -226,7 +226,7 @@
                   'acu-highlight-changed': isRowChanged(row),
                   'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
                 }"
-                :style="{ height: LIST_ITEM_HEIGHT + 'px' }"
+                :style="{ minHeight: LIST_ITEM_HEIGHT + 'px' }"
                 @click.stop="handleRowClick(row)"
               >
                 <i class="fas fa-circle" style="font-size: 6px"></i>

@@ -147,8 +147,14 @@ export const useThemeStore = defineStore('acu-theme', () => {
 
   /**
    * 从存储加载配置
+   * @param force 是否强制重新加载
    */
-  async function loadFromStorage() {
+  async function loadFromStorage(force = false) {
+    // 如果已加载且非强制，则跳过
+    if (isLoaded.value && !force) {
+      return;
+    }
+
     try {
       // 从 localStorage 加载预设列表
       const presetsJson = localStorage.getItem(STORAGE_KEY_THEME_PRESETS);
@@ -180,58 +186,115 @@ export const useThemeStore = defineStore('acu-theme', () => {
         }
 
         if (configToUse) {
-          if (configToUse.activePresetId) {
-            activePresetId.value = configToUse.activePresetId;
-          }
-
           if (configToUse.themePresets) {
             // 合并预设 (优先)
             presets.value = configToUse.themePresets;
           }
 
-          // 加载当前主题变量覆盖
-          if (configToUse.themeVars) {
-            currentThemeVars.value = configToUse.themeVars;
-          }
+          // 如果有激活的预设，优先应用预设
+          if (configToUse.activePresetId) {
+            const preset = presets.value.find(p => p.id === configToUse.activePresetId);
+            if (preset) {
+              // 应用预设配置
+              activePresetId.value = preset.id;
+              configStore.setTheme(preset.baseTheme);
+              currentThemeVars.value = { ...preset.themeVars };
+              currentThemeVarOpacities.value = { ...preset.themeVarOpacities };
+              currentHighlight.value = { ...preset.highlight };
+              backgroundConfig.value = preset.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG };
+              customCSS.value = preset.customCSS || '';
 
-          // 加载主题变量透明度配置
-          if (configToUse.themeVarOpacities) {
-            currentThemeVarOpacities.value = configToUse.themeVarOpacities;
-          }
-
-          // 加载背景配置
-          if (configToUse.backgroundConfig) {
-            backgroundConfig.value = configToUse.backgroundConfig;
-
-            // 尝试从 IndexedDB 恢复背景图片 URL
-            if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
-              try {
-                const blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
-                if (blobUrl) {
-                  backgroundConfig.value.imageUrl = blobUrl;
-                  console.info('[ACU Theme] 已从 IndexedDB 恢复背景图片');
+              // 尝试从 IndexedDB 恢复背景图片 URL（使用预设 ID 作为 key）
+              if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
+                try {
+                  // 优先尝试使用预设 ID 加载
+                  let blobUrl = await loadBackground(preset.id);
+                  // 如果预设 ID 没有找到，回退到全局 key（兼容旧数据）
+                  if (!blobUrl) {
+                    blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
+                  }
+                  if (blobUrl) {
+                    backgroundConfig.value.imageUrl = blobUrl;
+                    console.info('[ACU Theme] 已从 IndexedDB 恢复背景图片, key:', blobUrl ? preset.id : GLOBAL_THEME_BG_KEY);
+                  }
+                } catch (err) {
+                  console.warn('[ACU Theme] 恢复背景图片失败:', err);
                 }
-              } catch (err) {
-                console.warn('[ACU Theme] 恢复背景图片失败:', err);
               }
+
+              // 同步高亮配置到 configStore（从预设同步过去，而不是反向）
+              syncToConfigStore();
+
+              console.info('[ACU Theme] 已应用上次激活的预设:', preset.name);
+            } else {
+              // 预设不存在，回退到加载保存的状态
+              await loadSavedState(configToUse);
+              // 从 configStore 同步高亮配置（非预设模式才需要）
+              syncFromConfigStore();
             }
+          } else {
+            // 没有激活预设，加载保存的状态
+            await loadSavedState(configToUse);
+            // 从 configStore 同步高亮配置（非预设模式才需要）
+            syncFromConfigStore();
           }
-
-          // 加载自定义 CSS
-          if (configToUse.customCSS) {
-            customCSS.value = configToUse.customCSS;
-          }
+        } else {
+          // 没有保存的配置，从 configStore 同步
+          syncFromConfigStore();
         }
+      } else {
+        // getVariables 不可用，从 configStore 同步
+        syncFromConfigStore();
       }
-
-      // 从 configStore 同步高亮配置
-      syncFromConfigStore();
 
       isLoaded.value = true;
       console.info('[ACU Theme] 已加载主题配置');
     } catch (e) {
       console.error('[ACU Theme] 加载配置失败:', e);
       isLoaded.value = true;
+    }
+  }
+
+  /**
+   * 加载保存的状态 (非预设模式)
+   * 注意：这个函数只在没有激活预设的情况下调用
+   */
+  async function loadSavedState(configToUse: ACUScriptVariables) {
+    // 非预设模式下，activePresetId 应该为空
+    // 不应该在这里设置 activePresetId，因为这个函数只在预设不存在时调用
+    activePresetId.value = null;
+
+    // 加载当前主题变量覆盖
+    if (configToUse.themeVars) {
+      currentThemeVars.value = configToUse.themeVars;
+    }
+
+    // 加载主题变量透明度配置
+    if (configToUse.themeVarOpacities) {
+      currentThemeVarOpacities.value = configToUse.themeVarOpacities;
+    }
+
+    // 加载背景配置
+    if (configToUse.backgroundConfig) {
+      backgroundConfig.value = configToUse.backgroundConfig;
+
+      // 尝试从 IndexedDB 恢复背景图片 URL
+      if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
+        try {
+          const blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
+          if (blobUrl) {
+            backgroundConfig.value.imageUrl = blobUrl;
+            console.info('[ACU Theme] 已从 IndexedDB 恢复背景图片');
+          }
+        } catch (err) {
+          console.warn('[ACU Theme] 恢复背景图片失败:', err);
+        }
+      }
+    }
+
+    // 加载自定义 CSS
+    if (configToUse.customCSS) {
+      customCSS.value = configToUse.customCSS;
     }
   }
 
@@ -247,18 +310,29 @@ export const useThemeStore = defineStore('acu-theme', () => {
       localStorage.setItem(STORAGE_KEY_CUSTOM_CSS, customCSS.value);
 
       // 保存到全局变量 (Global)
-      if (typeof getVariables === 'function' && typeof insertOrAssignVariables === 'function') {
+      if (typeof getVariables === 'function' && typeof replaceVariables === 'function') {
+        // 注意：我们只保存预设列表和当前激活的预设 ID
+        // 当前的临时状态（themeVars 等）不单独保存，以避免与预设状态混淆
+        // 如果用户想保存当前状态，应该使用"保存预设"功能
+
+        // 【关键修复】构建干净的配置对象
         const newVars: ACUScriptVariables = {
           themePresets: presets.value,
-          activePresetId: activePresetId.value || undefined,
-          themeVars: currentThemeVars.value,
-          themeVarOpacities: currentThemeVarOpacities.value,
-          backgroundConfig: backgroundConfig.value,
-          customCSS: customCSS.value,
+          activePresetId: activePresetId.value || null,
         };
 
-        // 使用 insertOrAssignVariables 更新全局变量
-        insertOrAssignVariables({ [GLOBAL_VAR_KEY]: newVars }, { type: 'global' });
+        // 只有在没有激活预设时才保存临时状态（作为"默认配置"）
+        if (!activePresetId.value) {
+          newVars.themeVars = currentThemeVars.value;
+          newVars.themeVarOpacities = currentThemeVarOpacities.value;
+          newVars.backgroundConfig = backgroundConfig.value;
+          newVars.customCSS = customCSS.value;
+        }
+
+        // 【关键修复】使用 replaceVariables 完全覆盖，避免残留旧数据
+        const globalVars = getVariables({ type: 'global' });
+        globalVars[GLOBAL_VAR_KEY] = newVars;
+        replaceVariables(globalVars, { type: 'global' });
       }
 
       // 同步到 configStore
@@ -354,14 +428,60 @@ export const useThemeStore = defineStore('acu-theme', () => {
       // 通常保存为预设后，该预设即变为激活状态
       activePresetId.value = existing.id;
 
+      // 如果有背景图片且存储在 IndexedDB，需要将其复制一份到预设 ID 对应的键下
+      if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
+        copyBackgroundToPreset(existing.id);
+      }
+
       saveToStorage();
       return updated;
     } else {
       // 创建新预设
       const preset = createPreset(name);
       activePresetId.value = preset.id;
+
+      // 如果有背景图片且存储在 IndexedDB，需要将其复制一份到预设 ID 对应的键下
+      if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
+        copyBackgroundToPreset(preset.id);
+      }
+
       saveToStorage(); // createPreset 已经保存了一次，这里可能会重复保存，但 createPreset 内部保存了，saveCurrentToPreset 结尾不用再保存
       return preset;
+    }
+  }
+
+  /**
+   * 将当前背景图片复制到预设存储键下
+   */
+  async function copyBackgroundToPreset(presetId: string) {
+    try {
+      let blobUrl: string | null = null;
+
+      // 优先：如果当前内存中有 imageUrl (blob URL)，直接使用它
+      if (backgroundConfig.value.imageUrl && backgroundConfig.value.imageUrl.startsWith('blob:')) {
+        blobUrl = backgroundConfig.value.imageUrl;
+      } else {
+        // 1. 尝试从全局键加载 (当前正在使用的)
+        blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
+
+        // 2. 如果全局没有，尝试从当前激活的预设键加载 (如果之前已经绑定过)
+        if (!blobUrl && activePresetId.value && activePresetId.value !== presetId) {
+          blobUrl = await loadBackground(activePresetId.value);
+        }
+      }
+
+      if (blobUrl) {
+        // 将 blob URL 转换为 Blob 对象
+        const response = await fetch(blobUrl);
+        const blob = await response.blob();
+
+        // 保存到新预设 ID 下
+        const { saveBackground } = await import('../composables/useBackgroundStorage');
+        await saveBackground(presetId, blob, blob.type);
+        console.info('[ACU Theme] 已将背景图片绑定到预设:', presetId);
+      }
+    } catch (e) {
+      console.warn('[ACU Theme] 绑定背景图片到预设失败:', e);
     }
   }
 
@@ -385,48 +505,79 @@ export const useThemeStore = defineStore('acu-theme', () => {
   /**
    * 应用预设
    */
-  function applyPreset(presetId: string) {
+  async function applyPreset(presetId: string) {
     const preset = presets.value.find(p => p.id === presetId);
     if (!preset) return;
 
-    // 设置基础主题
-    configStore.setTheme(preset.baseTheme);
+    // 标记正在应用预设，防止 watch 触发不必要的保存
+    isApplyingPreset.value = true;
 
-    // 应用主题变量覆盖
-    currentThemeVars.value = { ...preset.themeVars };
+    try {
+      // 先设置 activePresetId，这样后续的 watch 触发时会正确跳过临时状态保存
+      activePresetId.value = presetId;
 
-    // 应用主题变量透明度配置
-    currentThemeVarOpacities.value = { ...preset.themeVarOpacities };
+      // 设置基础主题
+      configStore.setTheme(preset.baseTheme);
 
-    // 应用高亮配置
-    currentHighlight.value = { ...preset.highlight };
+      // 应用主题变量覆盖 - 完全替换对象
+      currentThemeVars.value = { ...(preset.themeVars || {}) };
 
-    // 应用背景配置
-    backgroundConfig.value = preset.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG };
+      // 应用主题变量透明度配置
+      currentThemeVarOpacities.value = { ...(preset.themeVarOpacities || {}) };
 
-    // 尝试恢复背景图片 (仅当标记为使用 IndexedDB 图片时)
-    if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
-      loadBackground(GLOBAL_THEME_BG_KEY)
-        .then(blobUrl => {
-          if (blobUrl) {
-            backgroundConfig.value.imageUrl = blobUrl;
-            console.info('[ACU Theme] 预设应用：已恢复背景图片');
-          } else {
-            backgroundConfig.value.imageUrl = ''; // 清除可能的无效 URL
-            console.warn('[ACU Theme] 预设应用：IndexedDB 中未找到背景图片');
+      // 应用高亮配置
+      currentHighlight.value = { ...preset.highlight };
+
+      // 应用背景配置
+      const newBgConfig = preset.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG };
+
+      // 先清除当前的 imageUrl，避免残留
+      newBgConfig.imageUrl = '';
+      backgroundConfig.value = { ...newBgConfig };
+
+      // 恢复背景图片
+      if (backgroundConfig.value.enabled) {
+        if (backgroundConfig.value.hasIndexedDBImage) {
+          // 使用预设 ID 作为背景图片的存储键
+          const bgKey = preset.id;
+          try {
+            let blobUrl = await loadBackground(bgKey);
+            // 如果预设 ID 没有找到，回退到全局 key（兼容旧数据）
+            if (!blobUrl) {
+              blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
+              if (blobUrl) {
+                console.info('[ACU Theme] 预设应用：使用全局背景 (兼容)');
+              }
+            }
+            if (blobUrl) {
+              backgroundConfig.value.imageUrl = blobUrl;
+              console.info('[ACU Theme] 预设应用：已恢复背景图片');
+            } else {
+              console.warn('[ACU Theme] 预设应用：IndexedDB 中未找到背景图片');
+              // 标记为没有图片，避免下次继续尝试加载
+              backgroundConfig.value.hasIndexedDBImage = false;
+            }
+          } catch (err) {
+            console.warn('[ACU Theme] 预设应用：恢复背景图片失败', err);
           }
-        })
-        .catch(err => {
-          console.warn('[ACU Theme] 预设应用：恢复背景图片失败', err);
-        });
+        } else if (backgroundConfig.value.externalUrl) {
+          // 使用外部 URL
+          backgroundConfig.value.imageUrl = backgroundConfig.value.externalUrl;
+          console.info('[ACU Theme] 预设应用：使用外部背景 URL');
+        }
+      }
+
+      // 应用自定义 CSS
+      customCSS.value = preset.customCSS || '';
+
+      // 同步高亮配置到 configStore
+      syncToConfigStore();
+    } finally {
+      // 无论成功失败，都要重置标志
+      isApplyingPreset.value = false;
     }
 
-    // 应用自定义 CSS
-    customCSS.value = preset.customCSS || '';
-
-    // 更新激活状态
-    activePresetId.value = presetId;
-
+    // 在标志重置后保存一次，确保预设状态正确持久化
     saveToStorage();
   }
 
@@ -686,13 +837,18 @@ export const useThemeStore = defineStore('acu-theme', () => {
   // 初始化
   // ============================================================
 
+  /** 是否正在应用预设（用于防止 watch 触发不必要的保存）*/
+  const isApplyingPreset = ref(false);
+
   // 监听变化自动保存
   watch(
     [currentHighlight, currentThemeVars, currentThemeVarOpacities, backgroundConfig, customCSS],
     () => {
-      if (isLoaded.value) {
-        saveToStorage();
+      // 在应用预设过程中不要触发保存，避免数据污染
+      if (!isLoaded.value || isApplyingPreset.value) {
+        return;
       }
+      saveToStorage();
     },
     { deep: true },
   );

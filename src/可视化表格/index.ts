@@ -14,6 +14,7 @@ import { createPinia } from 'pinia';
 import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
 import { cleanupSendIntercept, setupSendIntercept } from './composables/useHiddenPrompt';
+import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
 
@@ -226,6 +227,20 @@ $(() => {
     const uiStore = useUIStore();
     const currentPrompt = (window as any).__acu_hidden_prompt || '';
     uiStore.openPromptEditorDialog(currentPrompt);
+  });
+
+  // 监听 AI 生成开始事件，触发随机词库同步
+  // 这样可以确保在 AI 生成前，最新的表格数据已同步到世界书
+  // 注意：iframe_events 可能未定义，使用字符串字面量 'js_generation_started'
+  eventOn('js_generation_started', () => {
+    if (!vueApp) return;
+
+    const divinationStore = useDivinationStore();
+    // 只有在启用了世界书词库且启用了自动同步时才执行
+    if (divinationStore.config.enableWordPool && divinationStore.config.autoSync) {
+      console.info('[ACU] AI 生成开始，触发随机词库同步...');
+      divinationStore.syncFromACU();
+    }
   });
 
   // 设置 DOM 发送拦截

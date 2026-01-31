@@ -174,6 +174,15 @@ const props = defineProps<{
   modelValue: BackgroundConfig;
 }>();
 
+// 注入当前激活的预设 ID (可选)
+// 如果有激活的预设，优先使用预设 ID 作为存储键
+import { useThemeStore } from '../../stores/useThemeStore';
+const themeStore = useThemeStore();
+const activeStorageKey = computed(() => {
+  // 如果有激活的预设，使用预设 ID；否则使用传入的全局 Key
+  return themeStore.activePresetId || props.storageKey;
+});
+
 const emit = defineEmits<{
   (e: 'update:modelValue', value: BackgroundConfig): void;
 }>();
@@ -232,23 +241,76 @@ watch(
   { deep: true },
 );
 
-// 组件挂载时加载背景图片
-onMounted(async () => {
+// 监听 props.modelValue.imageUrl 变化，同步到本地状态
+// 当 store 的 applyPreset 更新了 backgroundConfig.imageUrl 后，这里会自动同步
+watch(
+  () => props.modelValue.imageUrl,
+  (newUrl) => {
+    // 如果新 URL 与本地不同，更新本地状态
+    if (newUrl !== localConfig.imageUrl) {
+      // 如果旧的是 blob URL 且与新的不同，释放它
+      if (currentBlobUrl.value && currentBlobUrl.value !== newUrl) {
+        revokeBlobUrl(currentBlobUrl.value);
+        currentBlobUrl.value = null;
+      }
+
+      localConfig.imageUrl = newUrl || '';
+
+      // 如果新 URL 是 blob URL，记录它
+      if (newUrl && newUrl.startsWith('blob:')) {
+        currentBlobUrl.value = newUrl;
+      }
+
+      console.info('[BackgroundConfigPanel] imageUrl 已同步:', newUrl ? '有图片' : '无图片');
+    }
+  },
+);
+
+/**
+ * 加载背景图片的通用函数
+ * 注意：这个函数只在 imageUrl 为空但 hasIndexedDBImage 为 true 时才实际加载
+ */
+async function loadBackgroundImage(): Promise<void> {
+  // 如果 imageUrl 已经有值（由 store 设置），不要再从 IndexedDB 加载
+  // 这避免了组件挂载时覆盖 store 已经设置好的 blob URL
+  if (localConfig.imageUrl) {
+    if (localConfig.imageUrl.startsWith('blob:')) {
+      currentBlobUrl.value = localConfig.imageUrl;
+    }
+    return;
+  }
+
   if (localConfig.externalUrl) {
     localConfig.imageUrl = localConfig.externalUrl;
     backgroundUrlInput.value = localConfig.externalUrl;
   } else if (localConfig.hasIndexedDBImage) {
     try {
-      const blobUrl = await loadBackground(props.storageKey);
+      // 优先尝试从当前激活的键加载
+      let blobUrl = await loadBackground(activeStorageKey.value);
+
+      // 如果没找到，且当前键不是全局键，尝试回退到全局键 (兼容旧数据)
+      if (!blobUrl && activeStorageKey.value !== props.storageKey) {
+        blobUrl = await loadBackground(props.storageKey);
+      }
+
       if (blobUrl) {
+        // 释放旧的
+        if (currentBlobUrl.value) {
+          revokeBlobUrl(currentBlobUrl.value);
+        }
         currentBlobUrl.value = blobUrl;
         localConfig.imageUrl = blobUrl;
-        emitUpdate();
+        // 不要在这里调用 emitUpdate()，因为这只是组件内部的初始化
       }
     } catch (e) {
       console.warn('[BackgroundConfigPanel] 加载背景图片失败:', e);
     }
   }
+}
+
+// 组件挂载时加载背景图片
+onMounted(() => {
+  loadBackgroundImage();
 });
 
 // 组件卸载时释放 blob URL
@@ -381,9 +443,17 @@ async function processImageFile(file: File): Promise<void> {
   }
 
   try {
-    // 保存到 IndexedDB
+    // 直接保存原图到 IndexedDB，不进行裁剪
+    // fileToBlob 只是简单的封装，不会修改图片内容
     const { blob, mimeType } = await fileToBlob(file);
-    await saveBackground(props.storageKey, blob, mimeType);
+
+    // 保存到当前激活的键 (预设 ID 或全局键)
+    await saveBackground(activeStorageKey.value, blob, mimeType);
+
+    // 如果当前是预设模式，同时也保存一份到全局键，作为兜底/默认
+    if (activeStorageKey.value !== props.storageKey) {
+      await saveBackground(props.storageKey, blob, mimeType);
+    }
 
     // 释放旧的 blob URL
     if (currentBlobUrl.value) {
@@ -391,7 +461,7 @@ async function processImageFile(file: File): Promise<void> {
     }
 
     // 加载预览
-    const blobUrl = await loadBackground(props.storageKey);
+    const blobUrl = await loadBackground(activeStorageKey.value);
     if (blobUrl) {
       currentBlobUrl.value = blobUrl;
       localConfig.imageUrl = blobUrl;
@@ -438,7 +508,14 @@ async function handleUrlInputBlur(): Promise<void> {
   if (url.startsWith('data:')) {
     try {
       const { blob, mimeType } = await urlToBlob(url);
-      await saveBackground(props.storageKey, blob, mimeType);
+
+      // 保存到当前激活的键
+      await saveBackground(activeStorageKey.value, blob, mimeType);
+
+      // 如果当前是预设模式，同时也保存一份到全局键
+      if (activeStorageKey.value !== props.storageKey) {
+        await saveBackground(props.storageKey, blob, mimeType);
+      }
 
       // 释放旧的 blob URL
       if (currentBlobUrl.value) {
@@ -446,7 +523,7 @@ async function handleUrlInputBlur(): Promise<void> {
       }
 
       // 加载预览
-      const blobUrl = await loadBackground(props.storageKey);
+      const blobUrl = await loadBackground(activeStorageKey.value);
       if (blobUrl) {
         currentBlobUrl.value = blobUrl;
         localConfig.imageUrl = blobUrl;
@@ -476,7 +553,9 @@ async function handleClearBackground(): Promise<void> {
 
   // 删除 IndexedDB 中的图片
   try {
-    await deleteBackground(props.storageKey);
+    await deleteBackground(activeStorageKey.value);
+    // 如果是预设模式，是否也要删除全局背景？
+    // 暂时不删除全局背景，只删除当前预设的背景
   } catch (e) {
     console.warn('[BackgroundConfigPanel] 删除背景图片失败:', e);
   }

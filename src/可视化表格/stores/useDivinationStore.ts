@@ -36,7 +36,7 @@ const DEFAULT_LUCK_DIMENSION: Dimension = {
 const DEFAULT_SANITY_DIMENSION: Dimension = {
   id: 'sanity',
   name: '扭曲度',
-  enabled: true,
+  enabled: false,
   tiers: [
     { id: 'normal', name: '正常逻辑', weight: 50, prompt: '' },
     {
@@ -45,6 +45,57 @@ const DEFAULT_SANITY_DIMENSION: Dimension = {
       weight: 50,
       prompt:
         '特别要求：若需要融合非日常要素，场景中的所有角色必须将其视为日常生活中理所当然的一部分，绝不要有特殊反应。',
+    },
+  ],
+};
+
+/** 默认随机误会维度 */
+const DEFAULT_MISUNDERSTANDING_DIMENSION: Dimension = {
+  id: 'misunderstanding',
+  name: '误会机制',
+  enabled: false,
+  tiers: [
+    {
+      id: 'semantic',
+      name: '语义歧义',
+      weight: 1,
+      prompt:
+        '请设计一段对话，让角色A在谈论某物品或事件时省略关键主语，导致角色B误以为A在谈论B自己或两人的关系，从而产生强烈的情绪错位。',
+    },
+    {
+      id: 'projection',
+      name: '预设偏见',
+      weight: 1,
+      prompt:
+        '请基于角色B当前的心理阴影或秘密（如自卑、愧疚、暗恋），强行将角色A的一个善意或无心的举动，解读为负面，从而产生低落情绪。',
+    },
+    {
+      id: 'fragment',
+      name: '断章取义',
+      weight: 1,
+      prompt:
+        "请构建一个场景，安排角色B在‘最容易引起误解的时间点’闯入或路过，只目击到事件的‘结果’而完全错过了‘起因’，导致B通过逻辑补全推导出偏差认知。",
+    },
+    {
+      id: 'pronoun',
+      name: '代词混淆',
+      weight: 1,
+      prompt:
+        '请安排一段关于‘他人/物品’的激烈讨论，利用模糊的代词，让偷听者误会两人的对话核心，产生持续性误会。',
+    },
+    {
+      id: 'glitch',
+      name: '过度脑补（online版）',
+      weight: 1,
+      prompt:
+        '请加入一个‘数字媒介干扰’要素（如：手滑误发表情包、关键时刻断网、撤回了一条其实很正常的消息、自动纠错成了糟糕的词），让接收方基于这个技术失误产生过度解读。',
+    },
+    {
+      id: 'jargon',
+      name: '电波接错',
+      weight: 1,
+      prompt:
+        '请让角色A使用其专业术语、特定圈子黑话或网络梗进行表达，而角色B完全按字面意思理解，导致一场从‘鸡同鸭讲’到‘事态升级’的严肃误会。',
     },
   ],
 };
@@ -60,7 +111,7 @@ const DEFAULT_CONFIG: DivinationConfig = {
   themeId: 'wafuku', // 默认使用和风御札主题
   flipMode: 'auto',
   peepMode: false, // 偷看模式
-  dimensions: [DEFAULT_LUCK_DIMENSION, DEFAULT_SANITY_DIMENSION],
+  dimensions: [DEFAULT_LUCK_DIMENSION, DEFAULT_SANITY_DIMENSION, DEFAULT_MISUNDERSTANDING_DIMENSION],
   customTemplate: '',
   // 词库设置
   enableWordDrawing: true, // @deprecated
@@ -71,6 +122,7 @@ const DEFAULT_CONFIG: DivinationConfig = {
   tableColumnConfig: undefined, // @deprecated
   tablePoolConfig: {}, // 表词库配置（表ID -> 配置）
   categoryConfig: {},
+  tableSyncConfig: {}, // 表格同步配置
 };
 
 export const useDivinationStore = defineStore('acu-divination', () => {
@@ -125,6 +177,8 @@ export const useDivinationStore = defineStore('acu-divination', () => {
             dimensions: globalVars.divinationConfig.dimensions || DEFAULT_CONFIG.dimensions,
             // 确保 tablePoolConfig 存在
             tablePoolConfig: globalVars.divinationConfig.tablePoolConfig || {},
+            // 确保 tableSyncConfig 存在
+            tableSyncConfig: globalVars.divinationConfig.tableSyncConfig || {},
           };
 
           // 迁移旧配置：tableColumnConfig → tablePoolConfig
@@ -255,6 +309,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     config.value.dimensions = [
       JSON.parse(JSON.stringify(DEFAULT_LUCK_DIMENSION)),
       JSON.parse(JSON.stringify(DEFAULT_SANITY_DIMENSION)),
+      JSON.parse(JSON.stringify(DEFAULT_MISUNDERSTANDING_DIMENSION)),
     ];
     activePresetId.value = null;
   }
@@ -444,21 +499,31 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 1. 筛选 "Random" 或 "随机" 表格
+      // 并且检查配置是否允许同步 (如果在配置中存在，则必须为 true；如果不存在，则默认允许)
       const randomTables: any[] = [];
+      const syncConfig = config.value.tableSyncConfig || {};
+
       for (const key in tables) {
         const table = tables[key];
-        // @ts-ignore - tables 类型定义中 name 是可选的，但实际上是有的
+        // @ts-ignore
         if (table.name && (table.name.includes('Random') || table.name.includes('随机'))) {
+          const tableId = table.id || key;
+          // 检查同步配置：显式禁用则跳过，否则默认同步
+          if (syncConfig[tableId] === false) {
+            console.info(`[Divination] Table ${table.name} (${tableId}) sync disabled by config`);
+            continue;
+          }
           randomTables.push(table);
         }
       }
 
       if (randomTables.length === 0) {
-        console.info('[Divination] No "Random" tables found to sync');
+        console.info('[Divination] No tables found to sync (or all disabled)');
         return;
       }
 
       // 2. 解析表格内容并构建新的条目列表
+      // 规则变更: 表名即一级分类 (Keys), 列名为二级分类 (Name)
       const newEntriesMap = new Map<
         string,
         {
@@ -474,12 +539,14 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         // 获取列头 (第一行)
         const headers = table.content?.[0] || [];
         const rows = table.content?.slice(1) || [];
+        // 表名作为分类名 (Keys)
+        const tableName = table.name || 'Random';
 
         headers.forEach((header: string | number, colIndex: number) => {
           const headerStr = String(header).trim();
           if (!headerStr) return;
 
-          // 解析列名作为分类名
+          // 解析列名作为条目名
           // 假设列名格式: "物品|正|1" 或 "天气"
           // 这里我们通过关键词智能打标 Bias
           let { name, bias, limit } = parseEntryName(headerStr);
@@ -493,7 +560,11 @@ export const useDivinationStore = defineStore('acu-divination', () => {
             }
           }
 
-          // 组合唯一键
+          // 组合唯一键: 为了避免不同表同列名冲突，可以考虑把 keys 加入唯一键
+          // 但原逻辑是 Name|Bias|Limit，如果不同表有相同列名，会合并到同一个世界书条目中
+          // 这通常是期望的行为（多个表的同类数据汇聚），但也可能导致 keys 混乱
+          // 这里我们暂时保持原有的条目 Key 逻辑，但在 keys 数组中添加所有来源表名
+
           const entryKey = `${name}|${bias}|${limit}`;
 
           if (!newEntriesMap.has(entryKey)) {
@@ -502,8 +573,14 @@ export const useDivinationStore = defineStore('acu-divination', () => {
               bias,
               limit,
               words: new Set(),
-              keys: [table.name || 'Random'], // 使用表名作为一级分类 Key
+              keys: [tableName], // 初始 Key 为当前表名
             });
+          } else {
+            // 如果已存在，追加当前表名为 Key (去重)
+            const entry = newEntriesMap.get(entryKey)!;
+            if (!entry.keys.includes(tableName)) {
+              entry.keys.push(tableName);
+            }
           }
 
           // 收集该列的所有词汇
@@ -553,13 +630,17 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
         if (existingEntry) {
           // 更新现有条目
+          // 合并 Keys: 现有 Keys + 新 Keys (去重)
+          const existingKeys = existingEntry.strategy?.keys || [];
+          // @ts-ignore
+          const mergedKeys = Array.from(new Set([...existingKeys, ...data.keys]));
+
           finalEntries.push({
             ...existingEntry,
             content, // 更新词汇
-            // 保持 keys 不变，或者合并 keys? 这里简单起见保持原有的 keys 如果存在，或者使用新的
             strategy: {
               ...existingEntry.strategy,
-              // keys: _.uniq([...existingEntry.strategy.keys, ...data.keys]) // 如果需要合并 keys
+              keys: mergedKeys, // 更新 Keys，使其包含所有来源表名
             },
           });
         } else {
@@ -857,6 +938,39 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     };
   }
 
+  /**
+   * 迁移维度到指定预设
+   * @param dimensions 要迁移的维度数组
+   * @param targetPresetId 目标预设 ID
+   */
+  function migrateDimensionsToPreset(dimensions: Dimension[], targetPresetId: string) {
+    const targetIndex = presets.value.findIndex(p => p.id === targetPresetId);
+    if (targetIndex === -1) {
+      console.warn('[Divination] Target preset not found:', targetPresetId);
+      return;
+    }
+
+    const target = presets.value[targetIndex];
+
+    // 深拷贝要迁移的维度
+    const clonedDimensions = dimensions.map(d => JSON.parse(JSON.stringify(d)));
+
+    // 检查重复并合并
+    clonedDimensions.forEach(newDim => {
+      const existingIndex = target.dimensions.findIndex(d => d.id === newDim.id);
+      if (existingIndex > -1) {
+        // 已存在则覆盖
+        target.dimensions[existingIndex] = newDim;
+      } else {
+        // 不存在则追加
+        target.dimensions.push(newDim);
+      }
+    });
+
+    // 触发保存
+    presets.value[targetIndex] = { ...target };
+  }
+
   return {
     config,
     categories,
@@ -879,5 +993,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     deletePreset,
     applyPreset,
     restoreDefaultDimensions,
+    migrateDimensionsToPreset,
   };
 });

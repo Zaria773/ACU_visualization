@@ -6,21 +6,6 @@
     </div>
     <!-- 基础设置 -->
     <div class="acu-settings-group">
-      <!-- 启用/禁用 -->
-      <div class="acu-settings-row">
-        <div class="acu-settings-label">
-          启用抽签系统
-          <span class="hint">开启后将在界面显示抽签入口</span>
-        </div>
-        <div class="acu-settings-control">
-          <button
-            class="acu-switch"
-            :class="{ active: config.enabled }"
-            @click="config.enabled = !config.enabled"
-          ></button>
-        </div>
-      </div>
-
       <!-- 维度管理入口 -->
       <div class="acu-settings-row acu-nav-row" @click="nav.navigateTo('divinationDimensions')">
         <div class="acu-settings-label">
@@ -185,8 +170,8 @@
             </div>
           </div>
 
-          <!-- 自动同步（仅当世界书词库开启时显示） -->
-          <div v-if="config.enableWordPool" class="acu-settings-row">
+          <!-- 自动同步 -->
+          <div class="acu-settings-row" @click="toggleTableSyncList">
             <div class="acu-settings-label">
               自动同步
               <span class="hint">表格变动时自动更新世界书</span>
@@ -195,9 +180,21 @@
               <button
                 class="acu-switch"
                 :class="{ active: config.autoSync }"
-                @click="config.autoSync = !config.autoSync"
+                @click.stop="config.autoSync = !config.autoSync"
               ></button>
+              <i class="fas" :class="showTableSyncList ? 'fa-chevron-up' : 'fa-chevron-down'" style="margin-left: 8px; font-size: 12px; color: var(--acu-text-sub);"></i>
             </div>
+          </div>
+
+          <!-- 同步表格列表 (可折叠) -->
+          <div v-if="showTableSyncList" style="padding: 0 16px 16px 16px;">
+             <SwitchList
+              v-model="enabledSyncTables"
+              :items="randomTableItems"
+              empty-text="没有找到包含'随机'的表格"
+              footer-template="已启用同步: {selected}/{total} 个表格"
+              empty-hint="(将自动扫描新表格)"
+            />
           </div>
 
           <!-- 词库管理入口 -->
@@ -221,7 +218,9 @@ import { storeToRefs } from 'pinia';
 import { computed, inject, ref } from 'vue';
 import { useToast } from '../../../composables/useToast';
 import { useDivinationStore } from '../../../stores/useDivinationStore';
+import { getTableData } from '../../../utils';
 import { getAllThemes } from '../../dialogs/divination/themes';
+import SwitchList from '../../ui/SwitchList.vue';
 
 // 注入导航
 const nav = inject<any>('settingsNavigation');
@@ -230,6 +229,77 @@ const nav = inject<any>('settingsNavigation');
 const store = useDivinationStore();
 const { config } = storeToRefs(store) as any;
 const { show } = useToast();
+
+// 状态
+const showTableSyncList = ref(false);
+
+const toggleTableSyncList = () => {
+  showTableSyncList.value = !showTableSyncList.value;
+};
+
+// 获取包含"随机"的表格
+const randomTableItems = computed(() => {
+  const tables = getTableData();
+  if (!tables) return [];
+
+  const items: any[] = [];
+  for (const key in tables) {
+    const table = tables[key] as any;
+    if (table.name && (table.name.includes('Random') || table.name.includes('随机'))) {
+      items.push({
+        key: table.id || key, // 优先使用 ID
+        label: table.name,
+        // 如果没有显式配置，默认为 true (与后端逻辑一致)
+        // 但 SwitchList 需要明确的选中状态
+      });
+    }
+  }
+  return items;
+});
+
+// 双向绑定同步配置
+// SwitchList v-model 绑定的是 string[] (选中的 ID 列表)
+// config.tableSyncConfig 是 Record<string, boolean>
+const enabledSyncTables = computed({
+  get() {
+    const selected: string[] = [];
+    // 遍历所有可用表格
+    randomTableItems.value.forEach((item: any) => {
+      const tableId = item.key;
+      // 检查配置: 如果未定义或为 true，则认为选中
+      const isEnabled = config.value.tableSyncConfig?.[tableId] !== false;
+      if (isEnabled) {
+        selected.push(tableId);
+      }
+    });
+    return selected;
+  },
+  set(newSelectedIds: string[]) {
+    // 初始化配置对象 (如果不存在)
+    if (!config.value.tableSyncConfig) {
+      config.value.tableSyncConfig = {};
+    }
+
+    // 更新每个表格的配置
+    randomTableItems.value.forEach((item: any) => {
+      const tableId = item.key;
+      const shouldEnable = newSelectedIds.includes(tableId);
+
+      // 只保存 false 的状态 (默认 true)，或者显式保存
+      // 这里为了明确，保存 true/false
+      // 但为了减少存储空间，我们遵循后端逻辑：不存在即为 true
+      if (shouldEnable) {
+        // 如果是 true，删除条目 (恢复默认)
+        if (config.value.tableSyncConfig[tableId] !== undefined) {
+           delete config.value.tableSyncConfig[tableId];
+        }
+      } else {
+        // 如果是 false，显式设置为 false
+        config.value.tableSyncConfig[tableId] = false;
+      }
+    });
+  }
+});
 
 // 主题列表
 const themeList = computed(() => getAllThemes());
