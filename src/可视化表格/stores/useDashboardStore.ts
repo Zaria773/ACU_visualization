@@ -2,7 +2,7 @@
 // @ts-nocheck
 /**
  * 仪表盘配置状态管理 Store
- * 配置存储在酒馆聊天变量中（绑定当前角色卡的聊天）
+ * 配置存储在酒馆全局变量中（跨聊天/角色卡共享）
  */
 
 import { defineStore } from 'pinia';
@@ -60,13 +60,13 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   // ============================================================
 
   /**
-   * 从酒馆聊天变量加载配置
-   * 聊天变量绑定在当前角色卡的聊天文件上
+   * 从酒馆全局变量加载配置
+   * 全局变量跨聊天/角色卡共享
    * 如果配置为空，自动添加默认组件
    */
   async function loadConfig(): Promise<void> {
     try {
-      const vars = getVariables({ type: 'chat' });
+      const vars = getVariables({ type: 'global' });
       if (vars && vars.acu_dashboard_config) {
         config.value = {
           ...DEFAULT_DASHBOARD_CONFIG,
@@ -132,7 +132,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       }
 
       isInitialized.value = true;
-      console.log('[ACU Dashboard] 配置加载成功 (聊天变量):', config.value);
+      console.log('[ACU Dashboard] 配置加载成功 (全局变量):', config.value);
     } catch (error) {
       console.warn('[ACU Dashboard] 加载配置失败，使用默认配置:', error);
       config.value = { ...DEFAULT_DASHBOARD_CONFIG };
@@ -211,20 +211,20 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   }
 
   /**
-   * 保存配置到酒馆聊天变量
-   * 聊天变量绑定在当前角色卡的聊天文件上
+   * 保存配置到酒馆全局变量
+   * 全局变量跨聊天/角色卡共享
    */
   async function saveConfig(): Promise<void> {
     try {
-      const currentVars = getVariables({ type: 'chat' }) || {};
+      const currentVars = getVariables({ type: 'global' }) || {};
       replaceVariables(
         {
           ...currentVars,
           acu_dashboard_config: config.value,
         },
-        { type: 'chat' },
+        { type: 'global' },
       );
-      console.log('[ACU Dashboard] 配置保存成功 (聊天变量)');
+      console.log('[ACU Dashboard] 配置保存成功 (全局变量)');
     } catch (error) {
       console.error('[ACU Dashboard] 保存配置失败:', error);
     }
