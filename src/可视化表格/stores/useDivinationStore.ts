@@ -59,7 +59,8 @@ const DEFAULT_MISUNDERSTANDING_DIMENSION: Dimension = {
       id: 'semantic',
       name: '语义歧义',
       weight: 1,
-      prompt: '请设计一段对话，让角色A在谈论某物品或事件时省略关键主语，导致角色B误会谈论对象，产生错误联想而导致的误会。',
+      prompt:
+        '请设计一段对话，让角色A在谈论某物品或事件时省略关键主语，导致角色B误会谈论对象，产生错误联想而导致的误会。',
     },
     {
       id: 'projection',
@@ -79,7 +80,8 @@ const DEFAULT_MISUNDERSTANDING_DIMENSION: Dimension = {
       id: 'jargon',
       name: '电波接错',
       weight: 1,
-      prompt: '请让角色A使用意有所指的话、圈子黑话或网络梗进行表达，而角色B完全按字面意思理解，产生有趣或严肃的持续性误会。',
+      prompt:
+        '请让角色A使用意有所指的话、圈子黑话或网络梗进行表达，而角色B完全按字面意思理解，产生有趣或严肃的持续性误会。',
     },
   ],
 };

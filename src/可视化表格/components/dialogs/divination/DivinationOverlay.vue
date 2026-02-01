@@ -131,9 +131,7 @@
               <p class="divination-hint__text">点击牌面 揭晓命运</p>
             </div>
             <!-- 翻牌后显示再抽一次按钮 -->
-            <button v-else class="divination-btn divination-btn--retry" @click.stop="handleRetry">
-              再抽一次
-            </button>
+            <button v-else class="divination-btn divination-btn--retry" @click.stop="handleRetry">再抽一次</button>
           </div>
         </div>
       </div>

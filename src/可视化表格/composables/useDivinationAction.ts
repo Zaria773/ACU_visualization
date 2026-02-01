@@ -158,7 +158,14 @@ export function useDivinationAction() {
       }
     }
 
-    console.info('[ACU Divination] 搜索用户消息范围:', `${startFloor}-${lastMsgId}`, '总消息:', allMessages.length, '条，最后一条用户消息 ID:', lastUserMsg?.message_id);
+    console.info(
+      '[ACU Divination] 搜索用户消息范围:',
+      `${startFloor}-${lastMsgId}`,
+      '总消息:',
+      allMessages.length,
+      '条，最后一条用户消息 ID:',
+      lastUserMsg?.message_id,
+    );
 
     if (!lastUserMsg) {
       toast.warning('未找到用户消息，已改为追加到输入框');
@@ -187,10 +194,12 @@ export function useDivinationAction() {
       newContent = newDirective + '\n' + content;
     }
 
-    await setChatMessagesFn([{
-      message_id: lastUserMsg.message_id,
-      message: newContent
-    }]);
+    await setChatMessagesFn([
+      {
+        message_id: lastUserMsg.message_id,
+        message: newContent,
+      },
+    ]);
 
     toast.success('已替换用户消息中的剧情元指令，请点击重新生成');
   }
