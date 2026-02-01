@@ -1,6 +1,6 @@
 <template>
   <div v-if="visible" class="acu-modal-container acu-center-modal" @click.self="close">
-    <div class="acu-modal" style="max-width: 500px">
+    <div class="acu-modal" style="max-width: 400px">
       <!-- 头部 -->
       <div class="acu-modal-header">
         <span class="acu-modal-title">导演控制台</span>
@@ -10,7 +10,7 @@
       <!-- 内容 -->
       <div class="acu-modal-body">
         <!-- 表格模板设置 -->
-        <div class="acu-settings-row">
+        <div class="acu-settings-row column">
           <div class="acu-settings-label">
             表格模板
             <span class="hint">切换游戏数据结构</span>
@@ -29,7 +29,7 @@
         </div>
 
         <!-- 剧情推进设置 -->
-        <div class="acu-settings-row">
+        <div class="acu-settings-row column">
           <div class="acu-settings-label">
             剧情推进
             <span class="hint">切换 AI 叙事风格</span>

@@ -120,18 +120,18 @@
               :theme-id="divinationStore.config.themeId"
               :peep-mode="divinationStore.config.peepMode"
               @flip="handleFlip"
-              @confirm="handleConfirm(divinationStore.config.peepMode ? 'hide' : 'reveal')"
+              @confirm="handleConfirm()"
             />
+          </div>
 
+          <!-- 底部控制区：提示文字和再抽一次按钮共用同一位置 -->
+          <div class="divination-footer">
             <!-- 翻牌前提示 -->
             <div v-if="!isFlipped" class="divination-hint">
               <p class="divination-hint__text">点击牌面 揭晓命运</p>
             </div>
-          </div>
-
-          <!-- 底部控制区 -->
-          <div class="divination-footer">
-            <button v-if="isFlipped" class="divination-btn divination-btn--retry" @click.stop="handleRetry">
+            <!-- 翻牌后显示再抽一次按钮 -->
+            <button v-else class="divination-btn divination-btn--retry" @click.stop="handleRetry">
               再抽一次
             </button>
           </div>
@@ -145,6 +145,7 @@
 import { computed, ref, watch } from 'vue';
 import { useConfigStore } from '../../../stores/useConfigStore';
 import { useDivinationStore } from '../../../stores/useDivinationStore';
+import { useUIStore } from '../../../stores/useUIStore';
 import type { DivinationResult } from '../../../types';
 import TarotCard from './TarotCard.vue';
 
@@ -159,12 +160,13 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'confirm', action: 'reveal' | 'hide'): void;
+  (e: 'confirm', action: 'reveal' | 'hide' | 'reroll'): void;
   (e: 'retry'): void;
 }>();
 
 const divinationStore = useDivinationStore();
 const configStore = useConfigStore();
+const uiStore = useUIStore();
 
 // 获取父窗口 body 用于 Teleport
 const parentBody = window.parent.document.body;
@@ -208,7 +210,7 @@ function handleClose() {
 
 function handleOverlayClick() {
   if (isFlipped.value) {
-    handleConfirm(divinationStore.config.peepMode ? 'hide' : 'reveal');
+    handleConfirm();
   }
 }
 
@@ -216,8 +218,17 @@ function handleFlip() {
   isFlipped.value = true;
 }
 
-function handleConfirm(action: 'reveal' | 'hide') {
-  emit('confirm', action);
+function handleConfirm() {
+  const config = divinationStore.config;
+
+  // 优先检查快捷重抽模式
+  if (uiStore.divinationOverlay.isQuickRerollMode) {
+    emit('confirm', 'reroll');
+  } else if (config.peepMode) {
+    emit('confirm', 'hide');
+  } else {
+    emit('confirm', 'reveal');
+  }
 }
 
 function handleRetry() {

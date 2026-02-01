@@ -448,7 +448,7 @@ const { refresh: refreshTableStatus } = useTableUpdateStatus();
 const { state: toastState } = useToast();
 const { setInput } = useCoreActions();
 const { setHiddenPrompt, setupSendIntercept, cleanupSendIntercept } = useHiddenPrompt();
-const { performDivination, confirmDivination } = useDivinationAction();
+const { performDivination, confirmDivination, triggerQuickReroll } = useDivinationAction();
 
 // 触摸滚动修复（横向布局卡片滑动）- 随组件生命周期自动管理
 useTouchScrollFix();
@@ -882,6 +882,10 @@ function handleDashboardAction(actionId: string, tableId: string) {
       // 打开导演控制台
       uiStore.openDirectorDialog();
       break;
+    case 'quickReroll':
+      // 快捷重抽
+      triggerQuickReroll();
+      break;
     default:
       console.log('[ACU Dashboard] 未处理的动作:', actionId, tableId);
   }
@@ -1070,6 +1074,12 @@ async function loadData(): Promise<void> {
 
     // 刷新后清除所有高亮标记（手动和AI）
     dataStore.clearChanges(true);
+
+    // 尝试补充默认组件（处理初始化时数据未就绪的情况）
+    // 这是一个幂等操作，只会添加缺失的组件
+    dashboardStore.ensureDefaultWidgets().catch(err => {
+      console.warn('[ACU] 补充默认组件失败（非阻塞）:', err);
+    });
 
     // 顺带刷新表格更新状态（仪表盘数据）
     // 由于 useTableUpdateStatus 改为了单例模式，这里调用会同步更新仪表盘组件
@@ -1281,7 +1291,7 @@ function tableRowToCells(row: TableRow): Record<number, string> {
 /**
  * 处理抽签确认
  */
-function handleDivinationConfirm(action: 'reveal' | 'hide' = 'reveal') {
+function handleDivinationConfirm(action: 'reveal' | 'hide' | 'reroll' = 'reveal') {
   const result = uiStore.divinationOverlay.result;
   if (result) {
     confirmDivination(result, action);

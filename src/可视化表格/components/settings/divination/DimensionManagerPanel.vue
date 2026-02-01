@@ -89,7 +89,7 @@
             <div class="tier-row prompt-editor">
               <textarea
                 v-model="tier.prompt"
-                class="acu-edit-textarea compact"
+                class="acu-textarea-scrollable compact"
                 placeholder="在此输入该档位的提示词..."
                 rows="2"
               ></textarea>
@@ -229,7 +229,7 @@ function handleRestoreDefault() {
 }
 
 function handleDeletePreset(id: string) {
-  const preset = divinationStore.presets.find(p => p.id === id);
+  const preset = divinationStore.presets.find((p: DivinationPreset) => p.id === id);
   if (!preset) return;
 
   if (confirm(`确定要删除预设「${preset.name}」吗？`)) {
@@ -241,7 +241,7 @@ function handleDeletePreset(id: string) {
 function handleQuickSave() {
   const activeId = divinationStore.activePresetId;
   if (activeId) {
-    const preset = divinationStore.presets.find(p => p.id === activeId);
+    const preset = divinationStore.presets.find((p: DivinationPreset) => p.id === activeId);
     if (preset) {
       divinationStore.saveCurrentToPreset(preset.name);
       toast.success(`预设「${preset.name}」已更新`);
@@ -258,7 +258,7 @@ function openSaveDialog() {
       presetType: 'divination', // 使用自定义类型或通用类型
       summaryItems: [],
       initialName: '',
-      checkDuplicate: (name: string) => divinationStore.presets.some(p => p.name === name),
+      checkDuplicate: (name: string) => divinationStore.presets.some((p: DivinationPreset) => p.name === name),
     },
     {
       onSave: (name: string) => {
@@ -276,7 +276,7 @@ function handleExportCurrentPreset() {
     toast.warning('请先选择一个预设');
     return;
   }
-  const preset = divinationStore.presets.find(p => p.id === activeId);
+  const preset = divinationStore.presets.find((p: DivinationPreset) => p.id === activeId);
   if (!preset) return;
 
   const data = {
@@ -333,11 +333,11 @@ function handleImportPresets(event: Event) {
         let importedCount = 0;
         data.presets.forEach((importedPreset: DivinationPreset) => {
           // 检查 ID 冲突，如果有冲突则重新生成 ID
-          const existing = divinationStore.presets.find(p => p.id === importedPreset.id);
+          const existing = divinationStore.presets.find((p: DivinationPreset) => p.id === importedPreset.id);
           if (existing) {
             // 如果 ID 冲突但内容不同，或者只是想合并，这里简单处理为追加并重命名
             // 实际策略可以是：覆盖、跳过或重命名。这里采用：如果 ID 相同则覆盖
-            const index = divinationStore.presets.findIndex(p => p.id === importedPreset.id);
+            const index = divinationStore.presets.findIndex((p: DivinationPreset) => p.id === importedPreset.id);
             divinationStore.presets[index] = importedPreset;
           } else {
             divinationStore.presets.push(importedPreset);

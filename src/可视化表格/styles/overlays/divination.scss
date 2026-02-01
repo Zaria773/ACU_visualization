@@ -324,10 +324,16 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   max-width: 1280px;
   margin: 0 auto;
   height: 100%;
-  justify-content: center;
+  justify-content: space-between; // 改为 space-between 以便更好地分配空间
   padding: 16px 24px;
-  gap: 16px;
+  gap: 8px; // 减小默认间距
   box-sizing: border-box;
+
+  // 移动端减少 padding
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+    gap: 4px;
+  }
 }
 
 // ============================================
@@ -336,7 +342,15 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 .divination-header {
   text-align: center;
   animation: divination-fade-in-down 1s ease-out;
-  flex-shrink: 0;
+  flex-shrink: 1; // 允许头部收缩
+  min-height: 0; // 允许完全压缩
+
+  // 移动端压缩头部空间
+  @media (max-width: 768px) {
+    transform: scale(0.6);
+    transform-origin: top center;
+    margin-bottom: -16px;
+  }
 
   &__title {
     display: inline-flex;
@@ -360,6 +374,10 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     background: linear-gradient(to right, transparent, #d4af37, transparent);
     margin-top: 8px;
     opacity: 0.5;
+
+    @media (max-width: 768px) {
+      margin-top: 4px;
+    }
   }
 }
 
@@ -384,7 +402,10 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   justify-content: center;
   width: 100%;
   position: relative;
-  flex-shrink: 0;
+  flex: 1; // 占据剩余空间
+  min-height: 0; // 允许 flex 子项收缩
+  padding: 8px 0;
+  overflow: hidden; // 防止卡片溢出
 }
 
 // ============================================
@@ -396,20 +417,24 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
   perspective: 1000px;
   // aspect-ratio 由内联样式动态控制
 
-  // 移动端：宽度占 90% 居中
-  width: 90vw;
-  height: auto;
-  // 限制最大高度，防止突破屏幕，留出上下空间 (header + footer + safe-area)
-  // header ~60px, footer ~80px, safe-area ~50px => ~190px
-  max-height: calc(100vh - 200px);
-  max-height: calc(100dvh - 200px);
+  // 核心：让卡片尺寸由 aspect-ratio 和容器共同决定
+  // 宽度取 "容器宽度" 或 "根据高度计算的宽度" 的较小值
+  width: auto;
+  height: 100%; // 先尝试填满容器高度
+  max-height: 100%; // 不超出容器
+  max-width: min(90vw, 400px); // 限制最大宽度
 
-  // PC 端：高度占 80% 居中
+  // 移动端：优先保证高度不溢出
+  @media (max-width: 768px) {
+    height: auto;
+    width: min(85vw, 300px);
+    max-height: calc(100dvh - 180px); // 减去头部+底部空间
+  }
+
+  // PC 端：更宽敞
   @media (min-width: 768px) {
-    width: auto;
-    height: 80vh;
-    max-width: 90vw; // 限制最大宽度，防止过宽
-    max-height: 800px; // PC端也加个最大高度限制
+    max-width: min(50vw, 450px);
+    max-height: 75vh;
   }
 
   &__inner {
@@ -464,14 +489,11 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 // - mystic 主题：_mystic.scss（神秘塔罗）
 
 // ============================================
-// 提示文字
+// 提示文字（放在 footer 区域）
 // ============================================
 .divination-hint {
-  position: absolute;
-  bottom: -64px;
-  left: 0;
-  right: 0;
   text-align: center;
+  pointer-events: none;
   animation: divination-fade-in 0.8s ease-out;
 
   &__text {
@@ -481,6 +503,10 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
     letter-spacing: 0.2em;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     animation: divination-bounce 2s ease-in-out infinite;
+
+    @media (max-width: 768px) {
+      font-size: 14px;
+    }
   }
 }
 
@@ -588,11 +614,18 @@ $divination-font-body: 'Noto Serif SC', 'Cormorant Garamond', serif;
 // ============================================
 .divination-footer {
   height: auto;
-  min-height: 40px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  flex-shrink: 1; // 允许底部收缩
+  padding-bottom: 4px;
+
+  // 移动端压缩底部空间
+  @media (max-width: 768px) {
+    min-height: 24px;
+    padding-bottom: 0;
+  }
 }
 
 // ============================================

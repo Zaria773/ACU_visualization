@@ -55,10 +55,12 @@
           v-for="actionId in filteredActionsNoSettings"
           :key="actionId"
           class="acu-icon-btn"
+          :class="{ 'acu-dual-icon': hasSecondaryIcon(actionId) }"
           :title="getActionTooltip(actionId)"
           @click.stop="handleAction(actionId)"
         >
           <i :class="['fas', getActionIcon(actionId)]"></i>
+          <i v-if="hasSecondaryIcon(actionId)" class="fas icon-secondary" :class="getSecondaryIcon(actionId)"></i>
         </button>
         <!-- 折叠指示器放在按钮区最右边 -->
         <i class="fas acu-dash-collapse-icon" :class="isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
@@ -219,7 +221,7 @@
           <div v-if="useVirtual" v-bind="listContainerProps" class="acu-dash-virtual-container">
             <div v-bind="listWrapperProps" class="acu-dash-list">
               <div
-                v-for="{ data: row, index } in virtualListRows"
+                v-for="{ data: row } in virtualListRows"
                 :key="row.key"
                 class="acu-dash-list-item acu-dash-interactive"
                 :class="{
@@ -971,6 +973,14 @@ function handleConfigActions(): void {
 
 function getActionIcon(actionId: WidgetActionId): string {
   return WIDGET_ACTIONS[actionId]?.icon ?? 'fa-question';
+}
+
+function hasSecondaryIcon(actionId: WidgetActionId): boolean {
+  return !!WIDGET_ACTIONS[actionId]?.secondaryIcon;
+}
+
+function getSecondaryIcon(actionId: WidgetActionId): string {
+  return WIDGET_ACTIONS[actionId]?.secondaryIcon ?? '';
 }
 
 function getActionTooltip(actionId: WidgetActionId): string {

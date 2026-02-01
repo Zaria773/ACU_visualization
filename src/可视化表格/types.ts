@@ -824,12 +824,14 @@ export type WidgetActionId =
   | 'settings' // 设置
   | 'nativeEdit' // 打开原生编辑器
   | 'divination' // 抽签
-  | 'console'; // 导演控制台
+  | 'console' // 导演控制台
+  | 'quickReroll'; // 快捷重抽
 
 /** 看板快捷按钮配置 */
 export interface WidgetAction {
   id: WidgetActionId;
   icon: string; // FA 图标 class
+  secondaryIcon?: string; // 次级图标（用于双图标显示）
   label: string; // 显示标签
   tooltip?: string; // 悬浮提示
 }
@@ -929,6 +931,13 @@ export const WIDGET_ACTIONS: Record<WidgetActionId, WidgetAction> = {
   nativeEdit: { id: 'nativeEdit', icon: 'fa-external-link-alt', label: '原生编辑器', tooltip: '打开原生编辑器' },
   divination: { id: 'divination', icon: 'fa-dice', label: '抽签', tooltip: '赛博算卦 - 注入隐藏提示词' },
   console: { id: 'console', icon: 'fa-solid fa-clapperboard', label: '导演控制台', tooltip: '打开导演控制台' },
+  quickReroll: {
+    id: 'quickReroll',
+    icon: 'fa-dice',
+    secondaryIcon: 'fa-redo-alt',
+    label: '快捷重抽',
+    tooltip: '抽签并替换最后一条用户消息中的剧情元指令',
+  },
 };
 
 /** 看板模板 - 用于快速添加 */

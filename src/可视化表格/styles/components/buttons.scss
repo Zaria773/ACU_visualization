@@ -407,3 +407,24 @@
 // 取消按钮
 
 // 锁定计数徽章
+
+// =========================================
+// 双图标按钮样式
+// =========================================
+.acu-icon-btn.acu-dual-icon {
+  position: relative;
+
+  .icon-secondary {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-size: 8px;
+    opacity: 0.9;
+    background: var(--acu-card-bg);
+    border-radius: 50%;
+    padding: 2px;
+    line-height: 1;
+    // 确保次级图标在主图标之上
+    z-index: 1;
+  }
+}

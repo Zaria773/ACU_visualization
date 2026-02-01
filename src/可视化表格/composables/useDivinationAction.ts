@@ -5,6 +5,17 @@ import { useHiddenPrompt } from './useHiddenPrompt';
 import { buildFullPrompt } from './usePromptBuild';
 import { toast } from './useToast';
 
+// 从类型定义导入 ChatMessage 类型
+type ChatMessage = {
+  message_id: number;
+  name: string;
+  role: 'system' | 'assistant' | 'user';
+  is_hidden: boolean;
+  message: string;
+  data: Record<string, any>;
+  extra: Record<string, any>;
+};
+
 /**
  * 抽签动作 Composable
  *
@@ -94,12 +105,15 @@ export function useDivinationAction() {
   /**
    * 确认抽签结果（注入提示词）
    * @param result 抽签结果
-   * @param action 注入动作 ('reveal' | 'hide')，默认为 'reveal'
+   * @param action 注入动作 ('reveal' | 'hide' | 'reroll')，默认为 'reveal'
    */
-  function confirmDivination(result: DivinationResult, action: 'reveal' | 'hide' = 'reveal') {
+  function confirmDivination(result: DivinationResult, action: 'reveal' | 'hide' | 'reroll' = 'reveal') {
     const prompt = buildPromptFromResult(result);
 
-    if (action === 'hide') {
+    if (action === 'reroll') {
+      // 快捷重抽模式
+      injectIntoLastUserMessage(prompt);
+    } else if (action === 'hide') {
       // 注入隐藏提示词
       setHiddenPrompt(prompt);
       setupSendIntercept();
@@ -110,6 +124,111 @@ export function useDivinationAction() {
     }
 
     uiStore.closeDivinationOverlay();
+  }
+
+  /**
+   * 注入到最后一条用户消息
+   */
+  async function injectIntoLastUserMessage(prompt: string): Promise<void> {
+    const parentWin = window.parent as any;
+    // 尝试从全局或 TavernHelper 获取接口
+    const getChatMessagesFn = parentWin.getChatMessages || parentWin.TavernHelper?.getChatMessages;
+    const setChatMessagesFn = parentWin.setChatMessages || parentWin.TavernHelper?.setChatMessages;
+    const getLastMessageIdFn = parentWin.getLastMessageId || parentWin.TavernHelper?.getLastMessageId;
+
+    if (!getChatMessagesFn || !setChatMessagesFn) {
+      console.error('[ACU] getChatMessages/setChatMessages not found in parent window or TavernHelper');
+      toast.error('无法获取酒馆接口，请确保酒馆助手已正确安装');
+      return;
+    }
+
+    // 获取最后一条消息的 ID
+    const lastMsgId = getLastMessageIdFn?.() ?? 999;
+    // 计算起始楼层（往前 50 条，确保能找到用户消息）
+    const startFloor = Math.max(0, lastMsgId - 50);
+    // 获取范围内的所有消息
+    const allMessages = getChatMessagesFn(`${startFloor}-${lastMsgId}`) as ChatMessage[];
+
+    // 倒序查找最后一条用户消息
+    let lastUserMsg: ChatMessage | undefined;
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      if (allMessages[i].role === 'user') {
+        lastUserMsg = allMessages[i];
+        break;
+      }
+    }
+
+    console.info('[ACU Divination] 搜索用户消息范围:', `${startFloor}-${lastMsgId}`, '总消息:', allMessages.length, '条，最后一条用户消息 ID:', lastUserMsg?.message_id);
+
+    if (!lastUserMsg) {
+      toast.warning('未找到用户消息，已改为追加到输入框');
+      appendPromptToInput(prompt);
+      return;
+    }
+
+    // 移除 prompt 中可能已存在的标签（包括带属性的标签），避免双重包裹
+    // 1. 移除开始标签 <剧情元指令...>
+    // 2. 移除结束标签 </剧情元指令>
+    const cleanPrompt = prompt
+      .replace(/<剧情元指令[^>]*>/g, '')
+      .replace(/<\/剧情元指令>/g, '')
+      .trim();
+
+    const newDirective = `<剧情元指令>\n${cleanPrompt}\n</剧情元指令>`;
+    // 移除 g 标志，避免 test() 移动 lastIndex 导致 replace() 失败
+    // 同时放宽正则匹配，以防标签有属性或空格
+    const regex = /<剧情元指令[\s\S]*?<\/剧情元指令>/;
+    const content = lastUserMsg.message || '';
+
+    let newContent: string;
+    if (regex.test(content)) {
+      newContent = content.replace(regex, newDirective);
+    } else {
+      newContent = newDirective + '\n' + content;
+    }
+
+    await setChatMessagesFn([{
+      message_id: lastUserMsg.message_id,
+      message: newContent
+    }]);
+
+    toast.success('已替换用户消息中的剧情元指令，请点击重新生成');
+  }
+
+  /**
+   * 触发快捷重抽
+   */
+  async function triggerQuickReroll(): Promise<void> {
+    // 初始化检查 (复用 performDivination 逻辑)
+    if (!divinationStore.isLoaded) divinationStore.loadConfig();
+    await uiStore.initDivinationSystem();
+
+    // 词库加载 (复用)
+    if (divinationStore.categories.length === 0) {
+      await divinationStore.loadFromWorldbook();
+      if (divinationStore.categories.length === 0) {
+        await divinationStore.syncFromACU();
+        await divinationStore.loadFromWorldbook();
+      }
+    } else {
+      divinationStore.loadFromWorldbook();
+    }
+
+    const result = divinationStore.performDivination();
+    if (result) {
+      const config = divinationStore.config;
+      // 注意：config 可能是 ref 或对象，需兼容处理
+      const flipMode = (config as any).value?.flipMode ?? config?.flipMode;
+
+      if (flipMode === 'skip') {
+        const prompt = buildPromptFromResult(result);
+        await injectIntoLastUserMessage(prompt);
+      } else {
+        uiStore.openDivinationOverlay(result, true); // true = isQuickReroll
+      }
+    } else {
+      toast.error('抽签失败，请检查配置');
+    }
   }
 
   /**
@@ -175,5 +294,6 @@ export function useDivinationAction() {
   return {
     performDivination,
     confirmDivination,
+    triggerQuickReroll,
   };
 }

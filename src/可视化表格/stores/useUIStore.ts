@@ -653,9 +653,11 @@ export const useUIStore = defineStore('acu-ui', () => {
   const divinationOverlay = reactive<{
     visible: boolean;
     result: DivinationResult | null;
+    isQuickRerollMode: boolean;
   }>({
     visible: false,
     result: null,
+    isQuickRerollMode: false,
   });
 
   /** 隐藏提示词编辑弹窗状态 */
@@ -1597,9 +1599,11 @@ export const useUIStore = defineStore('acu-ui', () => {
   /**
    * 打开抽签覆盖层
    * @param result 抽签结果
+   * @param isQuickReroll 是否为快捷重抽模式
    */
-  function openDivinationOverlay(result: DivinationResult): void {
+  function openDivinationOverlay(result: DivinationResult, isQuickReroll = false): void {
     divinationOverlay.result = result;
+    divinationOverlay.isQuickRerollMode = isQuickReroll;
     divinationOverlay.visible = true;
   }
 
@@ -1608,6 +1612,7 @@ export const useUIStore = defineStore('acu-ui', () => {
    */
   function closeDivinationOverlay(): void {
     divinationOverlay.visible = false;
+    divinationOverlay.isQuickRerollMode = false;
   }
 
   /**

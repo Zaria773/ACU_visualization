@@ -45,7 +45,7 @@
 // 窗口化包裹器
 #acu-parent-container .acu-wrapper {
   position: relative;
-  max-width: 98vw;
+  max-width: 100vw;
   pointer-events: auto !important; // 修复：确保面板可以接收点击事件
   display: flex;
   flex-direction: column-reverse;
@@ -59,8 +59,8 @@
 // 【关键修复】参照 6.4.1：默认居中显示
 #acu-parent-container .acu-wrapper {
   position: absolute !important;
-  // 宽度取 "存储值" 和 "屏幕宽度-20px" 中的较小值
-  width: min(var(--acu-win-width, 600px), calc(100vw - 20px)) !important;
+  // 宽度取 "存储值" 和 "屏幕宽度" 中的较小值
+  width: min(var(--acu-win-width, 600px), 100vw) !important;
   // 【关键】默认 50% 居中
   left: var(--acu-win-left, 50%) !important;
   bottom: var(--acu-win-bottom, 50%) !important;

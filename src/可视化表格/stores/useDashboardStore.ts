@@ -74,10 +74,8 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         };
       }
 
-      // 如果 widgets 为空，自动初始化默认组件
-      if (config.value.widgets.length === 0) {
-        await initDefaultWidgets();
-      }
+      // 无论是否为空，都尝试确保默认组件存在（处理数据延迟加载）
+      await ensureDefaultWidgets();
 
       // 临时迁移：将 NPC/人物/角色 类表格强制转换为 list 样式 (普通表格)
       // 修复旧配置中这些表格仍显示为 grid 的问题
@@ -143,30 +141,40 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   }
 
   /**
-   * 自动初始化默认组件
+   * 确保默认组件存在 (幂等操作)
+   * 可以在数据加载后重复调用，补充缺失的组件
    * 添加顺序：表格更新状态 → 随机词表（如检测到）→ 人物/NPC表 → 任务表 → 物品表
    */
-  async function initDefaultWidgets(): Promise<void> {
-    console.log('[ACU Dashboard] 初始化默认组件...');
+  async function ensureDefaultWidgets(): Promise<void> {
+    let hasChanges = false;
 
-    // 1. 首先添加"表格更新状态"特殊组件
-    addSpecialWidget('updateStatus');
+    // 1. 检查并添加"表格更新状态"特殊组件
+    if (!config.value.widgets.some(w => w.type === 'updateStatus')) {
+      addSpecialWidget('updateStatus', false);
+      hasChanges = true;
+    }
 
     // 2. 检测并添加随机词表组件
-    detectAndAddRandomWordWidget();
+    const randomTables = detectWordPoolTables();
+    if (randomTables.length > 0) {
+      if (!config.value.widgets.some(w => w.type === 'randomWordPool')) {
+        addSpecialWidget('randomWordPool', false);
+        hasChanges = true;
+        console.log(`[ACU Dashboard] 检测到 ${randomTables.length} 个随机表，已自动添加随机词表组件`);
+      }
+    }
 
-    // 2. 获取当前数据库的所有表格
+    // 3. 获取当前数据库的所有表格
     const rawData = getTableData();
     if (!rawData) {
-      console.log('[ACU Dashboard] 无法获取表格数据，仅添加更新状态组件');
-      saveConfig();
+      // 如果没有数据，且有变更，则保存
+      if (hasChanges) saveConfig();
       return;
     }
 
     const tables = processJsonData(rawData);
     if (!tables) {
-      console.log('[ACU Dashboard] 无有效表格，仅添加更新状态组件');
-      saveConfig();
+      if (hasChanges) saveConfig();
       return;
     }
 
@@ -178,7 +186,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       { keywords: ['交互', '互动'], templateKey: 'interaction' },
     ];
 
-    // 3. 遍历表格，按规则匹配并添加
+    // 4. 遍历表格，按规则匹配并添加
     for (const [tableName, tableInfo] of Object.entries(tables)) {
       const tableId = tableInfo.key;
       const lowerName = tableName.toLowerCase();
@@ -187,16 +195,19 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         if (rule.keywords.some(k => lowerName.includes(k.toLowerCase()))) {
           // 检查是否已添加（避免重复）
           if (!config.value.widgets.some(w => w.tableId === tableId)) {
-            addWidget(tableId, tableName, rule.templateKey);
+            addWidget(tableId, tableName, rule.templateKey, false);
             console.log(`[ACU Dashboard] 自动添加表格: ${tableName} (模板: ${rule.templateKey})`);
+            hasChanges = true;
           }
           break; // 每个表只匹配一个规则
         }
       }
     }
 
-    saveConfig();
-    console.log('[ACU Dashboard] 默认组件初始化完成');
+    if (hasChanges) {
+      saveConfig();
+      console.log('[ACU Dashboard] 默认组件已更新');
+    }
   }
 
   /**
@@ -236,8 +247,14 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
    * @param tableId 表格 ID
    * @param tableName 表格名称（可选，用于显示标题）
    * @param templateKey 模板 key (可选)
+   * @param autoSave 是否自动保存 (默认 true)
    */
-  function addWidget(tableId: string, tableName?: string, templateKey?: string): DashboardWidgetConfig {
+  function addWidget(
+    tableId: string,
+    tableName?: string,
+    templateKey?: string,
+    autoSave = true,
+  ): DashboardWidgetConfig {
     // 查找匹配的模板
     let template = templateKey ? WIDGET_TEMPLATES[templateKey] : undefined;
 
@@ -289,7 +306,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     };
 
     config.value.widgets.push(newWidget);
-    saveConfig();
+    if (autoSave) saveConfig();
     return newWidget;
   }
 
@@ -419,8 +436,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   /**
    * 添加特殊组件
    * @param widgetType 特殊组件类型
+   * @param autoSave 是否自动保存 (默认 true)
    */
-  function addSpecialWidget(widgetType: SpecialWidgetType): DashboardWidgetConfig {
+  function addSpecialWidget(widgetType: SpecialWidgetType, autoSave = true): DashboardWidgetConfig {
     const specialConfigs: Record<SpecialWidgetType, Partial<DashboardWidgetConfig>> = {
       updateStatus: {
         type: 'updateStatus',
@@ -461,7 +479,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     };
 
     config.value.widgets.push(newWidget);
-    saveConfig();
+    if (autoSave) saveConfig();
     return newWidget;
   }
 
@@ -518,5 +536,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     addSpecialWidget,
     removeSpecialWidget,
     getWidgetById,
+    ensureDefaultWidgets,
   };
 });

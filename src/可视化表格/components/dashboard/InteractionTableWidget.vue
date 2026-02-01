@@ -43,6 +43,19 @@
           <i class="fas fa-cog"></i>
         </button>
 
+        <!-- 自定义快捷按钮 -->
+        <button
+          v-for="actionId in filteredActions"
+          :key="actionId"
+          class="acu-icon-btn"
+          :class="{ 'acu-dual-icon': hasSecondaryIcon(actionId) }"
+          :title="getActionTooltip(actionId)"
+          @click.stop="handleAction(actionId)"
+        >
+          <i :class="['fas', getActionIcon(actionId)]"></i>
+          <i v-if="hasSecondaryIcon(actionId)" class="fas icon-secondary" :class="getSecondaryIcon(actionId)"></i>
+        </button>
+
         <i class="fas acu-dash-collapse-icon" :class="isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
       </div>
     </div>
@@ -154,6 +167,10 @@ const totalCount = computed(() => props.tableData?.rows.length ?? 0);
 const rowCount = computed(() => displayRows.value.length);
 const displayTitle = computed(() => props.tableData?.name || props.config.title);
 
+const filteredActions = computed(() => {
+  return (props.config.actions || []).filter(actionId => actionId !== 'settings' && actionId !== 'goToTable');
+});
+
 /** 显示图标 - 智能匹配 */
 const displayIcon = computed(() => {
   // 1. 如果有配置的图标且不是默认表图标，优先使用配置
@@ -192,6 +209,18 @@ const displayRows = computed(() => {
 // Methods
 function getActionTooltip(actionId: WidgetActionId): string {
   return WIDGET_ACTIONS[actionId]?.tooltip || '';
+}
+
+function getActionIcon(actionId: WidgetActionId): string {
+  return WIDGET_ACTIONS[actionId]?.icon ?? 'fa-question';
+}
+
+function hasSecondaryIcon(actionId: WidgetActionId): boolean {
+  return !!WIDGET_ACTIONS[actionId]?.secondaryIcon;
+}
+
+function getSecondaryIcon(actionId: WidgetActionId): string {
+  return WIDGET_ACTIONS[actionId]?.secondaryIcon ?? '';
 }
 
 function getRowValue(row: TableRow, colName: string): string {
