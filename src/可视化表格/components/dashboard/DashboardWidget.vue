@@ -42,12 +42,7 @@
       <!-- 按钮区（包含折叠指示器） -->
       <div class="acu-dash-actions">
         <!-- 返回按钮（层级模式，非第1层时显示） -->
-        <button
-          v-if="showBackButton"
-          class="acu-icon-btn"
-          title="返回上一层级"
-          @click.stop="goBackLevel"
-        >
+        <button v-if="showBackButton" class="acu-icon-btn" title="返回上一层级" @click.stop="goBackLevel">
           <i class="fas fa-arrow-left"></i>
         </button>
         <!-- 展开/收起按钮（层级模式下显示） -->
