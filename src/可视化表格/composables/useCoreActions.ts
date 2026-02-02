@@ -59,6 +59,14 @@ export function useCoreActions() {
     // 关键修复：先更新 stagedData，确保 saveToDatabase 使用最新数据
     dataStore.setStagedData(rawData);
 
+    // 关键修复：将新行添加到 manualDiffMap，这样 saveToDatabase 才会检测到变更
+    // 使用表格名称（而非 tableKey）来生成 rowKey，与 getModifiedTableIds 保持一致
+    const tableName = sheet.name || tableKey.replace('sheet_', '');
+    const newRowIndex = rowIdx + 1; // 新行在数据行中的索引（不含表头）
+    const rowKey = dataStore.getRowKey(tableName, newRowIndex);
+    dataStore.manualDiffMap.add(rowKey);
+    console.info(`[ACU insertRow] 已添加变更标记: ${rowKey}`);
+
     // 保存当前快照到撤回缓存（在保存操作前执行）
     dataStore.saveLastState();
 

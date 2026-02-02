@@ -240,6 +240,7 @@
                 :class="{
                   'acu-highlight-changed': isRowChanged(row),
                   'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+                  'acu-multi-tags': getTagCount(row) > 1,
                 }"
                 :style="{ minHeight: LIST_ITEM_HEIGHT + 'px' }"
                 @click.stop="handleRowClick(row)"
@@ -310,6 +311,7 @@
               :class="{
                 'acu-highlight-changed': isRowChanged(row),
                 'acu-highlight-ai': isRowAiChanged(row) && !searchTerm,
+                'acu-multi-tags': getTagCount(row) > 1,
               }"
               @click.stop="handleRowClick(row)"
             >
@@ -733,9 +735,71 @@ function isRowMatchSearch(row: TableRow): boolean {
 // ============================================================
 
 /**
+ * 层级排序：按树形结构排序
+ * - 父项在子项前面
+ * - 同级项按原始索引排序（通过路径前缀比较）
+ */
+function sortByHierarchy(rows: TableRow[]): TableRow[] {
+  // 构建路径到行索引的映射，用于同级比较
+  const pathToIndex = new Map<string, number>();
+  for (const row of rows) {
+    pathToIndex.set(getRowFullPath(row), row.index);
+  }
+
+  return [...rows].sort((a, b) => {
+    const pathA = getRowFullPath(a);
+    const pathB = getRowFullPath(b);
+
+    // 相同路径（不应该发生），按原始索引
+    if (pathA === pathB) {
+      return a.index - b.index;
+    }
+
+    // 判断是否有父子关系
+    if (pathB.startsWith(pathA + '/')) {
+      // B 是 A 的子项，A 在前
+      return -1;
+    }
+    if (pathA.startsWith(pathB + '/')) {
+      // A 是 B 的子项，B 在前
+      return 1;
+    }
+
+    // 没有直接父子关系，找到公共祖先后比较
+    const partsA = pathA.split('/');
+    const partsB = pathB.split('/');
+
+    // 找到第一个不同的层级
+    let commonPrefixLength = 0;
+    for (let i = 0; i < Math.min(partsA.length, partsB.length); i++) {
+      if (partsA[i] !== partsB[i]) {
+        break;
+      }
+      commonPrefixLength = i + 1;
+    }
+
+    // 构建到不同分支点的路径
+    const branchPathA = partsA.slice(0, commonPrefixLength + 1).join('/');
+    const branchPathB = partsB.slice(0, commonPrefixLength + 1).join('/');
+
+    // 尝试获取分支点行的原始索引进行比较
+    const branchIndexA = pathToIndex.get(branchPathA);
+    const branchIndexB = pathToIndex.get(branchPathB);
+
+    if (branchIndexA !== undefined && branchIndexB !== undefined) {
+      // 都找到了，按原始索引排序
+      return branchIndexA - branchIndexB;
+    }
+
+    // 找不到分支点行（可能被过滤了），按路径字典序
+    return branchPathA.localeCompare(branchPathB);
+  });
+}
+
+/**
  * 显示的行数据（过滤+排序）
  * - 搜索模式: 过滤不匹配的行
- * - 层级模式: 过滤超过当前最大层级的行 + 被父行折叠的行
+ * - 层级模式: 过滤超过当前最大层级的行 + 被父行折叠的行，按层级树结构排序
  * - 非搜索模式: AI 更新的行排前面
  */
 const displayRows = computed(() => {
@@ -758,7 +822,16 @@ const displayRows = computed(() => {
     rows = rows.filter(row => !isRowCollapsed(row));
   }
 
-  // 排序：AI 更新的排前面
+  // 层级模式：按层级树结构排序
+  if (isHierarchyMode.value) {
+    rows = sortByHierarchy(rows);
+
+    // AI 更新的行需要特殊处理：仍然高亮但保持层级顺序
+    // 不改变排序，只是视觉高亮
+    return rows;
+  }
+
+  // 非层级模式：AI 更新的排前面
   return rows.sort((a, b) => {
     const aAi = isRowAiChanged(a);
     const bAi = isRowAiChanged(b);
@@ -862,6 +935,23 @@ const filteredActionsNoSettings = computed(() => {
 // ============================================================
 // Methods - 数据展示
 // ============================================================
+
+/**
+ * 获取显示值 (优先使用 titleColumn，其次匹配 displayColumns)
+ */
+/**
+ * 获取行的标签总数
+ * 用于判断是否需要换行（>1 个标签才允许换行）
+ */
+function getTagCount(row: TableRow): number {
+  const displayTagsCount = getDisplayTags(row).length;
+  const interactiveTagsCount = getInteractiveTags(row).length;
+  // displayedInteractiveTags 和 displayedCategories 是组件级配置，所有行都有
+  const staticTagsCount = displayedInteractiveTags.value.length;
+  const categoryTagsCount = displayedCategories.value.length;
+
+  return displayTagsCount + interactiveTagsCount + staticTagsCount + categoryTagsCount;
+}
 
 /**
  * 获取显示值 (优先使用 titleColumn，其次匹配 displayColumns)

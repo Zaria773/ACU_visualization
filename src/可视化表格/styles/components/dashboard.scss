@@ -165,7 +165,12 @@
   align-items: center;
   gap: 6px;
   cursor: default;
-  flex-wrap: wrap; // 允许换行
+  flex-wrap: nowrap; // 默认不换行（1个标签时挤压标题）
+
+  // 当有多个标签时，允许换行以避免过度挤压
+  &.acu-multi-tags {
+    flex-wrap: wrap;
+  }
 
   &:hover {
     color: var(--acu-text-main);
@@ -756,6 +761,34 @@
 .acu-dash-list-item {
   &:hover .acu-dash-row-edit-btn {
     opacity: 1;
+  }
+}
+
+// 行级别折叠按钮（层级模式下显示）
+.acu-dash-row-collapse-btn {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--acu-text-sub);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 4px;
+  flex-shrink: 0;
+  padding: 0;
+
+  i {
+    font-size: 10px;
+  }
+
+  &:hover {
+    background: var(--acu-btn-hover);
+    color: var(--acu-title-color);
   }
 }
 

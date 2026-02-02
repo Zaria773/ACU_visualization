@@ -34,7 +34,7 @@
  * 支持自定义外观和 AI 填表通知动画
  */
 
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDraggableWithSnap, useParentEventListener } from '../composables';
 import { useBallAppearanceStore, useDataStore, useUIStore } from '../stores';
 import type { BallPosition } from '../types';
@@ -82,6 +82,8 @@ const imageStyle = computed(() => {
 
 /** AI 填表通知状态 */
 const isAiNotifying = ref(false);
+/** AI 正在生成状态（持续性动画） */
+const isAiGenerating = computed(() => uiStore.isAiGenerating);
 
 /** 通知动画计时器 */
 let notifyTimer: ReturnType<typeof setTimeout> | null = null;
@@ -102,13 +104,17 @@ function triggerAiNotify(duration = 3000) {
 }
 
 /** 计算的 class 列表 */
-const ballClasses = computed(() => ({
-  docked: isDocked.value,
-  'has-issues': hasIntegrityIssues.value,
-  'ai-notify': isAiNotifying.value,
-  'anim-ripple': isAiNotifying.value && appearance.value.notifyAnimation === 'ripple',
-  'anim-arc': isAiNotifying.value && appearance.value.notifyAnimation === 'arc',
-}));
+const ballClasses = computed(() => {
+  // 无论是正在生成中，还是生成完成后的通知期，都显示动画
+  const showAnimation = isAiGenerating.value || isAiNotifying.value;
+  return {
+    docked: isDocked.value,
+    'has-issues': hasIntegrityIssues.value,
+    'ai-notify': showAnimation,
+    'anim-ripple': showAnimation && appearance.value.notifyAnimation === 'ripple',
+    'anim-arc': showAnimation && appearance.value.notifyAnimation === 'arc',
+  };
+});
 
 /** 计算的样式（含 CSS 变量和位置） */
 const ballStyle = computed(() => {
@@ -193,6 +199,15 @@ function handleClick(e: MouseEvent) {
     return;
   }
 
+  // 点击时清除 AI 通知状态（停止动画）
+  if (isAiNotifying.value) {
+    isAiNotifying.value = false;
+    if (notifyTimer) {
+      clearTimeout(notifyTimer);
+      notifyTimer = null;
+    }
+  }
+
   // 停靠状态点击恢复
   if (isDocked.value) {
     isDocked.value = false;
@@ -259,6 +274,15 @@ onMounted(() => {
   // 从全局变量加载外观配置
   ballAppearanceStore.loadFromGlobalVariables();
 });
+
+// 监听 AI 通知信号
+watch(
+  () => uiStore.aiNotifySignal,
+  () => {
+    console.info('[ACU FloatingBall] 收到 AI 通知信号，触发动画');
+    triggerAiNotify();
+  },
+);
 
 onUnmounted(() => {
   if (clickTimer) {

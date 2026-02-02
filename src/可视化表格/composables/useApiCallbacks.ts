@@ -189,6 +189,9 @@ export function useApiCallbacks() {
           // 生成 AI 差异映射（高亮 AI 填表的变更）
           dataStore.generateDiffMap(newData);
 
+          // 触发悬浮球通知动画
+          uiStore.triggerAiNotify();
+
           // 【关键修复】只有开启智能检测时才执行完整性检测
           if (presetsManager.globalAutoTriggerEnabled.value) {
             // 执行完整性检测
@@ -215,6 +218,9 @@ export function useApiCallbacks() {
 
         // 保存当前状态用于撤回（AI 填表也可以撤回）
         dataStore.saveLastState();
+
+        // 设置 AI 生成状态
+        uiStore.setAiGenerating(true);
 
         // A. 检测累积变动：如果界面上还有未保存的高亮（diffMap），跳过快照更新
         // 注意：只检查 diffMap，不检查 pendingDeletes，与原代码保持一致

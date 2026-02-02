@@ -363,7 +363,7 @@
  * 集成所有子组件，管理全局状态和事件通信
  */
 
-import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect } from 'vue';
 
 // 组件导入
 import {
@@ -1288,7 +1288,6 @@ function tableRowToCells(row: TableRow): Record<number, string> {
 // 事件处理 - 抽签系统
 // ============================================================
 
-/**
 /**
  * 处理抽签确认
  */

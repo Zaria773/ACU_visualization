@@ -421,31 +421,31 @@ export const useUIStore = defineStore('acu-ui', () => {
   });
 
   /** 姓名选择弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
-  const nodeLabelOnApply = shallowRef<((indices: number[]) => void) | null>(null);
-  const nodeLabelOnReset = shallowRef<(() => void) | null>(null);
+    const nodeLabelOnApply = shallowRef<((indices: number[]) => void) | null>(null);
+    const nodeLabelOnReset = shallowRef<(() => void) | null>(null);
 
-  /** 打开姓名选择弹窗 */
-  function openNodeLabelDialog(props: NodeLabelDialogProps, callbacks: NodeLabelDialogCallbacks) {
-    nodeLabelDialog.props = { ...props };
-    nodeLabelOnApply.value = callbacks.onApply;
-    nodeLabelOnReset.value = callbacks.onReset;
-    nodeLabelDialog.visible = true;
-  }
-
-  /** 关闭姓名选择弹窗 */
-  function closeNodeLabelDialog() {
-    nodeLabelDialog.visible = false;
-    nodeLabelOnApply.value = null;
-    nodeLabelOnReset.value = null;
-  }
-
-  /** 处理姓名选择应用 */
-  function handleNodeLabelApply(indices: number[]) {
-    if (nodeLabelOnApply.value) {
-      nodeLabelOnApply.value(indices);
+    /** 打开姓名选择弹窗 */
+    function openNodeLabelDialog(props: NodeLabelDialogProps, callbacks: NodeLabelDialogCallbacks) {
+      nodeLabelDialog.props = { ...props };
+      nodeLabelOnApply.value = callbacks.onApply;
+      nodeLabelOnReset.value = callbacks.onReset;
+      nodeLabelDialog.visible = true;
     }
-    closeNodeLabelDialog();
-  }
+
+    /** 关闭姓名选择弹窗 */
+    function closeNodeLabelDialog() {
+      nodeLabelDialog.visible = false;
+      nodeLabelOnApply.value = null;
+      nodeLabelOnReset.value = null;
+    }
+
+    /** 处理姓名选择应用 */
+    function handleNodeLabelApply(data: { displayLabel: string; selectedIndices: number[] }) {
+      if (nodeLabelOnApply.value) {
+        nodeLabelOnApply.value(data.selectedIndices);
+      }
+      closeNodeLabelDialog();
+    }
 
   /** 处理姓名选择重置 */
   function handleNodeLabelReset() {
@@ -1656,6 +1656,27 @@ export const useUIStore = defineStore('acu-ui', () => {
     }
   }
 
+  // ============================================================
+  // AI 通知动画信号
+  // ============================================================
+  const aiNotifySignal = ref(0);
+  const isAiGenerating = ref(false);
+
+  /**
+   * 触发 AI 填表完成的通知动画
+   */
+  function triggerAiNotify() {
+    aiNotifySignal.value++;
+    isAiGenerating.value = false; // 完成时停止生成状态
+  }
+
+  /**
+   * 设置 AI 正在生成状态
+   */
+  function setAiGenerating(status: boolean) {
+    isAiGenerating.value = status;
+  }
+
   /**
    * 同步新表格到可见列表
    * 当 visibleTabs 非空时，检测新增的表格并自动添加到可见列表末尾
@@ -1897,5 +1918,12 @@ export const useUIStore = defineStore('acu-ui', () => {
     openDivinationSettingsDialog: () => {
       openSettingsDialog('divination');
     },
+
+    // AI 通知信号
+    aiNotifySignal: computed(() => aiNotifySignal.value),
+    triggerAiNotify,
+    isAiGenerating: computed(() => isAiGenerating.value),
+    setAiGenerating,
   };
 });
+
