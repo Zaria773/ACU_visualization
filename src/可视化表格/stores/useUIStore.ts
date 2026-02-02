@@ -421,31 +421,31 @@ export const useUIStore = defineStore('acu-ui', () => {
   });
 
   /** 姓名选择弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
-    const nodeLabelOnApply = shallowRef<((indices: number[]) => void) | null>(null);
-    const nodeLabelOnReset = shallowRef<(() => void) | null>(null);
+  const nodeLabelOnApply = shallowRef<((indices: number[]) => void) | null>(null);
+  const nodeLabelOnReset = shallowRef<(() => void) | null>(null);
 
-    /** 打开姓名选择弹窗 */
-    function openNodeLabelDialog(props: NodeLabelDialogProps, callbacks: NodeLabelDialogCallbacks) {
-      nodeLabelDialog.props = { ...props };
-      nodeLabelOnApply.value = callbacks.onApply;
-      nodeLabelOnReset.value = callbacks.onReset;
-      nodeLabelDialog.visible = true;
-    }
+  /** 打开姓名选择弹窗 */
+  function openNodeLabelDialog(props: NodeLabelDialogProps, callbacks: NodeLabelDialogCallbacks) {
+    nodeLabelDialog.props = { ...props };
+    nodeLabelOnApply.value = callbacks.onApply;
+    nodeLabelOnReset.value = callbacks.onReset;
+    nodeLabelDialog.visible = true;
+  }
 
-    /** 关闭姓名选择弹窗 */
-    function closeNodeLabelDialog() {
-      nodeLabelDialog.visible = false;
-      nodeLabelOnApply.value = null;
-      nodeLabelOnReset.value = null;
-    }
+  /** 关闭姓名选择弹窗 */
+  function closeNodeLabelDialog() {
+    nodeLabelDialog.visible = false;
+    nodeLabelOnApply.value = null;
+    nodeLabelOnReset.value = null;
+  }
 
-    /** 处理姓名选择应用 */
-    function handleNodeLabelApply(data: { displayLabel: string; selectedIndices: number[] }) {
-      if (nodeLabelOnApply.value) {
-        nodeLabelOnApply.value(data.selectedIndices);
-      }
-      closeNodeLabelDialog();
+  /** 处理姓名选择应用 */
+  function handleNodeLabelApply(data: { displayLabel: string; selectedIndices: number[] }) {
+    if (nodeLabelOnApply.value) {
+      nodeLabelOnApply.value(data.selectedIndices);
     }
+    closeNodeLabelDialog();
+  }
 
   /** 处理姓名选择重置 */
   function handleNodeLabelReset() {
@@ -1926,4 +1926,3 @@ export const useUIStore = defineStore('acu-ui', () => {
     setAiGenerating,
   };
 });
-
