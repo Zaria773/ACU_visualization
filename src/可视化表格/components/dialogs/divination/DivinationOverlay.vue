@@ -9,7 +9,6 @@
         class="divination-overlay"
         :style="{
           zIndex: 2147483647,
-          paddingBottom: `${configStore.config.mobileSafeAreaBottom ?? 50}px`,
         }"
         @click="handleOverlayClick"
       >

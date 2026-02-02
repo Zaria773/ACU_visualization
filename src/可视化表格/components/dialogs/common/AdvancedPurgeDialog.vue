@@ -118,11 +118,13 @@ interface Props {
   visible: boolean;
   initialStartFloor?: number;
   initialEndFloor?: number;
+  initialSelectedTables?: string[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   initialStartFloor: undefined,
   initialEndFloor: undefined,
+  initialSelectedTables: () => [],
 });
 
 const emit = defineEmits<{
@@ -236,7 +238,13 @@ watch(
         endFloor.value = defaultRange.end;
       }
 
-      selectedTableKeys.value = [];
+      // 设置初始选中的表格
+      if (props.initialSelectedTables && props.initialSelectedTables.length > 0) {
+        selectedTableKeys.value = [...props.initialSelectedTables];
+      } else {
+        selectedTableKeys.value = [];
+      }
+
       isExecuting.value = false;
 
       // 加载可用表格列表

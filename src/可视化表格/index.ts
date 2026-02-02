@@ -229,16 +229,16 @@ $(() => {
     uiStore.openPromptEditorDialog(currentPrompt);
   });
 
-  // 监听 AI 生成开始事件，触发随机词库同步
+  // 监听酒馆原生 AI 生成开始事件，触发随机词库同步
   // 这样可以确保在 AI 生成前，最新的表格数据已同步到世界书
-  // 注意：iframe_events 可能未定义，使用字符串字面量 'js_generation_started'
-  eventOn('js_generation_started', () => {
+  // 注意：使用 'generation_started'（酒馆原生事件），而非 'js_generation_started'（酒馆助手 generate 函数事件）
+  eventOn('generation_started', () => {
     if (!vueApp) return;
 
     const divinationStore = useDivinationStore();
     // 只有在启用了世界书词库且启用了自动同步时才执行
     if (divinationStore.config.enableWordPool && divinationStore.config.autoSync) {
-      console.info('[ACU] AI 生成开始，触发随机词库同步...');
+      console.info('[ACU] 酒馆 AI 生成开始，触发随机词库同步...');
       divinationStore.syncFromACU();
     }
   });

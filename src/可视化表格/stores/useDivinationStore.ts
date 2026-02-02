@@ -447,8 +447,9 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
       categories.value = entries.map(entry => {
         const { name, bias, limit } = parseEntryName(entry.name);
+        // 只按换行符分割，保持每个单元格内容完整
         const words = entry.content
-          .split(/[,，、\n]/)
+          .split('\n')
           .map(w => w.trim())
           .filter(w => w);
 
@@ -601,10 +602,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         const existingEntry = existingEntries.find(e => e.name === fullEntryName);
 
         // 增量合并逻辑：
-        // 1. 获取现有词汇
+        // 1. 获取现有词汇（只按换行符分割，保持每个单元格内容完整）
         const existingWords = existingEntry
           ? existingEntry.content
-              .split(/[,，、\n]/)
+              .split('\n')
               .map((w: string) => w.trim())
               .filter((w: string) => w)
           : [];

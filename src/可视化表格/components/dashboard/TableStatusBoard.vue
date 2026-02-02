@@ -448,6 +448,10 @@ function handleOpenPurgeDialog() {
         selectedKeys.value.clear();
       },
     },
+    {
+      // 传递当前选中的表格
+      selectedTableKeys: Array.from(selectedKeys.value),
+    },
   );
 }
 

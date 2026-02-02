@@ -164,6 +164,7 @@
       v-model:visible="uiStore.advancedPurgeDialog.visible"
       :initial-start-floor="uiStore.advancedPurgeDialog.props.initialStartFloor"
       :initial-end-floor="uiStore.advancedPurgeDialog.props.initialEndFloor"
+      :initial-selected-tables="uiStore.advancedPurgeDialog.state.selectedTableKeys"
       @confirm="uiStore.handleAdvancedPurgeConfirm"
     />
 

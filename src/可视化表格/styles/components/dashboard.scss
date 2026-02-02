@@ -174,7 +174,31 @@
 
   i {
     font-size: 0.8em;
-    color: var(--acu-highlight);
+    color: var(--acu-title-color);
+  }
+}
+
+// 层级折叠按钮 (行级)
+.acu-dash-row-collapse-btn {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--acu-table-head) !important;
+  border: 1px solid var(--acu-border) !important;
+  color: var(--acu-text-sub) !important;
+  font-size: 10px !important;
+  padding: 0 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--acu-title-color-bg) !important;
+    border-color: var(--acu-title-color) !important;
+    color: var(--acu-title-color) !important;
   }
 }
 
@@ -297,16 +321,6 @@
     border-style: dashed;
   }
 
-  // 全局标签库的标签（新系统）- 使用实线边框和略微不同的背景
-  &.acu-dash-global-tag {
-    border-width: 1.5px;
-    font-weight: 600;
-
-    // 悬浮时添加轻微放大效果
-    &:hover {
-      transform: scale(1.05);
-    }
-  }
 }
 
 // 分类按钮 (点击弹出分类下的标签选择)
@@ -385,10 +399,6 @@
 
   &.acu-dash-widget-wide {
     grid-column: span 2;
-
-    @media (max-width: 700px) {
-      grid-column: span 1;
-    }
   }
 
   // 全局状态组件：移除内边距（紫色斜线区域），让滚动区贴合容器边缘
@@ -616,10 +626,6 @@
   gap: 8px; // 减小间距
   padding: 8px; // 减小间距
   align-content: start;
-
-  @media (max-width: 700px) {
-    grid-template-columns: 1fr;
-  }
 }
 
 // 拖拽时的占位效果

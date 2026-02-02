@@ -222,8 +222,8 @@ const visibleButtons = computed(() => {
       ? [...configStore.config.visibleButtons]
       : [...DEFAULT_VISIBLE_BUTTONS];
 
-  // 收纳Tab模式开启时，自动添加 collapseTab 按钮
-  if (configStore.config.collapseTabBar) {
+  // 收纳Tab模式开启时，根据配置决定是否添加 collapseTab 按钮
+  if (configStore.config.collapseTabBar && configStore.config.showCollapseTabButton !== false) {
     if (!visibleIds.includes('collapseTab')) {
       visibleIds.push('collapseTab');
     }
@@ -238,7 +238,7 @@ const visibleButtons = computed(() => {
       }
     }
   } else {
-    // 收纳Tab模式关闭时，移除 collapseTab 按钮（但不要从 order 中移除，以保持配置位置）
+    // 收纳Tab模式关闭或不显示按钮时，移除 collapseTab 按钮
     const collapseIndex = visibleIds.indexOf('collapseTab');
     if (collapseIndex > -1) {
       visibleIds.splice(collapseIndex, 1);
@@ -249,6 +249,7 @@ const visibleButtons = computed(() => {
     order,
     visibleIds,
     collapseTabBar: configStore.config.collapseTabBar,
+    showCollapseTabButton: configStore.config.showCollapseTabButton,
   });
 
   return order

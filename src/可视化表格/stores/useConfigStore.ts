@@ -106,6 +106,7 @@ export const DEFAULT_CONFIG: ACUConfig = {
   longPressDirectExec: false,
   clearTableOnSwipe: true,
   collapseTabBar: false,
+  showCollapseTabButton: true,
   mobileSafeAreaBottom: 50,
   autoImportInteractions: false,
 };

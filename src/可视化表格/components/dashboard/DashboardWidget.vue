@@ -41,6 +41,24 @@
       </span>
       <!-- 按钮区（包含折叠指示器） -->
       <div class="acu-dash-actions">
+        <!-- 返回按钮（层级模式，非第1层时显示） -->
+        <button
+          v-if="showBackButton"
+          class="acu-icon-btn"
+          title="返回上一层级"
+          @click.stop="goBackLevel"
+        >
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <!-- 展开/收起按钮（层级模式下显示） -->
+        <button
+          v-if="showExpandCollapseButton"
+          class="acu-icon-btn"
+          :title="isFullyExpanded ? '收起到第一层' : '展开全部层级'"
+          @click.stop="toggleExpandCollapse"
+        >
+          <i :class="['fas', isFullyExpanded ? 'fa-compress-alt' : 'fa-expand-alt']"></i>
+        </button>
         <!-- 设置按钮常驻 (updateStatus 类型不显示) -->
         <button
           v-if="config.type !== 'updateStatus'"
@@ -128,7 +146,7 @@
                   <span
                     v-for="newTag in displayedInteractiveTags"
                     :key="newTag.id"
-                    class="acu-dash-interactive-tag acu-dash-global-tag"
+                    class="acu-dash-category-btn"
                     :title="getNewTagTooltip(newTag)"
                     @click.stop="
                       handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -188,7 +206,7 @@
               <span
                 v-for="newTag in displayedInteractiveTags"
                 :key="newTag.id"
-                class="acu-dash-interactive-tag acu-dash-global-tag"
+                class="acu-dash-category-btn"
                 :title="getNewTagTooltip(newTag)"
                 @click.stop="
                   handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -233,6 +251,15 @@
               >
                 <i class="fas fa-circle" style="font-size: 6px"></i>
                 <span class="acu-dash-list-text">{{ getDisplayValue(row) }}</span>
+                <!-- 层级折叠按钮（有子层级时显示） -->
+                <button
+                  v-if="isHierarchyMode && rowHasChildren(row)"
+                  class="acu-icon-btn acu-dash-row-collapse-btn"
+                  :title="isRowExpanded(row) ? '收起子层级' : '展开子层级'"
+                  @click.stop="toggleRowCollapse(row)"
+                >
+                  <i :class="['fas', isRowExpanded(row) ? 'fa-chevron-down' : 'fa-chevron-right']"></i>
+                </button>
                 <!-- 展示标签 -->
                 <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
                   {{ tag.value }}
@@ -252,7 +279,7 @@
                 <span
                   v-for="newTag in displayedInteractiveTags"
                   :key="newTag.id"
-                  class="acu-dash-interactive-tag acu-dash-global-tag"
+                  class="acu-dash-category-btn"
                   :title="getNewTagTooltip(newTag)"
                   @click.stop="
                     handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -264,7 +291,7 @@
                 <span
                   v-for="category in displayedCategories"
                   :key="category.id"
-                  class="acu-dash-interactive-tag acu-dash-global-tag"
+                  class="acu-dash-category-btn"
                   :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
                   @click.stop="
                     handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -293,6 +320,15 @@
             >
               <i class="fas fa-circle" style="font-size: 6px"></i>
               <span class="acu-dash-list-text">{{ getDisplayValue(row) }}</span>
+              <!-- 层级折叠按钮（有子层级时显示） -->
+              <button
+                v-if="isHierarchyMode && rowHasChildren(row)"
+                class="acu-icon-btn acu-dash-row-collapse-btn"
+                :title="isRowExpanded(row) ? '收起子层级' : '展开子层级'"
+                @click.stop="toggleRowCollapse(row)"
+              >
+                <i :class="['fas', isRowExpanded(row) ? 'fa-chevron-down' : 'fa-chevron-right']"></i>
+              </button>
               <!-- 展示标签 -->
               <span v-for="tag in getDisplayTags(row)" :key="tag.column" class="acu-dash-display-tag">
                 {{ tag.value }}
@@ -312,7 +348,7 @@
               <span
                 v-for="newTag in displayedInteractiveTags"
                 :key="newTag.id"
-                class="acu-dash-interactive-tag acu-dash-global-tag"
+                class="acu-dash-category-btn"
                 :title="getNewTagTooltip(newTag)"
                 @click.stop="
                   handleNewInteractiveTagClick(newTag, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -324,7 +360,7 @@
               <span
                 v-for="category in displayedCategories"
                 :key="category.id"
-                class="acu-dash-interactive-tag acu-dash-global-tag"
+                class="acu-dash-category-btn"
                 :title="`点击选择 ${getCategoryDisplayName(category)} 下的标签`"
                 @click.stop="
                   handleCategoryClick(category, { title: getDisplayValue(row), value: getDisplayValue(row) })
@@ -408,6 +444,12 @@ const isCollapsed = ref(false);
 /** 记录进入编辑模式前的折叠状态 */
 let previousCollapsedState = false;
 
+/** 当前显示的最大层级（Infinity 表示全部展开） */
+const currentMaxLevel = ref(Infinity);
+
+/** 已折叠的行路径集合（用于行级别的展开/收起） */
+const collapsedPaths = ref<Set<string>>(new Set());
+
 // 监听编辑模式变化：进入时自动收起，退出时恢复
 watch(
   () => props.isEditing,
@@ -477,6 +519,180 @@ const displayIcon = computed(() => {
 });
 
 // ============================================================
+// 层级显示相关
+// ============================================================
+
+/** 检测层级列名（包含"层级"的列） */
+const hierarchyColumn = computed(() => {
+  if (!props.tableData) return null;
+  return props.tableData.headers.find(h => h.includes('层级')) ?? null;
+});
+
+/** 是否启用层级模式 */
+const isHierarchyMode = computed(() => !!hierarchyColumn.value);
+
+/**
+ * 获取行的完整路径（支持两种格式）
+ * 格式 A：层级列值包含完整路径（如 香港/渣甸山/蒋家别墅）
+ * 格式 B：层级列值只填上层级（如 香港/渣甸山），名称在另一列
+ * 第一层级：层级列为空，完整路径就是名称本身
+ */
+function getRowFullPath(row: TableRow): string {
+  const displayValue = getDisplayValue(row);
+
+  if (!hierarchyColumn.value) return displayValue;
+
+  const cell = row.cells.find(c => c.key === hierarchyColumn.value);
+  const hierarchyValue = cell?.value ? String(cell.value).trim() : '';
+
+  // 第一层级：层级列为空
+  if (!hierarchyValue) {
+    return displayValue;
+  }
+
+  // 判断是哪种格式：检查层级值的最后一部分是否等于显示名称
+  const lastPart = hierarchyValue.split('/').pop() ?? '';
+
+  if (lastPart === displayValue) {
+    // 格式 A：完整路径已包含名称
+    return hierarchyValue;
+  } else {
+    // 格式 B：需要补全名称
+    return hierarchyValue + '/' + displayValue;
+  }
+}
+
+/**
+ * 获取行的父路径（用于判断父子关系）
+ */
+function getRowParentPath(row: TableRow): string {
+  const fullPath = getRowFullPath(row);
+  const lastSlash = fullPath.lastIndexOf('/');
+  return lastSlash > 0 ? fullPath.substring(0, lastSlash) : '';
+}
+
+/** 解析行的层级深度（根据完整路径的 / 分隔符数量） */
+function getRowLevel(row: TableRow): number {
+  const fullPath = getRowFullPath(row);
+  if (!fullPath) return 1;
+  // 计算 / 的数量 + 1 = 层级深度
+  return (fullPath.match(/\//g) || []).length + 1;
+}
+
+/** 检查行是否有子层级 */
+function rowHasChildren(row: TableRow): boolean {
+  if (!props.tableData || !isHierarchyMode.value) return false;
+  const rowPath = getRowFullPath(row);
+  // 检查是否有其他行的路径以当前行路径开头
+  return props.tableData.rows.some(otherRow => {
+    if (otherRow.key === row.key) return false;
+    const otherPath = getRowFullPath(otherRow);
+    return otherPath.startsWith(rowPath + '/');
+  });
+}
+
+/** 检查行是否被折叠（通过父路径判断） */
+function isRowCollapsed(row: TableRow): boolean {
+  const parentPath = getRowParentPath(row);
+  if (!parentPath) return false;
+
+  // 检查所有祖先路径是否有被折叠的
+  const pathParts = parentPath.split('/');
+  let currentPath = '';
+  for (const part of pathParts) {
+    currentPath = currentPath ? currentPath + '/' + part : part;
+    if (collapsedPaths.value.has(currentPath)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** 切换行的折叠状态 */
+function toggleRowCollapse(row: TableRow): void {
+  const rowPath = getRowFullPath(row);
+  if (collapsedPaths.value.has(rowPath)) {
+    collapsedPaths.value.delete(rowPath);
+  } else {
+    collapsedPaths.value.add(rowPath);
+  }
+  // 触发响应式更新
+  collapsedPaths.value = new Set(collapsedPaths.value);
+}
+
+/** 检查行是否处于折叠状态（用于显示图标） */
+function isRowExpanded(row: TableRow): boolean {
+  const rowPath = getRowFullPath(row);
+  return !collapsedPaths.value.has(rowPath);
+}
+
+/** 计算数据中的最大层级深度 */
+const maxLevelInData = computed(() => {
+  if (!isHierarchyMode.value || !props.tableData) return 1;
+  let maxLevel = 1;
+  for (const row of props.tableData.rows) {
+    const level = getRowLevel(row);
+    if (level > maxLevel) maxLevel = level;
+  }
+  return maxLevel;
+});
+
+/** 是否处于全展开状态 */
+const isFullyExpanded = computed(() => {
+  return currentMaxLevel.value >= maxLevelInData.value;
+});
+
+/** 返回上一层级 */
+function goBackLevel(): void {
+  if (currentMaxLevel.value > 1) {
+    // 如果是 Infinity 或超出实际层级，先设为实际最大层级 - 1
+    if (currentMaxLevel.value === Infinity || currentMaxLevel.value > maxLevelInData.value) {
+      currentMaxLevel.value = maxLevelInData.value - 1;
+    } else {
+      currentMaxLevel.value--;
+    }
+  }
+}
+
+/** 切换展开/收起状态 */
+function toggleExpandCollapse(): void {
+  if (isFullyExpanded.value) {
+    // 全展开 → 收起到第 1 层
+    currentMaxLevel.value = 1;
+    // 同时折叠所有行
+    if (props.tableData) {
+      const newCollapsed = new Set<string>();
+      for (const row of props.tableData.rows) {
+        if (rowHasChildren(row)) {
+          newCollapsed.add(getRowFullPath(row));
+        }
+      }
+      collapsedPaths.value = newCollapsed;
+    }
+  } else {
+    // 非全展开 → 展开到全部
+    currentMaxLevel.value = Infinity;
+    // 同时展开所有行
+    collapsedPaths.value = new Set();
+  }
+}
+
+/** 是否可以返回（当前不是只显示第 1 层） */
+const canGoBack = computed(() => {
+  return currentMaxLevel.value > 1;
+});
+
+/** 是否显示返回按钮（层级模式 && 当前不是只显示第 1 层） */
+const showBackButton = computed(() => {
+  return isHierarchyMode.value && canGoBack.value;
+});
+
+/** 是否显示展开/收起按钮（层级模式 && 有多于 1 层） */
+const showExpandCollapseButton = computed(() => {
+  return isHierarchyMode.value && maxLevelInData.value > 1;
+});
+
+// ============================================================
 // AI 高亮相关
 // ============================================================
 
@@ -524,6 +740,7 @@ function isRowMatchSearch(row: TableRow): boolean {
 /**
  * 显示的行数据（过滤+排序）
  * - 搜索模式: 过滤不匹配的行
+ * - 层级模式: 过滤超过当前最大层级的行 + 被父行折叠的行
  * - 非搜索模式: AI 更新的行排前面
  */
 const displayRows = computed(() => {
@@ -534,6 +751,16 @@ const displayRows = computed(() => {
   // 搜索模式：过滤不匹配的行
   if (props.searchTerm) {
     rows = rows.filter(row => isRowMatchSearch(row));
+  }
+
+  // 层级模式：过滤超过当前最大层级的行
+  if (isHierarchyMode.value && currentMaxLevel.value !== Infinity) {
+    rows = rows.filter(row => getRowLevel(row) <= currentMaxLevel.value);
+  }
+
+  // 层级模式：过滤被父行折叠的行
+  if (isHierarchyMode.value && collapsedPaths.value.size > 0) {
+    rows = rows.filter(row => !isRowCollapsed(row));
   }
 
   // 排序：AI 更新的排前面

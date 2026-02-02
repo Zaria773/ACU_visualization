@@ -519,11 +519,17 @@ export const useUIStore = defineStore('acu-ui', () => {
   const advancedPurgeDialog = reactive<{
     visible: boolean;
     props: AdvancedPurgeDialogProps;
+    state: {
+      selectedTableKeys: string[];
+    };
   }>({
     visible: false,
     props: {
       initialStartFloor: undefined,
       initialEndFloor: undefined,
+    },
+    state: {
+      selectedTableKeys: [],
     },
   });
 
@@ -1415,9 +1421,17 @@ export const useUIStore = defineStore('acu-ui', () => {
    * 打开高级清除弹窗
    * @param props 弹窗参数
    * @param callbacks 回调函数
+   * @param initialState 初始状态（可选）
    */
-  function openAdvancedPurgeDialog(props: AdvancedPurgeDialogProps, callbacks: AdvancedPurgeDialogCallbacks): void {
+  function openAdvancedPurgeDialog(
+    props: AdvancedPurgeDialogProps,
+    callbacks: AdvancedPurgeDialogCallbacks,
+    initialState?: { selectedTableKeys: string[] },
+  ): void {
     advancedPurgeDialog.props = { ...props };
+    if (initialState) {
+      advancedPurgeDialog.state.selectedTableKeys = [...initialState.selectedTableKeys];
+    }
     advancedPurgeOnConfirm.value = callbacks.onConfirm;
     advancedPurgeDialog.visible = true;
   }

@@ -235,6 +235,21 @@
                   </div>
                 </div>
 
+                <!-- 显示收纳Tab按钮 (仅在收纳Tab栏开启时显示) -->
+                <div v-if="localConfig.collapseTabBar" class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    显示收纳Tab按钮
+                    <span class="hint">在导航栏显示打开Tab浮窗的按钮</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.showCollapseTabButton !== false }"
+                      @click="localConfig.showCollapseTabButton = localConfig.showCollapseTabButton === false"
+                    ></button>
+                  </div>
+                </div>
+
                 <!-- 移动端底部安全区（仅移动端显示） -->
                 <div v-if="uiStore.isMobile" class="acu-settings-row">
                   <div class="acu-settings-label">
@@ -317,7 +332,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.7 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.8 ——</div>
       </div>
     </div>
   </Transition>
