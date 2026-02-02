@@ -484,7 +484,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       icon: specialConfig.icon || 'fa-cog',
       displayColumns: [],
       maxRows: 10,
-      actions: specialConfig.actions || [],  // 使用 specialConfig 中定义的 actions
+      actions: specialConfig.actions || [], // 使用 specialConfig 中定义的 actions
       order: config.value.widgets.length,
       enabled: true,
       colSpan: specialConfig.colSpan || 2,
