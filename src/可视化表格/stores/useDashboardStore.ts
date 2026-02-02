@@ -67,15 +67,24 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   async function loadConfig(): Promise<void> {
     try {
       const vars = getVariables({ type: 'global' });
+
+      // 标记是否成功加载了已有配置
+      let loadedExistingConfig = false;
+
       if (vars && vars.acu_dashboard_config) {
         config.value = {
           ...DEFAULT_DASHBOARD_CONFIG,
           ...vars.acu_dashboard_config,
         };
+        loadedExistingConfig = true;
+        console.log('[ACU Dashboard] 成功加载已有配置，widgets 数量:', config.value.widgets.length);
+      } else {
+        console.log('[ACU Dashboard] 未找到已有配置，使用默认配置');
       }
 
-      // 无论是否为空，都尝试确保默认组件存在（处理数据延迟加载）
-      await ensureDefaultWidgets();
+      // 只有在成功加载了配置，或者确认是首次使用时，才补充默认组件
+      // 这样可以避免热重载时因 API 未准备好而误覆盖用户配置
+      await ensureDefaultWidgets(loadedExistingConfig);
 
       // 临时迁移：将 NPC/人物/角色 类表格强制转换为 list 样式 (普通表格)
       // 修复旧配置中这些表格仍显示为 grid 的问题
@@ -144,8 +153,10 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
    * 确保默认组件存在 (幂等操作)
    * 可以在数据加载后重复调用，补充缺失的组件
    * 添加顺序：表格更新状态 → 随机词表（如检测到）→ 人物/NPC表 → 任务表 → 物品表
+   *
+   * @param allowSave 是否允许保存（防止热重载时误覆盖）
    */
-  async function ensureDefaultWidgets(): Promise<void> {
+  async function ensureDefaultWidgets(allowSave = true): Promise<void> {
     let hasChanges = false;
 
     // 1. 检查并添加"表格更新状态"特殊组件
@@ -167,14 +178,14 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     // 3. 获取当前数据库的所有表格
     const rawData = getTableData();
     if (!rawData) {
-      // 如果没有数据，且有变更，则保存
-      if (hasChanges) saveConfig();
+      // 如果没有数据，且有变更且允许保存，则保存
+      if (hasChanges && allowSave) saveConfig();
       return;
     }
 
     const tables = processJsonData(rawData);
     if (!tables) {
-      if (hasChanges) saveConfig();
+      if (hasChanges && allowSave) saveConfig();
       return;
     }
 
@@ -204,9 +215,11 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       }
     }
 
-    if (hasChanges) {
+    if (hasChanges && allowSave) {
       saveConfig();
       console.log('[ACU Dashboard] 默认组件已更新');
+    } else if (hasChanges && !allowSave) {
+      console.log('[ACU Dashboard] 检测到需要更新默认组件，但因配置来源不确定而跳过保存');
     }
   }
 
@@ -471,7 +484,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       icon: specialConfig.icon || 'fa-cog',
       displayColumns: [],
       maxRows: 10,
-      actions: [],
+      actions: specialConfig.actions || [],  // 使用 specialConfig 中定义的 actions
       order: config.value.widgets.length,
       enabled: true,
       colSpan: specialConfig.colSpan || 2,
