@@ -63,7 +63,7 @@
         <div v-if="expandedId === category.id" style="padding: 0 16px 16px">
           <textarea
             v-model="editingContent[category.id]"
-            class="acu-edit-textarea"
+            class="acu-textarea-scrollable"
             rows="5"
             placeholder="输入词条，用逗号或换行分隔"
             @input="handleContentChange(category.id)"
@@ -188,23 +188,6 @@ const handleContentChange = (id: number | string) => {
   border: 1px solid var(--acu-border);
   background: var(--acu-input-bg);
   color: var(--acu-text-main);
-  font-size: 13px;
-
-  &:focus {
-    border-color: var(--acu-title-color);
-    outline: none;
-  }
-}
-
-.acu-edit-textarea {
-  width: 100%;
-  padding: 8px;
-  border-radius: var(--acu-radius-md);
-  border: 1px solid var(--acu-border);
-  background: var(--acu-input-bg);
-  color: var(--acu-text-main);
-  resize: vertical;
-  font-family: inherit;
   font-size: 13px;
 
   &:focus {

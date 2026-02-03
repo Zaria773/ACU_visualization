@@ -10,6 +10,9 @@
  * 随 App.vue 组件生命周期自动管理，解决切换 Tab 后失效的问题
  */
 
+import { polyfill } from 'mobile-drag-drop';
+import 'mobile-drag-drop/default.css';
+import { scrollBehaviourDragImageTranslateOverride } from 'mobile-drag-drop/scroll-behaviour';
 import { createPinia } from 'pinia';
 import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
@@ -17,6 +20,15 @@ import { cleanupSendIntercept, setupSendIntercept } from './composables/useHidde
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
+
+// 初始化移动端拖拽 polyfill
+// 解决移动端不支持 HTML5 拖拽 API 的问题
+polyfill({
+  // 长按 300ms 后开始拖拽（可调整）
+  holdToDrag: 300,
+  // 解决拖拽时页面滚动问题
+  dragImageTranslateOverride: scrollBehaviourDragImageTranslateOverride,
+});
 
 // jQuery 兼容层 - 脚本项目中 jQuery 作用于父窗口
 (window as any).$ = (window.parent as any).$;

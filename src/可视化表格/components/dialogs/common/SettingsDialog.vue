@@ -332,7 +332,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 8.1.9 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer 8.2.0 ——</div>
       </div>
     </div>
   </Transition>

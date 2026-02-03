@@ -67,14 +67,6 @@
       >
         <i class="fas fa-circle-notch"></i>
       </button>
-      <button
-        class="acu-graph-btn"
-        :class="{ active: layoutMode === 'dagre' }"
-        title="层级布局"
-        @click="setLayout('dagre')"
-      >
-        <i class="fas fa-sitemap"></i>
-      </button>
       <span class="acu-toolbar-divider"></span>
       <button class="acu-graph-btn" title="重置布局" @click="clearSavedPositions">
         <i class="fas fa-undo"></i>
@@ -103,12 +95,13 @@
  * RelationshipGraph.vue - 人际关系图组件
  *
  * 使用 Cytoscape.js 渲染节点和边，支持：
- * - 三种布局模式（力导向、环形、层级）
+ * - 三种布局模式（力导向、环形）
  * - 节点拖拽
  * - 缩放和平移
  * - 边的颜色根据关系词自动判断
  */
 
+// @ts-nocheck
 import { useDebounceFn } from '@vueuse/core';
 import type { Core, LayoutOptions } from 'cytoscape';
 import cytoscape from 'cytoscape';
@@ -183,7 +176,7 @@ interface Props {
   /** 是否显示图例 */
   showLegend?: boolean;
   /** 初始布局模式 */
-  initialLayout?: 'fcose' | 'cola' | 'circle' | 'dagre';
+  initialLayout?: 'fcose' | 'cola' | 'circle';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -219,7 +212,7 @@ const focusedNodeId = ref<string | null>(null);
 const hiddenInColaBeforeSearch = ref<Set<string>>(new Set());
 
 /** 布局类型 */
-type LayoutType = 'fcose' | 'cola' | 'circle' | 'dagre';
+type LayoutType = 'fcose' | 'cola' | 'circle';
 
 /** 获取初始布局模式 - 优先使用保存的布局，否则使用 props.initialLayout */
 function getInitialLayoutMode(): LayoutType {
@@ -576,16 +569,6 @@ function getLayoutConfig(mode: LayoutType): LayoutOptions {
         fit: true,
         padding: 30,
       } as LayoutOptions;
-    case 'dagre':
-      // dagre 需要额外插件，这里用 breadthfirst 替代
-      return {
-        name: 'breadthfirst',
-        directed: true,
-        padding: 30,
-        spacingFactor: 1.5,
-        animate: true,
-        animationDuration: 300,
-      };
     case 'fcose':
     default:
       // fcose: 边交叉优化好的力导向布局（自由模式使用）

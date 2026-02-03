@@ -20,6 +20,20 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
   showStats: true,
 };
 
+/** localStorage 备份键名 */
+const STORAGE_KEY_DASHBOARD = 'acu_dashboard_config_backup';
+
+/** 重试配置 */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 500, // ms
+};
+
+/** 延迟函数 */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /** 生成唯一 ID */
 function generateId(): string {
   return `widget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -60,26 +74,118 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   // ============================================================
 
   /**
+   * 从 localStorage 加载备份配置
+   */
+  function loadFromLocalStorage(): DashboardConfig | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_DASHBOARD);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.widgets)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('[ACU Dashboard] localStorage 备份解析失败:', e);
+    }
+    return null;
+  }
+
+  /**
+   * 保存配置到 localStorage 备份
+   */
+  function saveToLocalStorage(): void {
+    try {
+      localStorage.setItem(STORAGE_KEY_DASHBOARD, JSON.stringify(config.value));
+    } catch (e) {
+      console.warn('[ACU Dashboard] localStorage 备份保存失败:', e);
+    }
+  }
+
+  /**
+   * 尝试从酒馆全局变量加载配置（带重试）
+   * @returns 配置对象或 null
+   */
+  async function tryLoadFromGlobalWithRetry(): Promise<DashboardConfig | null> {
+    for (let attempt = 1; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      try {
+        const vars = getVariables({ type: 'global' });
+        if (vars && vars.acu_dashboard_config && Array.isArray(vars.acu_dashboard_config.widgets)) {
+          console.log(`[ACU Dashboard] 第 ${attempt} 次尝试成功从酒馆变量加载配置`);
+          return vars.acu_dashboard_config;
+        }
+
+        // API 返回了但没有配置，可能是首次使用，不需要重试
+        if (vars !== null && vars !== undefined) {
+          console.log(`[ACU Dashboard] 第 ${attempt} 次尝试：API 可用但无配置`);
+          return null;
+        }
+      } catch (e) {
+        console.warn(`[ACU Dashboard] 第 ${attempt} 次尝试失败:`, e);
+      }
+
+      // 如果不是最后一次尝试，等待后重试
+      if (attempt < RETRY_CONFIG.maxRetries) {
+        console.log(`[ACU Dashboard] 等待 ${RETRY_CONFIG.retryDelay}ms 后重试...`);
+        await delay(RETRY_CONFIG.retryDelay);
+      }
+    }
+
+    console.warn(`[ACU Dashboard] ${RETRY_CONFIG.maxRetries} 次尝试后仍无法从酒馆变量加载`);
+    return null;
+  }
+
+  /**
    * 从酒馆全局变量加载配置
    * 全局变量跨聊天/角色卡共享
    * 如果配置为空，自动添加默认组件
+   *
+   * 加载优先级：
+   * 1. 酒馆全局变量（主存储，跨设备共享）- 带重试机制
+   * 2. localStorage 备份（热重载时快速恢复）
+   * 3. 默认配置（首次使用）
    */
   async function loadConfig(): Promise<void> {
     try {
-      const vars = getVariables({ type: 'global' });
-
       // 标记是否成功加载了已有配置
       let loadedExistingConfig = false;
+      let loadedFromGlobal = false;
 
-      if (vars && vars.acu_dashboard_config) {
+      // 1. 首先尝试从酒馆全局变量加载（带重试）
+      const globalConfig = await tryLoadFromGlobalWithRetry();
+
+      if (globalConfig) {
+        // 主存储：酒馆全局变量
         config.value = {
           ...DEFAULT_DASHBOARD_CONFIG,
-          ...vars.acu_dashboard_config,
+          ...globalConfig,
         };
         loadedExistingConfig = true;
-        console.log('[ACU Dashboard] 成功加载已有配置，widgets 数量:', config.value.widgets.length);
+        loadedFromGlobal = true;
+        console.log('[ACU Dashboard] 成功从酒馆变量加载配置，widgets 数量:', config.value.widgets.length);
+
+        // 同步更新 localStorage 备份
+        saveToLocalStorage();
       } else {
-        console.log('[ACU Dashboard] 未找到已有配置，使用默认配置');
+        // 2. 备份存储：localStorage
+        const backup = loadFromLocalStorage();
+        if (backup) {
+          config.value = {
+            ...DEFAULT_DASHBOARD_CONFIG,
+            ...backup,
+          };
+          loadedExistingConfig = true;
+          console.log('[ACU Dashboard] 从 localStorage 备份恢复配置，widgets 数量:', config.value.widgets.length);
+
+          // 尝试同步到酒馆变量（如果 API 可用）
+          try {
+            saveConfig();
+          } catch (e) {
+            console.warn('[ACU Dashboard] 同步到酒馆变量失败（非阻塞）:', e);
+          }
+        } else {
+          console.log('[ACU Dashboard] 未找到任何已有配置，使用默认配置');
+        }
       }
 
       // 只有在成功加载了配置，或者确认是首次使用时，才补充默认组件
@@ -224,10 +330,15 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   }
 
   /**
-   * 保存配置到酒馆全局变量
+   * 保存配置到酒馆全局变量和 localStorage 备份
    * 全局变量跨聊天/角色卡共享
+   * localStorage 作为热重载时的快速恢复备份
    */
   async function saveConfig(): Promise<void> {
+    // 始终保存到 localStorage 备份（快速、可靠）
+    saveToLocalStorage();
+
+    // 尝试保存到酒馆全局变量（主存储）
     try {
       const currentVars = getVariables({ type: 'global' }) || {};
       replaceVariables(
@@ -237,9 +348,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         },
         { type: 'global' },
       );
-      console.log('[ACU Dashboard] 配置保存成功 (全局变量)');
+      console.log('[ACU Dashboard] 配置保存成功 (全局变量 + localStorage)');
     } catch (error) {
-      console.error('[ACU Dashboard] 保存配置失败:', error);
+      console.warn('[ACU Dashboard] 保存到酒馆变量失败，但 localStorage 备份已保存:', error);
     }
   }
 

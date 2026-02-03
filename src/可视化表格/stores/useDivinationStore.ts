@@ -533,10 +533,15 @@ export const useDivinationStore = defineStore('acu-divination', () => {
           const headerStr = String(header).trim();
           if (!headerStr) return;
 
-          // 解析列名作为条目名
-          // 假设列名格式: "物品|正|1" 或 "天气"
+          // 检测是否是默认列名（如"列1"、"列2"、"Column1"等）
+          // 如果是默认列名，则使用表名作为分类名
+          const isDefaultColumnName = /^(列\d+|Column\s*\d+|Col\s*\d+|[A-Z])$/i.test(headerStr);
+          const categoryName = isDefaultColumnName ? tableName : headerStr;
+
+          // 解析分类名作为条目名
+          // 假设格式: "物品|正|1" 或 "天气"
           // 这里我们通过关键词智能打标 Bias
-          let { name, bias, limit } = parseEntryName(headerStr);
+          let { name, bias, limit } = parseEntryName(categoryName);
 
           // 智能打标 (如果列名没有显式指定 Bias)
           if (headerStr.indexOf('|') === -1) {

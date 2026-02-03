@@ -208,29 +208,53 @@ export function getWordPoolTableData(tableName: string): TableRow[] {
 }
 
 /**
+ * 获取指定词库表的原始内容（二维数组）
+ * 解决同名列被覆盖的问题
+ *
+ * @param tableName - 表名
+ * @returns 原始二维数组
+ */
+export function getWordPoolTableContent(tableName: string): string[][] {
+  const api = getCore().getDB();
+  const tableData = api?.exportTableAsJson ? api.exportTableAsJson() : null;
+
+  if (!tableData) {
+    return [];
+  }
+
+  const sheetKey = `sheet_${tableName}`;
+  const data = tableData[sheetKey];
+
+  if (Array.isArray(data)) {
+    return data as string[][];
+  } else if (data && typeof data === 'object' && Array.isArray((data as any).content)) {
+    return (data as any).content as string[][];
+  }
+
+  return [];
+}
+
+/**
  * 解析词库表数据（按表分组，单元格不拆分）
  *
  * @param tableId - 表ID（不含 sheet_ 前缀）
- * @param tableData - 表格数据行数组
+ * @param tableData - 表格原始数据（二维数组）
  * @returns 词库分组
- *
- * @example
- * ```typescript
- * const pool = parseWordPoolByTable('随机事件', tableData);
- * // { tableId: '随机事件', tableName: '随机事件表', words: ['苹果', '香蕉', '橙子'] }
- * ```
  */
-export function parseWordPoolByTable(tableId: string, tableData: TableRow[]): WordPool {
+export function parseWordPoolByTable(tableId: string, tableData: string[][]): WordPool {
   const words: string[] = [];
 
-  // 取最新一行（每表只有一行）
-  const row = tableData[tableData.length - 1];
-  if (row) {
-    for (const cellValue of Object.values(row)) {
-      if (cellValue && typeof cellValue === 'string') {
-        const trimmed = cellValue.trim();
-        if (trimmed) {
-          words.push(trimmed);
+  // 确保有数据（忽略第一行表头，所以需要 > 1）
+  if (tableData.length > 1) {
+    // 取最新一行（最后一行）
+    const row = tableData[tableData.length - 1];
+    if (Array.isArray(row)) {
+      for (const cellValue of row) {
+        if (cellValue && typeof cellValue === 'string') {
+          const trimmed = cellValue.trim();
+          if (trimmed) {
+            words.push(trimmed);
+          }
         }
       }
     }
@@ -505,18 +529,21 @@ export function drawFromLatestRowWithConfig(
     const cfg = tableConfig[tableId];
     if (cfg && !cfg.enabled) continue;
 
-    const rows = getWordPoolTableData(tableId);
-    if (rows.length === 0) continue;
+    const rows = getWordPoolTableContent(tableId);
+    // 忽略只有表头或空的表
+    if (rows.length <= 1) continue;
 
     // 取最后一行（最新生成的 / 每表唯一行）
     const latestRow = rows[rows.length - 1];
     const words: string[] = [];
 
     // 每个单元格是一个词（不再按逗号拆分）
-    for (const cellValue of Object.values(latestRow)) {
-      if (cellValue && typeof cellValue === 'string') {
-        const trimmed = cellValue.trim();
-        if (trimmed) words.push(trimmed);
+    if (Array.isArray(latestRow)) {
+      for (const cellValue of latestRow) {
+        if (cellValue && typeof cellValue === 'string') {
+          const trimmed = cellValue.trim();
+          if (trimmed) words.push(trimmed);
+        }
       }
     }
 
@@ -676,7 +703,7 @@ export function useWordPool(options: UseWordPoolOptions = {}): UseWordPoolReturn
 
   // 加载指定表（V2：按表分组）
   function loadTable(tableId: string): void {
-    const data = getWordPoolTableData(tableId);
+    const data = getWordPoolTableContent(tableId);
     const parsed = parseWordPoolByTable(tableId, data);
 
     // 检查是否已存在同 ID 的表
@@ -697,7 +724,7 @@ export function useWordPool(options: UseWordPoolOptions = {}): UseWordPoolReturn
     try {
       const tableIds = detect();
       for (const tableId of tableIds) {
-        const data = getWordPoolTableData(tableId);
+        const data = getWordPoolTableContent(tableId);
         const parsed = parseWordPoolByTable(tableId, data);
         pools.value.push(parsed);
       }

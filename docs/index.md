@@ -2,16 +2,16 @@
 layout: home
 
 hero:
-  name: ACU 可视化表格
-  text: 黑科技通用表格前端
-  tagline: 让角色卡数据管理变得简单直观
+  name: 悬浮表格
+  text: 黑科技数据库通用表格前端
+  tagline: 让表格数据管理变得简单直观~自定义程度高~
   actions:
     - theme: brand
       text: 快速开始
       link: /guide/quick-start
     - theme: alt
       text: 功能教程
-      link: /tutorial/data-table
+      link: /tutorial/dashboard
 
 features:
   - icon: 📊

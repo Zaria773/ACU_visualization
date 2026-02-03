@@ -149,7 +149,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { detectWordPoolTables, getTableDisplayName, getWordPoolTableData } from '../../composables/useWordPool';
+import {
+  detectWordPoolTables,
+  getTableDisplayName,
+  getWordPoolTableContent,
+} from '../../composables/useWordPool';
 import { useDataStore } from '../../stores/useDataStore';
 import { useDivinationStore } from '../../stores/useDivinationStore';
 import { useUIStore } from '../../stores/useUIStore';
@@ -289,19 +293,22 @@ function loadTableData(): void {
   const result: TableData[] = [];
 
   for (const tableId of detectedTables) {
-    const rows = getWordPoolTableData(tableId);
-    if (rows.length === 0) continue;
+    const rows = getWordPoolTableContent(tableId);
+    // 忽略只有表头或空的表
+    if (rows.length <= 1) continue;
 
     // 取最后一行（最新生成的数据 / 每表唯一行）
     const latestRow = rows[rows.length - 1];
     const words: string[] = [];
 
     // V2: 每个单元格是一个完整的词（不再按逗号拆分）
-    for (const cellValue of Object.values(latestRow)) {
-      if (cellValue && typeof cellValue === 'string') {
-        const trimmed = cellValue.trim();
-        if (trimmed) {
-          words.push(trimmed);
+    if (Array.isArray(latestRow)) {
+      for (const cellValue of latestRow) {
+        if (cellValue && typeof cellValue === 'string') {
+          const trimmed = cellValue.trim();
+          if (trimmed) {
+            words.push(trimmed);
+          }
         }
       }
     }
