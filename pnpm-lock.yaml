@@ -1,9 +1,5 @@
 lockfileVersion: '9.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 importers:
 
   .:
@@ -254,14 +250,10 @@ importers:
         version: 20.3.0(@vueuse/core@13.9.0(vue@3.5.27(typescript@6.0.0-dev.20250807)))
       unplugin-vue-components:
         specifier: ^29.2.0
-<<<<<<< HEAD
-        version: 29.2.0(@babel/parser@7.28.6)(vue@3.5.27(typescript@6.0.0-dev.20250807))
+        version: 29.2.0(@babel/parser@7.29.0)(vue@3.5.27(typescript@6.0.0-dev.20250807))
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.47.0)(@types/node@25.1.0)(@types/react@19.2.10)(axios@1.13.4)(lightningcss@1.30.2)(postcss@8.5.6)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)(search-insights@2.17.3)(terser@5.46.0)(typescript@6.0.0-dev.20250807)
-=======
-        version: 29.2.0(@babel/parser@7.29.0)(vue@3.5.27(typescript@6.0.0-dev.20250807))
->>>>>>> 657d325b384170d58b72e3fe3cc38173e31a414a
       vue-eslint-parser:
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.39.2(jiti@2.6.1))
@@ -3738,7 +3730,6 @@ packages:
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
     deprecated: |-
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
-
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
   quansync@0.2.11:
