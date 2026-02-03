@@ -149,11 +149,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import {
-  detectWordPoolTables,
-  getTableDisplayName,
-  getWordPoolTableContent,
-} from '../../composables/useWordPool';
+import { detectWordPoolTables, getTableDisplayName, getWordPoolTableContent } from '../../composables/useWordPool';
 import { useDataStore } from '../../stores/useDataStore';
 import { useDivinationStore } from '../../stores/useDivinationStore';
 import { useUIStore } from '../../stores/useUIStore';
