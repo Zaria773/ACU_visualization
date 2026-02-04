@@ -169,7 +169,12 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         loadedFromGlobal = true;
         // 【关键】记住加载时的版本号
         loadedVersion.value = config.value.configVersion || 0;
-        console.log('[ACU Dashboard] 成功从酒馆变量加载配置，widgets 数量:', config.value.widgets.length, '版本:', loadedVersion.value);
+        console.log(
+          '[ACU Dashboard] 成功从酒馆变量加载配置，widgets 数量:',
+          config.value.widgets.length,
+          '版本:',
+          loadedVersion.value,
+        );
 
         // 同步更新 localStorage 备份
         saveToLocalStorage();
@@ -378,7 +383,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
 
       // 如果存储的版本号比我们加载时的版本号更新，说明有其他实例修改了配置
       if (existingVersion > loadedVersion.value) {
-        console.warn(`[ACU Dashboard] 检测到更新的配置 (存储版本=${existingVersion}, 加载版本=${loadedVersion.value})，取消保存`);
+        console.warn(
+          `[ACU Dashboard] 检测到更新的配置 (存储版本=${existingVersion}, 加载版本=${loadedVersion.value})，取消保存`,
+        );
         // 从酒馆变量重新加载最新配置
         config.value = {
           ...DEFAULT_DASHBOARD_CONFIG,
