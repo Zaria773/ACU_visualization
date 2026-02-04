@@ -765,6 +765,7 @@ export function useParentStyleInjection() {
       }
 
       /* 文本元素 污染防护 - 必须同时重置 font-family */
+      /* 注意：font-size 不使用 !important，允许组件样式覆盖（如 .acu-global-time-primary { font-size: 1.4em }） */
       .acu-wrapper,
       .acu-wrapper p,
       .acu-wrapper div,
@@ -786,9 +787,9 @@ export function useParentStyleInjection() {
       .acu-modal-container th,
       .acu-modal-container td {
         font-family: var(--acu-font-family) !important;
-        font-size: var(--acu-font-size, 13px) !important;
+        font-size: var(--acu-font-size, 13px);
         text-shadow: none !important;
-        line-height: 1.5 !important;
+        line-height: 1.5;
       }
 
       /* 普通文本颜色 - 特定选择器 */

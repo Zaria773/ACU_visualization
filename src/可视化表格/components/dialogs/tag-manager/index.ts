@@ -11,3 +11,4 @@ export { default as TagEditDialog } from './TagEditDialog.vue';
 export { default as TagImportDialog } from './TagImportDialog.vue';
 export { default as CategorySelectPopup } from './CategorySelectPopup.vue';
 export { default as TagPreEditDialog } from './TagPreEditDialog.vue';
+export { default as TagPreviewTooltip } from './TagPreviewTooltip.vue';

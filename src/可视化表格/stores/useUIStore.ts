@@ -655,6 +655,22 @@ export const useUIStore = defineStore('acu-ui', () => {
     closeIconSelectDialog();
   }
 
+  /** 标签预览模式状态（移动端用） */
+  const tagPreviewMode = ref(false);
+
+  /** 标签预览浮窗状态 */
+  const tagPreviewTooltip = reactive<{
+    visible: boolean;
+    content: string;
+    x: number;
+    y: number;
+  }>({
+    visible: false,
+    content: '',
+    x: 0,
+    y: 0,
+  });
+
   /** 抽签覆盖层状态 */
   const divinationOverlay = reactive<{
     visible: boolean;
@@ -1924,5 +1940,23 @@ export const useUIStore = defineStore('acu-ui', () => {
     triggerAiNotify,
     isAiGenerating: computed(() => isAiGenerating.value),
     setAiGenerating,
+
+    // 标签预览模式
+    tagPreviewMode,
+    tagPreviewTooltip,
+    toggleTagPreviewMode: () => {
+      tagPreviewMode.value = !tagPreviewMode.value;
+      // 切换模式时隐藏浮窗
+      tagPreviewTooltip.visible = false;
+    },
+    showTagPreviewTooltip: (content: string, x: number, y: number) => {
+      tagPreviewTooltip.content = content;
+      tagPreviewTooltip.x = x;
+      tagPreviewTooltip.y = y;
+      tagPreviewTooltip.visible = true;
+    },
+    hideTagPreviewTooltip: () => {
+      tagPreviewTooltip.visible = false;
+    },
   };
 });

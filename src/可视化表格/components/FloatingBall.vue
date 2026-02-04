@@ -80,27 +80,26 @@ const imageStyle = computed(() => {
   };
 });
 
-/** AI 填表通知状态 */
+/** AI 填表通知状态 - 持久化显示，直到用户点击才清除 */
 const isAiNotifying = ref(false);
 /** AI 正在生成状态（持续性动画） */
 const isAiGenerating = computed(() => uiStore.isAiGenerating);
 
-/** 通知动画计时器 */
-let notifyTimer: ReturnType<typeof setTimeout> | null = null;
-
 /**
  * 触发 AI 填表通知动画
- * @param duration 动画持续时间（毫秒），默认 3000
+ * 动画会一直持续显示，直到用户点击悬浮球才会停止
  */
-function triggerAiNotify(duration = 3000) {
-  if (notifyTimer) {
-    clearTimeout(notifyTimer);
-  }
+function triggerAiNotify() {
   isAiNotifying.value = true;
-  notifyTimer = setTimeout(() => {
-    isAiNotifying.value = false;
-    notifyTimer = null;
-  }, duration);
+  console.info('[ACU FloatingBall] AI 填表完成，通知动画持续显示直到点击');
+}
+
+/**
+ * 清除 AI 通知状态
+ */
+function clearAiNotify() {
+  isAiNotifying.value = false;
+  console.info('[ACU FloatingBall] 通知动画已清除');
 }
 
 /** 计算的 class 列表 */
@@ -201,11 +200,7 @@ function handleClick(e: MouseEvent) {
 
   // 点击时清除 AI 通知状态（停止动画）
   if (isAiNotifying.value) {
-    isAiNotifying.value = false;
-    if (notifyTimer) {
-      clearTimeout(notifyTimer);
-      notifyTimer = null;
-    }
+    clearAiNotify();
   }
 
   // 停靠状态点击恢复
@@ -288,9 +283,6 @@ onUnmounted(() => {
   if (clickTimer) {
     clearTimeout(clickTimer);
   }
-  if (notifyTimer) {
-    clearTimeout(notifyTimer);
-  }
 });
 
 // ============================================================
@@ -308,8 +300,10 @@ defineExpose({
   setDocked: (docked: boolean) => {
     isDocked.value = docked;
   },
-  /** 触发 AI 填表通知动画 */
+  /** 触发 AI 填表通知动画（持久显示） */
   triggerAiNotify,
+  /** 清除 AI 通知动画 */
+  clearAiNotify,
   /** 获取当前外观配置 */
   getAppearance: () => appearance.value,
 });

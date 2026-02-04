@@ -58,7 +58,18 @@
 
           <!-- 右侧：标签网格 -->
           <div class="acu-category-tags-grid">
-            <button v-for="tag in displayedTags" :key="tag.id" class="acu-tag-btn" @click.stop="handleTagClick(tag)">
+            <button
+              v-for="tag in displayedTags"
+              :key="tag.id"
+              class="acu-tag-btn"
+              :class="{ 'mode-preview': uiStore.tagPreviewMode }"
+              @click.stop="handleTagClick(tag)"
+              @mouseenter="handleTagMouseEnter(tag, $event)"
+              @mouseleave="handleTagMouseLeave"
+              @touchstart.passive="handleTagTouchStart(tag, $event)"
+              @touchend="handleTagTouchEnd"
+              @touchcancel="handleTagTouchEnd"
+            >
               {{ tag.label }}
             </button>
 
@@ -73,7 +84,18 @@
         <!-- 无子分类：只显示标签滚动框 -->
         <div v-else class="acu-category-tags-only">
           <div class="acu-tags-scroll">
-            <button v-for="tag in allTags" :key="tag.id" class="acu-tag-btn" @click.stop="handleTagClick(tag)">
+            <button
+              v-for="tag in allTags"
+              :key="tag.id"
+              class="acu-tag-btn"
+              :class="{ 'mode-preview': uiStore.tagPreviewMode }"
+              @click.stop="handleTagClick(tag)"
+              @mouseenter="handleTagMouseEnter(tag, $event)"
+              @mouseleave="handleTagMouseLeave"
+              @touchstart.passive="handleTagTouchStart(tag, $event)"
+              @touchend="handleTagTouchEnd"
+              @touchcancel="handleTagTouchEnd"
+            >
               {{ tag.label }}
             </button>
           </div>
@@ -86,13 +108,22 @@
         </div>
       </div>
 
-      <!-- 底部：管理入口 -->
+      <!-- 底部：操作按钮 -->
       <div
         class="acu-modal-footer"
-        style="justify-content: flex-start; margin-top: 0; padding-top: 12px; border-top: 1px solid var(--acu-border)"
+        style="justify-content: space-between; margin-top: 0; padding-top: 12px; border-top: 1px solid var(--acu-border)"
       >
         <button class="acu-modal-btn secondary" @click.stop="handleManageTags">
           <i class="fas fa-tags"></i> 管理标签
+        </button>
+        <!-- 预览模式按钮（通过 CSS 媒体查询控制，仅移动端显示） -->
+        <button
+          class="acu-modal-btn secondary acu-mobile-only"
+          :class="{ active: uiStore.tagPreviewMode }"
+          @click.stop="uiStore.toggleTagPreviewMode()"
+        >
+          <i class="fas fa-search"></i>
+          {{ uiStore.tagPreviewMode ? '退出预览' : '预览模式' }}
         </button>
       </div>
     </div>
@@ -100,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { useDashboardStore } from '../../../stores/useDashboardStore';
 import { useTagLibraryStore } from '../../../stores/useTagLibraryStore';
 import { useUIStore } from '../../../stores/useUIStore';
@@ -241,9 +272,56 @@ function handleClose() {
 }
 
 function handleTagClick(tag: InteractiveTag) {
+  // 预览模式下不触发选择
+  if (uiStore.tagPreviewMode) return;
+
   emit('select', tag, props.rowContext);
   // 不自动关闭，允许用户连续点击多个标签
 }
+
+// ==================== 预览相关 ====================
+
+/** PC端：鼠标悬浮显示预览 */
+function handleTagMouseEnter(tag: InteractiveTag, event: MouseEvent) {
+  if (!tag.promptTemplate) return;
+
+  const target = event.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  // 使用视口坐标（position: fixed 相对于视口）
+  uiStore.showTagPreviewTooltip(tag.promptTemplate, rect.left + rect.width / 2, rect.top);
+}
+
+/** PC端：鼠标离开隐藏预览 */
+function handleTagMouseLeave() {
+  uiStore.hideTagPreviewTooltip();
+}
+
+/** 移动端：触摸开始显示预览（仅在预览模式下） */
+function handleTagTouchStart(tag: InteractiveTag, event: TouchEvent) {
+  if (!uiStore.tagPreviewMode) return;
+  if (!tag.promptTemplate) return;
+
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  // 使用触摸点的视口坐标
+  uiStore.showTagPreviewTooltip(tag.promptTemplate, touch.clientX, touch.clientY);
+}
+
+/** 移动端：触摸结束隐藏预览 */
+function handleTagTouchEnd() {
+  if (!uiStore.tagPreviewMode) return;
+  uiStore.hideTagPreviewTooltip();
+}
+
+// 组件卸载时清理
+onUnmounted(() => {
+  if (uiStore.tagPreviewMode) {
+    uiStore.toggleTagPreviewMode();
+  }
+  uiStore.hideTagPreviewTooltip();
+});
 
 function handleManageTags() {
   // 关闭当前弹窗

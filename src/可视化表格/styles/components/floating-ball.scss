@@ -223,13 +223,18 @@
 
 .acu-floating-ball-vue.ai-notify.anim-ripple {
   border-color: var(--ball-border-color-rgba);
+  // 呼吸灯效果 - 使用边框颜色
+  animation: acu-notify-glow 2s infinite ease-in-out;
 
   &::before,
   &::after {
     content: '';
     position: absolute;
-    width: 100%;
-    height: 100%;
+    // 修复居中问题：使用 inset 负值抵消边框，确保从球体中心扩散
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
     border-radius: 50%;
     border: 2px solid var(--ball-border-color, #90cdf4);
     animation: acu-notify-ripple-1 1.5s ease-out infinite;
@@ -352,13 +357,18 @@
   // 预览动画类 - 脉冲波纹
   &.p-anim-ripple {
     border-color: var(--ball-border-color-rgba);
+    // 呼吸灯效果
+    animation: acu-notify-glow 2s infinite ease-in-out;
 
     &::before,
     &::after {
       content: '';
       position: absolute;
-      width: 100%;
-      height: 100%;
+      // 修复居中问题
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
       border-radius: 50%;
       border: 2px solid var(--ball-border-color);
       animation: acu-notify-ripple-1 1.5s ease-out infinite;

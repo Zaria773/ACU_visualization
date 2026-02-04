@@ -1,4 +1,67 @@
 // ============================================
+// RowEditDialog 行编辑弹窗样式
+// ============================================
+
+// 行编辑弹窗容器
+.acu-row-edit-modal-container {
+  // 继承通用模态框样式
+}
+
+// 行编辑弹窗主体
+.acu-row-edit-modal {
+  max-width: 600px;
+  max-height: 85vh;
+
+  .acu-modal-body {
+    padding: 0;
+    overflow: hidden; // 让内部内容区滚动
+  }
+}
+
+// 行编辑内容区 - 关键：允许内部滚动
+.acu-row-edit-content {
+  padding: 16px;
+  max-height: calc(85vh - 120px); // 减去头部和底部留白
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // 内部的 DataCard 需要特殊处理
+  .acu-data-card {
+    overflow-y: visible !important; // 覆盖纵向布局的 visible 设置
+    overflow-x: visible !important;
+    max-height: none; // 不限制高度，让父容器滚动
+
+    // 卡片内容区也不需要单独滚动
+    .acu-card-body,
+    .acu-card-main-grid,
+    .acu-card-full-area {
+      overflow: visible;
+    }
+  }
+
+  // 滚动条样式
+  scrollbar-width: thin;
+  scrollbar-color: var(--acu-border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--acu-border);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--acu-text-sub);
+    }
+  }
+}
+
+// ============================================
 // 移动端适配 - 仪表盘弹窗放在上部
 // ============================================
 

@@ -16,7 +16,7 @@ import { scrollBehaviourDragImageTranslateOverride } from 'mobile-drag-drop/scro
 import { createPinia } from 'pinia';
 import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
-import { cleanupSendIntercept, setupSendIntercept } from './composables/useHiddenPrompt';
+import { cleanupSendIntercept, setupFocusTracking, setupSendIntercept } from './composables/useHiddenPrompt';
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
@@ -256,9 +256,10 @@ $(() => {
     }
   });
 
-  // 设置 DOM 发送拦截
+  // 设置 DOM 发送拦截和焦点追踪
   setTimeout(() => {
     setupSendIntercept();
+    setupFocusTracking(); // 追踪最后焦点的输入框，用于选项追加功能
   }, 500);
 
   // 等待 API 就绪并初始化

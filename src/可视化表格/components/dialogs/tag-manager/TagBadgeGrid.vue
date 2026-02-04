@@ -10,8 +10,14 @@
           added: displayedTagIdSet.has(tag.id),
           'mode-add': mode === 'add',
           'mode-delete': mode === 'delete',
+          'mode-preview': isPreviewMode,
         }"
         @click.stop="handleTagClick(tag)"
+        @mouseenter="handleTagMouseEnter(tag, $event)"
+        @mouseleave="handleTagMouseLeave"
+        @touchstart.passive="handleTagTouchStart(tag, $event)"
+        @touchend="handleTagTouchEnd"
+        @touchcancel="handleTagTouchEnd"
       >
         <!-- 标签文本 -->
         <span class="acu-badge-label">{{ tag.label }}</span>
@@ -42,6 +48,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useTagLibraryStore } from '../../../stores/useTagLibraryStore';
+import { useUIStore } from '../../../stores/useUIStore';
 import type { InteractiveTag, TagManagerMode } from '../../../types';
 
 // Props
@@ -64,27 +71,33 @@ const emit = defineEmits<{
 
 // Store
 const tagStore = useTagLibraryStore();
+const uiStore = useUIStore();
 
 // 计算属性
 const displayedTags = computed(() => tagStore.filteredTags);
 const selectedTagIds = computed(() => tagStore.selectedTagIds);
 const displayedTagIdSet = computed(() => new Set(props.displayedTagIds));
+const isPreviewMode = computed(() => uiStore.tagPreviewMode);
 
 const emptyMessage = computed(() => {
   if (tagStore.searchKeyword) {
     return '未找到匹配的标签';
   }
-  if (tagStore.selectedLevel1 === '未分类') {
+  if (tagStore.activeCategoryId === 'uncategorized') {
     return '暂无未分类的标签';
   }
-  if (tagStore.selectedLevel1) {
-    return `"${tagStore.selectedLevel1}" 分类下暂无标签`;
+  if (tagStore.activeCategoryId) {
+    const cat = tagStore.getCategoryById(tagStore.activeCategoryId);
+    return `"${cat?.path || '未知分类'}" 分类下暂无标签`;
   }
   return '暂无标签，点击新建按钮创建';
 });
 
 // 方法
 function handleTagClick(tag: InteractiveTag) {
+  // 预览模式下不触发任何操作
+  if (isPreviewMode.value) return;
+
   switch (props.mode) {
     case 'normal':
       // 普通模式：弹出编辑弹窗
@@ -119,5 +132,46 @@ function handleGridClick() {
 
 function toggleTagSelection(tagId: string) {
   tagStore.toggleTagSelection(tagId);
+}
+
+// ==================== 预览相关 ====================
+
+/** PC端：鼠标悬浮显示预览 */
+function handleTagMouseEnter(tag: InteractiveTag, event: MouseEvent) {
+  // 预览模式下或 PC 端都显示浮窗
+  if (!tag.promptTemplate) return;
+
+  const target = event.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  // 使用视口坐标（position: fixed 相对于视口）
+  uiStore.showTagPreviewTooltip(
+    tag.promptTemplate,
+    rect.left + rect.width / 2,
+    rect.top,
+  );
+}
+
+/** PC端：鼠标离开隐藏预览 */
+function handleTagMouseLeave() {
+  uiStore.hideTagPreviewTooltip();
+}
+
+/** 移动端：触摸开始显示预览（仅在预览模式下） */
+function handleTagTouchStart(tag: InteractiveTag, event: TouchEvent) {
+  if (!isPreviewMode.value) return;
+  if (!tag.promptTemplate) return;
+
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  // 使用触摸点的视口坐标
+  uiStore.showTagPreviewTooltip(tag.promptTemplate, touch.clientX, touch.clientY);
+}
+
+/** 移动端：触摸结束隐藏预览 */
+function handleTagTouchEnd() {
+  if (!isPreviewMode.value) return;
+  uiStore.hideTagPreviewTooltip();
 }
 </script>

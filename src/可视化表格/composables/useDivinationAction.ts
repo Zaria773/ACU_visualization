@@ -1,7 +1,7 @@
 import { useDivinationStore } from '../stores/useDivinationStore';
 import { useUIStore } from '../stores/useUIStore';
 import type { DivinationResult } from '../types';
-import { useHiddenPrompt } from './useHiddenPrompt';
+import { appendToActiveInput, useHiddenPrompt } from './useHiddenPrompt';
 import { buildFullPrompt } from './usePromptBuild';
 import { toast } from './useToast';
 
@@ -27,7 +27,7 @@ type ChatMessage = {
 export function useDivinationAction() {
   const divinationStore = useDivinationStore() as any;
   const uiStore = useUIStore();
-  const { setHiddenPrompt, setupSendIntercept, appendPromptToInput } = useHiddenPrompt();
+  const { setHiddenPrompt, setupSendIntercept } = useHiddenPrompt();
 
   /**
    * 构建提示词
@@ -119,8 +119,9 @@ export function useDivinationAction() {
       setupSendIntercept();
       toast.success('提示词已注入隐藏编辑框');
     } else {
-      // 使用所见即所得的追加方式 (reveal)
-      appendPromptToInput(prompt);
+      // 使用所见即所得的追加方式 (reveal)，支持同层界面的输入框
+      appendToActiveInput(prompt, '\n');
+      toast.success('提示词已追加到输入框');
     }
 
     uiStore.closeDivinationOverlay();
@@ -169,7 +170,7 @@ export function useDivinationAction() {
 
     if (!lastUserMsg) {
       toast.warning('未找到用户消息，已改为追加到输入框');
-      appendPromptToInput(prompt);
+      appendToActiveInput(prompt, '\n');
       return;
     }
 

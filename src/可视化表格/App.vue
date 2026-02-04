@@ -351,6 +351,9 @@
       @select="uiStore.handleIconSelect"
     />
 
+    <!-- 标签预览浮窗 (全局) -->
+    <TagPreviewTooltip />
+
     <!-- 全局 Toast 通知 -->
     <Toast :visible="toastState.visible" :message="toastState.message" :type="toastState.type" />
   </div>
@@ -399,7 +402,7 @@ import {
   WidgetSettingsDialog,
 } from './components/dialogs';
 import { DivinationOverlay, PromptEditorDialog } from './components/dialogs/divination';
-import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog } from './components/dialogs/tag-manager';
+import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog, TagPreviewTooltip } from './components/dialogs/tag-manager';
 
 // RelationshipGraph 使用懒加载，只在用户打开关系图时才加载 Cytoscape 及其扩展
 // 这可以显著减少初始内存占用，特别是在移动设备上
@@ -430,7 +433,7 @@ import { useCoreActions } from './composables/useCoreActions';
 import { useDataPersistence } from './composables/useDataPersistence';
 import { useDivinationAction } from './composables/useDivinationAction';
 import { useFullscreenSupport } from './composables/useFullscreenSupport';
-import { appendPromptToInput as appendToInput, useHiddenPrompt } from './composables/useHiddenPrompt';
+import { appendToActiveInput, useHiddenPrompt } from './composables/useHiddenPrompt';
 import { useParentStyleInjection } from './composables/useParentStyleInjection';
 import { useRowHistory } from './composables/useRowHistory';
 import { useSwipeEnhancement } from './composables/useSwipeEnhancement';
@@ -1093,6 +1096,9 @@ async function loadData(): Promise<void> {
     const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
     uiStore.syncNewTablesToVisibleTabs(allTableIds);
 
+    // 清理无效的仪表盘组件（移除已不存在的表格组件）
+    dashboardStore.cleanupInvalidWidgets(allTableIds);
+
     // 刷新后清除所有高亮标记（手动和AI）
     dataStore.clearChanges(true);
 
@@ -1330,12 +1336,12 @@ function handlePromptEditorSave(prompt: string): void {
 }
 
 /**
- * 追加提示词到酒馆输入框
+ * 追加提示词到最后焦点输入框（支持 galgame 等同层界面）
  * @param prompt 提示词内容
  */
 function appendPromptToInput(prompt: string): void {
   const wrapped = `<元指令>\n${prompt}\n</元指令>`;
-  appendToInput(wrapped, '\n');
+  appendToActiveInput(wrapped, '\n');
   toast.success('提示词已追加到输入框');
 }
 

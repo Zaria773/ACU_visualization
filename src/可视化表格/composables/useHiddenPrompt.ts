@@ -73,44 +73,65 @@ export function setupSendIntercept() {
       const userInput = textarea.value.trim();
 
       // 拼接：隐藏提示词 + 用户输入
-      const wrappedPrompt = `${hiddenPrompt}`;
-      const combinedMessage = userInput ? `${wrappedPrompt}\n${userInput}` : wrappedPrompt;
+      const combinedMessage = userInput ? `${hiddenPrompt}\n${userInput}` : hiddenPrompt;
 
       console.info('[ACU] 拼接消息:', combinedMessage.substring(0, 80));
 
-      // 用 /send 创建用户消息（消息时间戳是当前时间，满足 12s 判定）
-      // 使用 as user 确保是用户消息
       const parentWin = window.parent as any;
-      if (parentWin.TavernHelper && parentWin.TavernHelper.triggerSlash) {
-        await parentWin.TavernHelper.triggerSlash(`/send as=user ${combinedMessage}`);
-      } else {
-        console.error('[ACU] TavernHelper.triggerSlash 不可用');
+      if (!parentWin.TavernHelper) {
+        console.error('[ACU] TavernHelper 不可用');
         throw new Error('TavernHelper API unavailable');
       }
 
+      // ✅ 使用 createChatMessages 直接创建用户消息
+      await parentWin.TavernHelper.createChatMessages([
+        { role: 'user', message: combinedMessage },
+      ]);
+
       console.info('[ACU] ✓ 用户消息已创建');
 
-      // 清空输入框
+      // 清空隐藏提示词和输入框
+      setHiddenPrompt('');
       textarea.value = '';
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-      // 短暂延迟确保消息已写入
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // 触发 click，此时输入框为空
-      // - 空输入会让酒馆触发 AI 生成（continue 模式）
-      // - 同时数据库的 capture 监听器会记录发送意图
+      // ✅ 先触发一次 click 让剧情推进记录"发送意图"
+      // 由于输入框已清空，酒馆的 click 处理器会发现空输入而触发 continue 模式
+      // 但剧情推进的 capture 钩子会记录发送意图时间戳
+      isProcessing = false; // 临时放开，让 click 事件正常触发
       sendBtn.click();
+      isProcessing = true; // 立即恢复
+
+      // 短暂等待让剧情推进处理 click
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // ✅ 使用 generate 触发 AI 生成（剧情推进会通过 TavernHelper.generate 钩子拦截）
+      // 剧情推进已经记录了发送意图，现在会正常处理
+      await parentWin.TavernHelper.generate({});
 
       console.info('[ACU] ✓ 已触发生成');
+
+      // 延迟重渲染用户消息，确保剧情推进修改后的内容能正确显示
+      setTimeout(async () => {
+        try {
+          if (parentWin.TavernHelper?.setChatMessages && parentWin.TavernHelper?.getLastMessageId) {
+            const lastMsgId = parentWin.TavernHelper.getLastMessageId();
+            const userMsgs = parentWin.TavernHelper.getChatMessages(`0-${lastMsgId}`, { role: 'user' });
+            if (userMsgs && userMsgs.length > 0) {
+              const lastUserMsg = userMsgs[userMsgs.length - 1];
+              await parentWin.TavernHelper.setChatMessages([{ message_id: lastUserMsg.message_id }], { refresh: 'affected' });
+              console.info('[ACU] ✓ 用户消息已重渲染，message_id:', lastUserMsg.message_id);
+            }
+          }
+        } catch (e) {
+          console.warn('[ACU] 重渲染用户消息失败:', e);
+        }
+      }, 800);
     } catch (err) {
       console.error('[ACU] 发送失败:', err);
       toast.error('隐藏提示词发送失败');
     } finally {
-      // 延迟重置标志，确保递归的 click 不会再次触发
-      setTimeout(() => {
-        isProcessing = false;
-      }, 100);
+      isProcessing = false;
     }
   };
 
@@ -155,10 +176,17 @@ export function cleanupSendIntercept() {
 /**
  * 直接将提示词追加到输入框（所见即所得）
  * 不触发发送，不拦截
+ * @param text 要追加的文本
+ * @param separator 分隔符，默认换行
+ * @param targetSelector 目标输入框选择器，默认为酒馆输入框
  */
-export function appendPromptToInput(text: string, separator: string = '\n') {
+export function appendPromptToInput(
+  text: string,
+  separator: string = '\n',
+  targetSelector: string = '#send_textarea',
+) {
   const parentDoc = window.parent.document;
-  const textarea = parentDoc.getElementById('send_textarea') as HTMLTextAreaElement;
+  const textarea = parentDoc.querySelector(targetSelector) as HTMLTextAreaElement | HTMLInputElement | null;
   // 移动端正则检测 (简单的 UA 检测)
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -172,12 +200,123 @@ export function appendPromptToInput(text: string, separator: string = '\n') {
 
     if (!isMobile) {
       textarea.focus();
-      // 光标移到最后
-      textarea.setSelectionRange(newVal.length, newVal.length);
+      // 光标移到最后（仅 textarea 支持 setSelectionRange）
+      if ('setSelectionRange' in textarea) {
+        textarea.setSelectionRange(newVal.length, newVal.length);
+      }
     }
-    console.info('[ACU] 提示词已追加到输入框');
+    console.info('[ACU] 提示词已追加到输入框:', targetSelector);
   } else {
-    console.warn('[ACU] 未找到输入框 #send_textarea');
+    console.warn('[ACU] 未找到输入框:', targetSelector);
+  }
+}
+
+// 全局变量：记录最后一个有焦点的输入框
+let lastFocusedInput: HTMLTextAreaElement | HTMLInputElement | null = null;
+let focusListenerSetup = false;
+
+/**
+ * 检查元素是否属于 ACU 自己的输入框
+ * ACU 的输入框不应被记录为目标输入框
+ */
+function isACUInternalInput(el: HTMLElement): boolean {
+  // 检查 id 或 class 是否包含 acu 前缀
+  const id = el.id || '';
+  const className = el.className || '';
+
+  if (id.startsWith('acu') || id.includes('-acu-')) {
+    return true;
+  }
+
+  if (className.includes('acu-')) {
+    return true;
+  }
+
+  // 检查父元素是否在 ACU 容器内
+  const acuContainer = el.closest('#acu-parent-container, .acu-wrapper, .acu-modal-container');
+  if (acuContainer) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * 设置焦点监听器，记录最后一个获得焦点的输入框
+ * 仅需调用一次
+ * 注意：会过滤掉 ACU 自己的输入框（如搜索框、二次编辑弹窗等）
+ */
+export function setupFocusTracking() {
+  if (focusListenerSetup) return;
+
+  const parentDoc = window.parent.document;
+
+  // 监听 focusin 事件（冒泡版的 focus）
+  parentDoc.addEventListener(
+    'focusin',
+    (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'TEXTAREA' ||
+          (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'text'))
+      ) {
+        // 过滤掉 ACU 自己的输入框
+        if (isACUInternalInput(target)) {
+          console.info('[ACU] 忽略 ACU 内部输入框:', target.id || target.className);
+          return;
+        }
+
+        lastFocusedInput = target as HTMLTextAreaElement | HTMLInputElement;
+        console.info('[ACU] 记录焦点输入框:', target.id || target.className);
+      }
+    },
+    true,
+  );
+
+  focusListenerSetup = true;
+  console.info('[ACU] 焦点追踪已设置');
+}
+
+/**
+ * 获取最后一个有焦点的输入框
+ */
+export function getLastFocusedInput(): HTMLTextAreaElement | HTMLInputElement | null {
+  return lastFocusedInput;
+}
+
+/**
+ * 设置目标输入框（手动指定）
+ */
+export function setTargetInput(input: HTMLTextAreaElement | HTMLInputElement | null) {
+  lastFocusedInput = input;
+}
+
+/**
+ * 追加到最后一个有焦点的输入框
+ * 如果没有记录的输入框，则追加到酒馆默认输入框
+ * @param text 要追加的文本
+ * @param separator 分隔符，默认空格
+ */
+export function appendToActiveInput(text: string, separator: string = ' ') {
+  // 首先尝试使用记录的最后焦点输入框
+  if (lastFocusedInput && lastFocusedInput.isConnected) {
+    const input = lastFocusedInput;
+    const currentVal = input.value || '';
+    const newVal = currentVal ? currentVal + separator + text : text;
+
+    input.value = newVal;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // 重新聚焦并移动光标到最后
+    input.focus();
+    if ('setSelectionRange' in input) {
+      input.setSelectionRange(newVal.length, newVal.length);
+    }
+    console.info('[ACU] 提示词已追加到记录的输入框:', input.id || input.className);
+  } else {
+    // 降级到酒馆默认输入框
+    appendPromptToInput(text, separator);
   }
 }
 
@@ -191,5 +330,9 @@ export function useHiddenPrompt() {
     setupSendIntercept,
     cleanupSendIntercept,
     appendPromptToInput,
+    appendToActiveInput,
+    setupFocusTracking,
+    getLastFocusedInput,
+    setTargetInput,
   };
 }

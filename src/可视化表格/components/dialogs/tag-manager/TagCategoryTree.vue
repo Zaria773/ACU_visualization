@@ -5,7 +5,7 @@
     <div
       class="acu-tag-tree-item acu-root-item"
       :class="{
-        active: selectedLevel1 === '全部' || selectedLevel1 === '',
+        active: activeCategoryId === '',
         'migrate-target': mode === 'migrate',
       }"
       @click="handleRootClick"
@@ -80,10 +80,10 @@
     <div
       class="acu-tag-tree-item"
       :class="{
-        active: selectedLevel1 === '未分类',
+        active: activeCategoryId === 'uncategorized',
         'migrate-target': mode === 'migrate' && selectionType === 'tag',
       }"
-      @click="handleLevel1Click('未分类')"
+      @click="handleUncategorizedClick"
     >
       <span class="acu-tree-icon">📦</span>
       <span class="acu-tree-label">未分类</span>
@@ -108,7 +108,7 @@
         class="acu-tag-tree-item"
         :data-category-id="cat.id"
         :class="{
-          active: selectedCategoryId === cat.id || selectedLevel1 === cat.level1,
+          active: isCategoryActive(cat.id, cat.path),
           expanded: expandedCategories.has(cat.id),
           sticky: stickyCategory === cat.id,
           selected: selectedCategoryIds.has(cat.id),
@@ -210,18 +210,28 @@ const ROOT_ICON_KEY = 'acu_tag_library_root_icon';
 const rootIcon = ref(localStorage.getItem(ROOT_ICON_KEY) || '📂');
 
 // 计算属性
-const selectedLevel1 = computed(() => tagStore.selectedLevel1);
-const selectedCategoryId = computed(() => {
-  // 根据选中的一级和二级分类，找到对应的分类 ID
-  if (!tagStore.selectedLevel1 || tagStore.selectedLevel1 === '全部' || tagStore.selectedLevel1 === '未分类') {
-    return null;
-  }
-  const path = tagStore.selectedLevel2
-    ? `${tagStore.selectedLevel1}/${tagStore.selectedLevel2}`
-    : tagStore.selectedLevel1;
-  return tagStore.getCategoryByPath(path)?.id || null;
-});
+const activeCategoryId = computed(() => tagStore.activeCategoryId);
 const totalTags = computed(() => tagStore.totalTags);
+
+/** 判断分类是否处于激活状态（选中的分类及其所有子分类） */
+function isCategoryActive(catId: string, catPath: string): boolean {
+  if (!activeCategoryId.value || activeCategoryId.value === 'uncategorized') {
+    return false;
+  }
+
+  // 直接匹配
+  if (activeCategoryId.value === catId) {
+    return true;
+  }
+
+  // 检查是否是选中分类的子分类
+  const activeCategory = tagStore.getCategoryById(activeCategoryId.value);
+  if (activeCategory) {
+    return catPath.startsWith(activeCategory.path + '/');
+  }
+
+  return false;
+}
 const uncategorizedCount = computed(() => tagStore.uncategorizedCount);
 const selectedCategoryIds = computed(() => tagStore.selectedCategoryIds);
 const selectionType = computed(() => tagStore.selectionType);
@@ -312,7 +322,7 @@ function saveRootIcon() {
 
 function handleRootClick() {
   // 根目录点击：显示全部标签
-  tagStore.selectLevel1('');
+  tagStore.selectCategory('');
   emit('categoryClick', null);
 }
 
@@ -328,20 +338,9 @@ function openRootIconSelect() {
   );
 }
 
-function handleLevel1Click(name: string) {
-  if (props.mode === 'add') {
-    // 添加模式：点击分类添加到展示区
-    if (name !== '全部' && name !== '未分类') {
-      // 找到对应的分类
-      const cat = tagStore.library.categories.find(c => c.path === name);
-      if (cat) {
-        emit('categoryClick', cat);
-      }
-    }
-  } else {
-    tagStore.selectLevel1(name === '全部' ? '' : name);
-    emit('categoryClick', null);
-  }
+function handleUncategorizedClick() {
+  tagStore.selectCategory('uncategorized');
+  emit('categoryClick', null);
 }
 
 function handleCategoryClick(cat: FlatCategory) {
@@ -351,28 +350,9 @@ function handleCategoryClick(cat: FlatCategory) {
     return;
   }
 
-  if (props.mode === 'add') {
-    // 添加模式：点击分类行只选中分类以筛选标签，不触发添加
-    // 添加功能通过专门的+按钮触发
-    tagStore.selectLevel1(cat.level1);
-    if (cat.depth > 0) {
-      tagStore.selectLevel2(cat.name);
-    } else {
-      tagStore.selectLevel2('');
-    }
-    return;
-  }
-
-  // 普通模式
-  const isAlreadySelected = selectedCategoryId.value === cat.id;
-
   // 选中分类
-  tagStore.selectLevel1(cat.level1);
-  if (cat.depth > 0) {
-    tagStore.selectLevel2(cat.name);
-  } else {
-    tagStore.selectLevel2('');
-  }
+  const isAlreadySelected = activeCategoryId.value === cat.id;
+  tagStore.selectCategory(cat.id);
 
   // 展开/折叠逻辑
   if (cat.hasChildren) {

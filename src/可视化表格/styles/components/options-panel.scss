@@ -140,14 +140,6 @@
   flex-shrink: 0;
 }
 
-// 选项标签样式
-// 注意：HTML中需同时应用 .acu-badge 类
-.acu-option-tag {
-  background: var(--acu-btn-bg, rgba(255, 255, 255, 0.1));
-  color: var(--acu-title-color, #fff);
-  border: 1px solid var(--acu-border);
-  font-weight: bold;
-}
 
 // 选项文本
 .acu-embedded-option-text {

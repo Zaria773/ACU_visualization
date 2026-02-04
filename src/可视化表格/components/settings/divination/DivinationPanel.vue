@@ -93,13 +93,12 @@
     </div>
 
     <!-- 抽词设置 -->
-    <div class="acu-settings-section" data-section="word-drawing">
-      <div class="acu-settings-title" style="margin-top: 16px">
-        <i class="fas fa-font"></i>
-        抽词设置
-      </div>
-      <div class="acu-settings-group">
-        <!-- 表格随机词 -->
+    <div class="acu-settings-title" style="margin-top: 16px">
+      <i class="fas fa-font"></i>
+      抽词设置
+    </div>
+    <div class="acu-settings-group">
+      <!-- 表格随机词 -->
         <div class="acu-settings-row">
           <div class="acu-settings-label">
             表格随机词
@@ -213,7 +212,6 @@
           </div>
         </template>
       </div>
-    </div>
   </div>
 </template>
 

@@ -13,10 +13,9 @@ import type {
   ImportOptions,
   ImportResult,
   InteractiveTag,
-  ParsedCategory,
   TagCategory,
   TagLibraryExport,
-  TagManagerMode,
+  TagManagerMode
 } from '../types';
 
 /** 存储键常量 */
@@ -24,15 +23,69 @@ const STORAGE_KEY = 'acu_global_tag_library';
 
 /** 空的标签库默认值 */
 const DEFAULT_LIBRARY: GlobalTagLibrary = {
-  categories: [],
-  tags: [],
-};
+  categories: [
+    { id: 'cat_general', path: '通用', icon: 'fas fa-cog', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_location', path: '地点', icon: 'fas fa-map-marker-alt', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_character', path: '人物', icon: 'fas fa-user', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_char_social', path: '人物/社交', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_char_observe', path: '人物/观察', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_char_conflict', path: '人物/冲突', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_item', path: '物品', icon: 'fas fa-box-open', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_quest', path: '任务', icon: 'fas fa-scroll', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'cat_action', path: '动作', icon: 'fas fa-running', createdAt: '2024-01-01T00:00:00.000Z' },
+  ],
+  tags: [
+    // 通用
+    { id: 'tag_gen_prevent', label: '防转述', categoryId: 'cat_general', promptTemplate: '禁止在正文中复述{{user}}的输入。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_gen_speak', label: '抢话', categoryId: 'cat_general', promptTemplate: '{{user}}在正文中必须有2句以上新对白。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_gen_skip', label: '跳过', categoryId: 'cat_general', promptTemplate: '适当跳过一段时间，自然概括中间发生的事。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_gen_detail', label: '细写', categoryId: 'cat_general', promptTemplate: '放慢节奏，细致展开当前场景的细节。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_gen_pov', label: '切视角', categoryId: 'cat_general', promptTemplate: '以{{rowTitle}}的视角来描写接下来的场景。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_gen_inner', label: '内心戏', categoryId: 'cat_general', promptTemplate: '着重展开当前角色的内心活动与情绪波动。', createdAt: '2024-01-01T00:00:00.000Z' },
 
-/** 内置的一级分类（始终显示） */
-const BUILTIN_LEVEL1 = [
-  { name: '全部', icon: '', hasChildren: false },
-  { name: '未分类', icon: '📦', hasChildren: false },
-];
+    // 地点
+    { id: 'tag_loc_go', label: '前往', categoryId: 'cat_location', promptTemplate: '动身前往{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_loc_wander', label: '闲逛', categoryId: 'cat_location', promptTemplate: '在{{rowTitle}}四处闲逛。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_loc_search', label: '搜查', categoryId: 'cat_location', promptTemplate: '仔细搜查{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_loc_sneak', label: '潜入', categoryId: 'cat_location', promptTemplate: '悄悄潜入{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 人物/社交
+    { id: 'tag_char_talk', label: '搭话', categoryId: 'cat_char_social', promptTemplate: '主动向{{rowTitle}}搭话。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_ask', label: '询问', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}询问[内容]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_req', label: '请求', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}请求[帮助]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_invite', label: '邀请', categoryId: 'cat_char_social', promptTemplate: '邀请{{rowTitle}}同行。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_thx', label: '感谢', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}表示感谢。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_sry', label: '道歉', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}道歉。', createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 人物/观察
+    { id: 'tag_char_gaze', label: '注视', categoryId: 'cat_char_observe', promptTemplate: '默默注视着{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_track', label: '跟踪', categoryId: 'cat_char_observe', promptTemplate: '悄悄跟踪{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_listen', label: '偷听', categoryId: 'cat_char_observe', promptTemplate: '偷听{{rowTitle}}的谈话。', createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 人物/冲突
+    { id: 'tag_char_ques', label: '质问', categoryId: 'cat_char_conflict', promptTemplate: '质问{{rowTitle}}关于[事情]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_threat', label: '威胁', categoryId: 'cat_char_conflict', promptTemplate: '威胁{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_atk', label: '攻击', categoryId: 'cat_char_conflict', promptTemplate: '对{{rowTitle}}发起攻击。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_char_flee', label: '逃离追击', categoryId: 'cat_char_conflict', promptTemplate: '试图逃离{{rowTitle}}的追击。', createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 物品
+    { id: 'tag_item_use', label: '使用', categoryId: 'cat_item', promptTemplate: '使用{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_item_check', label: '检查', categoryId: 'cat_item', promptTemplate: '仔细检查{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_item_gift', label: '赠送', categoryId: 'cat_item', promptTemplate: '把{{rowTitle}}送给', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_item_show', label: '展示', categoryId: 'cat_item', promptTemplate: '向 展示{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 任务
+    { id: 'tag_quest_advance', label: '推进', categoryId: 'cat_quest', promptTemplate: '推进剧情，推动{{rowTitle}}的进度。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_quest_clue', label: '追踪线索', categoryId: 'cat_quest', promptTemplate: '追踪关于{{rowTitle}}的新线索。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_quest_help', label: '求助', categoryId: 'cat_quest', promptTemplate: '为解决{{rowTitle}}寻求 帮助。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+
+    // 动作
+    { id: 'tag_act_hide', label: '躲藏', categoryId: 'cat_action', promptTemplate: '<user>找地方躲起来。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_act_rest', label: '休息', categoryId: 'cat_action', promptTemplate: '<user>决定找个地方休息一下。', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_act_silent', label: '沉默', categoryId: 'cat_action', promptTemplate: '<user>陷入沉默', createdAt: '2024-01-01T00:00:00.000Z' },
+    { id: 'tag_act_daze', label: '走神', categoryId: 'cat_action', promptTemplate: '<user>走神发呆了一会儿。', createdAt: '2024-01-01T00:00:00.000Z' },
+  ],
+};
 
 /**
  * 生成唯一 ID
@@ -49,11 +102,8 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   /** 全局标签库 */
   const library = ref<GlobalTagLibrary>({ ...DEFAULT_LIBRARY });
 
-  /** 当前选中的一级分类（空字符串表示"全部"） */
-  const selectedLevel1 = ref<string>('');
-
-  /** 当前选中的二级分类（空字符串表示显示该一级下所有） */
-  const selectedLevel2 = ref<string>('');
+  /** 当前选中的分类 ID（''表示全部，'uncategorized'表示未分类） */
+  const activeCategoryId = ref<string>('');
 
   /** 搜索关键词 */
   const searchKeyword = ref<string>('');
@@ -99,20 +149,24 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
 
       if (globalVars && globalVars[STORAGE_KEY]) {
         const storedLibrary = globalVars[STORAGE_KEY] as GlobalTagLibrary;
+        const categories = storedLibrary.categories || [];
+        const tags = storedLibrary.tags || [];
 
-        // 合并默认值，确保结构完整
-        library.value = {
-          categories: storedLibrary.categories || [],
-          tags: storedLibrary.tags || [],
-        };
-
-        console.info('[ACU TagLibrary] 已从全局变量加载标签库:', {
-          categories: library.value.categories.length,
-          tags: library.value.tags.length,
-        });
+        // 如果存储的数据为空，使用默认值
+        if (categories.length === 0 && tags.length === 0) {
+          console.info('[ACU TagLibrary] 存储数据为空，加载默认标签库');
+          library.value = { ...DEFAULT_LIBRARY };
+        } else {
+          library.value = { categories, tags };
+          console.info('[ACU TagLibrary] 已从全局变量加载标签库:', {
+            categories: library.value.categories.length,
+            tags: library.value.tags.length,
+          });
+        }
       } else {
-        // 首次加载，尝试从旧的 interactiveTagConfig.tagDefinitions 迁移
-        await migrateFromOldConfig();
+        // 首次加载，使用默认标签库
+        console.info('[ACU TagLibrary] 首次使用，加载默认标签库');
+        library.value = { ...DEFAULT_LIBRARY };
       }
 
       isLoaded.value = true;
@@ -159,20 +213,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     }, 300); // 300ms 防抖
   }
 
-  /**
-   * 从旧配置迁移数据
-   * 兼容旧版 interactiveTagConfig.tagDefinitions
-   */
-  async function migrateFromOldConfig(): Promise<void> {
-    try {
-      // 这里可以添加从旧配置迁移的逻辑
-      // 目前暂时跳过，因为旧配置存储在 DashboardWidgetConfig 中
-      console.info('[ACU TagLibrary] 首次使用，初始化空标签库');
-      library.value = { ...DEFAULT_LIBRARY };
-    } catch (e) {
-      console.warn('[ACU TagLibrary] 迁移旧配置失败:', e);
-    }
-  }
 
   // 监听变化自动保存
   watch(
@@ -188,91 +228,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   // ============================================================
   // 分类操作
   // ============================================================
-
-  /**
-   * 解析分类路径
-   * @param category 分类对象
-   */
-  function parseCategoryPath(category: TagCategory): ParsedCategory {
-    const parts = category.path.split('/');
-    return {
-      category,
-      level1: parts[0] || '',
-      level2: parts[1] || '',
-      rest: parts.slice(2).join('/'),
-    };
-  }
-
-  /**
-   * 获取所有一级分类（含内置）
-   */
-  const level1Categories = computed<Array<{ name: string; icon?: string; hasChildren: boolean }>>(() => {
-    // 提取所有一级分类名
-    const level1Set = new Map<string, { icon?: string; hasChildren: boolean }>();
-
-    library.value.categories.forEach(cat => {
-      const parsed = parseCategoryPath(cat);
-      if (parsed.level1) {
-        const existing = level1Set.get(parsed.level1);
-        const hasChildren = parsed.level2 !== '';
-
-        if (existing) {
-          // 如果已存在，更新 hasChildren
-          existing.hasChildren = existing.hasChildren || hasChildren;
-          // 使用第一个找到的图标
-        } else {
-          level1Set.set(parsed.level1, {
-            icon: cat.icon,
-            hasChildren,
-          });
-        }
-      }
-    });
-
-    // 构建结果列表
-    const customLevel1: Array<{ name: string; icon?: string; hasChildren: boolean }> = [];
-    level1Set.forEach((value, name) => {
-      customLevel1.push({
-        name,
-        icon: value.icon,
-        hasChildren: value.hasChildren,
-      });
-    });
-
-    // 按名称排序
-    customLevel1.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
-
-    // 返回内置 + 自定义
-    return [...BUILTIN_LEVEL1, ...customLevel1];
-  });
-
-  /**
-   * 获取当前一级分类下的二级分类
-   */
-  const level2Categories = computed<Array<{ name: string; fullPath: string }>>(() => {
-    if (!selectedLevel1.value || selectedLevel1.value === '全部' || selectedLevel1.value === '未分类') {
-      return [];
-    }
-
-    const result: Array<{ name: string; fullPath: string }> = [];
-    const seen = new Set<string>();
-
-    library.value.categories.forEach(cat => {
-      const parsed = parseCategoryPath(cat);
-      if (parsed.level1 === selectedLevel1.value && parsed.level2 && !seen.has(parsed.level2)) {
-        seen.add(parsed.level2);
-        result.push({
-          name: parsed.level2,
-          fullPath: `${parsed.level1}/${parsed.level2}`,
-        });
-      }
-    });
-
-    // 按名称排序
-    result.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
-
-    return result;
-  });
 
   /**
    * 添加分类
@@ -407,32 +362,33 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
       );
     }
 
-    // 按一级分类筛选
-    if (selectedLevel1.value === '未分类') {
+    // 按分类筛选
+    if (activeCategoryId.value === 'uncategorized') {
       // 未分类：categoryId 为空或不存在的分类
       result = result.filter(tag => {
         if (!tag.categoryId) return true;
         return !library.value.categories.find(c => c.id === tag.categoryId);
       });
-    } else if (selectedLevel1.value && selectedLevel1.value !== '全部') {
-      // 获取该一级分类下的所有分类 ID
-      const matchingCategoryIds = new Set<string>();
+    } else if (activeCategoryId.value) {
+      // 特定分类：匹配该分类及其所有子分类
+      const currentCategory = getCategoryById(activeCategoryId.value);
 
-      library.value.categories.forEach(cat => {
-        const parsed = parseCategoryPath(cat);
-        if (parsed.level1 === selectedLevel1.value) {
-          // 如果选择了二级分类，只匹配该二级
-          if (selectedLevel2.value) {
-            if (parsed.level2 === selectedLevel2.value) {
-              matchingCategoryIds.add(cat.id);
-            }
-          } else {
-            matchingCategoryIds.add(cat.id);
+      if (currentCategory) {
+        const validCategoryIds = new Set<string>([currentCategory.id]);
+        const pathPrefix = currentCategory.path + '/';
+
+        // 查找所有子分类
+        library.value.categories.forEach(cat => {
+          if (cat.path.startsWith(pathPrefix)) {
+            validCategoryIds.add(cat.id);
           }
-        }
-      });
+        });
 
-      result = result.filter(tag => matchingCategoryIds.has(tag.categoryId));
+        result = result.filter(tag => validCategoryIds.has(tag.categoryId));
+      } else {
+        // 分类不存在（可能被删除了），显示空
+        result = [];
+      }
     }
 
     // 按创建时间倒序
@@ -826,28 +782,18 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   // ============================================================
 
   /**
-   * 选择一级分类
-   * @param name 分类名称
+   * 选择分类
+   * @param categoryId 分类 ID（''表示全部，'uncategorized'表示未分类）
    */
-  function selectLevel1(name: string): void {
-    selectedLevel1.value = name;
-    selectedLevel2.value = ''; // 重置二级选择
-  }
-
-  /**
-   * 选择二级分类
-   * @param name 分类名称
-   */
-  function selectLevel2(name: string): void {
-    selectedLevel2.value = name;
+  function selectCategory(categoryId: string): void {
+    activeCategoryId.value = categoryId;
   }
 
   /**
    * 重置分类选择
    */
   function resetSelection(): void {
-    selectedLevel1.value = '';
-    selectedLevel2.value = '';
+    activeCategoryId.value = '';
     searchKeyword.value = '';
   }
 
@@ -893,30 +839,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     return library.value.tags.filter(tag => categoryIds.has(tag.categoryId)).length;
   }
 
-  /**
-   * 获取一级分类下的标签总数
-   * @param level1Name 一级分类名称
-   */
-  function getLevel1TagCount(level1Name: string): number {
-    if (level1Name === '全部') {
-      return library.value.tags.length;
-    }
-    if (level1Name === '未分类') {
-      return uncategorizedCount.value;
-    }
-
-    // 获取该一级分类下所有分类的 ID
-    const categoryIds = new Set<string>();
-    library.value.categories.forEach(cat => {
-      const parsed = parseCategoryPath(cat);
-      if (parsed.level1 === level1Name) {
-        categoryIds.add(cat.id);
-      }
-    });
-
-    return library.value.tags.filter(tag => categoryIds.has(tag.categoryId)).length;
-  }
-
   // ============================================================
   // 清空操作
   // ============================================================
@@ -952,8 +874,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   return {
     // 状态
     library,
-    selectedLevel1,
-    selectedLevel2,
+    activeCategoryId,
     searchKeyword,
     isLoaded,
 
@@ -968,9 +889,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     saveLibrary,
 
     // 分类操作
-    parseCategoryPath,
-    level1Categories,
-    level2Categories,
     addCategory,
     deleteCategory,
     updateCategory,
@@ -978,7 +896,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     getCategoryByPath,
     getChildCategories,
     getCategoryTagCount,
-    getLevel1TagCount,
 
     // 标签操作
     filteredTags,
@@ -1008,8 +925,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     clearAll,
 
     // 分类选择
-    selectLevel1,
-    selectLevel2,
+    selectCategory,
     resetSelection,
 
     // 统计

@@ -13,6 +13,9 @@ export * from './relationshipParser';
 // 图片上传和颜色工具
 export * from './imageUpload';
 
+// 选项解析工具
+export * from './optionParser';
+
 /**
  * 获取核心依赖 (jQuery 和数据库 API)
  */

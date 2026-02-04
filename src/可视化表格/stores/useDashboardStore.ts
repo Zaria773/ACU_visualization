@@ -268,6 +268,39 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   }
 
   /**
+   * 清理无效的表格组件
+   * 当表格在数据库中不再存在时，移除对应的仪表盘组件
+   * @param existingTableIds 当前存在的所有表格 ID 列表
+   */
+  function cleanupInvalidWidgets(existingTableIds: string[]): void {
+    const validIdsSet = new Set(existingTableIds);
+    let hasChanges = false;
+
+    // 倒序遍历以便安全删除
+    for (let i = config.value.widgets.length - 1; i >= 0; i--) {
+      const widget = config.value.widgets[i];
+
+      // 只检查表格类型的组件
+      if (widget.type === 'table' && widget.tableId) {
+        // 如果表格 ID 不在现有 ID 列表中，则移除
+        if (!validIdsSet.has(widget.tableId)) {
+          console.log(`[ACU Dashboard] 移除无效组件: ${widget.title} (Table ID: ${widget.tableId} 不存在)`);
+          config.value.widgets.splice(i, 1);
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      // 重新排序
+      config.value.widgets.forEach((w, index) => {
+        w.order = index;
+      });
+      saveConfig();
+    }
+  }
+
+  /**
    * 确保默认组件存在 (只在首次初始化时执行)
    *
    * 【重要】此函数只在 hasInitializedDefaults 为 false 时添加默认组件。
@@ -724,5 +757,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     removeSpecialWidget,
     getWidgetById,
     ensureDefaultWidgets,
+    cleanupInvalidWidgets,
   };
 });

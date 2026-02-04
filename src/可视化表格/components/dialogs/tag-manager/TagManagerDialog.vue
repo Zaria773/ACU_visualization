@@ -48,6 +48,17 @@
 
         <!-- 工具栏 -->
         <div class="acu-tag-toolbar">
+          <!-- 预览模式按钮（通过 CSS 媒体查询控制，仅移动端显示） -->
+          <button
+            class="acu-mode-btn acu-mobile-only"
+            :class="{ active: uiStore.tagPreviewMode }"
+            title="预览模式：点按标签查看提示词"
+            @click.stop="uiStore.toggleTagPreviewMode()"
+          >
+            <i class="fas fa-search"></i>
+            <span class="btn-label">预览</span>
+          </button>
+
           <!-- 模式按钮 -->
           <button
             class="acu-mode-btn"
@@ -153,9 +164,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useConfigStore } from '../../../stores/useConfigStore';
 import { useTagLibraryStore } from '../../../stores/useTagLibraryStore';
+import { useUIStore } from '../../../stores/useUIStore';
 import type { InteractiveTag, TagCategory, TagManagerMode } from '../../../types';
 import TagBadgeGrid from './TagBadgeGrid.vue';
 import TagCategoryTree from './TagCategoryTree.vue';
@@ -184,6 +196,7 @@ const emit = defineEmits<{
 // Store
 const tagStore = useTagLibraryStore();
 const configStore = useConfigStore();
+const uiStore = useUIStore();
 
 // 本地状态
 const searchKeyword = ref('');
@@ -250,6 +263,14 @@ const localDisplayedTagIdSet = computed(() => localDisplayedTagIds.value);
 // 生命周期
 onMounted(async () => {
   await tagStore.loadLibrary();
+});
+
+onUnmounted(() => {
+  // 关闭时重置预览模式
+  if (uiStore.tagPreviewMode) {
+    uiStore.toggleTagPreviewMode();
+  }
+  uiStore.hideTagPreviewTooltip();
 });
 
 // 方法

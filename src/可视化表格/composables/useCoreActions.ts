@@ -8,7 +8,7 @@
 import { useDataStore } from '../stores/useDataStore';
 import { getBadgeStyle, getCore } from '../utils';
 import { useDataPersistence } from './useDataPersistence';
-import { appendPromptToInput } from './useHiddenPrompt';
+import { appendToActiveInput } from './useHiddenPrompt';
 import { toast } from './useToast';
 
 export function useCoreActions() {
@@ -157,11 +157,11 @@ export function useCoreActions() {
   };
 
   /**
-   * 设置输入框内容 (追加)
+   * 设置输入框内容 (追加到当前焦点输入框或酒馆默认输入框)
    * @param text 要追加的文本
    */
   const setInput = (text: string) => {
-    appendPromptToInput(text, ' ');
+    appendToActiveInput(text, ' ');
   };
 
   /**

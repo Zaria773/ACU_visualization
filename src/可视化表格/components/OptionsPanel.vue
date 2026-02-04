@@ -39,7 +39,7 @@
               >
                 <!-- 标签区域 -->
                 <div class="acu-embedded-option-tags">
-                  <span v-for="(tag, tagIdx) in optionItem.tags" :key="tagIdx" class="acu-badge acu-option-tag">
+                  <span v-for="(tag, tagIdx) in optionItem.tags" :key="tagIdx" class="acu-badge">
                     {{ tag }}
                   </span>
                 </div>
@@ -69,11 +69,7 @@ import { useCoreActions } from '../composables/useCoreActions';
 import { toast } from '../composables/useToast';
 import { TAB_DASHBOARD, useUIStore } from '../stores';
 import type { ProcessedTable } from '../types';
-
-interface OptionItem {
-  text: string;
-  tags: string[];
-}
+import { isOptionTable, parseOptionItems, type OptionItem } from '../utils/optionParser';
 
 interface Props {
   /** 所有表格数据 */
@@ -102,87 +98,19 @@ const uiStore = useUIStore();
 
 /** 获取所有包含"选项"的表格 */
 const optionTables = computed(() => {
-  return props.tables.filter(t => t.name.includes('选项'));
+  return props.tables.filter(t => isOptionTable(t.name));
 });
 
 // ============================================================
-// 矩阵模式检测 (与原代码逻辑一致)
-// ============================================================
-
-/**
- * 判断表格是否为矩阵模式
- * 条件：表头有 >= 2 个含"选项/Option/分支"的字段
- */
-function isMatrixMode(table: ProcessedTable): { isMatrix: boolean; optionColIndices: number[] } {
-  const headers = table.headers || [];
-  const optionColIndices: number[] = [];
-
-  headers.forEach((h, idx) => {
-    if (h && /(选项|Option|分支)/i.test(String(h))) {
-      optionColIndices.push(idx);
-    }
-  });
-
-  return {
-    isMatrix: optionColIndices.length >= 2,
-    optionColIndices,
-  };
-}
-
-// ============================================================
-// 选项数据处理 (与原代码 createOptionItemHtml 逻辑一致)
+// 选项数据处理 (使用共享的解析函数)
 // ============================================================
 
 /**
  * 获取表格的所有选项项
- * 根据矩阵模式/普通模式分别处理
+ * 使用共享的 parseOptionItems 函数
  */
 function getOptionItems(table: ProcessedTable): OptionItem[] {
-  const items: OptionItem[] = [];
-  const { isMatrix, optionColIndices } = isMatrixMode(table);
-  const headers = table.headers || [];
-
-  table.rows.forEach(row => {
-    const rowData = row.cells.map(c => String(c.value || '').trim());
-
-    if (isMatrix) {
-      // 矩阵模式：提取公共标签，每个选项列单独生成一个选项项
-      const commonTags: string[] = [];
-      rowData.forEach((cellText, idx) => {
-        if (!optionColIndices.includes(idx) && cellText) {
-          commonTags.push(cellText);
-        }
-      });
-
-      optionColIndices.forEach(colIdx => {
-        const cellText = rowData[colIdx];
-        if (cellText) {
-          const currentHeaderTag = headers[colIdx] || '';
-          const allTags = [...commonTags];
-          if (currentHeaderTag) {
-            allTags.push(currentHeaderTag);
-          }
-          items.push({
-            text: cellText,
-            tags: allTags,
-          });
-        }
-      });
-    } else {
-      // 普通模式：最后一个有值单元格作为选项文本，其他作为标签
-      const validCells = rowData.filter(c => c !== '');
-      if (validCells.length === 0) return;
-
-      const targetText = validCells[validCells.length - 1];
-      const tags = validCells.slice(0, validCells.length - 1);
-      items.push({
-        text: targetText,
-        tags,
-      });
-    }
-  });
-
-  return items;
+  return parseOptionItems(table);
 }
 
 // ============================================================
