@@ -1,11 +1,7 @@
 <!-- TagPreviewTooltip.vue - 标签预览浮窗（PC悬浮/移动端点按显示） -->
 <!-- 不使用 Teleport，直接在弹窗内渲染，通过 position: fixed 定位 -->
 <template>
-  <div
-    v-if="uiStore.tagPreviewTooltip.visible"
-    class="acu-tag-preview-tooltip"
-    :style="tooltipStyle"
-  >
+  <div v-if="uiStore.tagPreviewTooltip.visible" class="acu-tag-preview-tooltip" :style="tooltipStyle">
     {{ uiStore.tagPreviewTooltip.content }}
   </div>
 </template>

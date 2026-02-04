@@ -111,7 +111,12 @@
       <!-- 底部：操作按钮 -->
       <div
         class="acu-modal-footer"
-        style="justify-content: space-between; margin-top: 0; padding-top: 12px; border-top: 1px solid var(--acu-border)"
+        style="
+          justify-content: space-between;
+          margin-top: 0;
+          padding-top: 12px;
+          border-top: 1px solid var(--acu-border);
+        "
       >
         <button class="acu-modal-btn secondary" @click.stop="handleManageTags">
           <i class="fas fa-tags"></i> 管理标签

@@ -99,119 +99,119 @@
     </div>
     <div class="acu-settings-group">
       <!-- 表格随机词 -->
-        <div class="acu-settings-row">
-          <div class="acu-settings-label">
-            表格随机词
-            <span class="hint">从含"随机"的表格抽词</span>
-          </div>
-          <div class="acu-settings-control">
-            <button
-              class="acu-switch"
-              :class="{ active: config.enableTableWords }"
-              @click="config.enableTableWords = !config.enableTableWords"
-            ></button>
-          </div>
+      <div class="acu-settings-row">
+        <div class="acu-settings-label">
+          表格随机词
+          <span class="hint">从含"随机"的表格抽词</span>
         </div>
-
-        <!-- 世界书词库 -->
-        <div class="acu-settings-row">
-          <div class="acu-settings-label">
-            世界书词库
-            <span class="hint">从同步的世界书抽词</span>
-          </div>
-          <div class="acu-settings-control">
-            <button
-              class="acu-switch"
-              :class="{ active: config.enableWordPool }"
-              @click="config.enableWordPool = !config.enableWordPool"
-            ></button>
-          </div>
+        <div class="acu-settings-control">
+          <button
+            class="acu-switch"
+            :class="{ active: config.enableTableWords }"
+            @click="config.enableTableWords = !config.enableTableWords"
+          ></button>
         </div>
-
-        <!-- 抽词模式（任一开启时显示） -->
-        <template v-if="config.enableTableWords || config.enableWordPool">
-          <div class="acu-settings-row">
-            <div class="acu-settings-label">
-              抽词模式
-              <span class="hint">{{ modeHintText }}</span>
-            </div>
-            <div class="acu-settings-control acu-mode-control">
-              <select v-model="config.wordDrawMode" class="acu-select">
-                <option value="perItem">每项抽 x 个</option>
-                <option value="custom">自定义</option>
-                <option value="mixed">混抽</option>
-              </select>
-              <!-- perItem 模式：拖动条在同一行 -->
-              <template v-if="config.wordDrawMode === 'perItem'">
-                <div class="acu-range-wrapper">
-                  <input
-                    v-model.number="config.wordsPerItem"
-                    type="range"
-                    min="1"
-                    max="10"
-                    step="1"
-                    class="acu-inline-range"
-                  />
-                  <span class="acu-range-value">{{ config.wordsPerItem }}</span>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <!-- custom/mixed 模式：抽词总数（单独一行拖动条 1-20） -->
-          <div v-if="config.wordDrawMode !== 'perItem'" class="acu-settings-row">
-            <div class="acu-settings-label">
-              抽词总数
-              <span class="hint">最多抽取 {{ config.drawCount }} 个词</span>
-            </div>
-            <div class="acu-settings-control">
-              <input v-model.number="config.drawCount" type="range" min="1" max="20" step="1" />
-            </div>
-          </div>
-
-          <!-- 自动同步 -->
-          <div class="acu-settings-row" @click="toggleTableSyncList">
-            <div class="acu-settings-label">
-              自动同步
-              <span class="hint">表格变动时自动更新世界书</span>
-            </div>
-            <div class="acu-settings-control">
-              <button
-                class="acu-switch"
-                :class="{ active: config.autoSync }"
-                @click.stop="config.autoSync = !config.autoSync"
-              ></button>
-              <i
-                class="fas"
-                :class="showTableSyncList ? 'fa-chevron-up' : 'fa-chevron-down'"
-                style="margin-left: 8px; font-size: 12px; color: var(--acu-text-sub)"
-              ></i>
-            </div>
-          </div>
-
-          <!-- 同步表格列表 (可折叠) -->
-          <div v-if="showTableSyncList" style="padding: 0 16px 16px 16px">
-            <SwitchList
-              v-model="enabledSyncTables"
-              :items="randomTableItems"
-              empty-text="没有找到包含'随机'的表格"
-              footer-template="已启用同步: {selected}/{total} 个表格"
-              empty-hint="(将自动扫描新表格)"
-            />
-          </div>
-
-          <!-- 词库管理入口 -->
-          <div class="acu-settings-row acu-nav-row" @click="nav.navigateTo('divinationWordPool')">
-            <div class="acu-settings-label">
-              词库管理
-              <span class="hint">配置每项的 limit 和开关</span>
-            </div>
-            <div class="acu-settings-control">
-              <i class="fas fa-chevron-right"></i>
-            </div>
-          </div>
-        </template>
       </div>
+
+      <!-- 世界书词库 -->
+      <div class="acu-settings-row">
+        <div class="acu-settings-label">
+          世界书词库
+          <span class="hint">从同步的世界书抽词</span>
+        </div>
+        <div class="acu-settings-control">
+          <button
+            class="acu-switch"
+            :class="{ active: config.enableWordPool }"
+            @click="config.enableWordPool = !config.enableWordPool"
+          ></button>
+        </div>
+      </div>
+
+      <!-- 抽词模式（任一开启时显示） -->
+      <template v-if="config.enableTableWords || config.enableWordPool">
+        <div class="acu-settings-row">
+          <div class="acu-settings-label">
+            抽词模式
+            <span class="hint">{{ modeHintText }}</span>
+          </div>
+          <div class="acu-settings-control acu-mode-control">
+            <select v-model="config.wordDrawMode" class="acu-select">
+              <option value="perItem">每项抽 x 个</option>
+              <option value="custom">自定义</option>
+              <option value="mixed">混抽</option>
+            </select>
+            <!-- perItem 模式：拖动条在同一行 -->
+            <template v-if="config.wordDrawMode === 'perItem'">
+              <div class="acu-range-wrapper">
+                <input
+                  v-model.number="config.wordsPerItem"
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  class="acu-inline-range"
+                />
+                <span class="acu-range-value">{{ config.wordsPerItem }}</span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- custom/mixed 模式：抽词总数（单独一行拖动条 1-20） -->
+        <div v-if="config.wordDrawMode !== 'perItem'" class="acu-settings-row">
+          <div class="acu-settings-label">
+            抽词总数
+            <span class="hint">最多抽取 {{ config.drawCount }} 个词</span>
+          </div>
+          <div class="acu-settings-control">
+            <input v-model.number="config.drawCount" type="range" min="1" max="20" step="1" />
+          </div>
+        </div>
+
+        <!-- 自动同步 -->
+        <div class="acu-settings-row" @click="toggleTableSyncList">
+          <div class="acu-settings-label">
+            自动同步
+            <span class="hint">表格变动时自动更新世界书</span>
+          </div>
+          <div class="acu-settings-control">
+            <button
+              class="acu-switch"
+              :class="{ active: config.autoSync }"
+              @click.stop="config.autoSync = !config.autoSync"
+            ></button>
+            <i
+              class="fas"
+              :class="showTableSyncList ? 'fa-chevron-up' : 'fa-chevron-down'"
+              style="margin-left: 8px; font-size: 12px; color: var(--acu-text-sub)"
+            ></i>
+          </div>
+        </div>
+
+        <!-- 同步表格列表 (可折叠) -->
+        <div v-if="showTableSyncList" style="padding: 0 16px 16px 16px">
+          <SwitchList
+            v-model="enabledSyncTables"
+            :items="randomTableItems"
+            empty-text="没有找到包含'随机'的表格"
+            footer-template="已启用同步: {selected}/{total} 个表格"
+            empty-hint="(将自动扫描新表格)"
+          />
+        </div>
+
+        <!-- 词库管理入口 -->
+        <div class="acu-settings-row acu-nav-row" @click="nav.navigateTo('divinationWordPool')">
+          <div class="acu-settings-label">
+            词库管理
+            <span class="hint">配置每项的 limit 和开关</span>
+          </div>
+          <div class="acu-settings-control">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 

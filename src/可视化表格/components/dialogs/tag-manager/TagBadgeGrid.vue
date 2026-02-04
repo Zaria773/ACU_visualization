@@ -145,11 +145,7 @@ function handleTagMouseEnter(tag: InteractiveTag, event: MouseEvent) {
   const rect = target.getBoundingClientRect();
 
   // 使用视口坐标（position: fixed 相对于视口）
-  uiStore.showTagPreviewTooltip(
-    tag.promptTemplate,
-    rect.left + rect.width / 2,
-    rect.top,
-  );
+  uiStore.showTagPreviewTooltip(tag.promptTemplate, rect.left + rect.width / 2, rect.top);
 }
 
 /** PC端：鼠标离开隐藏预览 */

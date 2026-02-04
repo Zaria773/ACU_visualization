@@ -15,7 +15,7 @@ import type {
   InteractiveTag,
   TagCategory,
   TagLibraryExport,
-  TagManagerMode
+  TagManagerMode,
 } from '../types';
 
 /** 存储键常量 */
@@ -36,54 +36,263 @@ const DEFAULT_LIBRARY: GlobalTagLibrary = {
   ],
   tags: [
     // 通用
-    { id: 'tag_gen_prevent', label: '防转述', categoryId: 'cat_general', promptTemplate: '禁止在正文中复述{{user}}的输入。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_gen_speak', label: '抢话', categoryId: 'cat_general', promptTemplate: '{{user}}在正文中必须有2句以上新对白。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_gen_skip', label: '跳过', categoryId: 'cat_general', promptTemplate: '适当跳过一段时间，自然概括中间发生的事。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_gen_detail', label: '细写', categoryId: 'cat_general', promptTemplate: '放慢节奏，细致展开当前场景的细节。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_gen_pov', label: '切视角', categoryId: 'cat_general', promptTemplate: '以{{rowTitle}}的视角来描写接下来的场景。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_gen_inner', label: '内心戏', categoryId: 'cat_general', promptTemplate: '着重展开当前角色的内心活动与情绪波动。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_gen_prevent',
+      label: '防转述',
+      categoryId: 'cat_general',
+      promptTemplate: '禁止在正文中复述{{user}}的输入。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_gen_speak',
+      label: '抢话',
+      categoryId: 'cat_general',
+      promptTemplate: '{{user}}在正文中必须有2句以上新对白。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_gen_skip',
+      label: '跳过',
+      categoryId: 'cat_general',
+      promptTemplate: '适当跳过一段时间，自然概括中间发生的事。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_gen_detail',
+      label: '细写',
+      categoryId: 'cat_general',
+      promptTemplate: '放慢节奏，细致展开当前场景的细节。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_gen_pov',
+      label: '切视角',
+      categoryId: 'cat_general',
+      promptTemplate: '以{{rowTitle}}的视角来描写接下来的场景。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_gen_inner',
+      label: '内心戏',
+      categoryId: 'cat_general',
+      promptTemplate: '着重展开当前角色的内心活动与情绪波动。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 地点
-    { id: 'tag_loc_go', label: '前往', categoryId: 'cat_location', promptTemplate: '动身前往{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_loc_wander', label: '闲逛', categoryId: 'cat_location', promptTemplate: '在{{rowTitle}}四处闲逛。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_loc_search', label: '搜查', categoryId: 'cat_location', promptTemplate: '仔细搜查{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_loc_sneak', label: '潜入', categoryId: 'cat_location', promptTemplate: '悄悄潜入{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_loc_go',
+      label: '前往',
+      categoryId: 'cat_location',
+      promptTemplate: '动身前往{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_loc_wander',
+      label: '闲逛',
+      categoryId: 'cat_location',
+      promptTemplate: '在{{rowTitle}}四处闲逛。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_loc_search',
+      label: '搜查',
+      categoryId: 'cat_location',
+      promptTemplate: '仔细搜查{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_loc_sneak',
+      label: '潜入',
+      categoryId: 'cat_location',
+      promptTemplate: '悄悄潜入{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 人物/社交
-    { id: 'tag_char_talk', label: '搭话', categoryId: 'cat_char_social', promptTemplate: '主动向{{rowTitle}}搭话。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_ask', label: '询问', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}询问[内容]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_req', label: '请求', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}请求[帮助]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_invite', label: '邀请', categoryId: 'cat_char_social', promptTemplate: '邀请{{rowTitle}}同行。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_thx', label: '感谢', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}表示感谢。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_sry', label: '道歉', categoryId: 'cat_char_social', promptTemplate: '向{{rowTitle}}道歉。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_char_talk',
+      label: '搭话',
+      categoryId: 'cat_char_social',
+      promptTemplate: '主动向{{rowTitle}}搭话。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_ask',
+      label: '询问',
+      categoryId: 'cat_char_social',
+      promptTemplate: '向{{rowTitle}}询问[内容]。',
+      allowPreEdit: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_req',
+      label: '请求',
+      categoryId: 'cat_char_social',
+      promptTemplate: '向{{rowTitle}}请求[帮助]。',
+      allowPreEdit: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_invite',
+      label: '邀请',
+      categoryId: 'cat_char_social',
+      promptTemplate: '邀请{{rowTitle}}同行。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_thx',
+      label: '感谢',
+      categoryId: 'cat_char_social',
+      promptTemplate: '向{{rowTitle}}表示感谢。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_sry',
+      label: '道歉',
+      categoryId: 'cat_char_social',
+      promptTemplate: '向{{rowTitle}}道歉。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 人物/观察
-    { id: 'tag_char_gaze', label: '注视', categoryId: 'cat_char_observe', promptTemplate: '默默注视着{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_track', label: '跟踪', categoryId: 'cat_char_observe', promptTemplate: '悄悄跟踪{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_listen', label: '偷听', categoryId: 'cat_char_observe', promptTemplate: '偷听{{rowTitle}}的谈话。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_char_gaze',
+      label: '注视',
+      categoryId: 'cat_char_observe',
+      promptTemplate: '默默注视着{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_track',
+      label: '跟踪',
+      categoryId: 'cat_char_observe',
+      promptTemplate: '悄悄跟踪{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_listen',
+      label: '偷听',
+      categoryId: 'cat_char_observe',
+      promptTemplate: '偷听{{rowTitle}}的谈话。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 人物/冲突
-    { id: 'tag_char_ques', label: '质问', categoryId: 'cat_char_conflict', promptTemplate: '质问{{rowTitle}}关于[事情]。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_threat', label: '威胁', categoryId: 'cat_char_conflict', promptTemplate: '威胁{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_atk', label: '攻击', categoryId: 'cat_char_conflict', promptTemplate: '对{{rowTitle}}发起攻击。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_char_flee', label: '逃离追击', categoryId: 'cat_char_conflict', promptTemplate: '试图逃离{{rowTitle}}的追击。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_char_ques',
+      label: '质问',
+      categoryId: 'cat_char_conflict',
+      promptTemplate: '质问{{rowTitle}}关于[事情]。',
+      allowPreEdit: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_threat',
+      label: '威胁',
+      categoryId: 'cat_char_conflict',
+      promptTemplate: '威胁{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_atk',
+      label: '攻击',
+      categoryId: 'cat_char_conflict',
+      promptTemplate: '对{{rowTitle}}发起攻击。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_char_flee',
+      label: '逃离追击',
+      categoryId: 'cat_char_conflict',
+      promptTemplate: '试图逃离{{rowTitle}}的追击。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 物品
-    { id: 'tag_item_use', label: '使用', categoryId: 'cat_item', promptTemplate: '使用{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_item_check', label: '检查', categoryId: 'cat_item', promptTemplate: '仔细检查{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_item_gift', label: '赠送', categoryId: 'cat_item', promptTemplate: '把{{rowTitle}}送给', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_item_show', label: '展示', categoryId: 'cat_item', promptTemplate: '向 展示{{rowTitle}}。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_item_use',
+      label: '使用',
+      categoryId: 'cat_item',
+      promptTemplate: '使用{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_item_check',
+      label: '检查',
+      categoryId: 'cat_item',
+      promptTemplate: '仔细检查{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_item_gift',
+      label: '赠送',
+      categoryId: 'cat_item',
+      promptTemplate: '把{{rowTitle}}送给',
+      allowPreEdit: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_item_show',
+      label: '展示',
+      categoryId: 'cat_item',
+      promptTemplate: '向 展示{{rowTitle}}。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 任务
-    { id: 'tag_quest_advance', label: '推进', categoryId: 'cat_quest', promptTemplate: '推进剧情，推动{{rowTitle}}的进度。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_quest_clue', label: '追踪线索', categoryId: 'cat_quest', promptTemplate: '追踪关于{{rowTitle}}的新线索。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_quest_help', label: '求助', categoryId: 'cat_quest', promptTemplate: '为解决{{rowTitle}}寻求 帮助。', allowPreEdit: true, createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_quest_advance',
+      label: '推进',
+      categoryId: 'cat_quest',
+      promptTemplate: '推进剧情，推动{{rowTitle}}的进度。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_quest_clue',
+      label: '追踪线索',
+      categoryId: 'cat_quest',
+      promptTemplate: '追踪关于{{rowTitle}}的新线索。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_quest_help',
+      label: '求助',
+      categoryId: 'cat_quest',
+      promptTemplate: '为解决{{rowTitle}}寻求 帮助。',
+      allowPreEdit: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
 
     // 动作
-    { id: 'tag_act_hide', label: '躲藏', categoryId: 'cat_action', promptTemplate: '<user>找地方躲起来。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_act_rest', label: '休息', categoryId: 'cat_action', promptTemplate: '<user>决定找个地方休息一下。', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_act_silent', label: '沉默', categoryId: 'cat_action', promptTemplate: '<user>陷入沉默', createdAt: '2024-01-01T00:00:00.000Z' },
-    { id: 'tag_act_daze', label: '走神', categoryId: 'cat_action', promptTemplate: '<user>走神发呆了一会儿。', createdAt: '2024-01-01T00:00:00.000Z' },
+    {
+      id: 'tag_act_hide',
+      label: '躲藏',
+      categoryId: 'cat_action',
+      promptTemplate: '<user>找地方躲起来。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_act_rest',
+      label: '休息',
+      categoryId: 'cat_action',
+      promptTemplate: '<user>决定找个地方休息一下。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_act_silent',
+      label: '沉默',
+      categoryId: 'cat_action',
+      promptTemplate: '<user>陷入沉默',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'tag_act_daze',
+      label: '走神',
+      categoryId: 'cat_action',
+      promptTemplate: '<user>走神发呆了一会儿。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
   ],
 };
 
@@ -212,7 +421,6 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
       }
     }, 300); // 300ms 防抖
   }
-
 
   // 监听变化自动保存
   watch(

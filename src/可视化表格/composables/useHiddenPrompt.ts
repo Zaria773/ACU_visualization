@@ -84,9 +84,7 @@ export function setupSendIntercept() {
       }
 
       // ✅ 使用 createChatMessages 直接创建用户消息
-      await parentWin.TavernHelper.createChatMessages([
-        { role: 'user', message: combinedMessage },
-      ]);
+      await parentWin.TavernHelper.createChatMessages([{ role: 'user', message: combinedMessage }]);
 
       console.info('[ACU] ✓ 用户消息已创建');
 
@@ -119,7 +117,9 @@ export function setupSendIntercept() {
             const userMsgs = parentWin.TavernHelper.getChatMessages(`0-${lastMsgId}`, { role: 'user' });
             if (userMsgs && userMsgs.length > 0) {
               const lastUserMsg = userMsgs[userMsgs.length - 1];
-              await parentWin.TavernHelper.setChatMessages([{ message_id: lastUserMsg.message_id }], { refresh: 'affected' });
+              await parentWin.TavernHelper.setChatMessages([{ message_id: lastUserMsg.message_id }], {
+                refresh: 'affected',
+              });
               console.info('[ACU] ✓ 用户消息已重渲染，message_id:', lastUserMsg.message_id);
             }
           }
@@ -180,11 +180,7 @@ export function cleanupSendIntercept() {
  * @param separator 分隔符，默认换行
  * @param targetSelector 目标输入框选择器，默认为酒馆输入框
  */
-export function appendPromptToInput(
-  text: string,
-  separator: string = '\n',
-  targetSelector: string = '#send_textarea',
-) {
+export function appendPromptToInput(text: string, separator: string = '\n', targetSelector: string = '#send_textarea') {
   const parentDoc = window.parent.document;
   const textarea = parentDoc.querySelector(targetSelector) as HTMLTextAreaElement | HTMLInputElement | null;
   // 移动端正则检测 (简单的 UA 检测)
@@ -258,8 +254,7 @@ export function setupFocusTracking() {
       const target = e.target as HTMLElement;
       if (
         target &&
-        (target.tagName === 'TEXTAREA' ||
-          (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'text'))
+        (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'text'))
       ) {
         // 过滤掉 ACU 自己的输入框
         if (isACUInternalInput(target)) {

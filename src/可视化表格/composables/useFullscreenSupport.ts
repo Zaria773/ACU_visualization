@@ -144,7 +144,9 @@ export function useFullscreenSupport() {
     // 添加全屏模式类
     container.classList.add('acu-fullscreen-mode');
 
-    console.info(`[ACU Fullscreen] Adjusted ball position: left=${newLeft}px, top=${newTop}px (fullscreen height=${rect.height}px)`);
+    console.info(
+      `[ACU Fullscreen] Adjusted ball position: left=${newLeft}px, top=${newTop}px (fullscreen height=${rect.height}px)`,
+    );
   }
 
   /**

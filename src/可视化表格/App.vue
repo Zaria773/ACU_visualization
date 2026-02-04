@@ -402,7 +402,12 @@ import {
   WidgetSettingsDialog,
 } from './components/dialogs';
 import { DivinationOverlay, PromptEditorDialog } from './components/dialogs/divination';
-import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog, TagPreviewTooltip } from './components/dialogs/tag-manager';
+import {
+  CategorySelectPopup,
+  TagManagerDialog,
+  TagPreEditDialog,
+  TagPreviewTooltip,
+} from './components/dialogs/tag-manager';
 
 // RelationshipGraph 使用懒加载，只在用户打开关系图时才加载 Cytoscape 及其扩展
 // 这可以显著减少初始内存占用，特别是在移动设备上
