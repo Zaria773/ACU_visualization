@@ -2201,9 +2201,12 @@ packages:
 
   electron-to-chromium@1.5.286:
     resolution: {integrity: sha512-9tfDXhJ4RKFNerfjdCcZfufu49vg620741MNs26a9+bhLThdB+plgMeou98CAaHu/WATj2iHOOHTp1hWtABj2A==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 8a3236488f838733f52d0fbae264274272bfdbb3
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -6520,8 +6523,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.286: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 8a3236488f838733f52d0fbae264274272bfdbb3
 
   emoji-regex@8.0.0: {}
 
