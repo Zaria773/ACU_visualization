@@ -332,7 +332,7 @@
         </Transition>
 
         <!-- 底部留白适配移动端安全区 -->
-        <div class="acu-bottom-spacer">—— ACU Visualizer 8.2.0 ——</div>
+        <div class="acu-bottom-spacer">—— ACU Visualizer v{{ VERSION }} ——</div>
       </div>
     </div>
   </Transition>
@@ -345,6 +345,7 @@ import { useCellLock } from '../../../composables';
 import { useBallAppearanceStore, useConfigStore } from '../../../stores/useConfigStore';
 import { useUIStore } from '../../../stores/useUIStore';
 import type { ACUConfig } from '../../../types';
+import { VERSION } from '../../../version';
 import BallAppearancePanel from '../../settings/BallAppearancePanel.vue';
 import NavButtonConfigPanel from '../../settings/NavButtonConfigPanel.vue';
 import TabConfigPanel from '../../settings/TabConfigPanel.vue';

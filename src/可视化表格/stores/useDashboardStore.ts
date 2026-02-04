@@ -18,6 +18,8 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
   layout: 'grid',
   columns: 2,
   showStats: true,
+  hasInitializedDefaults: false, // 标记是否已完成首次默认组件初始化
+  configVersion: 0, // 配置版本号，用于防止旧配置覆盖新配置
 };
 
 /** localStorage 备份键名 */
@@ -49,6 +51,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
 
   /** 是否已初始化 */
   const isInitialized = ref(false);
+
+  /** 加载时的版本号，用于检测配置是否被其他实例修改 */
+  const loadedVersion = ref<number>(0);
 
   // ============================================================
   // Getters
@@ -162,7 +167,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         };
         loadedExistingConfig = true;
         loadedFromGlobal = true;
-        console.log('[ACU Dashboard] 成功从酒馆变量加载配置，widgets 数量:', config.value.widgets.length);
+        // 【关键】记住加载时的版本号
+        loadedVersion.value = config.value.configVersion || 0;
+        console.log('[ACU Dashboard] 成功从酒馆变量加载配置，widgets 数量:', config.value.widgets.length, '版本:', loadedVersion.value);
 
         // 同步更新 localStorage 备份
         saveToLocalStorage();
@@ -256,13 +263,22 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   }
 
   /**
-   * 确保默认组件存在 (幂等操作)
-   * 可以在数据加载后重复调用，补充缺失的组件
+   * 确保默认组件存在 (只在首次初始化时执行)
+   *
+   * 【重要】此函数只在 hasInitializedDefaults 为 false 时添加默认组件。
+   * 一旦用户删除了某个组件，不会再被自动添加回来。
+   *
    * 添加顺序：表格更新状态 → 随机词表（如检测到）→ 人物/NPC表 → 任务表 → 物品表
    *
    * @param allowSave 是否允许保存（防止热重载时误覆盖）
    */
   async function ensureDefaultWidgets(allowSave = true): Promise<void> {
+    // 【关键修复】如果已经完成过首次初始化，直接返回，不再自动添加任何组件
+    if (config.value.hasInitializedDefaults) {
+      console.log('[ACU Dashboard] 已完成首次初始化，跳过默认组件添加');
+      return;
+    }
+
     let hasChanges = false;
 
     // 1. 检查并添加"表格更新状态"特殊组件
@@ -285,13 +301,19 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     const rawData = getTableData();
     if (!rawData) {
       // 如果没有数据，且有变更且允许保存，则保存
-      if (hasChanges && allowSave) saveConfig();
+      if (hasChanges && allowSave) {
+        config.value.hasInitializedDefaults = true; // 标记已初始化
+        saveConfig();
+      }
       return;
     }
 
     const tables = processJsonData(rawData);
     if (!tables) {
-      if (hasChanges && allowSave) saveConfig();
+      if (hasChanges && allowSave) {
+        config.value.hasInitializedDefaults = true; // 标记已初始化
+        saveConfig();
+      }
       return;
     }
 
@@ -321,11 +343,17 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       }
     }
 
+    // 【关键】无论是否有变更，都标记为已初始化
+    // 这样后续脚本重新挂载时就不会再自动添加组件了
+    config.value.hasInitializedDefaults = true;
+
     if (hasChanges && allowSave) {
       saveConfig();
-      console.log('[ACU Dashboard] 默认组件已更新');
-    } else if (hasChanges && !allowSave) {
-      console.log('[ACU Dashboard] 检测到需要更新默认组件，但因配置来源不确定而跳过保存');
+      console.log('[ACU Dashboard] 默认组件已更新（首次初始化）');
+    } else if (allowSave) {
+      // 即使没有添加新组件，也要保存 hasInitializedDefaults 标记
+      saveConfig();
+      console.log('[ACU Dashboard] 首次初始化完成，已保存初始化标记');
     }
   }
 
@@ -333,14 +361,37 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
    * 保存配置到酒馆全局变量和 localStorage 备份
    * 全局变量跨聊天/角色卡共享
    * localStorage 作为热重载时的快速恢复备份
+   *
+   * 【重要】使用版本号防止旧配置覆盖新配置（竞态条件保护）
+   * - 保存前检查当前存储的版本号
+   * - 只有当存储版本 <= 加载时的版本时才允许保存
+   * - 保存时递增版本号
    */
   async function saveConfig(): Promise<void> {
-    // 始终保存到 localStorage 备份（快速、可靠）
-    saveToLocalStorage();
-
     // 尝试保存到酒馆全局变量（主存储）
     try {
       const currentVars = getVariables({ type: 'global' }) || {};
+
+      // 【关键】检查版本号，防止旧实例覆盖新配置
+      const existingConfig = currentVars.acu_dashboard_config;
+      const existingVersion = existingConfig?.configVersion || 0;
+
+      // 如果存储的版本号比我们加载时的版本号更新，说明有其他实例修改了配置
+      if (existingVersion > loadedVersion.value) {
+        console.warn(`[ACU Dashboard] 检测到更新的配置 (存储版本=${existingVersion}, 加载版本=${loadedVersion.value})，取消保存`);
+        // 从酒馆变量重新加载最新配置
+        config.value = {
+          ...DEFAULT_DASHBOARD_CONFIG,
+          ...existingConfig,
+        };
+        loadedVersion.value = existingVersion;
+        return;
+      }
+
+      // 递增版本号
+      config.value.configVersion = existingVersion + 1;
+      loadedVersion.value = config.value.configVersion;
+
       replaceVariables(
         {
           ...currentVars,
@@ -348,9 +399,14 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
         },
         { type: 'global' },
       );
-      console.log('[ACU Dashboard] 配置保存成功 (全局变量 + localStorage)');
+
+      // 同步更新 localStorage 备份
+      saveToLocalStorage();
+
+      console.log('[ACU Dashboard] 配置保存成功 (版本:', config.value.configVersion, ')');
     } catch (error) {
-      console.warn('[ACU Dashboard] 保存到酒馆变量失败，但 localStorage 备份已保存:', error);
+      console.warn('[ACU Dashboard] 保存到酒馆变量失败，尝试保存到 localStorage:', error);
+      saveToLocalStorage();
     }
   }
 

@@ -915,6 +915,10 @@ export interface DashboardConfig {
   columns: number;
   /** 是否显示统计卡片 */
   showStats: boolean;
+  /** 是否已完成首次默认组件初始化（防止重复添加已删除的组件） */
+  hasInitializedDefaults?: boolean;
+  /** 配置版本号，用于防止旧配置覆盖新配置（乐观锁） */
+  configVersion?: number;
 }
 
 /** 预设快捷按钮配置 */

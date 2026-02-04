@@ -414,6 +414,7 @@ import { useApiCallbacks } from './composables/useApiCallbacks';
 import { useCoreActions } from './composables/useCoreActions';
 import { useDataPersistence } from './composables/useDataPersistence';
 import { useDivinationAction } from './composables/useDivinationAction';
+import { useFullscreenSupport } from './composables/useFullscreenSupport';
 import { appendPromptToInput as appendToInput, useHiddenPrompt } from './composables/useHiddenPrompt';
 import { useParentStyleInjection } from './composables/useParentStyleInjection';
 import { useRowHistory } from './composables/useRowHistory';
@@ -456,6 +457,10 @@ useTouchScrollFix();
 
 // API 回调注册（表格更新、快照管理）- 随组件生命周期自动管理
 useApiCallbacks();
+
+// 全屏支持（同层界面兼容）- 随组件生命周期自动管理
+// 支持三种场景：CSS全屏、浏览器全屏、iframe内全屏
+useFullscreenSupport();
 
 // Swipe 增强功能（清除表格、重新触发剧情推进）- 在 onMounted 中初始化
 const swipeEnhancement = useSwipeEnhancement();

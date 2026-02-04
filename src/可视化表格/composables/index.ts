@@ -286,3 +286,9 @@ export {
   useListVirtualScroll,
 } from './useVirtualScroll';
 export type { UseVirtualListReturn } from './useVirtualScroll';
+
+// ============================================
+// 全屏支持（同层界面兼容）
+// ============================================
+export { exposeFullscreenAPI, useFullscreenSupport } from './useFullscreenSupport';
+export type { FullscreenState } from './useFullscreenSupport';

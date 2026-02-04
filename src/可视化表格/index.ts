@@ -20,6 +20,7 @@ import { cleanupSendIntercept, setupSendIntercept } from './composables/useHidde
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
+import { VERSION } from './version';
 
 // 初始化移动端拖拽 polyfill
 // 解决移动端不支持 HTML5 拖拽 API 的问题
@@ -222,7 +223,7 @@ function cleanup() {
 // ============================================================
 
 $(() => {
-  console.info(`[ACU] 脚本加载: ${SCRIPT_ID}`);
+  console.info(`[ACU] v${VERSION} 脚本加载`);
 
   // 注册脚本按钮
   replaceScriptButtons([{ name: '🎴 隐藏提示词', visible: true }]);
