@@ -56,19 +56,6 @@ function getSillyTavernContext(): any {
   return null;
 }
 
-/**
- * 判断 touch 目标是否在最后一条消息区域
- */
-function isTouchOnLastMessage(target: Element | null): boolean {
-  if (!target) return false;
-
-  const parentDoc = window.parent.document;
-  const allMessages = parentDoc.querySelectorAll('#chat .mes');
-  if (allMessages.length === 0) return false;
-
-  const lastMessageEl = allMessages[allMessages.length - 1];
-  return lastMessageEl.contains(target);
-}
 
 // ============================================================
 // Composable 定义
@@ -84,12 +71,6 @@ export function useSwipeEnhancement() {
 
   // 事件清理函数
   const cleanupFns: Array<() => void> = [];
-
-  // 移动端手势状态
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let isSwiping = false;
-  const SWIPE_THRESHOLD = 50;
 
   // ============================================================
   // 配置管理
@@ -243,13 +224,43 @@ export function useSwipeEnhancement() {
     const parentDoc = window.parent.document;
 
     // 使用原生事件监听的捕获阶段，确保优先于 SillyTavern 的处理器执行
-    const handler = (e: Event) => {
+    const handler = async (e: Event) => {
       const target = e.target as HTMLElement;
-      // 检查是否点击的是 swipe 右箭头
-      if (!target.closest('.swipe_right')) return;
+      const swipeBtn = target.closest('.swipe_right');
 
-      console.info('[ACU Swipe] 检测到 swipe_right 点击');
-      handleSwipe(e);
+      // 检查是否点击的是 swipe 右箭头
+      if (!swipeBtn) return;
+
+      // 检查是否是我们触发的重试事件（避免死循环）
+      if ((e as any).__acu_processed) return;
+
+      // 从 configStore 读取配置，如果未启用则不拦截
+      const clearEnabled = configStore.config.clearTableOnSwipe ?? config.value.clearTableOnSwipe;
+      if (!clearEnabled) return;
+
+      console.info('[ACU Swipe] 拦截 swipe_right 点击，准备清理数据');
+
+      // 1. 拦截原始事件，阻止酒馆处理
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      try {
+        // 2. 执行清理 (等待世界书同步完成)
+        await handleSwipe(e);
+      } catch (err) {
+        console.error('[ACU Swipe] 清理过程出错，仍继续触发 Swipe', err);
+      }
+
+      console.info('[ACU Swipe] 数据清理完成，重新触发 Swipe');
+
+      // 3. 重新触发点击事件 (标记为已处理)
+      const newEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window.parent,
+      });
+      (newEvent as any).__acu_processed = true;
+      swipeBtn.dispatchEvent(newEvent);
     };
 
     // 使用 capture: true 在捕获阶段拦截事件
@@ -265,54 +276,62 @@ export function useSwipeEnhancement() {
   }
 
   /**
-   * 初始化移动端触摸监听
+   * 初始化酒馆事件监听（用于移动端手势等无法通过 click 拦截的场景）
+   *
+   * 监听 MESSAGE_SWIPED 事件，在 Swipe 发生后、AI 生成前执行清理
+   * 使用 eventMakeFirst 确保我们的 listener 最先执行
    */
-  function initMobileListener() {
-    const parentDoc = window.parent.document;
-    const chatContainer = parentDoc.getElementById('chat');
-    if (!chatContainer) {
-      console.warn('[ACU Swipe] 未找到 #chat 容器，无法初始化移动端监听');
-      return;
-    }
+  function initTavernEventListener() {
+    // 标记是否已经处理过（防止与 click 拦截重复处理）
+    let lastProcessedSwipeTime = 0;
+    const DEBOUNCE_MS = 500;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      isSwiping = false;
-    };
+    const handleMessageSwiped = async (message_id: number) => {
+      // 从 configStore 读取配置
+      const clearEnabled = configStore.config.clearTableOnSwipe ?? config.value.clearTableOnSwipe;
+      if (!clearEnabled) return;
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isSwiping) return;
-
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartX;
-      const deltaY = touch.clientY - touchStartY;
-
-      // 水平滑动优先（避免与垂直滚动冲突）
-      // 左滑 = 负的 deltaX，相当于点击右箭头
-      if (Math.abs(deltaX) > Math.abs(deltaY) && deltaX < -SWIPE_THRESHOLD) {
-        isSwiping = true;
-
-        // 检测是否在最后一条消息上
-        if (isTouchOnLastMessage(e.target as Element)) {
-          console.log('[ACU Swipe] 移动端：检测到左滑手势');
-          handleSwipe();
-        }
+      // 防抖：如果刚刚通过 click 处理过，跳过
+      const now = Date.now();
+      if (now - lastProcessedSwipeTime < DEBOUNCE_MS) {
+        console.info('[ACU Swipe] 刚处理过，跳过重复触发');
+        return;
       }
+      lastProcessedSwipeTime = now;
+
+      console.info('[ACU Swipe] MESSAGE_SWIPED 事件触发，message_id:', message_id);
+
+      // 检查是否会触发新生成（与 handleSwipeClearOnly 逻辑一致）
+      const ctx = getSillyTavernContext();
+      if (!ctx?.chat?.length) return;
+
+      const lastIndex = ctx.chat.length - 1;
+      const lastMessage = ctx.chat[lastIndex] as STChatMessage;
+
+      if (!willTriggerNewGeneration(lastMessage)) {
+        console.info('[ACU Swipe] 查看历史 swipe，跳过清除');
+        return;
+      }
+
+      if (!hasACUData(lastMessage)) {
+        console.info('[ACU Swipe] 最后一楼无 ACU 数据，跳过清除');
+        return;
+      }
+
+      console.info('[ACU Swipe] 通过事件监听执行清理...');
+      await handleSwipeClearOnly();
     };
 
-    chatContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-    chatContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
+    // 使用 eventMakeFirst 确保我们的 listener 最先执行
+    // 这样在酒馆发送 AI 请求之前，我们的清理操作就能完成
+    const { stop } = eventMakeFirst(tavern_events.MESSAGE_SWIPED, errorCatched(handleMessageSwiped));
 
-    // 注册清理函数
     cleanupFns.push(() => {
-      chatContainer.removeEventListener('touchstart', handleTouchStart);
-      chatContainer.removeEventListener('touchmove', handleTouchMove);
-      console.info('[ACU Swipe] 移动端监听已清理');
+      stop();
+      console.info('[ACU Swipe] 酒馆事件监听已清理');
     });
 
-    console.info('[ACU Swipe] 移动端监听已初始化');
+    console.info('[ACU Swipe] 酒馆事件监听已初始化 (MESSAGE_SWIPED)');
   }
 
   /**
@@ -320,7 +339,7 @@ export function useSwipeEnhancement() {
    */
   function init() {
     initDesktopListener();
-    initMobileListener();
+    initTavernEventListener();
     console.info('[ACU Swipe] Swipe 增强功能已初始化');
   }
 

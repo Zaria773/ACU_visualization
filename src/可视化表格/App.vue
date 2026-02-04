@@ -366,6 +366,7 @@
 import { computed, nextTick, onMounted, onUnmounted, provide, reactive, ref, watch, watchEffect } from 'vue';
 
 // 组件导入
+import { defineAsyncComponent } from 'vue';
 import {
   ContextMenu,
   Dashboard,
@@ -373,7 +374,6 @@ import {
   FloatingBall,
   MainPanel,
   OptionsPanel,
-  RelationshipGraph,
   TabBar,
   TabsPopup,
   Toast,
@@ -400,6 +400,21 @@ import {
 } from './components/dialogs';
 import { DivinationOverlay, PromptEditorDialog } from './components/dialogs/divination';
 import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog } from './components/dialogs/tag-manager';
+
+// RelationshipGraph 使用懒加载，只在用户打开关系图时才加载 Cytoscape 及其扩展
+// 这可以显著减少初始内存占用，特别是在移动设备上
+const RelationshipGraph = defineAsyncComponent({
+  loader: () => import('./components/RelationshipGraph.vue'),
+  loadingComponent: {
+    template: `
+      <div class="acu-graph-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>正在加载关系图...</span>
+      </div>
+    `,
+  },
+  delay: 200, // 200ms 后显示加载指示器
+});
 
 // Store 导入
 import { useConfigStore } from './stores/useConfigStore';
