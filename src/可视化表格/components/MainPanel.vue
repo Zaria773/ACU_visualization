@@ -220,9 +220,7 @@ const visibleButtons = computed(() => {
   let order = buttonsConfig.buttonOrder || NAV_BUTTONS.map((b: NavButtonConfig) => b.id);
   // 修复：当 visibleButtons 为空数组或未定义时，使用默认值
   const visibleIds =
-    buttonsConfig.visibleButtons?.length > 0
-      ? [...buttonsConfig.visibleButtons]
-      : [...DEFAULT_VISIBLE_BUTTONS];
+    buttonsConfig.visibleButtons?.length > 0 ? [...buttonsConfig.visibleButtons] : [...DEFAULT_VISIBLE_BUTTONS];
 
   // 收纳Tab模式开启时，根据配置决定是否添加 collapseTab 按钮
   if (configStore.config.collapseTabBar && configStore.config.showCollapseTabButton !== false) {

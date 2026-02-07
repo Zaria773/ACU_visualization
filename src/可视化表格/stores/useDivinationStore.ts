@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
@@ -139,7 +138,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   let isFirstWatch = true;
   watch(
     config,
-    (newValue) => {
+    newValue => {
       if (isFirstWatch) {
         isFirstWatch = false;
         return;
@@ -147,7 +146,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       configManager.config.divination.config = newValue;
       configManager.saveConfig();
     },
-    { deep: true }
+    { deep: true },
   );
 
   /** 预设列表 - 从 ConfigManager 读取 */

@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
@@ -94,10 +93,14 @@ export const useThemeStore = defineStore('acu-theme', () => {
   const currentThemeVarOpacities = ref<ThemeVarOpacities>(klona(configManager.config.theme?.themeVarOpacities || {}));
 
   /** 当前高亮颜色配置 */
-  const currentHighlight = ref<HighlightConfig>(klona(configManager.config.theme?.highlight || { ...DEFAULT_HIGHLIGHT_CONFIG }));
+  const currentHighlight = ref<HighlightConfig>(
+    klona(configManager.config.theme?.highlight || { ...DEFAULT_HIGHLIGHT_CONFIG }),
+  );
 
   /** 背景配置 */
-  const backgroundConfig = ref<BackgroundConfig>(klona(configManager.config.theme?.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG }));
+  const backgroundConfig = ref<BackgroundConfig>(
+    klona(configManager.config.theme?.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG }),
+  );
 
   /** 自定义 CSS */
   const customCSS = ref<string>(configManager.config.theme?.customCSS || '');

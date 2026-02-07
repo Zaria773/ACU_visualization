@@ -311,11 +311,9 @@ const customCategories = computed<FlatCategory[]>(() => {
 
     // 如果展开，添加子分类
     if (expandedCategories.value.has(cat.id)) {
-      children
-        .sort(sortCategories)
-        .forEach(child => {
-          addCategoryAndChildren(child.path, depth + 1, cat.id);
-        });
+      children.sort(sortCategories).forEach(child => {
+        addCategoryAndChildren(child.path, depth + 1, cat.id);
+      });
     }
   }
 

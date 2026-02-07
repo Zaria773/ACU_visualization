@@ -287,7 +287,7 @@ export const useUIStore = defineStore('acu-ui', () => {
   let isChatConfigInitializing = true;
   watch(
     chatConfigRef,
-    (newValue) => {
+    newValue => {
       if (isChatConfigInitializing) return;
       const chatId = currentChatId.value;
       configManager.setChatConfig(chatId, klona(newValue));
@@ -298,7 +298,7 @@ export const useUIStore = defineStore('acu-ui', () => {
   // 监听 Tab 配置变化，同步到 chatConfigRef 并触发保存
   watch(
     visibleTabsRef,
-    (newValue) => {
+    newValue => {
       if (isChatConfigInitializing) return;
       chatConfigRef.value.visibleTabs = [...newValue];
       const chatId = currentChatId.value;
@@ -310,7 +310,7 @@ export const useUIStore = defineStore('acu-ui', () => {
 
   watch(
     tabOrderRef,
-    (newValue) => {
+    newValue => {
       if (isChatConfigInitializing) return;
       chatConfigRef.value.tabOrder = [...newValue];
       const chatId = currentChatId.value;
@@ -328,7 +328,7 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** 表格高度 - 通过 chatConfigRef 访问 */
   const tableHeights = computed({
     get: () => chatConfigRef.value.tableHeights,
-    set: (val) => {
+    set: val => {
       chatConfigRef.value.tableHeights = val;
     },
   });
@@ -336,7 +336,7 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** 表格样式 - 通过 chatConfigRef 访问 */
   const tableStyles = computed({
     get: () => chatConfigRef.value.tableStyles,
-    set: (val) => {
+    set: val => {
       chatConfigRef.value.tableStyles = val;
     },
   });
@@ -344,7 +344,7 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** 倒序显示的表格列表 - 通过 chatConfigRef 访问 */
   const reverseTables = computed({
     get: () => chatConfigRef.value.reverseTables,
-    set: (val) => {
+    set: val => {
       chatConfigRef.value.reverseTables = val;
     },
   });
@@ -365,7 +365,7 @@ export const useUIStore = defineStore('acu-ui', () => {
    */
   const visibleTabs = computed({
     get: () => visibleTabsRef.value,
-    set: (val) => {
+    set: val => {
       visibleTabsRef.value = [...val];
     },
   });
@@ -376,7 +376,7 @@ export const useUIStore = defineStore('acu-ui', () => {
    */
   const tabOrder = computed({
     get: () => tabOrderRef.value,
-    set: (val) => {
+    set: val => {
       tabOrderRef.value = [...val];
     },
   });

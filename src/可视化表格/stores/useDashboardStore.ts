@@ -65,7 +65,7 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   let isDashboardConfigInitializing = true;
   watch(
     config,
-    (newValue) => {
+    newValue => {
       if (isDashboardConfigInitializing) return;
       configManager.config.dashboard = klona(newValue);
       configManager.saveConfig();
@@ -142,7 +142,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
 
       // 确保默认组件存在
       await ensureDefaultWidgets(loadedExistingConfig);
-
 
       isInitialized.value = true;
       console.log('[ACU Dashboard] 配置加载成功:', config.value);

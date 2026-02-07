@@ -315,7 +315,7 @@ export function useACUConfigManager() {
         localState: { ...localState },
       },
       null,
-      2
+      2,
     );
   }
 
