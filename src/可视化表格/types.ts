@@ -957,6 +957,10 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     actions: ['goToTable'],
     colSpan: 1,
     displayStyle: 'list',
+    widgetTagConfig: {
+      displayedTagIds: [],
+      displayedCategoryIds: ['cat_quest'],
+    },
   },
   item: {
     type: 'table',
@@ -967,6 +971,10 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     actions: ['goToTable'],
     colSpan: 1,
     displayStyle: 'grid',
+    widgetTagConfig: {
+      displayedTagIds: [],
+      displayedCategoryIds: ['cat_item'],
+    },
   },
   character: {
     type: 'table',
@@ -977,6 +985,10 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     actions: ['goToTable'],
     colSpan: 2,
     displayStyle: 'list',
+    widgetTagConfig: {
+      displayedTagIds: [],
+      displayedCategoryIds: ['cat_character'],
+    },
   },
   location: {
     type: 'table',
@@ -987,6 +999,10 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     actions: ['goToTable'],
     colSpan: 1,
     displayStyle: 'list',
+    widgetTagConfig: {
+      displayedTagIds: [],
+      displayedCategoryIds: ['cat_location'],
+    },
   },
   global: {
     type: 'table',
@@ -1004,7 +1020,7 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
 export const TABLE_KEYWORD_RULES: Record<string, string[]> = {
   task: ['任务', 'Task', 'task', 'Quest', 'quest', '日程'],
   item: ['物品', '道具', 'Item', 'item', '背包', '库存', '装备', '武器'],
-  character: ['主角', '玩家', 'Player', 'player', 'protagonist'],
+  character: ['主角', '玩家', 'Player', 'player', 'protagonist', '人物', '角色', 'NPC', 'npc'],
   location: ['地点', '位置', 'Location', 'location', '场景'],
   global: ['全局', 'Global'],
 };

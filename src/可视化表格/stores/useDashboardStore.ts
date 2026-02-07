@@ -143,6 +143,9 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       // 确保默认组件存在
       await ensureDefaultWidgets(loadedExistingConfig);
 
+      // 尝试为现有的空配置组件应用默认标签
+      applyDefaultsToEmptyWidgets();
+
       isInitialized.value = true;
       console.log('[ACU Dashboard] 配置加载成功:', config.value);
     } catch (error) {
@@ -182,6 +185,60 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       widgets.forEach((w, index) => {
         w.order = index;
       });
+      config.value = { ...config.value, widgets };
+      // watch 会自动保存
+    }
+  }
+
+  /**
+   * 为现有的、未配置标签的组件应用默认标签配置
+   * 仅当组件没有任何标签配置（displayedTagIds 和 displayedCategoryIds 都为空）时才应用
+   */
+  function applyDefaultsToEmptyWidgets(): void {
+    let hasChanges = false;
+    const widgets = [...config.value.widgets];
+
+    widgets.forEach(widget => {
+      // 只处理表格类型的组件
+      if (widget.type !== 'table') return;
+
+      // 检查是否已有配置
+      const hasTags = widget.widgetTagConfig?.displayedTagIds?.length > 0;
+      const hasCategories = widget.widgetTagConfig?.displayedCategoryIds?.length > 0;
+
+      // 如果已有配置，跳过（保护用户自定义设置）
+      if (hasTags || hasCategories) return;
+
+      // 尝试匹配模板
+      let template = undefined;
+      const searchText = widget.title || widget.tableId || '';
+
+      // 1. 尝试通过 ID 精确匹配模板 key (如 'task', 'item')
+      // 但通常 widget.id 是生成的，所以这里主要靠关键词匹配
+
+      // 2. 通过关键词匹配模板
+      for (const [key, keywords] of Object.entries(TABLE_KEYWORD_RULES)) {
+        if (keywords.some(k => searchText.toLowerCase().includes(k.toLowerCase()))) {
+          template = WIDGET_TEMPLATES[key];
+          break;
+        }
+      }
+
+      // 如果找到模板且模板有标签配置
+      if (template?.widgetTagConfig) {
+        // 初始化 widgetTagConfig (如果不存在)
+        if (!widget.widgetTagConfig) {
+          widget.widgetTagConfig = { displayedTagIds: [], displayedCategoryIds: [] };
+        }
+
+        // 应用模板配置
+        widget.widgetTagConfig = klona(template.widgetTagConfig);
+        console.log(`[ACU Dashboard] 已自动为组件 "${widget.title}" 应用默认标签配置`);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
       config.value = { ...config.value, widgets };
       // watch 会自动保存
     }
@@ -348,6 +405,8 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
       enabled: true,
       colSpan: template?.colSpan || 1,
       displayStyle,
+      // 复制模板中的标签配置
+      widgetTagConfig: template?.widgetTagConfig ? klona(template.widgetTagConfig) : undefined,
     };
 
     const widgets = [...config.value.widgets, newWidget];
@@ -605,5 +664,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     getWidgetById,
     ensureDefaultWidgets,
     cleanupInvalidWidgets,
+    applyDefaultsToEmptyWidgets,
   };
 });
