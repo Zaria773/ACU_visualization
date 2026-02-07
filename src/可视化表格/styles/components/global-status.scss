@@ -21,10 +21,13 @@
 
 .acu-global-header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
   padding: 12px 16px; // Header padding
+  flex-wrap: wrap; // 允许换行，防止小屏幕拥挤
 }
 
 .acu-global-body {

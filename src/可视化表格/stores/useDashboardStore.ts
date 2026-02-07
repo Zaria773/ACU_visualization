@@ -265,9 +265,39 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
    * @param allowSave 是否允许保存（防止热重载时误覆盖）
    */
   async function ensureDefaultWidgets(allowSave = true): Promise<void> {
+    // 【热重载修复】重新检查 ConfigManager 中的配置
+    // 因为热重载时 loadConfigFromManager() 可能在 ConfigManager 同步之前执行
+    const storedConfig = configManager.config.dashboard as DashboardConfig | undefined;
+    if (storedConfig && Array.isArray(storedConfig.widgets) && storedConfig.widgets.length > 0) {
+      // 发现有效配置，更新本地状态
+      if (config.value.widgets.length === 0 || !config.value.hasInitializedDefaults) {
+        config.value = klona({
+          ...DEFAULT_DASHBOARD_CONFIG,
+          ...storedConfig,
+          hasInitializedDefaults: true, // 确保标记为已初始化
+        });
+        console.log('[ACU Dashboard] 从 ConfigManager 恢复配置，widgets:', config.value.widgets.length);
+      }
+      return;
+    }
+
     // 【关键修复】如果已经完成过首次初始化，直接返回，不再自动添加任何组件
     if (config.value.hasInitializedDefaults) {
       console.log('[ACU Dashboard] 已完成首次初始化，跳过默认组件添加');
+      return;
+    }
+
+    // 【版本升级兼容】如果用户已有 widgets 配置，说明不是首次使用
+    // 旧版本可能没有 hasInitializedDefaults 字段，但已经有用户自定义配置
+    // 此时应该标记为已初始化，不再添加默认组件
+    if (config.value.widgets.length > 0) {
+      console.log('[ACU Dashboard] 检测到已有配置（旧版本升级），标记为已初始化');
+      config.value = { ...config.value, hasInitializedDefaults: true };
+      if (allowSave) {
+        // 保存标记，下次不再检查
+        configManager.config.dashboard = klona(config.value);
+        await configManager.saveConfig();
+      }
       return;
     }
 

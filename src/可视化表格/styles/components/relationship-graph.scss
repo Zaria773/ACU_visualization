@@ -67,6 +67,18 @@
   overflow: hidden;
 }
 
+// PC端：当数据面板显示关系图时，强制撑满可用高度
+// 使用 :has 选择器确保无论 JS 计算结果如何，都能正确撑满
+@media (min-width: 769px) {
+  .acu-data-display:has(.acu-relationship-graph) {
+    // 强制撑满：使用 calc 计算最大可用高度
+    // 减去底部导航栏的预估高度（约 60px）和一些边距
+    min-height: calc(100vh - var(--acu-win-bottom, 100px) - 80px);
+    // flex: 1 确保撑满父容器剩余空间
+    flex: 1 1 auto;
+  }
+}
+
 // 图容器 - 占满整个容器（图例和工具栏用绝对定位覆盖）
 .acu-graph-container {
   width: 100%;

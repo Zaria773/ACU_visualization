@@ -856,6 +856,8 @@ function initCytoscape() {
     boxSelectionEnabled: false,
     minZoom: 0.3,
     maxZoom: 3,
+    // 降低滚轮缩放灵敏度，默认值为 1，设置更小的值让缩放更平滑
+    wheelSensitivity: 0.45,
   });
 
   // 绑定事件 - 单击节点

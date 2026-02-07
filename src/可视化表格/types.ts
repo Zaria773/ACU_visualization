@@ -1008,7 +1008,7 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     type: 'table',
     title: '全局状态',
     icon: 'fa-globe',
-    displayColumns: [],
+    displayColumns: ['时间', '地点'],
     maxRows: 1,
     actions: ['goToTable'],
     colSpan: 2,
