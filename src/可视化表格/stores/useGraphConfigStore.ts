@@ -3,11 +3,16 @@
 /**
  * 关系图配置 Store
  * 用于管理关系图的显示设置，如节点大小、边宽度、字体大小等
+ * 使用 ConfigManager 统一管理配置（按聊天分隔）
+ *
+ * 注意：使用 ref + watch 模式而非 computed getter/setter
+ * 这样可以确保直接修改对象属性时也能触发保存
  */
 
 import { klona } from 'klona';
 import { defineStore } from 'pinia';
-import { ref, watchEffect } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { getACUConfigManager } from '../composables/useACUConfigManager';
 
 /** 图例项配置 */
 export interface LegendItem {
@@ -187,43 +192,88 @@ export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
   legendConfig: { ...DEFAULT_LEGEND_CONFIG },
 };
 
-/** 聊天变量存储键 */
-const CHAT_VAR_KEY = 'acu_graph_style_config';
-
 export const useGraphConfigStore = defineStore('graphConfig', () => {
-  // 从聊天变量加载配置
-  const config = ref<GraphConfig>(loadConfig());
+  // ============================================================
+  // 使用 ConfigManager 统一管理配置（按聊天分隔）
+  // ============================================================
+  const configManager = getACUConfigManager();
+
+  /** 获取当前聊天 ID - 使用 computed 自动获取 */
+  const currentChatId = computed(() => SillyTavern.getCurrentChatId() || '');
+
+  // ============================================================
+  // 使用 ref + watch 模式确保响应式正确工作
+  // ============================================================
+
+  /** 关系图配置 - 使用 ref 实现响应式 */
+  const config = ref<GraphConfig>({ ...DEFAULT_GRAPH_CONFIG });
+
+  /** 从 ConfigManager 加载当前聊天的配置 */
+  function loadConfigFromManager() {
+    const chatId = currentChatId.value;
+    if (!chatId) {
+      config.value = { ...DEFAULT_GRAPH_CONFIG };
+      return;
+    }
+    const chatConfig = configManager.getChatConfig(chatId);
+    config.value = chatConfig.graphConfig ? klona(chatConfig.graphConfig) : { ...DEFAULT_GRAPH_CONFIG };
+    console.info('[GraphConfigStore] 已加载聊天配置:', chatId);
+  }
+
+  // 监听聊天 ID 变化，自动加载配置（immediate: true 确保初始化时加载）
+  watch(
+    currentChatId,
+    () => {
+      loadConfigFromManager();
+    },
+    { immediate: true },
+  );
+
+  // 监听配置变化，自动保存
+  let isGraphConfigInitializing = true;
+  watch(
+    config,
+    newValue => {
+      if (isGraphConfigInitializing) return;
+      if (!currentChatId.value) return;
+      const chatConfig = configManager.getChatConfig(currentChatId.value);
+      configManager.setChatConfig(currentChatId.value, {
+        ...chatConfig,
+        graphConfig: klona(newValue),
+      });
+    },
+    { deep: true },
+  );
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isGraphConfigInitializing = false;
+  }, 100);
 
   /**
-   * 加载配置
-   * 从聊天变量读取配置，与默认值合并
+   * 初始化当前聊天 ID
+   * @deprecated 现在自动获取聊天 ID，此方法保留仅为兼容性
    */
-  function loadConfig(): GraphConfig {
-    try {
-      const chatVars = getVariables({ type: 'chat' });
-      const savedConfig = chatVars[CHAT_VAR_KEY];
-      if (savedConfig && typeof savedConfig === 'object') {
-        return {
-          ...DEFAULT_GRAPH_CONFIG,
-          ...savedConfig,
-        };
-      }
-    } catch (e) {
-      console.warn('[GraphConfigStore] 加载配置失败:', e);
-    }
-    return { ...DEFAULT_GRAPH_CONFIG };
+  function initChatId(_chatId: string): void {
+    // 现在 currentChatId 是 computed 属性，自动获取
+    // 此方法保留仅为向后兼容
+    console.info('[GraphConfigStore] initChatId 已弃用，聊天 ID 现在自动获取');
   }
 
   /**
    * 保存配置
-   * 将配置保存到聊天变量
+   * 使用 ConfigManager 保存（由于 watch 自动保存，此函数主要用于手动触发）
    */
   function saveConfig(): void {
-    try {
-      insertOrAssignVariables({ [CHAT_VAR_KEY]: klona(config.value) }, { type: 'chat' });
-    } catch (e) {
-      console.warn('[GraphConfigStore] 保存配置失败:', e);
+    if (!currentChatId.value) {
+      console.warn('[GraphConfigStore] 无法保存：未设置聊天 ID');
+      return;
     }
+    const chatConfig = configManager.getChatConfig(currentChatId.value);
+    configManager.setChatConfig(currentChatId.value, {
+      ...chatConfig,
+      graphConfig: klona(config.value),
+    });
   }
 
   /**
@@ -231,15 +281,14 @@ export const useGraphConfigStore = defineStore('graphConfig', () => {
    */
   function resetToDefault(): void {
     config.value = { ...DEFAULT_GRAPH_CONFIG, factionColors: {} };
-    saveConfig();
   }
 
   /**
    * 刷新配置
-   * 重新从聊天变量加载配置
+   * 重新从 ConfigManager 加载配置（切换聊天时调用）
    */
   function refresh(): void {
-    config.value = loadConfig();
+    loadConfigFromManager();
   }
 
   /**
@@ -458,15 +507,7 @@ export const useGraphConfigStore = defineStore('graphConfig', () => {
     return !!config.value.nodeOverrides?.[nodeId];
   }
 
-  // 自动保存：当配置变化时自动保存
-  watchEffect(() => {
-    // 触发依赖追踪
-    const _ = JSON.stringify(config.value);
-    // 延迟保存，避免初始化时触发
-    if (config.value !== undefined) {
-      saveConfig();
-    }
-  });
+  // 注意：watch 已在上方设置，监听 config 变化自动保存
 
   // ============================================================
   // 图例配置管理
@@ -568,6 +609,8 @@ export const useGraphConfigStore = defineStore('graphConfig', () => {
 
   return {
     config,
+    currentChatId,
+    initChatId,
     saveConfig,
     resetToDefault,
     refresh,

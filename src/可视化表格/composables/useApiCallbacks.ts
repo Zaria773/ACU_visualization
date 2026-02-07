@@ -16,6 +16,7 @@ import type { RawDatabaseData, TableRow } from '../types';
 import { getCore, getTableData } from '../utils/index';
 import { useDbSettings } from './useDbSettings';
 import { saveSnapshot as saveRowSnapshot } from './useRowHistory';
+import { useTableUpdateStatus } from './useTableUpdateStatus';
 import { toast } from './useToast';
 import { useUpdatePresets } from './useUpdatePresets';
 
@@ -39,6 +40,7 @@ export function useApiCallbacks() {
   const uiStore = useUIStore();
   const presetsManager = useUpdatePresets();
   const dbSettings = useDbSettings();
+  const tableUpdateStatus = useTableUpdateStatus();
 
   // 上次检测到问题的时间（防止频繁提示）
   let lastIssueNotifyTime = 0;
@@ -182,15 +184,17 @@ export function useApiCallbacks() {
 
           dataStore.setStagedData(newData);
 
-          // 同步新表格到可见列表（确保新模板的表格能显示）
-          const allTableIds = Object.keys(newData).filter(k => k.startsWith('sheet_'));
-          uiStore.syncNewTablesToVisibleTabs(allTableIds);
+          // 【已移除】syncNewTablesToVisibleTabs 会错误地把"用户隐藏的表格"当成"新表格"添加
+          // 用户应该通过设置面板手动管理 Tab 可见性
 
           // 生成 AI 差异映射（高亮 AI 填表的变更）
           dataStore.generateDiffMap(newData);
 
           // 触发悬浮球通知动画
           uiStore.triggerAiNotify();
+
+          // 刷新表格更新状态看板（仪表盘中的组件）
+          tableUpdateStatus.refresh();
 
           // 【关键修复】只有开启智能检测时才执行完整性检测
           if (presetsManager.globalAutoTriggerEnabled.value) {

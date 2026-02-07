@@ -85,18 +85,22 @@ function isSpecialTab(tabId: string): boolean {
 
 /**
  * 构建完整的 Tab 对象（包括仪表盘、关系图和选项面板）
+ * 注意：visibleTabs 存储的是表格名称 (name)，特殊 Tab 存储的是常量 ID
+ * @param nameOrId 表格名称或特殊 Tab 的 ID
  */
-function createTabObject(tabId: string): TabItem | undefined {
-  if (tabId === TAB_DASHBOARD) {
+function createTabObject(nameOrId: string): TabItem | undefined {
+  // 特殊 Tab 使用常量 ID
+  if (nameOrId === TAB_DASHBOARD) {
     return { id: TAB_DASHBOARD, name: '仪表盘', icon: 'fas fa-home' };
   }
-  if (tabId === TAB_RELATIONSHIP_GRAPH) {
+  if (nameOrId === TAB_RELATIONSHIP_GRAPH) {
     return { id: TAB_RELATIONSHIP_GRAPH, name: '关系图', icon: 'fas fa-project-diagram' };
   }
-  if (tabId === TAB_OPTIONS) {
+  if (nameOrId === TAB_OPTIONS) {
     return { id: TAB_OPTIONS, name: '选项', icon: 'fas fa-sliders-h' };
   }
-  return props.tabs.find(t => t.id === tabId);
+  // 普通表格使用名称匹配
+  return props.tabs.find(t => t.name === nameOrId);
 }
 
 /**

@@ -16,6 +16,7 @@ import { scrollBehaviourDragImageTranslateOverride } from 'mobile-drag-drop/scro
 import { createPinia } from 'pinia';
 import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
+import { getACUConfigManager } from './composables/useACUConfigManager';
 import { cleanupSendIntercept, setupFocusTracking, setupSendIntercept } from './composables/useHiddenPrompt';
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
@@ -37,8 +38,8 @@ polyfill({
 const SCRIPT_ID = 'acu-parent-container';
 const MAX_DATA_RETRIES = 10;
 
-// 存储键常量
-const STORAGE_KEYS = {
+// 存储键常量（本地使用）
+const LOCAL_KEYS = {
   WIN_CONFIG: 'acu_win_config',
   ACTIVE_TAB: 'acu_active_tab',
   UI_COLLAPSE: 'acu_ui_collapse_state',
@@ -56,17 +57,17 @@ const STORAGE_KEYS = {
  */
 function checkAndResetCenteredMode(): void {
   try {
-    const winConfigRaw = localStorage.getItem(STORAGE_KEYS.WIN_CONFIG);
+    const winConfigRaw = localStorage.getItem(LOCAL_KEYS.WIN_CONFIG);
 
     // 情况1：没有保存过位置（首次加载）
     if (!winConfigRaw) {
       // 设置默认居中配置
       const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
-      localStorage.setItem(STORAGE_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
+      localStorage.setItem(LOCAL_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
       // 清除 activeTab，确保不显示内容区域
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
+      localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
       // 确保面板展开（不显示悬浮球）
-      localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+      localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
       console.info('[ACU] 首次加载：设置居中模式，清除 activeTab');
       return;
     }
@@ -75,17 +76,17 @@ function checkAndResetCenteredMode(): void {
     const winConfig = JSON.parse(winConfigRaw);
     if (winConfig?.isCentered === true) {
       // 居中模式下清除 activeTab，只显示导航栏
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
+      localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
       // 确保面板展开（不显示悬浮球）
-      localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+      localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
       console.info('[ACU] 居中模式：清除 activeTab，确保面板展开');
     }
   } catch (e) {
     // 解析失败，重置为安全的居中状态
     const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
-    localStorage.setItem(STORAGE_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_TAB);
-    localStorage.setItem(STORAGE_KEYS.UI_COLLAPSE, 'false');
+    localStorage.setItem(LOCAL_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
+    localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
+    localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
     console.warn('[ACU] 解析 win_config 失败，重置为居中模式:', e);
   }
 }
@@ -95,10 +96,13 @@ let vueApp: VueApp | null = null;
 let mountContainer: HTMLElement | null = null;
 
 // 定时器 ID (用于清理)
-let initCheckTimerId: ReturnType<typeof setTimeout> | null = null;
+let dbCheckTimerId: ReturnType<typeof setTimeout> | null = null;
 
 // 是否已停止初始化 (防止热重载时继续初始化)
 let isShuttingDown = false;
+
+// 数据库 API 是否就绪
+let isDatabaseReady = false;
 
 /**
  * 初始化 Vue 应用
@@ -134,51 +138,77 @@ function initVueApp() {
 }
 
 /**
- * 等待 API 就绪并初始化
+ * 等待数据库 API 就绪（后台进行，不阻塞 UI）
+ *
+ * 返回 Promise，在 API 就绪时 resolve
  */
-function waitForApiAndInit() {
+function waitForDatabaseApi(): Promise<void> {
+  return new Promise(resolve => {
+    let dataCheckRetries = 0;
+
+    const checkApi = () => {
+      // 如果正在关闭，停止检查
+      if (isShuttingDown) {
+        console.info('[ACU] 脚本正在卸载，停止数据库 API 检查');
+        return;
+      }
+
+      const { $, getDB } = getCore();
+      const api = getDB();
+
+      // 检查 API 和 jQuery 是否就绪
+      if (api && typeof api.exportTableAsJson === 'function' && $) {
+        // 尝试获取数据
+        const data = api.exportTableAsJson();
+        const hasData = data && Object.keys(data).length > 0;
+
+        // 如果没有数据，且未达到最大重试次数，则继续等待
+        if (!hasData && dataCheckRetries < MAX_DATA_RETRIES) {
+          dataCheckRetries++;
+          console.info(`[ACU] 数据库 API 就绪但无数据，等待中... (${dataCheckRetries}/${MAX_DATA_RETRIES})`);
+          dbCheckTimerId = setTimeout(checkApi, 1000);
+          return;
+        }
+
+        // 清除定时器 ID
+        dbCheckTimerId = null;
+        isDatabaseReady = true;
+        resolve();
+      } else {
+        // API 未就绪，继续等待
+        dbCheckTimerId = setTimeout(checkApi, 1000);
+      }
+    };
+
+    checkApi();
+  });
+}
+
+/**
+ * 初始化 ACU
+ *
+ * 新的初始化流程：
+ * 1. 加载配置（同步，extensionSettings 立即可用）
+ * 2. 等待数据库 API 就绪（后台进行，不阻塞 UI）
+ * 3. 挂载 Vue 应用（配置已加载，可以立即渲染）
+ */
+function initACU() {
   // 【关键】在 Vue 应用初始化之前检测居中模式
   // 必须先执行，确保 Pinia store 初始化时 activeTab 已被正确处理
   checkAndResetCenteredMode();
 
-  let dataCheckRetries = 0;
+  // 1. 加载配置（同步，extensionSettings 立即可用）
+  const configManager = getACUConfigManager();
+  configManager.loadConfig();
+  console.info('[ACU] 配置已同步加载');
 
-  const checkApi = () => {
-    // 如果正在关闭，停止检查
-    if (isShuttingDown) {
-      console.info('[ACU] 脚本正在卸载，停止 API 检查');
-      return;
-    }
+  // 2. 等待数据库 API 就绪（后台进行，不阻塞 UI）
+  waitForDatabaseApi().then(() => {
+    console.info('[ACU] 数据库 API 就绪');
+  });
 
-    const { $, getDB } = getCore();
-    const api = getDB();
-
-    // 检查 API 和 jQuery 是否就绪
-    if (api && typeof api.exportTableAsJson === 'function' && $) {
-      // 尝试获取数据
-      const data = api.exportTableAsJson();
-      const hasData = data && Object.keys(data).length > 0;
-
-      // 如果没有数据，且未达到最大重试次数，则继续等待
-      if (!hasData && dataCheckRetries < MAX_DATA_RETRIES) {
-        dataCheckRetries++;
-        console.info(`[ACU] API 就绪但无数据，等待中... (${dataCheckRetries}/${MAX_DATA_RETRIES})`);
-        initCheckTimerId = setTimeout(checkApi, 1000);
-        return;
-      }
-
-      // 清除定时器 ID
-      initCheckTimerId = null;
-
-      // 初始化 Vue 应用
-      initVueApp();
-    } else {
-      // API 未就绪，继续等待
-      initCheckTimerId = setTimeout(checkApi, 1000);
-    }
-  };
-
-  checkApi();
+  // 3. 挂载 Vue 应用（配置已加载，可以立即渲染）
+  initVueApp();
 }
 
 /**
@@ -193,11 +223,11 @@ function cleanup() {
   // 设置关闭标志，防止回调继续执行
   isShuttingDown = true;
 
-  // 清理初始化定时器
-  if (initCheckTimerId !== null) {
-    clearTimeout(initCheckTimerId);
-    initCheckTimerId = null;
-    console.info('[ACU] 初始化定时器已清除');
+  // 清理数据库检查定时器
+  if (dbCheckTimerId !== null) {
+    clearTimeout(dbCheckTimerId);
+    dbCheckTimerId = null;
+    console.info('[ACU] 数据库检查定时器已清除');
   }
 
   // 卸载 Vue 应用
@@ -262,8 +292,8 @@ $(() => {
     setupFocusTracking(); // 追踪最后焦点的输入框，用于选项追加功能
   }, 500);
 
-  // 等待 API 就绪并初始化
-  waitForApiAndInit();
+  // 初始化 ACU（同步配置加载 + 异步数据库等待 + 立即挂载 Vue）
+  errorCatched(initACU)();
 
   // 卸载时清理 (使用 pagehide 而非 unload)
   $(window).on('pagehide', () => {

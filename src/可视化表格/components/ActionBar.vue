@@ -95,13 +95,20 @@ const uiStore = useUIStore();
 const cellLock = useCellLock();
 
 // ============================================================
-// 按钮配置获取
+// 按钮配置获取 - 使用本地 computed 直接访问 store getter
 // ============================================================
 
 /** 获取排序后的可见按钮 ID 列表 */
 const sortedVisibleButtonIds = computed(() => {
+  console.log('[ACU ActionBar] Computing sortedVisibleButtonIds from store:', configStore.sortedVisibleButtons);
   return configStore.sortedVisibleButtons;
 });
+
+/** 按钮收纳组 */
+const buttonGroups = computed(() => configStore.buttonGroups);
+
+/** 长按直接执行开关 */
+const longPressDirectExec = computed(() => configStore.longPressDirectExec);
 
 /**
  * 获取按钮的附属按钮 ID

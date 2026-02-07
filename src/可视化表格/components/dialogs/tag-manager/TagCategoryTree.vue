@@ -261,7 +261,28 @@ const customCategories = computed<FlatCategory[]>(() => {
 
   // 找出所有一级分类（真实存在的，不包含 / 的路径）
   const level1Categories = categories.filter(c => !c.path.includes('/'));
-  const sortedLevel1 = level1Categories.sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+
+  // 预计算每个分类的子分类数量
+  const childrenCountMap = new Map<string, number>();
+  categories.forEach(c => {
+    const lastSlash = c.path.lastIndexOf('/');
+    if (lastSlash !== -1) {
+      const parentPath = c.path.slice(0, lastSlash);
+      childrenCountMap.set(parentPath, (childrenCountMap.get(parentPath) || 0) + 1);
+    }
+  });
+
+  // 排序函数：子分类多的排下面（升序），然后按拼音
+  function sortCategories(a: TagCategory, b: TagCategory): number {
+    const countA = childrenCountMap.get(a.path) || 0;
+    const countB = childrenCountMap.get(b.path) || 0;
+    if (countA !== countB) {
+      return countA - countB;
+    }
+    return a.path.localeCompare(b.path, 'zh-CN');
+  }
+
+  const sortedLevel1 = level1Categories.sort(sortCategories);
 
   // 递归构建树
   function addCategoryAndChildren(path: string, depth: number, parentId?: string) {
@@ -291,7 +312,7 @@ const customCategories = computed<FlatCategory[]>(() => {
     // 如果展开，添加子分类
     if (expandedCategories.value.has(cat.id)) {
       children
-        .sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'))
+        .sort(sortCategories)
         .forEach(child => {
           addCategoryAndChildren(child.path, depth + 1, cat.id);
         });

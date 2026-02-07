@@ -113,35 +113,21 @@ export function useDbSettings() {
 
   /**
    * 读取设置
-   * 优先使用 API，回退到 localStorage
+   * 从 localStorage 读取数据库插件设置
    */
   async function loadSettings(): Promise<DbSettings> {
     isLoading.value = true;
 
     try {
-      const api = getCore().getDB();
-
-      // 优先使用 API
-      if (api && typeof api.getSettings === 'function') {
-        const apiSettings = await api.getSettings();
-        if (apiSettings && typeof apiSettings === 'object') {
-          settings.value = apiSettings;
-          console.info('[ACU] 从 API 读取设置成功');
-          return apiSettings;
-        }
-      }
-
-      // 回退到 localStorage
+      // 从 localStorage 读取数据库插件设置
       const localSettings = readFromLocalStorage();
       settings.value = localSettings;
       console.info('[ACU] 从 localStorage 读取设置');
       return localSettings;
     } catch (e) {
       console.error('[ACU] 读取设置失败:', e);
-      // 尝试从 localStorage 读取
-      const localSettings = readFromLocalStorage();
-      settings.value = localSettings;
-      return localSettings;
+      settings.value = {};
+      return {};
     } finally {
       isLoading.value = false;
       isInitialized.value = true;

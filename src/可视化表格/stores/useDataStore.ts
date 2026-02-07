@@ -21,20 +21,8 @@ import { getCore, getTableData } from '../utils/index';
 // 本地类型定义 (避免与 types/index.ts 冲突)
 // ============================================================
 
-/** 存储键名常量 - 兼容旧版本 */
-export const STORAGE_KEYS = {
-  SNAPSHOT: 'acu_data_snapshot_v18_5',
-  TABLE_ORDER: 'acu_table_order',
-  ACTIVE_TAB: 'acu_active_tab',
-  UI_CONFIG: 'acu_ui_config_v18',
-  UI_COLLAPSE: 'acu_ui_collapse',
-  TABLE_HEIGHTS: 'acu_table_heights',
-  REVERSE_TABLES: 'acu_reverse_tables',
-  PIN: 'acu_pin',
-  TABLE_STYLES: 'acu_table_styles',
-  WINDOW_CONFIG: 'acu_win_config',
-  V5_SETTINGS: 'shujuku_v34_allSettings_v2',
-} as const;
+/** 数据快照键（仅本文件内部使用） */
+const SNAPSHOT_KEY = 'acu_data_snapshot_v18_5';
 
 /** 简化的单元格数据 (用于 Vue 组件) */
 export interface CellData {
@@ -206,7 +194,7 @@ export const useDataStore = defineStore('acu-data', () => {
    */
   function loadSnapshot(): RawDatabaseData | null {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.SNAPSHOT);
+      const data = localStorage.getItem(SNAPSHOT_KEY);
       return data ? JSON.parse(data) : null;
     } catch {
       return null;
@@ -221,7 +209,7 @@ export const useDataStore = defineStore('acu-data', () => {
       // 更新内存中的快照（用于 generateDiffMap 对比）
       snapshot.value = klona(data);
       // 持久化到 localStorage
-      localStorage.setItem(STORAGE_KEYS.SNAPSHOT, JSON.stringify(data));
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(data));
     } catch (e) {
       console.error('[ACU] Save snapshot failed:', e);
     }
@@ -232,7 +220,7 @@ export const useDataStore = defineStore('acu-data', () => {
    */
   function clearSnapshot(): void {
     try {
-      localStorage.removeItem(STORAGE_KEYS.SNAPSHOT);
+      localStorage.removeItem(SNAPSHOT_KEY);
     } catch {
       // ignore
     }
@@ -402,33 +390,6 @@ export const useDataStore = defineStore('acu-data', () => {
       ST = (window as any).top.SillyTavern;
     }
     return ST;
-  }
-
-  /**
-   * 获取隔离配置 Key
-   */
-  function getIsolationConfigKey(): string {
-    let configKey = '';
-    try {
-      let storage = window.localStorage;
-      if (!storage.getItem(STORAGE_KEYS.V5_SETTINGS) && window.parent) {
-        try {
-          storage = window.parent.localStorage;
-        } catch {
-          // ignore cross-origin
-        }
-      }
-      const settingsStr = storage.getItem(STORAGE_KEYS.V5_SETTINGS);
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
-        if (settings.dataIsolationEnabled && settings.dataIsolationCode) {
-          configKey = settings.dataIsolationCode;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return configKey;
   }
 
   /**
@@ -810,7 +771,8 @@ export const useDataStore = defineStore('acu-data', () => {
 
     const targetMsg = ST.chat[floorIndex] as STChatMessage;
 
-    let finalKey = getIsolationConfigKey();
+    // 使用空字符串作为默认隔离键，优先沿用已存在的键
+    let finalKey = '';
     if (targetMsg.TavernDB_ACU_IsolatedData) {
       const existingKeys = Object.keys(targetMsg.TavernDB_ACU_IsolatedData);
       if (existingKeys.length > 0) {

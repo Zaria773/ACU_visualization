@@ -964,7 +964,7 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     icon: 'fa-box-open',
     displayColumns: ['名称', '物品名', 'name', 'Name', '数量'],
     maxRows: 12,
-    actions: ['goToTable', 'clear'],
+    actions: ['goToTable'],
     colSpan: 1,
     displayStyle: 'grid',
   },
@@ -988,14 +988,25 @@ export const WIDGET_TEMPLATES: Record<string, Partial<DashboardWidgetConfig>> = 
     colSpan: 1,
     displayStyle: 'list',
   },
+  global: {
+    type: 'table',
+    title: '全局状态',
+    icon: 'fa-globe',
+    displayColumns: [],
+    maxRows: 1,
+    actions: ['goToTable'],
+    colSpan: 2,
+    displayStyle: 'global',
+  },
 };
 
 /** 表格名称关键词匹配规则 */
 export const TABLE_KEYWORD_RULES: Record<string, string[]> = {
   task: ['任务', 'Task', 'task', 'Quest', 'quest', '日程'],
-  item: ['物品', '道具', 'Item', 'item', '背包', '库存', '装备'],
+  item: ['物品', '道具', 'Item', 'item', '背包', '库存', '装备', '武器'],
   character: ['主角', '玩家', 'Player', 'player', 'protagonist'],
   location: ['地点', '位置', 'Location', 'location', '场景'],
+  global: ['全局', 'Global'],
 };
 
 // ============================================================

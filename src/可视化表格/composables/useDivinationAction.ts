@@ -175,8 +175,6 @@ export function useDivinationAction() {
     }
 
     // 移除 prompt 中可能已存在的标签（包括带属性的标签），避免双重包裹
-    // 1. 移除开始标签 <剧情元指令...>
-    // 2. 移除结束标签 </剧情元指令>
     const cleanPrompt = prompt
       .replace(/<剧情元指令[^>]*>/g, '')
       .replace(/<\/剧情元指令>/g, '')

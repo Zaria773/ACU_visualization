@@ -6,8 +6,11 @@
  */
 
 import { useStorage } from '@vueuse/core';
-import { shallowRef } from 'vue';
+import { klona } from 'klona';
+import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import type { DivinationResult } from '../components/dialogs/divination/types';
+import { DEFAULT_CHAT_CONFIG, type ChatSpecificConfig } from '../composables/storageKeys';
+import { getACUConfigManager } from '../composables/useACUConfigManager';
 import type { BallPosition, DashboardWidgetConfig, TableRow, WidgetActionId } from '../types';
 import { useDataStore } from './useDataStore';
 import { useDivinationStore } from './useDivinationStore';
@@ -232,14 +235,119 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** 表格排序 - 对应原代码 getSavedTableOrder/saveTableOrder */
   const tableOrder = useStorage<string[]>(STORAGE_KEYS.TABLE_ORDER, []);
 
-  /** 表格高度 - 对应原代码 getTableHeights/saveTableHeights */
-  const tableHeights = useStorage<Record<string, number>>(STORAGE_KEYS.TABLE_HEIGHTS, {});
+  // ============================================================
+  // 使用 ConfigManager 管理聊天相关配置
+  // 配置存储在 extensionSettings，同步读取，自动保存
+  //
+  // 【重要】使用 ref + watch 模式而非 computed getter/setter
+  // computed getter/setter 在嵌套对象修改时不会触发，导致配置无法保存
+  // ============================================================
+  const configManager = getACUConfigManager();
 
-  /** 表格样式 - 对应原代码 getTableStyles/saveTableStyles */
-  const tableStyles = useStorage<Record<string, 'list' | 'card'>>(STORAGE_KEYS.TABLE_STYLES, {});
+  /** 获取当前聊天 ID */
+  const currentChatId = computed(() => SillyTavern.getCurrentChatId() || 'default');
 
-  /** 倒序显示的表格列表 - 对应原代码 getReverseOrderTables/saveReverseOrderTables */
-  const reverseTables = useStorage<string[]>(STORAGE_KEYS.REVERSE_TABLES, []);
+  /** 聊天配置 - 使用 ref 实现响应式 */
+  const chatConfigRef = ref<ChatSpecificConfig>({ ...DEFAULT_CHAT_CONFIG });
+
+  /**
+   * Tab 可见性配置 - 使用独立 ref 避免 computed getter/setter 的响应式问题
+   * 空数组表示全部显示，非空数组表示只显示指定的 Tab
+   * 存储的是表格名称 (name)，特殊 Tab 使用常量 ID
+   */
+  const visibleTabsRef = ref<string[]>([]);
+
+  /**
+   * Tab 排序配置 - 使用独立 ref
+   * 空数组表示使用默认顺序
+   */
+  const tabOrderRef = ref<string[]>([]);
+
+  /** 从 ConfigManager 加载当前聊天的配置 */
+  function loadChatConfig() {
+    const chatId = currentChatId.value;
+    const stored = configManager.config.chats[chatId];
+    chatConfigRef.value = stored ? klona(stored) : { ...DEFAULT_CHAT_CONFIG };
+    // 同步 Tab 配置到独立 ref
+    visibleTabsRef.value = [...chatConfigRef.value.visibleTabs];
+    tabOrderRef.value = [...chatConfigRef.value.tabOrder];
+    console.info('[UIStore] 已加载聊天配置:', chatId, 'visibleTabs:', visibleTabsRef.value);
+  }
+
+  // 监听聊天 ID 变化，自动加载配置
+  watch(
+    currentChatId,
+    () => {
+      loadChatConfig();
+    },
+    { immediate: true },
+  );
+
+  // 监听配置变化，自动保存
+  let isChatConfigInitializing = true;
+  watch(
+    chatConfigRef,
+    (newValue) => {
+      if (isChatConfigInitializing) return;
+      const chatId = currentChatId.value;
+      configManager.setChatConfig(chatId, klona(newValue));
+    },
+    { deep: true },
+  );
+
+  // 监听 Tab 配置变化，同步到 chatConfigRef 并触发保存
+  watch(
+    visibleTabsRef,
+    (newValue) => {
+      if (isChatConfigInitializing) return;
+      chatConfigRef.value.visibleTabs = [...newValue];
+      const chatId = currentChatId.value;
+      configManager.setChatConfig(chatId, klona(chatConfigRef.value));
+      console.info('[UIStore] visibleTabs 已保存:', newValue);
+    },
+    { deep: true },
+  );
+
+  watch(
+    tabOrderRef,
+    (newValue) => {
+      if (isChatConfigInitializing) return;
+      chatConfigRef.value.tabOrder = [...newValue];
+      const chatId = currentChatId.value;
+      configManager.setChatConfig(chatId, klona(chatConfigRef.value));
+      console.info('[UIStore] tabOrder 已保存:', newValue);
+    },
+    { deep: true },
+  );
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isChatConfigInitializing = false;
+  }, 100);
+
+  /** 表格高度 - 通过 chatConfigRef 访问 */
+  const tableHeights = computed({
+    get: () => chatConfigRef.value.tableHeights,
+    set: (val) => {
+      chatConfigRef.value.tableHeights = val;
+    },
+  });
+
+  /** 表格样式 - 通过 chatConfigRef 访问 */
+  const tableStyles = computed({
+    get: () => chatConfigRef.value.tableStyles,
+    set: (val) => {
+      chatConfigRef.value.tableStyles = val;
+    },
+  });
+
+  /** 倒序显示的表格列表 - 通过 chatConfigRef 访问 */
+  const reverseTables = computed({
+    get: () => chatConfigRef.value.reverseTables,
+    set: (val) => {
+      chatConfigRef.value.reverseTables = val;
+    },
+  });
 
   /** 悬浮球位置 */
   const ballPosition = useStorage<BallPosition>(STORAGE_KEYS.BALL_POSITION, {
@@ -250,11 +358,28 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** 布局方向 - 横向(horizontal)或竖向(vertical) */
   const layout = useStorage<'horizontal' | 'vertical'>(STORAGE_KEYS.LAYOUT, 'horizontal');
 
-  /** 可见的 Tab ID 列表 - 空数组表示全部显示 */
-  const visibleTabs = useStorage<string[]>(STORAGE_KEYS.VISIBLE_TABS, []);
+  /**
+   * 可见的 Tab 列表 - 使用独立 ref 实现响应式
+   * 空数组表示全部显示
+   * 存储的是表格名称 (name)，特殊 Tab 使用常量 ID
+   */
+  const visibleTabs = computed({
+    get: () => visibleTabsRef.value,
+    set: (val) => {
+      visibleTabsRef.value = [...val];
+    },
+  });
 
-  /** Tab 排序顺序 - 空数组表示使用默认顺序 */
-  const tabOrder = useStorage<string[]>(STORAGE_KEYS.TAB_ORDER, []);
+  /**
+   * Tab 排序顺序 - 使用独立 ref 实现响应式
+   * 空数组表示使用默认顺序
+   */
+  const tabOrder = computed({
+    get: () => tabOrderRef.value,
+    set: (val) => {
+      tabOrderRef.value = [...val];
+    },
+  });
 
   // ============================================================
   // 非持久化状态 - 仅在运行时存在
@@ -995,12 +1120,12 @@ export const useUIStore = defineStore('acu-ui', () => {
 
   /**
    * 检查 Tab 是否可见
-   * @param tabId Tab ID
+   * @param tabNameOrId Tab 名称或 ID（支持特殊 Tab 的 ID，如 TAB_DASHBOARD）
    */
-  function isTabVisible(tabId: string): boolean {
+  function isTabVisible(tabNameOrId: string): boolean {
     // 空数组表示全部显示
     if (visibleTabs.value.length === 0) return true;
-    return visibleTabs.value.includes(tabId);
+    return visibleTabs.value.includes(tabNameOrId);
   }
 
   /**
@@ -1696,25 +1821,26 @@ export const useUIStore = defineStore('acu-ui', () => {
   /**
    * 同步新表格到可见列表
    * 当 visibleTabs 非空时，检测新增的表格并自动添加到可见列表末尾
-   * @param allTableIds 当前所有表格的 ID 列表
-   * @returns 新增的表格 ID 数组
+   * 注意：visibleTabs 存储的是表格名称 (name)，而不是 sheetId，因为 name 更稳定
+   * @param allTableNames 当前所有表格的名称列表
+   * @returns 新增的表格名称数组
    */
-  function syncNewTablesToVisibleTabs(allTableIds: string[]): string[] {
+  function syncNewTablesToVisibleTabs(allTableNames: string[]): string[] {
     // 如果 visibleTabs 为空（全部显示模式），无需同步
     if (visibleTabs.value.length === 0) {
       return [];
     }
 
-    // 找出不在 visibleTabs 中的新表格
-    const newTabIds = allTableIds.filter(id => !visibleTabs.value.includes(id));
+    // 找出不在 visibleTabs 中的新表格（按名称匹配）
+    const newTabNames = allTableNames.filter(name => !visibleTabs.value.includes(name));
 
     // 如果有新表格，添加到可见列表末尾
-    if (newTabIds.length > 0) {
-      visibleTabs.value = [...visibleTabs.value, ...newTabIds];
-      console.info(`[ACU] 检测到 ${newTabIds.length} 个新表格，已自动添加到可见列表:`, newTabIds);
+    if (newTabNames.length > 0) {
+      visibleTabs.value = [...visibleTabs.value, ...newTabNames];
+      console.info(`[ACU] 检测到 ${newTabNames.length} 个新表格，已自动添加到可见列表:`, newTabNames);
     }
 
-    return newTabIds;
+    return newTabNames;
   }
 
   // ============================================================

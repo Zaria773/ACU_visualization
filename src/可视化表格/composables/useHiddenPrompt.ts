@@ -73,65 +73,47 @@ export function setupSendIntercept() {
       const userInput = textarea.value.trim();
 
       // 拼接：隐藏提示词 + 用户输入
-      const combinedMessage = userInput ? `${hiddenPrompt}\n${userInput}` : hiddenPrompt;
+      const wrappedPrompt = `${hiddenPrompt}`;
+      const combinedMessage = userInput ? `${wrappedPrompt}\n${userInput}` : wrappedPrompt;
 
       console.info('[ACU] 拼接消息:', combinedMessage.substring(0, 80));
 
+      // 用 /send 创建用户消息（消息时间戳是当前时间，满足 12s 判定）
+      // 使用 as user 确保是用户消息
       const parentWin = window.parent as any;
-      if (!parentWin.TavernHelper) {
-        console.error('[ACU] TavernHelper 不可用');
+      if (parentWin.TavernHelper && parentWin.TavernHelper.triggerSlash) {
+        await parentWin.TavernHelper.triggerSlash(`/send as=user ${combinedMessage}`);
+      } else {
+        console.error('[ACU] TavernHelper.triggerSlash 不可用');
         throw new Error('TavernHelper API unavailable');
       }
 
-      // ✅ 使用 createChatMessages 直接创建用户消息
-      await parentWin.TavernHelper.createChatMessages([{ role: 'user', message: combinedMessage }]);
-
       console.info('[ACU] ✓ 用户消息已创建');
 
-      // 清空隐藏提示词和输入框
+      // 清空隐藏提示词
       setHiddenPrompt('');
+
+      // 清空输入框
       textarea.value = '';
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
-      // ✅ 先触发一次 click 让剧情推进记录"发送意图"
-      // 由于输入框已清空，酒馆的 click 处理器会发现空输入而触发 continue 模式
-      // 但剧情推进的 capture 钩子会记录发送意图时间戳
-      isProcessing = false; // 临时放开，让 click 事件正常触发
+      // 短暂延迟确保消息已写入
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // 触发 click，此时输入框为空
+      // - 空输入会让酒馆触发 AI 生成（continue 模式）
+      // - 同时数据库的 capture 监听器会记录发送意图
       sendBtn.click();
-      isProcessing = true; // 立即恢复
-
-      // 短暂等待让剧情推进处理 click
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // ✅ 使用 generate 触发 AI 生成（剧情推进会通过 TavernHelper.generate 钩子拦截）
-      // 剧情推进已经记录了发送意图，现在会正常处理
-      await parentWin.TavernHelper.generate({});
 
       console.info('[ACU] ✓ 已触发生成');
-
-      // 延迟重渲染用户消息，确保剧情推进修改后的内容能正确显示
-      setTimeout(async () => {
-        try {
-          if (parentWin.TavernHelper?.setChatMessages && parentWin.TavernHelper?.getLastMessageId) {
-            const lastMsgId = parentWin.TavernHelper.getLastMessageId();
-            const userMsgs = parentWin.TavernHelper.getChatMessages(`0-${lastMsgId}`, { role: 'user' });
-            if (userMsgs && userMsgs.length > 0) {
-              const lastUserMsg = userMsgs[userMsgs.length - 1];
-              await parentWin.TavernHelper.setChatMessages([{ message_id: lastUserMsg.message_id }], {
-                refresh: 'affected',
-              });
-              console.info('[ACU] ✓ 用户消息已重渲染，message_id:', lastUserMsg.message_id);
-            }
-          }
-        } catch (e) {
-          console.warn('[ACU] 重渲染用户消息失败:', e);
-        }
-      }, 800);
     } catch (err) {
       console.error('[ACU] 发送失败:', err);
       toast.error('隐藏提示词发送失败');
     } finally {
-      isProcessing = false;
+      // 延迟重置标志，确保递归的 click 不会再次触发
+      setTimeout(() => {
+        isProcessing = false;
+      }, 100);
     }
   };
 

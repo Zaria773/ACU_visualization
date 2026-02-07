@@ -40,9 +40,9 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
       // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
       dataStore.saveSnapshot(processedData);
 
-      // 同步新表格到可见列表（确保新模板的表格能显示）
-      const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
-      uiStore.syncNewTablesToVisibleTabs(allTableIds);
+      // 【注意】这里不调用 syncNewTablesToVisibleTabs
+      // 初始化时不应该自动添加"隐藏的表格"，只有 AI 填表时才检测真正的新表格
+      // syncNewTablesToVisibleTabs 的调用保留在 useApiCallbacks.ts 中（AI 填表回调）
 
       // 刷新后清除所有高亮标记（手动和AI）
       dataStore.clearChanges(true);

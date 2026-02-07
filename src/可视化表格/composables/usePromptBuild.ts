@@ -59,10 +59,10 @@ export interface FullDrawResult extends DrawResult {
  * 用于在没有自定义模板时动态构建提示词
  */
 const TEMPLATE_PARTS = {
-  HEADER: '<user>行动顺利度：',
-  LUCK: '{{luck}}',
+  HEADER: '<剧情元指令>禁止在正文提及任何元指令内容。',
+  LUCK: '<user>行动顺利度：{{luck}}',
   WORDS: `在接下来的描写中，请自然地融入以下要素：[ {{words}} ]`,
-  DIMENSIONS: '{{dimensions}}',
+  DIMENSIONS: '{{dimensions}}</剧情元指令>',
 };
 
 /**

@@ -126,8 +126,20 @@ interface TabConfigItem {
 }
 
 /**
+ * 获取用于 visibleTabs 存储的键
+ * 特殊 Tab 使用常量 ID，普通表格使用名称
+ */
+function getVisibleKey(tab: TabConfigItem): string {
+  if (tab.type === 'dashboard' || tab.type === 'graph' || tab.type === 'options') {
+    return tab.id; // 特殊 Tab 使用 ID
+  }
+  return tab.name; // 普通表格使用名称
+}
+
+/**
  * 获取所有可用的表格（包括特殊类型）
- * 关键：使用 sheetId 作为 Tab ID，与 App.vue 的 tabList 保持一致
+ * 关键：visibleTabs 存储的是表格名称 (name)，而不是 sheetId
+ * 特殊 Tab（仪表盘、关系图、选项面板）仍使用常量 ID
  */
 const allTabs = computed<TabConfigItem[]>(() => {
   const tabs: TabConfigItem[] = [];
@@ -191,16 +203,16 @@ const allTabs = computed<TabConfigItem[]>(() => {
  * - 否则按照 visibleTabs 顺序显示
  */
 const visibleTabItems = computed<TabConfigItem[]>(() => {
-  const visibleIds = uiStore.visibleTabs;
+  const visibleKeys = uiStore.visibleTabs;
 
   // 空数组时展示区为空，让用户从隐藏区选择
-  if (!visibleIds || visibleIds.length === 0) {
+  if (!visibleKeys || visibleKeys.length === 0) {
     return [];
   }
 
-  // 按照 visibleTabs 顺序返回
-  return visibleIds
-    .map(id => allTabs.value.find(tab => tab.id === id))
+  // 按照 visibleTabs 顺序返回，使用 getVisibleKey 匹配
+  return visibleKeys
+    .map(key => allTabs.value.find(tab => getVisibleKey(tab) === key))
     .filter((tab): tab is TabConfigItem => tab !== undefined);
 });
 
@@ -210,15 +222,15 @@ const visibleTabItems = computed<TabConfigItem[]>(() => {
  * - 否则显示不在 visibleTabs 中的 Tab
  */
 const hiddenTabItems = computed<TabConfigItem[]>(() => {
-  const visibleIds = uiStore.visibleTabs;
+  const visibleKeys = uiStore.visibleTabs;
 
   // 空数组时隐藏区显示所有 Tab
-  if (!visibleIds || visibleIds.length === 0) {
+  if (!visibleKeys || visibleKeys.length === 0) {
     return allTabs.value;
   }
 
-  // 过滤出不在 visibleTabs 中的 Tab
-  return allTabs.value.filter(tab => !visibleIds.includes(tab.id));
+  // 过滤出不在 visibleTabs 中的 Tab，使用 getVisibleKey 匹配
+  return allTabs.value.filter(tab => !visibleKeys.includes(getVisibleKey(tab)));
 });
 
 /**
@@ -273,10 +285,10 @@ const handleDrop = (e: DragEvent, targetIndex: number) => {
   e.preventDefault();
   if (draggedIndex.value === null || draggedIndex.value === targetIndex) return;
 
-  // 获取当前顺序：如果是空数组（显示全部模式），先初始化为所有 Tab ID
+  // 获取当前顺序：如果是空数组（显示全部模式），先初始化为所有 Tab 的 visibleKey
   let currentOrder = [...uiStore.visibleTabs];
   if (currentOrder.length === 0) {
-    currentOrder = allTabs.value.map(t => t.id);
+    currentOrder = allTabs.value.map(t => getVisibleKey(t));
   }
 
   // 重新排序
@@ -300,27 +312,37 @@ const handleDragEnd = () => {
 
 /**
  * 将 Tab 添加到展示区
+ * @param tabId Tab 的 sheetId（用于查找 Tab）
  */
 const handleShow = (tabId: string) => {
+  const tab = allTabs.value.find(t => t.id === tabId);
+  if (!tab) return;
+
+  const visibleKey = getVisibleKey(tab);
   const currentVisible = [...uiStore.visibleTabs];
 
-  if (!currentVisible.includes(tabId)) {
+  if (!currentVisible.includes(visibleKey)) {
     // 添加到末尾
-    currentVisible.push(tabId);
+    currentVisible.push(visibleKey);
     uiStore.setVisibleTabs(currentVisible);
   }
 };
 
 /**
  * 将 Tab 从展示区移除
+ * @param tabId Tab 的 sheetId（用于查找 Tab）
  */
 const handleHide = (tabId: string) => {
+  const tab = allTabs.value.find(t => t.id === tabId);
+  if (!tab) return;
+
+  const visibleKey = getVisibleKey(tab);
   const currentVisible = [...uiStore.visibleTabs];
 
   // 如果当前是"显示全部"模式（空数组），先初始化为所有 Tab
   if (currentVisible.length === 0) {
-    const allIds = allTabs.value.map(t => t.id);
-    const filtered = allIds.filter(id => id !== tabId);
+    const allKeys = allTabs.value.map(t => getVisibleKey(t));
+    const filtered = allKeys.filter(key => key !== visibleKey);
     // 至少保留一个 Tab
     if (filtered.length > 0) {
       uiStore.setVisibleTabs(filtered);
@@ -328,7 +350,7 @@ const handleHide = (tabId: string) => {
     return;
   }
 
-  const index = currentVisible.indexOf(tabId);
+  const index = currentVisible.indexOf(visibleKey);
   if (index > -1) {
     // 至少保留一个 Tab
     if (currentVisible.length > 1) {
@@ -343,9 +365,9 @@ const handleHide = (tabId: string) => {
  * 将所有Tab添加到展示区
  */
 const handleReset = () => {
-  // 重置时将所有Tab添加到展示区
-  const allIds = allTabs.value.map(t => t.id);
-  uiStore.setVisibleTabs(allIds);
+  // 重置时将所有Tab添加到展示区，使用 visibleKey
+  const allKeys = allTabs.value.map(t => getVisibleKey(t));
+  uiStore.setVisibleTabs(allKeys);
 };
 
 /**

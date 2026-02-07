@@ -1,28 +1,26 @@
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
  * 配置状态管理 Store
- * 迁移原代码中的配置管理逻辑 (getConfig/saveConfig)
+ * 使用 ConfigManager 统一管理配置
+ *
+ * 注意：使用 ref + watch 模式而非 computed getter/setter
+ * 这样可以确保直接修改对象属性时也能触发保存
  */
 
-import { useStorage } from '@vueuse/core';
+import { klona } from 'klona';
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
+import { DEFAULT_BUTTONS_CONFIG, getACUConfigManager } from '../composables/useACUConfigManager';
 import type {
   ACUConfig,
-  ACUScriptVariables,
   ButtonGroup,
   CustomFont,
   FloatingBallAnimation,
   FloatingBallAppearance,
   NavButtonConfig,
 } from '../types';
-
-/** 存储键常量 (保持与原代码兼容) */
-const STORAGE_KEY_UI_CONFIG = 'acu_ui_config_v18';
-
-/** 全局配置键名 */
-const GLOBAL_CONFIG_KEY = 'acu_visualizer_config';
 
 /** 悬浮球外观默认配置 - 保持现有毛玻璃效果 */
 export const DEFAULT_BALL_APPEARANCE: FloatingBallAppearance = {
@@ -56,17 +54,17 @@ export const NAV_BUTTONS: NavButtonConfig[] = [
 /** 导航栏按钮 ID 类型 */
 export type NavButtonId = (typeof NAV_BUTTONS)[number]['id'];
 
-/** 默认可见按钮列表 */
-const DEFAULT_VISIBLE_BUTTONS = ['save', 'collapseTab', 'refresh', 'director', 'toggle', 'settings'];
+/** 默认可见按钮列表（导演控制台默认不展示） */
+const DEFAULT_VISIBLE_BUTTONS = ['save', 'collapseTab', 'refresh', 'toggle', 'settings'];
 
 /** 默认按钮顺序 */
 const DEFAULT_BUTTON_ORDER = [
   'save',
   'collapseTab',
   'refresh',
-  'director',
   'toggle',
   'settings',
+  'director',
   'saveAs',
   'undo',
   'manualUpdate',
@@ -154,13 +152,78 @@ export const HIGHLIGHT_COLORS = {
 
 export const useConfigStore = defineStore('acu-config', () => {
   // ============================================================
-  // 持久化状态 - 使用 useStorage 自动同步 localStorage
+  // 使用 ConfigManager 统一管理配置
+  // ============================================================
+  const configManager = getACUConfigManager();
+
+  // ============================================================
+  // 使用 ref + watch 模式确保响应式正确工作
   // ============================================================
 
-  /** 配置状态 - 合并默认值 */
-  const config = useStorage<ACUConfig>(STORAGE_KEY_UI_CONFIG, DEFAULT_CONFIG, localStorage, {
-    mergeDefaults: true, // 确保新增的配置项有默认值
+  /** UI 配置状态 - 使用 ref 实现响应式 */
+  const config = ref<ACUConfig>({
+    ...DEFAULT_CONFIG,
+    ...klona(configManager.config.ui),
   });
+
+  // ============================================================
+  // 按钮配置状态 - 使用独立的 ref 确保响应式正确
+  // ============================================================
+
+  /** 可见按钮列表 */
+  const visibleButtonsRef = ref<string[]>([
+    ...(configManager.config.buttons?.visibleButtons || DEFAULT_BUTTONS_CONFIG.visibleButtons),
+  ]);
+
+  /** 按钮顺序 */
+  const buttonOrderRef = ref<string[]>([
+    ...(configManager.config.buttons?.buttonOrder || DEFAULT_BUTTONS_CONFIG.buttonOrder),
+  ]);
+
+  /** 按钮收纳组 */
+  const buttonGroupsRef = ref<ButtonGroup[]>(
+    klona(configManager.config.buttons?.buttonGroups || DEFAULT_BUTTONS_CONFIG.buttonGroups),
+  );
+
+  /** 长按直接执行开关 */
+  const longPressDirectExecRef = ref<boolean>(
+    configManager.config.buttons?.longPressDirectExec ?? DEFAULT_BUTTONS_CONFIG.longPressDirectExec,
+  );
+
+  // 监听 UI 配置变化，自动保存
+  let isInitializing = true;
+  watch(
+    config,
+    newValue => {
+      if (isInitializing) return;
+      Object.assign(configManager.config.ui, klona(newValue));
+      configManager.saveConfig();
+    },
+    { deep: true },
+  );
+
+  // 监听按钮配置变化，自动保存
+  function saveButtonsConfig() {
+    if (isInitializing) return;
+    configManager.config.buttons = {
+      visibleButtons: [...visibleButtonsRef.value],
+      buttonOrder: [...buttonOrderRef.value],
+      buttonGroups: klona(buttonGroupsRef.value),
+      longPressDirectExec: longPressDirectExecRef.value,
+    };
+    configManager.saveConfig();
+    console.log('[ACU ConfigStore] 按钮配置已保存:', configManager.config.buttons);
+  }
+
+  watch(visibleButtonsRef, saveButtonsConfig, { deep: true });
+  watch(buttonOrderRef, saveButtonsConfig, { deep: true });
+  watch(buttonGroupsRef, saveButtonsConfig, { deep: true });
+  watch(longPressDirectExecRef, saveButtonsConfig);
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isInitializing = false;
+  }, 100);
 
   // ============================================================
   // Getters
@@ -249,7 +312,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param updates 要更新的配置项
    */
   function updateConfig(updates: Partial<ACUConfig>) {
-    config.value = { ...config.value, ...updates };
+    Object.assign(config.value, updates);
   }
 
   /**
@@ -264,7 +327,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param themeId 主题 ID
    */
   function setTheme(themeId: string) {
-    updateConfig({ theme: themeId });
+    config.value.theme = themeId;
   }
 
   /**
@@ -272,7 +335,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param fontId 字体 ID
    */
   function setFontFamily(fontId: string) {
-    updateConfig({ fontFamily: fontId });
+    config.value.fontFamily = fontId;
   }
 
   /**
@@ -280,7 +343,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param layout 布局模式
    */
   function setLayout(layout: 'vertical' | 'horizontal') {
-    updateConfig({ layout });
+    config.value.layout = layout;
   }
 
   /**
@@ -288,7 +351,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param colorKey 颜色 key
    */
   function setHighlightColor(colorKey: string) {
-    updateConfig({ highlightColor: colorKey, highlightManualColor: colorKey });
+    config.value.highlightColor = colorKey;
+    config.value.highlightManualColor = colorKey;
   }
 
   /**
@@ -296,7 +360,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param colorKey 颜色 key
    */
   function setHighlightManualColor(colorKey: string) {
-    updateConfig({ highlightManualColor: colorKey, highlightColor: colorKey });
+    config.value.highlightManualColor = colorKey;
+    config.value.highlightColor = colorKey;
   }
 
   /**
@@ -304,7 +369,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param colorKey 颜色 key
    */
   function setHighlightAiColor(colorKey: string) {
-    updateConfig({ highlightAiColor: colorKey });
+    config.value.highlightAiColor = colorKey;
   }
 
   /**
@@ -312,49 +377,49 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param colorKey 颜色 key
    */
   function setTitleColor(colorKey: string) {
-    updateConfig({ titleColor: colorKey });
+    config.value.titleColor = colorKey;
   }
 
   /**
    * 切换高亮新内容
    */
   function toggleHighlightNew() {
-    updateConfig({ highlightNew: !config.value.highlightNew });
+    config.value.highlightNew = !config.value.highlightNew;
   }
 
   /**
    * 切换自定义标题颜色
    */
   function toggleCustomTitleColor() {
-    updateConfig({ customTitleColor: !config.value.customTitleColor });
+    config.value.customTitleColor = !config.value.customTitleColor;
   }
 
   /**
    * 切换显示仪表盘
    */
   function toggleShowDashboard() {
-    updateConfig({ showDashboard: !config.value.showDashboard });
+    config.value.showDashboard = !config.value.showDashboard;
   }
 
   /**
    * 切换显示分页
    */
   function toggleShowPagination() {
-    updateConfig({ showPagination: !config.value.showPagination });
+    config.value.showPagination = !config.value.showPagination;
   }
 
   /**
    * 切换锁定面板
    */
   function toggleLockPanel() {
-    updateConfig({ lockPanel: !config.value.lockPanel });
+    config.value.lockPanel = !config.value.lockPanel;
   }
 
   /**
    * 切换长文本限制
    */
   function toggleLimitLongText() {
-    updateConfig({ limitLongText: !config.value.limitLongText });
+    config.value.limitLongText = !config.value.limitLongText;
   }
 
   // ============================================================
@@ -366,7 +431,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param buttons 按钮 ID 列表
    */
   function setVisibleButtons(buttons: string[]) {
-    config.value.visibleButtons = buttons;
+    visibleButtonsRef.value = [...buttons];
+    console.log('[ACU ConfigStore] setVisibleButtons:', visibleButtonsRef.value);
   }
 
   /**
@@ -374,7 +440,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param order 按钮 ID 顺序列表
    */
   function setButtonOrder(order: string[]) {
-    config.value.buttonOrder = order;
+    buttonOrderRef.value = [...order];
+    console.log('[ACU ConfigStore] setButtonOrder:', buttonOrderRef.value);
   }
 
   /**
@@ -382,7 +449,7 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param buttonId 按钮 ID
    */
   function isButtonVisible(buttonId: string): boolean {
-    return config.value.visibleButtons.includes(buttonId);
+    return visibleButtonsRef.value.includes(buttonId);
   }
 
   /**
@@ -390,24 +457,25 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param buttonId 按钮 ID
    */
   function toggleButtonVisibility(buttonId: string) {
-    const current = [...config.value.visibleButtons];
+    const current = [...visibleButtonsRef.value];
     const index = current.indexOf(buttonId);
     if (index > -1) {
       current.splice(index, 1);
     } else {
       current.push(buttonId);
     }
-    config.value.visibleButtons = current;
+    visibleButtonsRef.value = current;
   }
 
   /**
    * 获取排序后的可见按钮列表
    */
   const sortedVisibleButtons = computed(() => {
-    const order = config.value.buttonOrder;
-    const visible = config.value.visibleButtons;
-    // 按照 buttonOrder 的顺序过滤出可见的按钮
-    return order.filter((id: string) => visible.includes(id));
+    const order = buttonOrderRef.value;
+    const visible = visibleButtonsRef.value;
+    const result = order.filter((id: string) => visible.includes(id));
+    console.log('[ACU ConfigStore] sortedVisibleButtons:', result, 'order:', order, 'visible:', visible);
+    return result;
   });
 
   /**
@@ -417,8 +485,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * - 排除标记为 hidden 的按钮
    */
   const hiddenButtons = computed(() => {
-    const visible = config.value.visibleButtons;
-    const groups = config.value.buttonGroups || [];
+    const visible = visibleButtonsRef.value;
+    const groups = buttonGroupsRef.value;
     const usedSecondaries = groups.map(g => g.secondaryId).filter(Boolean);
 
     return NAV_BUTTONS.filter(btn => !btn.hidden && !visible.includes(btn.id) && !usedSecondaries.includes(btn.id));
@@ -444,19 +512,19 @@ export const useConfigStore = defineStore('acu-config', () => {
   /**
    * 获取按钮收纳组列表
    */
-  const buttonGroups = computed(() => config.value.buttonGroups || []);
+  const buttonGroups = computed(() => buttonGroupsRef.value);
 
   /**
    * 获取长按直接执行开关状态
    */
-  const longPressDirectExec = computed(() => config.value.longPressDirectExec || false);
+  const longPressDirectExec = computed(() => longPressDirectExecRef.value);
 
   /**
    * 设置按钮收纳组
    * @param groups 收纳组列表
    */
   function setButtonGroups(groups: ButtonGroup[]) {
-    config.value.buttonGroups = groups;
+    buttonGroupsRef.value = klona(groups);
   }
 
   /**
@@ -466,13 +534,12 @@ export const useConfigStore = defineStore('acu-config', () => {
    */
   function addButtonGroup(primaryId: string, secondaryId: string) {
     // 移除该附属按钮在其他组的关联，同时移除当前主按钮的旧组
-    const groups = (config.value.buttonGroups || []).filter(
-      g => g.secondaryId !== secondaryId && g.primaryId !== primaryId,
-    );
+    const currentGroups = buttonGroupsRef.value;
+    const groups = currentGroups.filter(g => g.secondaryId !== secondaryId && g.primaryId !== primaryId);
     // 创建新的组
     groups.push({ primaryId, secondaryId });
-    config.value.buttonGroups = [...groups]; // 使用新数组触发响应式更新
-    console.log('[ACU] addButtonGroup:', primaryId, '->', secondaryId, 'groups:', config.value.buttonGroups);
+    buttonGroupsRef.value = [...groups];
+    console.log('[ACU] addButtonGroup:', primaryId, '->', secondaryId, 'groups:', groups);
   }
 
   /**
@@ -480,9 +547,10 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param primaryId 主按钮 ID
    */
   function removeButtonGroupSecondary(primaryId: string) {
-    const groups = (config.value.buttonGroups || []).filter(g => g.primaryId !== primaryId);
-    config.value.buttonGroups = [...groups]; // 使用新数组触发响应式更新
-    console.log('[ACU] removeButtonGroupSecondary:', primaryId, 'groups:', config.value.buttonGroups);
+    const currentGroups = buttonGroupsRef.value;
+    const groups = currentGroups.filter(g => g.primaryId !== primaryId);
+    buttonGroupsRef.value = [...groups];
+    console.log('[ACU] removeButtonGroupSecondary:', primaryId, 'groups:', groups);
   }
 
   /**
@@ -490,7 +558,8 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param primaryId 主按钮 ID
    */
   function getSecondaryButtonId(primaryId: string): string | null {
-    const group = (config.value.buttonGroups || []).find(g => g.primaryId === primaryId);
+    const groups = buttonGroupsRef.value;
+    const group = groups.find(g => g.primaryId === primaryId);
     return group?.secondaryId || null;
   }
 
@@ -499,14 +568,15 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param buttonId 按钮 ID
    */
   function isSecondaryButton(buttonId: string): boolean {
-    return (config.value.buttonGroups || []).some(g => g.secondaryId === buttonId);
+    const groups = buttonGroupsRef.value;
+    return groups.some(g => g.secondaryId === buttonId);
   }
 
   /**
    * 切换长按直接执行开关
    */
   function toggleLongPressDirectExec() {
-    config.value.longPressDirectExec = !config.value.longPressDirectExec;
+    longPressDirectExecRef.value = !longPressDirectExecRef.value;
   }
 
   /**
@@ -514,22 +584,34 @@ export const useConfigStore = defineStore('acu-config', () => {
    * @param value 是否启用
    */
   function setLongPressDirectExec(value: boolean) {
-    config.value.longPressDirectExec = value;
+    longPressDirectExecRef.value = value;
   }
 
   /**
    * 重置按钮配置为默认值
    */
   function resetButtonConfig() {
-    config.value.visibleButtons = [...DEFAULT_VISIBLE_BUTTONS];
-    config.value.buttonOrder = [...DEFAULT_BUTTON_ORDER];
-    config.value.buttonGroups = [...DEFAULT_BUTTON_GROUPS];
-    config.value.longPressDirectExec = false;
+    visibleButtonsRef.value = [...DEFAULT_BUTTONS_CONFIG.visibleButtons];
+    buttonOrderRef.value = [...DEFAULT_BUTTONS_CONFIG.buttonOrder];
+    buttonGroupsRef.value = [];
+    longPressDirectExecRef.value = false;
+    console.log('[ACU ConfigStore] 按钮配置已重置');
   }
+
+  /**
+   * 兼容旧接口：导出 buttonsConfig 对象
+   */
+  const buttonsConfig = computed(() => ({
+    visibleButtons: visibleButtonsRef.value,
+    buttonOrder: buttonOrderRef.value,
+    buttonGroups: buttonGroupsRef.value,
+    longPressDirectExec: longPressDirectExecRef.value,
+  }));
 
   return {
     // 状态
     config,
+    buttonsConfig, // 兼容旧接口
 
     // Getters
     theme,
@@ -583,100 +665,64 @@ export const useConfigStore = defineStore('acu-config', () => {
 });
 
 // ============================================================
-// 悬浮球外观配置 Store (独立管理，使用脚本变量持久化)
+// 悬浮球外观配置 Store (使用 ConfigManager 统一管理)
 // ============================================================
 
 export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
   // ============================================================
-  // 状态
+  // 使用 ConfigManager 统一管理配置
   // ============================================================
-
-  /** 悬浮球外观配置 */
-  const appearance = ref<FloatingBallAppearance>({ ...DEFAULT_BALL_APPEARANCE });
-
-  /** 自定义字体列表 */
-  const customFonts = ref<CustomFont[]>([]);
-
-  /** 是否已从脚本变量加载 */
-  const isLoaded = ref(false);
+  const configManager = getACUConfigManager();
 
   // ============================================================
-  // 全局变量持久化
+  // 使用 ref + watch 模式确保响应式正确工作
   // ============================================================
 
-  /**
-   * 从全局变量加载配置
-   */
-  function loadFromGlobalVariables() {
-    try {
-      if (typeof getVariables !== 'function') {
-        console.warn('[ACU] getVariables 不可用，使用默认配置');
-        isLoaded.value = true;
-        return;
-      }
+  /** 悬浮球外观配置 - 使用 ref 实现响应式 */
+  const appearance = ref<FloatingBallAppearance>({
+    ...DEFAULT_BALL_APPEARANCE,
+    ...klona(configManager.config.ball?.appearance || {}),
+  });
 
-      const globalVars = getVariables({ type: 'global' });
-      const config = globalVars[GLOBAL_CONFIG_KEY] as ACUScriptVariables | undefined;
+  /** 自定义字体列表 - 使用 ref 实现响应式 */
+  const customFonts = ref<CustomFont[]>(klona(configManager.config.ball?.customFonts || []));
 
-      if (config?.ballAppearance) {
-        appearance.value = { ...DEFAULT_BALL_APPEARANCE, ...config.ballAppearance };
-      }
+  /** 是否已加载 (ConfigManager 在初始化时已加载) */
+  const isLoaded = computed(() => true);
 
-      if (config?.customFonts) {
-        customFonts.value = config.customFonts;
-      }
-
-      isLoaded.value = true;
-      console.info('[ACU] 已从全局变量加载配置');
-    } catch (e) {
-      console.error('[ACU] 加载全局变量失败:', e);
-      isLoaded.value = true;
-    }
-  }
-
-  /**
-   * 保存配置到全局变量
-   */
-  function saveToGlobalVariables() {
-    try {
-      if (typeof getVariables !== 'function' || typeof replaceVariables !== 'function') {
-        console.warn('[ACU] 变量 API 不可用');
-        return;
-      }
-
-      const globalVars = getVariables({ type: 'global' });
-      const currentConfig = (globalVars[GLOBAL_CONFIG_KEY] || {}) as ACUScriptVariables;
-
-      const newConfig: ACUScriptVariables = {
-        ...currentConfig,
-        configVersion: 1,
-        ballAppearance: appearance.value,
-        customFonts: customFonts.value,
-      };
-
-      replaceVariables(
-        {
-          ...globalVars,
-          [GLOBAL_CONFIG_KEY]: newConfig,
-        },
-        { type: 'global' },
-      );
-      console.info('[ACU] 已保存配置到全局变量');
-    } catch (e) {
-      console.error('[ACU] 保存全局变量失败:', e);
-    }
-  }
-
-  // 监听变化自动保存
+  // 监听悬浮球外观变化，自动保存
+  let isBallInitializing = true;
   watch(
-    [appearance, customFonts],
-    () => {
-      if (isLoaded.value) {
-        saveToGlobalVariables();
+    appearance,
+    newValue => {
+      if (isBallInitializing) return;
+      if (!configManager.config.ball) {
+        configManager.config.ball = { appearance: {}, customFonts: [] };
       }
+      Object.assign(configManager.config.ball.appearance, klona(newValue));
+      configManager.saveConfig();
     },
     { deep: true },
   );
+
+  // 监听自定义字体变化，自动保存
+  watch(
+    customFonts,
+    newValue => {
+      if (isBallInitializing) return;
+      if (!configManager.config.ball) {
+        configManager.config.ball = { appearance: {}, customFonts: [] };
+      }
+      configManager.config.ball.customFonts = klona(newValue);
+      configManager.saveConfig();
+    },
+    { deep: true },
+  );
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isBallInitializing = false;
+  }, 100);
 
   // ============================================================
   // 悬浮球外观 Actions
@@ -687,7 +733,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
    * @param updates 要更新的配置项
    */
   function updateAppearance(updates: Partial<FloatingBallAppearance>) {
-    appearance.value = { ...appearance.value, ...updates };
+    Object.assign(appearance.value, updates);
   }
 
   /**
@@ -760,7 +806,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
       ...font,
       id: `custom_${Date.now()}`,
     };
-    customFonts.value.push(newFont);
+    customFonts.value = [...customFonts.value, newFont];
     return newFont;
   }
 
@@ -769,10 +815,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
    * @param fontId 字体 ID
    */
   function removeFont(fontId: string) {
-    const index = customFonts.value.findIndex(f => f.id === fontId);
-    if (index > -1) {
-      customFonts.value.splice(index, 1);
-    }
+    customFonts.value = customFonts.value.filter(f => f.id !== fontId);
   }
 
   /**
@@ -830,10 +873,6 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     appearance,
     customFonts,
     isLoaded,
-
-    // 全局变量
-    loadFromGlobalVariables,
-    saveToGlobalVariables,
 
     // 悬浮球外观
     updateAppearance,

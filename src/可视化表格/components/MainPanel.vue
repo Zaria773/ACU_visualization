@@ -213,13 +213,15 @@ const configStore = useConfigStore();
 /** 默认可见按钮列表 */
 const DEFAULT_VISIBLE_BUTTONS = ['save', 'refresh', 'settings', 'pin', 'toggle'];
 
-/** 获取排序后的可见按钮列表 */
+/** 获取排序后的可见按钮列表 - 使用 buttonsConfig 而非 config */
 const visibleButtons = computed(() => {
-  let order = configStore.config.buttonOrder || NAV_BUTTONS.map((b: NavButtonConfig) => b.id);
+  // 【修复】使用 buttonsConfig（独立的按钮配置 refs）而非 config（UI 配置）
+  const buttonsConfig = configStore.buttonsConfig;
+  let order = buttonsConfig.buttonOrder || NAV_BUTTONS.map((b: NavButtonConfig) => b.id);
   // 修复：当 visibleButtons 为空数组或未定义时，使用默认值
   const visibleIds =
-    configStore.config.visibleButtons?.length > 0
-      ? [...configStore.config.visibleButtons]
+    buttonsConfig.visibleButtons?.length > 0
+      ? [...buttonsConfig.visibleButtons]
       : [...DEFAULT_VISIBLE_BUTTONS];
 
   // 收纳Tab模式开启时，根据配置决定是否添加 collapseTab 按钮
@@ -248,6 +250,7 @@ const visibleButtons = computed(() => {
   console.info('[ACU MainPanel] 计算可见按钮:', {
     order,
     visibleIds,
+    buttonsConfigVisible: buttonsConfig.visibleButtons,
     collapseTabBar: configStore.config.collapseTabBar,
     showCollapseTabButton: configStore.config.showCollapseTabButton,
   });

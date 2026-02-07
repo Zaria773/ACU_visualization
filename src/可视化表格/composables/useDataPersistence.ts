@@ -323,21 +323,6 @@ function getSheetGuideInfo(
   }
 }
 
-/** 旧版本 localStorage 键名 - 用于兼容性检测 */
-const LEGACY_KEYS = [
-  'acu_table_order',
-  'acu_reverse_tables',
-  'acu_table_heights',
-  'acu_active_tab',
-  'acu_ui_collapse',
-  'acu_pin',
-  'acu_table_styles',
-  'acu_win_config',
-] as const;
-
-/** V5 隔离设置键名 */
-const STORAGE_KEY_V5_SETTINGS = 'acu_v5_isolation_settings';
-
 export function useDataPersistence() {
   const dataStore = useDataStore();
   const configStore = useConfigStore();
@@ -1250,55 +1235,6 @@ export function useDataPersistence() {
     }
   }
 
-  // ============================================================
-  // 兼容旧版本数据迁移
-  // ============================================================
-
-  /**
-   * 检测并记录旧版本数据
-   * 用于向后兼容性检查
-   */
-  function migrateLegacyData(): void {
-    console.info('[ACU] 检查旧版本数据...');
-
-    let legacyDataFound = false;
-
-    LEGACY_KEYS.forEach(key => {
-      try {
-        const value = localStorage.getItem(key);
-        if (value) {
-          console.info(`[ACU] 发现旧版本数据: ${key}`);
-          legacyDataFound = true;
-
-          // 尝试解析并记录数据类型
-          try {
-            const parsed = JSON.parse(value);
-            const dataType = Array.isArray(parsed) ? 'array' : typeof parsed;
-            console.info(`[ACU]   - 数据类型: ${dataType}`);
-          } catch {
-            console.info(`[ACU]   - 数据类型: string`);
-          }
-        }
-      } catch (e) {
-        console.warn(`[ACU] 读取 ${key} 失败:`, e);
-      }
-    });
-
-    // 检查 V5 设置
-    try {
-      const v5Settings = localStorage.getItem(STORAGE_KEY_V5_SETTINGS);
-      if (v5Settings) {
-        console.info('[ACU] 发现 V5 隔离设置数据');
-        legacyDataFound = true;
-      }
-    } catch {
-      // ignore
-    }
-
-    if (!legacyDataFound) {
-      console.info('[ACU] 未发现旧版本数据');
-    }
-  }
 
   // ============================================================
   // 初始化函数
@@ -1306,18 +1242,15 @@ export function useDataPersistence() {
 
   /**
    * 初始化数据持久化
-   * 包含: 旧数据迁移检查、加载数据、设置自动保存
+   * 包含: 加载数据、设置自动保存
    */
   async function initDataPersistence(): Promise<void> {
     console.info('[ACU] 初始化数据持久化...');
 
-    // 1. 检查旧版本数据
-    migrateLegacyData();
-
-    // 2. 从数据库加载数据
+    // 1. 从数据库加载数据
     await dataStore.loadFromDatabase();
 
-    // 3. 设置自动保存 (如果配置启用)
+    // 2. 设置自动保存 (如果配置启用)
     if (configStore.config.autoSave) {
       setupAutoSave(configStore.config.autoSaveDelay || 5000);
     }
@@ -1346,9 +1279,6 @@ export function useDataPersistence() {
     // 自动保存
     setupAutoSave,
     stopAutoSave,
-
-    // 兼容层
-    migrateLegacyData,
 
     // 初始化
     initDataPersistence,

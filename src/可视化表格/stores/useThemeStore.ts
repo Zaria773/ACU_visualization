@@ -1,15 +1,21 @@
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
  * 主题美化与高亮配置 Store
  * 管理主题预设、自定义变量、高亮颜色、自定义 CSS
+ * 使用 ConfigManager 统一管理配置
+ *
+ * 注意：使用 ref + watch 模式而非 computed getter/setter
+ * 这样可以确保直接修改对象属性时也能触发保存
  */
 
+import { klona } from 'klona';
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
+import { getACUConfigManager } from '../composables/useACUConfigManager';
 import { GLOBAL_THEME_BG_KEY, loadBackground } from '../composables/useBackgroundStorage';
 import {
-  type ACUScriptVariables,
   type BackgroundConfig,
   DEFAULT_BACKGROUND_CONFIG,
   type HighlightConfig,
@@ -19,18 +25,6 @@ import {
   type ThemeVarOpacities,
 } from '../types';
 import { HIGHLIGHT_COLORS, useConfigStore } from './useConfigStore';
-
-/** 脚本 ID - 用于脚本变量存储 (旧数据迁移用) */
-const SCRIPT_ID = 'acu_visualizer_ui';
-
-/** 全局变量存储键 (新) */
-const GLOBAL_VAR_KEY = 'acu_theme_config_global_v1';
-
-/** 主题预设存储键 */
-const STORAGE_KEY_THEME_PRESETS = 'acu_theme_presets_v1';
-
-/** 自定义 CSS 存储键 */
-const STORAGE_KEY_CUSTOM_CSS = 'acu_custom_css_v1';
 
 /** 默认高亮颜色配置 */
 export const DEFAULT_HIGHLIGHT_CONFIG: HighlightConfig = {
@@ -79,32 +73,68 @@ function getColorValue(colorKey: string, customHex?: string): string {
 
 export const useThemeStore = defineStore('acu-theme', () => {
   // ============================================================
-  // 状态
+  // 使用 ConfigManager 统一管理配置
+  // ============================================================
+  const configManager = getACUConfigManager();
+
+  // ============================================================
+  // 使用 ref + watch 模式确保响应式正确工作
   // ============================================================
 
-  /** 主题预设列表 */
-  const presets = ref<ThemePreset[]>([]);
+  /** 主题预设列表 - 使用 ref 实现响应式 */
+  const presets = ref<ThemePreset[]>(klona(configManager.config.theme?.presets || []));
 
   /** 当前激活的预设 ID (为空表示使用当前配置) */
-  const activePresetId = ref<string | null>(null);
+  const activePresetId = ref<string | null>(configManager.config.theme?.activePresetId || null);
 
   /** 当前编辑的主题变量覆盖 (未保存到预设的临时状态) */
-  const currentThemeVars = ref<Partial<ThemeVariables>>({});
+  const currentThemeVars = ref<Partial<ThemeVariables>>(klona(configManager.config.theme?.themeVars || {}));
 
   /** 当前主题变量透明度配置 (0-100，100=完全不透明) */
-  const currentThemeVarOpacities = ref<ThemeVarOpacities>({});
+  const currentThemeVarOpacities = ref<ThemeVarOpacities>(klona(configManager.config.theme?.themeVarOpacities || {}));
 
   /** 当前高亮颜色配置 */
-  const currentHighlight = ref<HighlightConfig>({ ...DEFAULT_HIGHLIGHT_CONFIG });
+  const currentHighlight = ref<HighlightConfig>(klona(configManager.config.theme?.highlight || { ...DEFAULT_HIGHLIGHT_CONFIG }));
 
   /** 背景配置 */
-  const backgroundConfig = ref<BackgroundConfig>({ ...DEFAULT_BACKGROUND_CONFIG });
+  const backgroundConfig = ref<BackgroundConfig>(klona(configManager.config.theme?.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG }));
 
   /** 自定义 CSS */
-  const customCSS = ref<string>('');
+  const customCSS = ref<string>(configManager.config.theme?.customCSS || '');
 
-  /** 是否已加载 */
-  const isLoaded = ref(false);
+  /** 是否已加载 (ConfigManager 在初始化时已加载) */
+  const isLoaded = computed(() => configManager.isLoaded.value);
+
+  // 监听所有主题配置变化，自动保存
+  let isThemeInitializing = true;
+
+  // 统一监听函数
+  function syncToConfigManager() {
+    if (isThemeInitializing) return;
+    configManager.config.theme = {
+      presets: klona(presets.value),
+      activePresetId: activePresetId.value,
+      themeVars: klona(currentThemeVars.value),
+      themeVarOpacities: klona(currentThemeVarOpacities.value),
+      highlight: klona(currentHighlight.value),
+      backgroundConfig: klona(backgroundConfig.value),
+      customCSS: customCSS.value,
+    };
+    configManager.saveConfig();
+  }
+
+  watch(presets, syncToConfigManager, { deep: true });
+  watch(activePresetId, syncToConfigManager);
+  watch(currentThemeVars, syncToConfigManager, { deep: true });
+  watch(currentThemeVarOpacities, syncToConfigManager, { deep: true });
+  watch(currentHighlight, syncToConfigManager, { deep: true });
+  watch(backgroundConfig, syncToConfigManager, { deep: true });
+  watch(customCSS, syncToConfigManager);
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isThemeInitializing = false;
+  }, 100);
 
   // ============================================================
   // 计算属性
@@ -142,7 +172,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
   });
 
   // ============================================================
-  // 持久化
+  // 持久化 - 使用 ConfigManager
   // ============================================================
 
   /**
@@ -150,139 +180,34 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * @param force 是否强制重新加载
    */
   async function loadFromStorage(force = false) {
-    // 如果已加载且非强制，则跳过
-    if (isLoaded.value && !force) {
-      return;
-    }
-
+    // ConfigManager 在初始化时已加载配置，这里只需要处理背景图片恢复
     try {
-      // 从 localStorage 加载预设列表
-      const presetsJson = localStorage.getItem(STORAGE_KEY_THEME_PRESETS);
-      if (presetsJson) {
-        presets.value = JSON.parse(presetsJson);
-      }
+      const activeId = activePresetId.value;
+      const bgConfig = backgroundConfig.value;
 
-      // 从 localStorage 加载自定义 CSS
-      const savedCSS = localStorage.getItem(STORAGE_KEY_CUSTOM_CSS);
-      if (savedCSS) {
-        customCSS.value = savedCSS;
-      }
-
-      if (typeof getVariables === 'function') {
-        // 1. 尝试从全局变量加载 (新位置)
-        const globalVars = getVariables({ type: 'global' });
-        const savedConfig = globalVars[GLOBAL_VAR_KEY] as ACUScriptVariables | undefined;
-
-        // 2. 如果全局没有，尝试从脚本变量加载 (旧位置迁移)
-        let configToUse = savedConfig;
-        if (!configToUse) {
-          const scriptVars = getVariables({ type: 'script', script_id: SCRIPT_ID }) as ACUScriptVariables;
-          if (scriptVars && (scriptVars.themeVars || scriptVars.backgroundConfig)) {
-            console.info('[ACU Theme] 检测到旧版配置，正在迁移到全局变量...');
-            configToUse = scriptVars;
-            // 标记需要保存迁移结果
-            setTimeout(() => saveToStorage(), 1000);
-          }
-        }
-
-        if (configToUse) {
-          if (configToUse.themePresets) {
-            // 合并预设 (优先)
-            presets.value = configToUse.themePresets;
-          }
-
-          // 如果有激活的预设，优先应用预设
-          if (configToUse.activePresetId) {
-            const preset = presets.value.find(p => p.id === configToUse.activePresetId);
-            if (preset) {
-              // 应用预设配置
-              activePresetId.value = preset.id;
-              configStore.setTheme(preset.baseTheme);
-              currentThemeVars.value = { ...preset.themeVars };
-              currentThemeVarOpacities.value = { ...preset.themeVarOpacities };
-              currentHighlight.value = { ...preset.highlight };
-              backgroundConfig.value = preset.backgroundConfig || { ...DEFAULT_BACKGROUND_CONFIG };
-              customCSS.value = preset.customCSS || '';
-
-              // 尝试从 IndexedDB 恢复背景图片 URL（使用预设 ID 作为 key）
-              if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
-                try {
-                  // 优先尝试使用预设 ID 加载
-                  let blobUrl = await loadBackground(preset.id);
-                  // 如果预设 ID 没有找到，回退到全局 key（兼容旧数据）
-                  if (!blobUrl) {
-                    blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
-                  }
-                  if (blobUrl) {
-                    backgroundConfig.value.imageUrl = blobUrl;
-                    console.info(
-                      '[ACU Theme] 已从 IndexedDB 恢复背景图片, key:',
-                      blobUrl ? preset.id : GLOBAL_THEME_BG_KEY,
-                    );
-                  }
-                } catch (err) {
-                  console.warn('[ACU Theme] 恢复背景图片失败:', err);
-                }
-              }
-
-              // 同步高亮配置到 configStore（从预设同步过去，而不是反向）
-              syncToConfigStore();
-
-              console.info('[ACU Theme] 已应用上次激活的预设:', preset.name);
-            } else {
-              // 预设不存在，回退到加载保存的状态
-              await loadSavedState(configToUse);
-              // 从 configStore 同步高亮配置（非预设模式才需要）
-              syncFromConfigStore();
+      // 如果有激活的预设，尝试恢复背景图片
+      if (activeId) {
+        const preset = presets.value.find(p => p.id === activeId);
+        if (preset && bgConfig.enabled && bgConfig.hasIndexedDBImage) {
+          try {
+            // 优先尝试使用预设 ID 加载
+            let blobUrl = await loadBackground(preset.id);
+            // 如果预设 ID 没有找到，回退到全局 key（兼容旧数据）
+            if (!blobUrl) {
+              blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
             }
-          } else {
-            // 没有激活预设，加载保存的状态
-            await loadSavedState(configToUse);
-            // 从 configStore 同步高亮配置（非预设模式才需要）
-            syncFromConfigStore();
+            if (blobUrl) {
+              backgroundConfig.value.imageUrl = blobUrl;
+              console.info('[ACU Theme] 已从 IndexedDB 恢复背景图片');
+            }
+          } catch (err) {
+            console.warn('[ACU Theme] 恢复背景图片失败:', err);
           }
-        } else {
-          // 没有保存的配置，从 configStore 同步
-          syncFromConfigStore();
         }
-      } else {
-        // getVariables 不可用，从 configStore 同步
-        syncFromConfigStore();
-      }
-
-      isLoaded.value = true;
-      console.info('[ACU Theme] 已加载主题配置');
-    } catch (e) {
-      console.error('[ACU Theme] 加载配置失败:', e);
-      isLoaded.value = true;
-    }
-  }
-
-  /**
-   * 加载保存的状态 (非预设模式)
-   * 注意：这个函数只在没有激活预设的情况下调用
-   */
-  async function loadSavedState(configToUse: ACUScriptVariables) {
-    // 非预设模式下，activePresetId 应该为空
-    // 不应该在这里设置 activePresetId，因为这个函数只在预设不存在时调用
-    activePresetId.value = null;
-
-    // 加载当前主题变量覆盖
-    if (configToUse.themeVars) {
-      currentThemeVars.value = configToUse.themeVars;
-    }
-
-    // 加载主题变量透明度配置
-    if (configToUse.themeVarOpacities) {
-      currentThemeVarOpacities.value = configToUse.themeVarOpacities;
-    }
-
-    // 加载背景配置
-    if (configToUse.backgroundConfig) {
-      backgroundConfig.value = configToUse.backgroundConfig;
-
-      // 尝试从 IndexedDB 恢复背景图片 URL
-      if (backgroundConfig.value.enabled && backgroundConfig.value.hasIndexedDBImage) {
+        // 同步高亮配置到 configStore
+        syncToConfigStore();
+      } else if (bgConfig.enabled && bgConfig.hasIndexedDBImage) {
+        // 没有激活预设，但有背景配置，尝试恢复
         try {
           const blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
           if (blobUrl) {
@@ -292,56 +217,25 @@ export const useThemeStore = defineStore('acu-theme', () => {
         } catch (err) {
           console.warn('[ACU Theme] 恢复背景图片失败:', err);
         }
+        // 从 configStore 同步高亮配置
+        syncFromConfigStore();
       }
-    }
 
-    // 加载自定义 CSS
-    if (configToUse.customCSS) {
-      customCSS.value = configToUse.customCSS;
+      console.info('[ACU Theme] 主题配置已就绪');
+    } catch (e) {
+      console.error('[ACU Theme] 加载配置失败:', e);
     }
   }
 
   /**
-   * 保存到存储
+   * 保存到存储 - 使用 ConfigManager
    */
   function saveToStorage() {
     try {
-      // 保存预设列表到 localStorage
-      localStorage.setItem(STORAGE_KEY_THEME_PRESETS, JSON.stringify(presets.value));
-
-      // 保存自定义 CSS 到 localStorage
-      localStorage.setItem(STORAGE_KEY_CUSTOM_CSS, customCSS.value);
-
-      // 保存到全局变量 (Global)
-      if (typeof getVariables === 'function' && typeof replaceVariables === 'function') {
-        // 注意：我们只保存预设列表和当前激活的预设 ID
-        // 当前的临时状态（themeVars 等）不单独保存，以避免与预设状态混淆
-        // 如果用户想保存当前状态，应该使用"保存预设"功能
-
-        // 【关键修复】构建干净的配置对象
-        const newVars: ACUScriptVariables = {
-          themePresets: presets.value,
-          activePresetId: activePresetId.value || null,
-        };
-
-        // 只有在没有激活预设时才保存临时状态（作为"默认配置"）
-        if (!activePresetId.value) {
-          newVars.themeVars = currentThemeVars.value;
-          newVars.themeVarOpacities = currentThemeVarOpacities.value;
-          newVars.backgroundConfig = backgroundConfig.value;
-          newVars.customCSS = customCSS.value;
-        }
-
-        // 【关键修复】使用 replaceVariables 完全覆盖，避免残留旧数据
-        const globalVars = getVariables({ type: 'global' });
-        globalVars[GLOBAL_VAR_KEY] = newVars;
-        replaceVariables(globalVars, { type: 'global' });
-      }
-
+      syncToConfigManager();
       // 同步到 configStore
       syncToConfigStore();
-
-      console.info('[ACU Theme] 已保存主题配置 (Global)');
+      console.info('[ACU Theme] 已保存主题配置');
     } catch (e) {
       console.error('[ACU Theme] 保存配置失败:', e);
     }
@@ -366,14 +260,15 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 同步高亮配置到 configStore
    */
   function syncToConfigStore() {
+    const highlight = currentHighlight.value;
     configStore.updateConfig({
-      highlightManualColor: currentHighlight.value.manualColor,
-      highlightColor: currentHighlight.value.manualColor, // 兼容旧配置
-      customHighlightManualHex: currentHighlight.value.manualHex,
-      highlightAiColor: currentHighlight.value.aiColor,
-      customHighlightAiHex: currentHighlight.value.aiHex,
-      titleColor: currentHighlight.value.titleColor,
-      customTitleHex: currentHighlight.value.titleHex,
+      highlightManualColor: highlight.manualColor,
+      highlightColor: highlight.manualColor, // 兼容旧配置
+      customHighlightManualHex: highlight.manualHex,
+      highlightAiColor: highlight.aiColor,
+      customHighlightAiHex: highlight.aiHex,
+      titleColor: highlight.titleColor,
+      customTitleHex: highlight.titleHex,
       // 强制开启高亮
       highlightNew: true,
       customTitleColor: true,
@@ -400,8 +295,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
       customCSS: customCSS.value,
     };
 
-    presets.value.push(preset);
-    saveToStorage();
+    presets.value = [...presets.value, preset];
     return preset;
   }
 
@@ -410,11 +304,12 @@ export const useThemeStore = defineStore('acu-theme', () => {
    */
   function saveCurrentToPreset(name: string): ThemePreset {
     // 检查是否存在同名预设
-    const existingIndex = presets.value.findIndex(p => p.name === name);
+    const currentPresets = [...presets.value];
+    const existingIndex = currentPresets.findIndex(p => p.name === name);
 
     if (existingIndex > -1) {
       // 更新现有预设
-      const existing = presets.value[existingIndex];
+      const existing = currentPresets[existingIndex];
       const updated: ThemePreset = {
         ...existing,
         baseTheme: baseTheme.value,
@@ -425,10 +320,8 @@ export const useThemeStore = defineStore('acu-theme', () => {
         customCSS: customCSS.value,
       };
 
-      presets.value[existingIndex] = updated;
-
-      // 如果更新的是当前激活的预设，不需要额外操作
-      // 通常保存为预设后，该预设即变为激活状态
+      currentPresets[existingIndex] = updated;
+      presets.value = currentPresets;
       activePresetId.value = existing.id;
 
       // 如果有背景图片且存储在 IndexedDB，需要将其复制一份到预设 ID 对应的键下
@@ -436,7 +329,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
         copyBackgroundToPreset(existing.id);
       }
 
-      saveToStorage();
       return updated;
     } else {
       // 创建新预设
@@ -448,7 +340,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
         copyBackgroundToPreset(preset.id);
       }
 
-      saveToStorage(); // createPreset 已经保存了一次，这里可能会重复保存，但 createPreset 内部保存了，saveCurrentToPreset 结尾不用再保存
       return preset;
     }
   }
@@ -492,18 +383,21 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 删除预设
    */
   function deletePreset(presetId: string) {
-    const index = presets.value.findIndex(p => p.id === presetId);
+    const currentPresets = [...presets.value];
+    const index = currentPresets.findIndex(p => p.id === presetId);
     if (index > -1) {
-      presets.value.splice(index, 1);
+      currentPresets.splice(index, 1);
+      presets.value = currentPresets;
 
       // 如果删除的是当前激活的预设，清空激活状态
       if (activePresetId.value === presetId) {
         activePresetId.value = null;
       }
-
-      saveToStorage();
     }
   }
+
+  /** 是否正在应用预设（用于防止 watch 触发不必要的保存）*/
+  const isApplyingPreset = ref(false);
 
   /**
    * 应用预设
@@ -516,7 +410,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
     isApplyingPreset.value = true;
 
     try {
-      // 先设置 activePresetId，这样后续的 watch 触发时会正确跳过临时状态保存
+      // 先设置 activePresetId
       activePresetId.value = presetId;
 
       // 设置基础主题
@@ -539,8 +433,8 @@ export const useThemeStore = defineStore('acu-theme', () => {
       backgroundConfig.value = { ...newBgConfig };
 
       // 恢复背景图片
-      if (backgroundConfig.value.enabled) {
-        if (backgroundConfig.value.hasIndexedDBImage) {
+      if (newBgConfig.enabled) {
+        if (newBgConfig.hasIndexedDBImage) {
           // 使用预设 ID 作为背景图片的存储键
           const bgKey = preset.id;
           try {
@@ -563,9 +457,9 @@ export const useThemeStore = defineStore('acu-theme', () => {
           } catch (err) {
             console.warn('[ACU Theme] 预设应用：恢复背景图片失败', err);
           }
-        } else if (backgroundConfig.value.externalUrl) {
+        } else if (newBgConfig.externalUrl) {
           // 使用外部 URL
-          backgroundConfig.value.imageUrl = backgroundConfig.value.externalUrl;
+          backgroundConfig.value.imageUrl = newBgConfig.externalUrl;
           console.info('[ACU Theme] 预设应用：使用外部背景 URL');
         }
       }
@@ -579,19 +473,17 @@ export const useThemeStore = defineStore('acu-theme', () => {
       // 无论成功失败，都要重置标志
       isApplyingPreset.value = false;
     }
-
-    // 在标志重置后保存一次，确保预设状态正确持久化
-    saveToStorage();
   }
 
   /**
    * 更新预设
    */
   function updatePreset(presetId: string, updates: Partial<ThemePreset>) {
-    const index = presets.value.findIndex(p => p.id === presetId);
+    const currentPresets = [...presets.value];
+    const index = currentPresets.findIndex(p => p.id === presetId);
     if (index > -1) {
-      presets.value[index] = { ...presets.value[index], ...updates };
-      saveToStorage();
+      currentPresets[index] = { ...currentPresets[index], ...updates };
+      presets.value = currentPresets;
     }
   }
 
@@ -610,27 +502,33 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 设置手动修改高亮颜色
    */
   function setManualHighlightColor(colorKey: string, customHex?: string) {
-    currentHighlight.value.manualColor = colorKey;
-    currentHighlight.value.manualHex = customHex;
-    saveToStorage();
+    currentHighlight.value = {
+      ...currentHighlight.value,
+      manualColor: colorKey,
+      manualHex: customHex,
+    };
   }
 
   /**
    * 设置 AI 填表高亮颜色
    */
   function setAiHighlightColor(colorKey: string, customHex?: string) {
-    currentHighlight.value.aiColor = colorKey;
-    currentHighlight.value.aiHex = customHex;
-    saveToStorage();
+    currentHighlight.value = {
+      ...currentHighlight.value,
+      aiColor: colorKey,
+      aiHex: customHex,
+    };
   }
 
   /**
    * 设置标题颜色
    */
   function setTitleColor(colorKey: string, customHex?: string) {
-    currentHighlight.value.titleColor = colorKey;
-    currentHighlight.value.titleHex = customHex;
-    saveToStorage();
+    currentHighlight.value = {
+      ...currentHighlight.value,
+      titleColor: colorKey,
+      titleHex: customHex,
+    };
   }
 
   // ============================================================
@@ -641,14 +539,19 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 设置主题变量
    */
   function setThemeVar(key: keyof ThemeVariables, value: string) {
-    currentThemeVars.value[key] = value;
+    currentThemeVars.value = {
+      ...currentThemeVars.value,
+      [key]: value,
+    };
   }
 
   /**
    * 移除主题变量覆盖 (恢复基础主题值)
    */
   function removeThemeVar(key: keyof ThemeVariables) {
-    delete currentThemeVars.value[key];
+    const newVars = { ...currentThemeVars.value };
+    delete newVars[key];
+    currentThemeVars.value = newVars;
   }
 
   /**
@@ -668,14 +571,19 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * @param opacity - 透明度值 (0-100，100=完全不透明)
    */
   function setThemeVarOpacity(key: keyof ThemeVariables, opacity: number) {
-    currentThemeVarOpacities.value[key] = Math.max(0, Math.min(100, opacity));
+    currentThemeVarOpacities.value = {
+      ...currentThemeVarOpacities.value,
+      [key]: Math.max(0, Math.min(100, opacity)),
+    };
   }
 
   /**
    * 移除主题变量透明度覆盖 (恢复默认100)
    */
   function removeThemeVarOpacity(key: keyof ThemeVariables) {
-    delete currentThemeVarOpacities.value[key];
+    const newOpacities = { ...currentThemeVarOpacities.value };
+    delete newOpacities[key];
+    currentThemeVarOpacities.value = newOpacities;
   }
 
   /**
@@ -693,8 +601,10 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 设置背景配置
    */
   function setBackgroundConfig(config: Partial<BackgroundConfig>) {
-    backgroundConfig.value = { ...backgroundConfig.value, ...config };
-    saveToStorage();
+    backgroundConfig.value = {
+      ...backgroundConfig.value,
+      ...config,
+    };
   }
 
   /**
@@ -713,7 +623,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
    */
   function setCustomCSS(css: string) {
     customCSS.value = css;
-    saveToStorage();
   }
 
   /**
@@ -721,7 +630,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
    */
   function clearCustomCSS() {
     customCSS.value = '';
-    saveToStorage();
   }
 
   // ============================================================
@@ -835,26 +743,6 @@ export const useThemeStore = defineStore('acu-theme', () => {
 
     return [varStyles, userCSS].filter(Boolean).join('\n\n');
   }
-
-  // ============================================================
-  // 初始化
-  // ============================================================
-
-  /** 是否正在应用预设（用于防止 watch 触发不必要的保存）*/
-  const isApplyingPreset = ref(false);
-
-  // 监听变化自动保存
-  watch(
-    [currentHighlight, currentThemeVars, currentThemeVarOpacities, backgroundConfig, customCSS],
-    () => {
-      // 在应用预设过程中不要触发保存，避免数据污染
-      if (!isLoaded.value || isApplyingPreset.value) {
-        return;
-      }
-      saveToStorage();
-    },
-    { deep: true },
-  );
 
   return {
     // 状态

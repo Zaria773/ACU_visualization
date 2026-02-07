@@ -1097,9 +1097,11 @@ async function loadData(): Promise<void> {
     // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
     dataStore.saveSnapshot(processedData);
 
-    // 同步新表格到可见列表（确保新模板的表格能显示）
+    // 获取所有表格 ID
     const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
-    uiStore.syncNewTablesToVisibleTabs(allTableIds);
+
+    // 【已移除】syncNewTablesToVisibleTabs 会强制重置用户隐藏的表格
+    // 新表格的可见性现在由 ConfigManager 的默认策略处理
 
     // 清理无效的仪表盘组件（移除已不存在的表格组件）
     dashboardStore.cleanupInvalidWidgets(allTableIds);

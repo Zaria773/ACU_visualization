@@ -2157,11 +2157,36 @@ watch(
   { deep: true },
 );
 
+/** 背景加载请求 ID，用于防止竞态条件 */
+let bgLoadRequestId = 0;
+
 /** 监听背景配置变化，重新加载背景图片 */
 watch(
-  () => [themeStore.backgroundConfig.hasIndexedDBImage, themeStore.backgroundConfig.externalUrl],
-  () => {
-    loadBackgroundImage();
+  // 监听 imageUrl 变化，这样预设切换时也能正确响应
+  () => themeStore.backgroundConfig.imageUrl,
+  newUrl => {
+    // 如果有新 URL，立即更新
+    if (newUrl) {
+      if (currentBackgroundUrl.value !== newUrl) {
+        currentBackgroundUrl.value = newUrl;
+        console.info('[RelationshipGraph] 背景图片已更新（来自 themeStore）');
+      }
+    } else {
+      // URL 变空时，延迟处理，避免与 themeStore 加载产生竞态
+      // themeStore.applyPreset 会先清空 imageUrl，然后异步加载后再设置
+      // 我们等待一小段时间，看看是否会有新 URL 到来
+      const requestId = ++bgLoadRequestId;
+      setTimeout(() => {
+        // 如果这期间有新请求，或者 imageUrl 已经有值，就不清理
+        if (requestId === bgLoadRequestId && !themeStore.backgroundConfig.imageUrl) {
+          // 确实需要清理
+          if (currentBackgroundUrl.value) {
+            currentBackgroundUrl.value = null;
+            console.info('[RelationshipGraph] 背景图片已清除');
+          }
+        }
+      }, 150); // 给 themeStore 150ms 时间完成加载
+    }
   },
 );
 
@@ -2260,30 +2285,32 @@ function handleLabelChange() {
 /** 是否已初始化 */
 const isInitialized = ref(false);
 
-/** 加载背景图片 */
+/** 加载背景图片 - 仅用于组件首次挂载时的初始化 */
 async function loadBackgroundImage(): Promise<void> {
   const config = themeStore.backgroundConfig;
 
-  // 清理旧的 ObjectURL
-  if (currentBackgroundUrl.value?.startsWith('blob:')) {
-    revokeBlobUrl(currentBackgroundUrl.value);
-    currentBackgroundUrl.value = null;
+  // 优先使用 themeStore 中已经有的 imageUrl
+  if (config.imageUrl) {
+    currentBackgroundUrl.value = config.imageUrl;
+    console.info('[RelationshipGraph] 初始化：使用 themeStore 背景');
+    return;
   }
 
-  if (config.externalUrl) {
-    // 外部 URL 直接使用
-    currentBackgroundUrl.value = config.externalUrl;
-  } else if (config.hasIndexedDBImage) {
-    // 从 IndexedDB 加载
+  // themeStore 中没有 imageUrl，尝试从 IndexedDB 加载
+  // 这主要用于首次加载时 themeStore 还没有恢复背景的情况
+  if (config.hasIndexedDBImage) {
     try {
       const blobUrl = await loadBackground(GLOBAL_THEME_BG_KEY);
-      currentBackgroundUrl.value = blobUrl;
+      if (blobUrl) {
+        currentBackgroundUrl.value = blobUrl;
+        console.info('[RelationshipGraph] 初始化：从 IndexedDB 加载背景');
+      }
     } catch (e) {
-      console.warn('[RelationshipGraph] 加载背景图片失败:', e);
-      currentBackgroundUrl.value = null;
+      console.warn('[RelationshipGraph] 初始化：加载背景图片失败:', e);
     }
-  } else {
-    currentBackgroundUrl.value = null;
+  } else if (config.externalUrl) {
+    currentBackgroundUrl.value = config.externalUrl;
+    console.info('[RelationshipGraph] 初始化：使用外部 URL 背景');
   }
 }
 
@@ -2339,17 +2366,28 @@ watch(
   { deep: true },
 );
 
-// 监听主题变化 - 更新节点颜色
+// 监听主题/预设/高亮变化 - 更新所有颜色
 watch(
-  () => configStore.config.theme,
+  [
+    () => configStore.config.theme,
+    () => themeStore.activePresetId,
+    () => themeStore.currentHighlight,
+    () => themeStore.currentThemeVars,
+  ],
   () => {
     if (cy) {
       // 使用 nextTick 或 setTimeout 确保 CSS 变量已更新
       setTimeout(() => {
+        // 更新普通节点和边
         updateNodeColors();
-      }, 50);
+        // 更新势力容器和边
+        applyAllFactionStyles();
+        // 强制重绘
+        cy.style().update();
+      }, 100);
     }
   },
+  { deep: true },
 );
 
 // 监听字体变化 - 更新节点和边的字体

@@ -1,12 +1,15 @@
+
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /**
  * 抽签系统 Store
  * 管理抽签逻辑、配置、世界书同步
+ * 使用 ConfigManager 统一管理配置
  */
 
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { getACUConfigManager } from '../composables/useACUConfigManager';
 import { DEFAULT_LUCK_TIERS } from '../composables/useDraw';
 import { drawFromLatestRowWithConfig, shuffleArray, type TableConfig } from '../composables/useWordPool';
 import type {
@@ -41,7 +44,7 @@ const DEFAULT_SANITY_DIMENSION: Dimension = {
     { id: 'normal', name: '正常逻辑', weight: 50, prompt: '' },
     {
       id: 'absurd',
-      name: '“天然合理”',
+      name: '"天然合理"',
       weight: 50,
       prompt:
         '特别要求：若需要融合非日常要素，场景中的所有角色必须将其视为日常生活中理所当然的一部分，绝不要有特殊反应。',
@@ -74,7 +77,7 @@ const DEFAULT_MISUNDERSTANDING_DIMENSION: Dimension = {
       name: '断章取义',
       weight: 1,
       prompt:
-        '请构建一个场景，安排角色B在‘最容易引起误解的时间点’闯入或路过，只目击到事件的‘结果’而完全错过了‘起因’，导致B通过逻辑补全推导出偏差认知。',
+        '请构建一个场景，安排角色B在「最容易引起误解的时间点」闯入或路过，只目击到事件的「结果」而完全错过了「起因」，导致B通过逻辑补全推导出偏差认知。',
     },
     {
       id: 'jargon',
@@ -113,116 +116,82 @@ const DEFAULT_CONFIG: DivinationConfig = {
 
 export const useDivinationStore = defineStore('acu-divination', () => {
   // ============================================================
-  // State
+  // 使用 ConfigManager 统一管理配置
   // ============================================================
+  const configManager = getACUConfigManager();
 
-  const config = ref<DivinationConfig>({ ...DEFAULT_CONFIG });
-  const categories = ref<DivinationCategory[]>([]);
-  const isLoaded = ref(false);
+  /** 加载存储的配置 */
+  function loadStoredConfig(): DivinationConfig {
+    const stored = configManager.config.divination.config;
+    return {
+      ...DEFAULT_CONFIG,
+      ...stored,
+      dimensions: stored?.dimensions?.length > 0 ? stored.dimensions : DEFAULT_CONFIG.dimensions,
+      tablePoolConfig: stored?.tablePoolConfig || {},
+      tableSyncConfig: stored?.tableSyncConfig || {},
+    } as DivinationConfig;
+  }
 
-  /** 预设列表 */
-  const presets = ref<DivinationPreset[]>([]);
+  /** 配置 - 使用 ref + watch 实现响应式双向同步 */
+  const config = ref<DivinationConfig>(loadStoredConfig());
+
+  // 监听配置变化，自动保存到 ConfigManager
+  let isFirstWatch = true;
+  watch(
+    config,
+    (newValue) => {
+      if (isFirstWatch) {
+        isFirstWatch = false;
+        return;
+      }
+      configManager.config.divination.config = newValue;
+      configManager.saveConfig();
+    },
+    { deep: true }
+  );
+
+  /** 预设列表 - 从 ConfigManager 读取 */
+  const presets = computed({
+    get: () => configManager.config.divination.presets || [],
+    set: (value: DivinationPreset[]) => {
+      configManager.config.divination.presets = value;
+      configManager.saveConfig();
+    },
+  });
+
   /** 当前激活的预设 ID */
-  const activePresetId = ref<string | null>(null);
+  const activePresetId = computed({
+    get: () => configManager.config.divination.activePresetId,
+    set: (value: string | null) => {
+      configManager.config.divination.activePresetId = value;
+      configManager.saveConfig();
+    },
+  });
+
+  /** 世界书分类 (从世界书加载) */
+  const categories = ref<DivinationCategory[]>([]);
+
+  /** 是否已加载 (ConfigManager 在初始化时已加载) */
+  const isLoaded = computed(() => configManager.isLoaded.value);
 
   // ============================================================
-  // Persistence (Global Variables)
+  // 持久化 - 使用 ConfigManager
   // ============================================================
 
   /**
-   * 加载配置
-   * 优先读取 global
+   * 加载配置 - ConfigManager 已在初始化时加载
    */
   function loadConfig() {
-    try {
-      if (typeof getVariables !== 'function') {
-        console.warn('[Divination] getVariables API unavailable');
-        isLoaded.value = true;
-        return;
-      }
-
-      // 1. 尝试读取全局变量
-      const globalVars = getVariables({ type: 'global' }) as any;
-
-      if (globalVars) {
-        // 加载预设
-        if (globalVars.divinationPresets) {
-          presets.value = globalVars.divinationPresets;
-        }
-        if (globalVars.activeDivinationPresetId) {
-          activePresetId.value = globalVars.activeDivinationPresetId;
-        }
-
-        // 加载配置
-        if (globalVars.divinationConfig) {
-          // 合并配置
-          config.value = {
-            ...DEFAULT_CONFIG,
-            ...globalVars.divinationConfig,
-            // 确保 dimensions 存在
-            dimensions: globalVars.divinationConfig.dimensions || DEFAULT_CONFIG.dimensions,
-            // 确保 tablePoolConfig 存在
-            tablePoolConfig: globalVars.divinationConfig.tablePoolConfig || {},
-            // 确保 tableSyncConfig 存在
-            tableSyncConfig: globalVars.divinationConfig.tableSyncConfig || {},
-          };
-
-          // 迁移旧配置：tableColumnConfig → tablePoolConfig
-          if (
-            globalVars.divinationConfig.tableColumnConfig &&
-            Object.keys(globalVars.divinationConfig.tableColumnConfig).length > 0 &&
-            Object.keys(config.value.tablePoolConfig).length === 0
-          ) {
-            config.value.tablePoolConfig = { ...globalVars.divinationConfig.tableColumnConfig };
-            config.value.tableColumnConfig = undefined;
-            console.info('[Divination] Migrated tableColumnConfig → tablePoolConfig');
-          }
-
-          console.info('[Divination] Config loaded from global variables');
-        }
-      }
-
-      isLoaded.value = true;
-    } catch (e) {
-      console.error('[Divination] Failed to load config:', e);
-      isLoaded.value = true;
-    }
+    console.info('[Divination] 配置已就绪');
   }
 
   /**
-   * 保存配置到全局变量
+   * 保存配置 - 使用 ConfigManager
    */
   function saveConfig() {
-    try {
-      if (typeof getVariables !== 'function' || typeof replaceVariables !== 'function') {
-        return;
-      }
-
-      const globalVars = getVariables({ type: 'global' }) as any;
-      const newVars = {
-        ...globalVars,
-        divinationConfig: config.value,
-        divinationPresets: presets.value,
-        activeDivinationPresetId: activePresetId.value,
-      };
-
-      replaceVariables(newVars, { type: 'global' });
-      console.info('[Divination] Config saved to global variables');
-    } catch (e) {
-      console.error('[Divination] Failed to save config:', e);
-    }
+    configManager.saveConfig();
+    console.info('[Divination] 已保存配置');
   }
-
-  // 监听配置变化自动保存
-  watch(
-    [config, presets, activePresetId],
-    () => {
-      if (isLoaded.value) {
-        saveConfig();
-      }
-    },
-    { deep: true },
-  );
 
   // ============================================================
   // Preset Management
@@ -238,8 +207,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       createdAt: new Date().toISOString(),
       dimensions: JSON.parse(JSON.stringify(config.value.dimensions)),
     };
-    presets.value.push(preset);
-    activePresetId.value = preset.id;
+    const newPresets = [...presets.value, preset];
+    configManager.config.divination.presets = newPresets;
+    configManager.config.divination.activePresetId = preset.id;
+    configManager.saveConfig();
     return preset;
   }
 
@@ -247,16 +218,19 @@ export const useDivinationStore = defineStore('acu-divination', () => {
    * 保存当前配置到预设
    */
   function saveCurrentToPreset(name: string): DivinationPreset {
-    const existingIndex = presets.value.findIndex(p => p.name === name);
+    const currentPresets = [...presets.value];
+    const existingIndex = currentPresets.findIndex(p => p.name === name);
     if (existingIndex > -1) {
       // 更新现有预设
-      const existing = presets.value[existingIndex];
+      const existing = currentPresets[existingIndex];
       const updated: DivinationPreset = {
         ...existing,
         dimensions: JSON.parse(JSON.stringify(config.value.dimensions)),
       };
-      presets.value[existingIndex] = updated;
-      activePresetId.value = existing.id;
+      currentPresets[existingIndex] = updated;
+      configManager.config.divination.presets = currentPresets;
+      configManager.config.divination.activePresetId = existing.id;
+      configManager.saveConfig();
       return updated;
     } else {
       // 创建新预设
@@ -268,12 +242,15 @@ export const useDivinationStore = defineStore('acu-divination', () => {
    * 删除预设
    */
   function deletePreset(presetId: string) {
-    const index = presets.value.findIndex(p => p.id === presetId);
+    const currentPresets = [...presets.value];
+    const index = currentPresets.findIndex(p => p.id === presetId);
     if (index > -1) {
-      presets.value.splice(index, 1);
+      currentPresets.splice(index, 1);
+      configManager.config.divination.presets = currentPresets;
       if (activePresetId.value === presetId) {
-        activePresetId.value = null;
+        configManager.config.divination.activePresetId = null;
       }
+      configManager.saveConfig();
     }
   }
 
@@ -283,8 +260,12 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   function applyPreset(presetId: string) {
     const preset = presets.value.find(p => p.id === presetId);
     if (preset) {
-      config.value.dimensions = JSON.parse(JSON.stringify(preset.dimensions));
-      activePresetId.value = presetId;
+      configManager.config.divination.config = {
+        ...config.value,
+        dimensions: JSON.parse(JSON.stringify(preset.dimensions)),
+      };
+      configManager.config.divination.activePresetId = presetId;
+      configManager.saveConfig();
     }
   }
 
@@ -292,12 +273,26 @@ export const useDivinationStore = defineStore('acu-divination', () => {
    * 恢复默认维度配置
    */
   function restoreDefaultDimensions() {
-    config.value.dimensions = [
-      JSON.parse(JSON.stringify(DEFAULT_LUCK_DIMENSION)),
-      JSON.parse(JSON.stringify(DEFAULT_SANITY_DIMENSION)),
-      JSON.parse(JSON.stringify(DEFAULT_MISUNDERSTANDING_DIMENSION)),
-    ];
-    activePresetId.value = null;
+    configManager.config.divination.config = {
+      ...DEFAULT_CONFIG,
+      // 保留用户的资产与映射配置
+      cardBackImage: config.value.cardBackImage,
+      tablePoolConfig: config.value.tablePoolConfig || {},
+      tableSyncConfig: config.value.tableSyncConfig || {},
+      categoryConfig: config.value.categoryConfig || {},
+      // 保留用户的外观设置
+      themeColor: config.value.themeColor,
+      themeId: config.value.themeId,
+
+      // 强制重置维度
+      dimensions: [
+        JSON.parse(JSON.stringify(DEFAULT_LUCK_DIMENSION)),
+        JSON.parse(JSON.stringify(DEFAULT_SANITY_DIMENSION)),
+        JSON.parse(JSON.stringify(DEFAULT_MISUNDERSTANDING_DIMENSION)),
+      ],
+    };
+    configManager.config.divination.activePresetId = null;
+    configManager.saveConfig();
   }
 
   // ============================================================
@@ -305,23 +300,34 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   // ============================================================
 
   function addDimension(dimension: Dimension) {
-    config.value.dimensions.push(dimension);
+    const newConfig = { ...config.value };
+    newConfig.dimensions = [...newConfig.dimensions, dimension];
+    configManager.config.divination.config = newConfig;
+    configManager.saveConfig();
   }
 
   function updateDimension(index: number, dimension: Dimension) {
-    if (index >= 0 && index < config.value.dimensions.length) {
-      config.value.dimensions[index] = dimension;
+    const newConfig = { ...config.value };
+    if (index >= 0 && index < newConfig.dimensions.length) {
+      newConfig.dimensions = [...newConfig.dimensions];
+      newConfig.dimensions[index] = dimension;
+      configManager.config.divination.config = newConfig;
+      configManager.saveConfig();
     }
   }
 
   function removeDimension(index: number) {
-    if (index >= 0 && index < config.value.dimensions.length) {
+    const newConfig = { ...config.value };
+    if (index >= 0 && index < newConfig.dimensions.length) {
       // 保护运势维度不被删除 (通常是第一个)
-      if (config.value.dimensions[index].id === 'luck') {
+      if (newConfig.dimensions[index].id === 'luck') {
         console.warn('[Divination] Cannot remove luck dimension');
         return;
       }
-      config.value.dimensions.splice(index, 1);
+      newConfig.dimensions = [...newConfig.dimensions];
+      newConfig.dimensions.splice(index, 1);
+      configManager.config.divination.config = newConfig;
+      configManager.saveConfig();
     }
   }
 
@@ -337,7 +343,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 2. 准备世界书数据
-      // 我们需要获取当前所有的 Worldbook 条目，并更新目标条目
       let allEntries: any[] = [];
       try {
         allEntries = await getWorldbook(WORLDBOOK_NAME);
@@ -357,13 +362,8 @@ export const useDivinationStore = defineStore('acu-divination', () => {
           ...allEntries[entryIndex],
           content,
           enabled: category.enabled,
-          // 如果名称/偏好/限制也变了，也需要更新 name 字段
-          // name: `${category.name}|${category.bias}|${category.limit}`
-          // 暂时假设 WordPoolPanel 只修改内容和开关
         };
       } else {
-        // 如果找不到 ID (可能世界书被删了)，尝试按 Name 匹配或新建
-        // 这里简单处理：如果找不到就不存了，或者提示错误
         console.warn(`[Divination] Entry with uid ${category.id} not found in worldbook`);
         return;
       }
@@ -391,7 +391,9 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       const compressed = await compressImage(base64, 1024, 0.9);
 
       // 3. 更新配置
-      config.value.cardBackImage = compressed;
+      const newConfig = { ...config.value, cardBackImage: compressed };
+      configManager.config.divination.config = newConfig;
+      configManager.saveConfig();
       console.info('[Divination] Card back image uploaded');
     } catch (e) {
       console.error('[Divination] Failed to upload card back:', e);
@@ -437,12 +439,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         return;
       }
 
-      // 检查世界书是否存在
-      const names = (await getWorldbookNames?.()) || []; // 安全调用
-      // 实际上 getWorldbook 会抛出错误如果不存在，所以直接 try-catch 即可
-      // 但这里我们假设如果 names 列表里没有就不尝试获取了
-      // 注意: worldbook.d.ts 定义了 getWorldbookNames, 但不一定总是可用，需防御性编程
-
       const entries = await getWorldbook(WORLDBOOK_NAME);
 
       categories.value = entries.map(entry => {
@@ -468,7 +464,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       console.info(`[Divination] Loaded ${categories.value.length} categories from worldbook`);
     } catch (e) {
       console.warn('[Divination] Failed to load worldbook (it might not exist yet):', e);
-      // 如果读取失败（例如世界书不存在），清空分类列表
       categories.value = [];
     }
   }
@@ -486,7 +481,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 1. 筛选 "Random" 或 "随机" 表格
-      // 并且检查配置是否允许同步 (如果在配置中存在，则必须为 true；如果不存在，则默认允许)
       const randomTables: any[] = [];
       const syncConfig = config.value.tableSyncConfig || {};
 
@@ -495,7 +489,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         // @ts-ignore
         if (table.name && (table.name.includes('Random') || table.name.includes('随机'))) {
           const tableId = table.id || key;
-          // 检查同步配置：显式禁用则跳过，否则默认同步
           if (syncConfig[tableId] === false) {
             console.info(`[Divination] Table ${table.name} (${tableId}) sync disabled by config`);
             continue;
@@ -510,7 +503,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
 
       // 2. 解析表格内容并构建新的条目列表
-      // 规则变更: 表名即一级分类 (Keys), 列名为二级分类 (Name)
       const newEntriesMap = new Map<
         string,
         {
@@ -523,27 +515,19 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       >();
 
       for (const table of randomTables) {
-        // 获取列头 (第一行)
         const headers = table.content?.[0] || [];
         const rows = table.content?.slice(1) || [];
-        // 表名作为分类名 (Keys)
         const tableName = table.name || 'Random';
 
         headers.forEach((header: string | number, colIndex: number) => {
           const headerStr = String(header).trim();
           if (!headerStr) return;
 
-          // 检测是否是默认列名（如"列1"、"列2"、"Column1"等）
-          // 如果是默认列名，则使用表名作为分类名
           const isDefaultColumnName = /^(列\d+|Column\s*\d+|Col\s*\d+|[A-Z])$/i.test(headerStr);
           const categoryName = isDefaultColumnName ? tableName : headerStr;
 
-          // 解析分类名作为条目名
-          // 假设格式: "物品|正|1" 或 "天气"
-          // 这里我们通过关键词智能打标 Bias
           let { name, bias, limit } = parseEntryName(categoryName);
 
-          // 智能打标 (如果列名没有显式指定 Bias)
           if (headerStr.indexOf('|') === -1) {
             if (name.includes('吉') || name.includes('好') || name.includes('正') || name.includes('赏')) {
               bias = 'positive';
@@ -551,11 +535,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
               bias = 'negative';
             }
           }
-
-          // 组合唯一键: 为了避免不同表同列名冲突，可以考虑把 keys 加入唯一键
-          // 但原逻辑是 Name|Bias|Limit，如果不同表有相同列名，会合并到同一个世界书条目中
-          // 这通常是期望的行为（多个表的同类数据汇聚），但也可能导致 keys 混乱
-          // 这里我们暂时保持原有的条目 Key 逻辑，但在 keys 数组中添加所有来源表名
 
           const entryKey = `${name}|${bias}|${limit}`;
 
@@ -565,17 +544,15 @@ export const useDivinationStore = defineStore('acu-divination', () => {
               bias,
               limit,
               words: new Set(),
-              keys: [tableName], // 初始 Key 为当前表名
+              keys: [tableName],
             });
           } else {
-            // 如果已存在，追加当前表名为 Key (去重)
             const entry = newEntriesMap.get(entryKey)!;
             if (!entry.keys.includes(tableName)) {
               entry.keys.push(tableName);
             }
           }
 
-          // 收集该列的所有词汇
           rows.forEach((row: any[]) => {
             const cellVal = row[colIndex];
             if (cellVal) {
@@ -588,7 +565,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         });
       }
 
-      // 3. 读取现有世界书（用于保留 enabled 状态和其他设置）
+      // 3. 读取现有世界书
       let existingEntries: any[] = [];
       try {
         existingEntries = await getWorldbook(WORLDBOOK_NAME);
@@ -599,15 +576,10 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       // 4. 合并数据
       const finalEntries: any[] = [];
 
-      // 遍历新解析的数据
       for (const [key, data] of newEntriesMap) {
-        // 查找是否已存在同名条目 (Name|Bias|Limit 完全匹配)
-        // 注意：这里 worldbook entry name 是完整的 "Name|Bias|Limit"
         const fullEntryName = `${data.name}|${data.bias}|${data.limit}`;
         const existingEntry = existingEntries.find(e => e.name === fullEntryName);
 
-        // 增量合并逻辑：
-        // 1. 获取现有词汇（只按换行符分割，保持每个单元格内容完整）
         const existingWords = existingEntry
           ? existingEntry.content
               .split('\n')
@@ -615,33 +587,28 @@ export const useDivinationStore = defineStore('acu-divination', () => {
               .filter((w: string) => w)
           : [];
 
-        // 2. 合并新词汇 (Set 去重)
         const mergedWords = new Set([...existingWords, ...data.words]);
-        // 用换行符分隔，支持句子或段落作为词条
         const content = Array.from(mergedWords).join('\n');
 
         if (existingEntry) {
-          // 更新现有条目
-          // 合并 Keys: 现有 Keys + 新 Keys (去重)
           const existingKeys = existingEntry.strategy?.keys || [];
           // @ts-ignore
           const mergedKeys = Array.from(new Set([...existingKeys, ...data.keys]));
 
           finalEntries.push({
             ...existingEntry,
-            content, // 更新词汇
+            content,
             strategy: {
               ...existingEntry.strategy,
-              keys: mergedKeys, // 更新 Keys，使其包含所有来源表名
+              keys: mergedKeys,
             },
           });
         } else {
-          // 创建新条目
           finalEntries.push({
             name: fullEntryName,
             enabled: true,
             strategy: {
-              type: 'constant', // 默认为常量，不自动激活，只作为数据库
+              type: 'constant',
               keys: data.keys,
               keys_secondary: { logic: 'not_all', keys: [] },
               scan_depth: 'same_as_global',
@@ -660,19 +627,16 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         }
       }
 
-      // 保留那些在 ACU 表格中没有但在世界书中有的条目吗？
-      // 策略：保留，因为用户可能手动在世界书中添加了条目
       const newEntryNames = new Set(finalEntries.map(e => e.name));
       const orphanEntries = existingEntries.filter(e => !newEntryNames.has(e.name));
       finalEntries.push(...orphanEntries);
 
       // 5. 保存到世界书
       if (typeof createOrReplaceWorldbook === 'function') {
-        // @ts-ignore - PartialDeep 类型兼容性问题
+        // @ts-ignore
         await createOrReplaceWorldbook(WORLDBOOK_NAME, finalEntries, { render: 'debounced' });
         console.info('[Divination] Synced to worldbook successfully');
 
-        // 重新加载以更新 Store
         await loadFromWorldbook();
       } else {
         console.warn('[Divination] createOrReplaceWorldbook API unavailable');
@@ -688,14 +652,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
   /**
    * 从世界书词库抽词（带配置）
-   *
-   * @param mode 抽词模式
-   * @param wordsPerItem perItem 模式下每项抽取数量
-   * @param maxCount 最大抽取数量（custom/mixed 模式）
-   * @param cats 分类列表
-   * @param categoryConfig 分类配置
-   * @param selectedLuck 当前运势（用于权重计算）
-   * @returns 抽取的词数组
    */
   function drawFromWorldbookWithConfig(
     mode: 'perItem' | 'custom' | 'mixed',
@@ -707,9 +663,7 @@ export const useDivinationStore = defineStore('acu-divination', () => {
   ): string[] {
     const result: string[] = [];
 
-    // 过滤已启用的分类
     const enabledCats = cats.filter(c => {
-      // 如果有配置，使用配置的 enabled 状态
       const catConfig = categoryConfig[c.id];
       const isEnabled = catConfig ? catConfig.enabled : c.enabled;
       return isEnabled && c.words.length > 0;
@@ -720,7 +674,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
     }
 
     if (mode === 'perItem') {
-      // perItem 模式：每个开启的分类抽 wordsPerItem 个（不受总数限制）
       for (const cat of enabledCats) {
         const count = Math.min(wordsPerItem, cat.words.length);
         const shuffled = shuffleArray([...cat.words]);
@@ -728,16 +681,13 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
       console.info(`[Divination] perItem 模式从世界书抽取 ${result.length} 个词:`, result);
     } else if (mode === 'custom') {
-      // custom 模式：每分类最多抽 limit 个，总数不超过 maxCount
       let remaining = maxCount;
 
       for (const cat of enabledCats) {
         if (remaining <= 0) break;
 
         const catConfig = categoryConfig[cat.id];
-        // 优先使用配置的 limit，否则使用分类自身的 limit
         const limit = catConfig?.limit ?? cat.limit ?? 0;
-        // limit 为 0 表示不限制，使用 wordsPerItem 作为默认值
         const maxFromThisCat = limit > 0 ? Math.min(limit, remaining) : Math.min(wordsPerItem, remaining);
         const count = Math.min(maxFromThisCat, cat.words.length);
 
@@ -747,8 +697,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
       console.info(`[Divination] custom 模式从世界书抽取 ${result.length} 个词:`, result);
     } else {
-      // mixed 模式：加权随机抽取
-      // 构建加权池
       const catWeights = enabledCats.map(c => {
         if (config.value.enableBias && selectedLuck) {
           return getWeight(selectedLuck, c.bias);
@@ -775,36 +723,23 @@ export const useDivinationStore = defineStore('acu-divination', () => {
    * 获取加权随机权重
    */
   function getWeight(luckTier: DimensionTier, bias: BiasType): number {
-    // 权重配置表
-    // 运势 | 正向权重 | 中性权重 | 负向权重
-    // 超吉/大吉 | 3.0 | 1.0 | 1.0
-    // 小吉 | 2.0 | 1.0 | 1.0
-    // 平 | 1.0 | 1.0 | 1.0
-    // 小凶 | 1.0 | 2.0 | 2.0
-    // 大凶/超凶 | 1.0 | 2.0 | 3.0
-
     const luckId = luckTier.id;
 
-    // 超吉/大吉
     if (luckId === 'superLucky' || luckId === 'lucky') {
       if (bias === 'positive') return 3.0;
       return 1.0;
     }
-    // 小吉 (末吉)
     if (luckId === 'slightlyLucky') {
       if (bias === 'positive') return 2.0;
       return 1.0;
     }
-    // 平
     if (luckId === 'neutral') {
       return 1.0;
     }
-    // 小凶
     if (luckId === 'slightlyUnlucky') {
-      if (bias === 'negative' || bias === 'neutral') return 2.0; // 稍微倾向负面/中性
+      if (bias === 'negative' || bias === 'neutral') return 2.0;
       return 1.0;
     }
-    // 大凶/超凶
     if (luckId === 'unlucky' || luckId === 'superUnlucky') {
       if (bias === 'negative') return 3.0;
       if (bias === 'neutral') return 2.0;
@@ -836,7 +771,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
    * 执行抽签
    */
   function performDivination(): DivinationResult | null {
-    // 1. 抽取维度 (包括运势)
     const dimensionResults: { dimension: Dimension; tier: DimensionTier }[] = [];
     let selectedLuck: DimensionTier | null = null;
 
@@ -847,7 +781,6 @@ export const useDivinationStore = defineStore('acu-divination', () => {
         if (selectedTier) {
           dimensionResults.push({ dimension: dim, tier: selectedTier });
 
-          // 记录运势结果，用于后续词条权重计算
           if (dim.id === 'luck') {
             selectedLuck = selectedTier;
           }
@@ -855,13 +788,9 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       }
     }
 
-    // 如果没有抽到运势，且存在运势维度，则无法进行倾向计算 (或者默认平运)
-    // 这里我们假设如果运势维度被禁用，则 selectedLuck 为 null，后续权重计算会 fallback
-
-    // 2. 抽取随机词
     let drawnWords: string[] = [];
 
-    // ========== 1. 表格随机词 ==========
+    // 1. 表格随机词
     if (config.value.enableTableWords) {
       const tableWords = drawFromLatestRowWithConfig(
         config.value.wordDrawMode,
@@ -873,13 +802,12 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       console.info(`[Divination] 从表格抽词，模式: ${config.value.wordDrawMode}，结果:`, tableWords);
     }
 
-    // ========== 2. 世界书词库 ==========
+    // 2. 世界书词库
     if (config.value.enableWordPool) {
-      // 计算剩余抽词名额
       const remainingCount =
         config.value.wordDrawMode === 'perItem'
-          ? config.value.wordsPerItem // perItem 模式每项抽固定数，不受已抽数量影响
-          : Math.max(0, config.value.drawCount - drawnWords.length); // 其他模式用剩余名额
+          ? config.value.wordsPerItem
+          : Math.max(0, config.value.drawCount - drawnWords.length);
 
       const poolWords = drawFromWorldbookWithConfig(
         config.value.wordDrawMode,
@@ -893,13 +821,12 @@ export const useDivinationStore = defineStore('acu-divination', () => {
       console.info(`[Divination] 从世界书抽词，模式: ${config.value.wordDrawMode}，结果:`, poolWords);
     }
 
-    // ========== 3. 混合模式下打乱顺序 ==========
+    // 3. 混合模式下打乱顺序
     if (config.value.enableTableWords && config.value.enableWordPool && drawnWords.length > 0) {
       drawnWords = shuffleArray(drawnWords);
-      console.info(`[Divination] 混合抽词后打乱顺序:`, drawnWords);
+      console.info('[Divination] 混合抽词后打乱顺序:', drawnWords);
     }
 
-    // 3. 构建结果
     // 查找运势结果用于显示
     const luckResult = dimensionResults.find(r => r.dimension.id === 'luck');
 
@@ -932,35 +859,30 @@ export const useDivinationStore = defineStore('acu-divination', () => {
 
   /**
    * 迁移维度到指定预设
-   * @param dimensions 要迁移的维度数组
-   * @param targetPresetId 目标预设 ID
    */
   function migrateDimensionsToPreset(dimensions: Dimension[], targetPresetId: string) {
-    const targetIndex = presets.value.findIndex(p => p.id === targetPresetId);
+    const currentPresets = [...presets.value];
+    const targetIndex = currentPresets.findIndex(p => p.id === targetPresetId);
     if (targetIndex === -1) {
       console.warn('[Divination] Target preset not found:', targetPresetId);
       return;
     }
 
-    const target = presets.value[targetIndex];
-
-    // 深拷贝要迁移的维度
+    const target = currentPresets[targetIndex];
     const clonedDimensions = dimensions.map(d => JSON.parse(JSON.stringify(d)));
 
-    // 检查重复并合并
     clonedDimensions.forEach(newDim => {
       const existingIndex = target.dimensions.findIndex(d => d.id === newDim.id);
       if (existingIndex > -1) {
-        // 已存在则覆盖
         target.dimensions[existingIndex] = newDim;
       } else {
-        // 不存在则追加
         target.dimensions.push(newDim);
       }
     });
 
-    // 触发保存
-    presets.value[targetIndex] = { ...target };
+    currentPresets[targetIndex] = { ...target };
+    configManager.config.divination.presets = currentPresets;
+    configManager.saveConfig();
   }
 
   return {

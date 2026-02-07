@@ -2,12 +2,17 @@
 // @ts-nocheck
 /**
  * 标签库状态管理 Store
- * 管理全局标签库（分类和标签），存储在酒馆全局变量中
+ * 管理全局标签库（分类和标签）
+ * 使用 ConfigManager 统一管理配置
+ *
+ * 注意：使用 ref + watch 模式而非 computed getter/setter
+ * 这样可以确保直接修改对象属性时也能触发保存
  */
 
 import { klona } from 'klona';
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
+import { getACUConfigManager } from '../composables/useACUConfigManager';
 import type {
   GlobalTagLibrary,
   ImportOptions,
@@ -17,9 +22,6 @@ import type {
   TagLibraryExport,
   TagManagerMode,
 } from '../types';
-
-/** 存储键常量 */
-const STORAGE_KEY = 'acu_global_tag_library';
 
 /** 空的标签库默认值 */
 const DEFAULT_LIBRARY: GlobalTagLibrary = {
@@ -40,7 +42,7 @@ const DEFAULT_LIBRARY: GlobalTagLibrary = {
       id: 'tag_gen_prevent',
       label: '防转述',
       categoryId: 'cat_general',
-      promptTemplate: '禁止在正文中复述{{user}}的输入。',
+      promptTemplate: '禁止在正文中复述用户的输入。',
       createdAt: '2024-01-01T00:00:00.000Z',
     },
     {
@@ -51,17 +53,10 @@ const DEFAULT_LIBRARY: GlobalTagLibrary = {
       createdAt: '2024-01-01T00:00:00.000Z',
     },
     {
-      id: 'tag_gen_skip',
-      label: '跳过',
-      categoryId: 'cat_general',
-      promptTemplate: '适当跳过一段时间，自然概括中间发生的事。',
-      createdAt: '2024-01-01T00:00:00.000Z',
-    },
-    {
       id: 'tag_gen_detail',
       label: '细写',
       categoryId: 'cat_general',
-      promptTemplate: '放慢节奏，细致展开当前场景的细节。',
+      promptTemplate: '放慢节奏，禁止更换当前叙事中心与切场景。',
       createdAt: '2024-01-01T00:00:00.000Z',
     },
     {
@@ -69,13 +64,6 @@ const DEFAULT_LIBRARY: GlobalTagLibrary = {
       label: '切视角',
       categoryId: 'cat_general',
       promptTemplate: '以{{rowTitle}}的视角来描写接下来的场景。',
-      createdAt: '2024-01-01T00:00:00.000Z',
-    },
-    {
-      id: 'tag_gen_inner',
-      label: '内心戏',
-      categoryId: 'cat_general',
-      promptTemplate: '着重展开当前角色的内心活动与情绪波动。',
       createdAt: '2024-01-01T00:00:00.000Z',
     },
 
@@ -305,11 +293,25 @@ function generateId(prefix: string): string {
 
 export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   // ============================================================
-  // 状态
+  // 使用 ConfigManager 统一管理配置
+  // ============================================================
+  const configManager = getACUConfigManager();
+
+  // ============================================================
+  // 使用 ref + watch 模式确保响应式正确工作
   // ============================================================
 
-  /** 全局标签库 */
-  const library = ref<GlobalTagLibrary>({ ...DEFAULT_LIBRARY });
+  /** 获取初始标签库数据 */
+  function getInitialLibrary(): GlobalTagLibrary {
+    const stored = configManager.config.tagLibrary;
+    if (!stored || (!stored.categories?.length && !stored.tags?.length)) {
+      return klona(DEFAULT_LIBRARY);
+    }
+    return klona(stored) as GlobalTagLibrary;
+  }
+
+  /** 全局标签库 - 使用 ref 实现响应式 */
+  const library = ref<GlobalTagLibrary>(getInitialLibrary());
 
   /** 当前选中的分类 ID（''表示全部，'uncategorized'表示未分类） */
   const activeCategoryId = ref<string>('');
@@ -317,11 +319,25 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   /** 搜索关键词 */
   const searchKeyword = ref<string>('');
 
-  /** 是否已加载 */
-  const isLoaded = ref(false);
+  /** 是否已加载 (ConfigManager 在初始化时已加载) */
+  const isLoaded = computed(() => configManager.isLoaded.value);
 
-  /** 是否正在保存（防抖用） */
-  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  // 监听标签库变化，自动保存
+  let isTagLibraryInitializing = true;
+  watch(
+    library,
+    newValue => {
+      if (isTagLibraryInitializing) return;
+      configManager.config.tagLibrary = klona(newValue);
+      configManager.saveConfig();
+    },
+    { deep: true },
+  );
+
+  // 初始化完成后允许保存
+  setTimeout(() => {
+    isTagLibraryInitializing = false;
+  }, 100);
 
   // ============================================================
   // 模式系统状态（新增）
@@ -340,98 +356,34 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   const selectionType = ref<'tag' | 'category' | null>(null);
 
   // ============================================================
-  // 持久化 - 酒馆全局变量
+  // 持久化 - 使用 ConfigManager
   // ============================================================
 
   /**
-   * 从全局变量加载标签库
+   * 加载标签库 - ConfigManager 已在初始化时加载
    */
   async function loadLibrary(): Promise<void> {
-    try {
-      if (typeof getVariables !== 'function') {
-        console.warn('[ACU TagLibrary] getVariables 不可用，使用默认配置');
-        isLoaded.value = true;
-        return;
-      }
-
-      const globalVars = getVariables({ type: 'global' });
-
-      if (globalVars && globalVars[STORAGE_KEY]) {
-        const storedLibrary = globalVars[STORAGE_KEY] as GlobalTagLibrary;
-        const categories = storedLibrary.categories || [];
-        const tags = storedLibrary.tags || [];
-
-        // 如果存储的数据为空，使用默认值
-        if (categories.length === 0 && tags.length === 0) {
-          console.info('[ACU TagLibrary] 存储数据为空，加载默认标签库');
-          library.value = { ...DEFAULT_LIBRARY };
-        } else {
-          library.value = { categories, tags };
-          console.info('[ACU TagLibrary] 已从全局变量加载标签库:', {
-            categories: library.value.categories.length,
-            tags: library.value.tags.length,
-          });
-        }
-      } else {
-        // 首次加载，使用默认标签库
-        console.info('[ACU TagLibrary] 首次使用，加载默认标签库');
-        library.value = { ...DEFAULT_LIBRARY };
-      }
-
-      isLoaded.value = true;
-    } catch (e) {
-      console.error('[ACU TagLibrary] 加载标签库失败:', e);
-      library.value = { ...DEFAULT_LIBRARY };
-      isLoaded.value = true;
+    const stored = configManager.config.tagLibrary;
+    if (!stored || (!stored.categories?.length && !stored.tags?.length)) {
+      // 首次使用，初始化默认标签库
+      configManager.config.tagLibrary = klona(DEFAULT_LIBRARY);
+      configManager.saveConfig();
+      console.info('[ACU TagLibrary] 首次使用，加载默认标签库');
+    } else {
+      console.info('[ACU TagLibrary] 已加载标签库:', {
+        categories: stored.categories?.length || 0,
+        tags: stored.tags?.length || 0,
+      });
     }
   }
 
   /**
-   * 保存标签库到全局变量
+   * 保存标签库 - 使用 ConfigManager
    */
   async function saveLibrary(): Promise<void> {
-    // 防抖：清除之前的保存计时器
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
-    }
-
-    saveTimeout = setTimeout(() => {
-      try {
-        if (typeof getVariables !== 'function' || typeof replaceVariables !== 'function') {
-          console.warn('[ACU TagLibrary] 脚本变量 API 不可用');
-          return;
-        }
-
-        const globalVars = getVariables({ type: 'global' }) || {};
-
-        // 使用 klona 去除 proxy 层
-        const dataToSave = klona(library.value);
-
-        replaceVariables(
-          {
-            ...globalVars,
-            [STORAGE_KEY]: dataToSave,
-          },
-          { type: 'global' },
-        );
-
-        console.info('[ACU TagLibrary] 已保存标签库到全局变量');
-      } catch (e) {
-        console.error('[ACU TagLibrary] 保存标签库失败:', e);
-      }
-    }, 300); // 300ms 防抖
+    configManager.saveConfig();
+    console.info('[ACU TagLibrary] 已保存标签库');
   }
-
-  // 监听变化自动保存
-  watch(
-    library,
-    () => {
-      if (isLoaded.value) {
-        saveLibrary();
-      }
-    },
-    { deep: true },
-  );
 
   // ============================================================
   // 分类操作
@@ -483,7 +435,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
 
     library.value.categories.push(newCategory);
     console.info('[ACU TagLibrary] 创建分类:', path);
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
     return newCategory;
   }
 
@@ -519,7 +471,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
       categoryIdsToDelete.size - 1,
       ')',
     );
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   /**
@@ -532,7 +484,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     if (category) {
       if (updates.path !== undefined) category.path = updates.path;
       if (updates.icon !== undefined) category.icon = updates.icon;
-      // saveLibrary 由 watch 自动触发
+      saveLibrary();
     }
   }
 
@@ -621,7 +573,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
         createdAt: tag.createdAt || new Date().toISOString(),
       });
     }
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   /**
@@ -640,7 +592,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     };
 
     library.value.tags.push(newTag);
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
     return newTag;
   }
 
@@ -650,7 +602,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
    */
   function deleteTag(tagId: string): void {
     library.value.tags = library.value.tags.filter(t => t.id !== tagId);
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   /**
@@ -660,7 +612,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
   function deleteTags(tagIds: string[]): void {
     const idsSet = new Set(tagIds);
     library.value.tags = library.value.tags.filter(t => !idsSet.has(t.id));
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   /**
@@ -688,7 +640,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     const tag = library.value.tags.find(t => t.id === tagId);
     if (tag) {
       tag.categoryId = categoryId;
-      // saveLibrary 由 watch 自动触发
+      saveLibrary();
     }
   }
 
@@ -704,7 +656,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
         tag.categoryId = categoryId;
       }
     });
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   // ============================================================
@@ -1058,7 +1010,7 @@ export const useTagLibraryStore = defineStore('acu-tag-library', () => {
     library.value.tags = [];
     library.value.categories = [];
     console.info('[ACU TagLibrary] 已清空所有标签和分类');
-    // saveLibrary 由 watch 自动触发
+    saveLibrary();
   }
 
   // ============================================================

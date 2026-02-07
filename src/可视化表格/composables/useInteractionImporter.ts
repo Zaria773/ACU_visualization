@@ -93,16 +93,6 @@ export function useInteractionImporter() {
         textToProcess = textToProcess.split(target).join('{{rowTitle}}');
       }
 
-      // 如果使用了简介进行逆向替换，最终保存的 promptTemplate 应该是处理后的简介
-      // 但这里有个问题：标签库的 promptTemplate 通常用于生成内容
-      // 如果我们存入的是简介，那么点击标签时生成的就是简介，而不是原始内容
-      // 根据需求 "如果此交互表有列含“简介”，会去逆向替换交互简介而不是交互内容"
-      // 理解为：用户希望标签库里存的是处理后的简介（作为 promptTemplate），
-      // 或者说，用户希望通过简介来生成 promptTemplate，但实际使用时可能需要区分？
-      // 按照常规逻辑，promptTemplate 就是点击标签后发送给 AI 或输入框的内容。
-      // 如果表里有“简介”，通常意味着“内容”是具体的长文，“简介”是简短描述或指令。
-      // 如果用户希望逆向替换简介，那么存入的应该是处理后的简介。
-      // 如果没有简介，则处理内容。
       const finalPrompt = textToProcess;
 
       // 2. 分类处理

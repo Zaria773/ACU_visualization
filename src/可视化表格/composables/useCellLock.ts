@@ -1,46 +1,20 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 /**
  * 单元格锁定管理器 Composable
  *
- * 移植自骰子可视化的 LockManager，支持：
+ * 支持：
  * - 单元格级锁定和整行锁定
- * - 按聊天 contextFingerprint 隔离
+ * - 按聊天 ID 隔离（存储在 ConfigManager 中）
  * - 批量锁定模式（临时锁定 → 保存）
  * - AI 数据保护（applyLocks 恢复被修改的值）
  */
 
 import { computed, ref } from 'vue';
-
-// ============================================================
-// 类型定义
-// ============================================================
-
-/** 单行的锁定信息 */
-interface RowLockInfo {
-  /** 是否整行锁定 */
-  _fullRow: boolean;
-  /** 字段级锁定的值 */
-  _fields: Record<string, string>;
-  /** 整行锁定时的完整快照 */
-  _snapshot: Record<string, string> | null;
-}
-
-/** 表的锁定数据 */
-type TableLocks = Record<string, RowLockInfo>;
-
-/** 完整的锁定存储结构 */
-interface LockStorage {
-  [tableName: string]: TableLocks;
-  _lastAccess?: number;
-}
+import type { LockStorage, RowLockInfo } from './storageKeys';
+import { getACUConfigManager } from './useACUConfigManager';
 
 // ============================================================
 // 常量
 // ============================================================
-
-const STORAGE_KEY_PREFIX = 'acu_locked_fields_v2_';
-const MAX_CONTEXTS = 20;
 
 /** 各表的主键字段定义 */
 const PRIMARY_KEYS: Record<string, string | null> = {
@@ -63,114 +37,50 @@ const PRIMARY_KEYS: Record<string, string | null> = {
 // 辅助函数
 // ============================================================
 
-/** 获取当前聊天的上下文指纹 */
-function getCurrentContextFingerprint(): string {
-  try {
-    // 尝试从 SillyTavern 获取当前聊天 ID
-    const ctx = (window as any).SillyTavern?.getContext?.();
-    if (ctx?.chatId) {
-      return ctx.chatId;
-    }
-    // 备用：使用角色名 + 聊天文件名
-    if (ctx?.characterId && ctx?.chat?.length > 0) {
-      return `${ctx.characterId}_${ctx.chat.length}`;
-    }
-  } catch {
-    // ignore
-  }
-  return 'default';
-}
-
-/** 获取存储键 */
-function getStorageKey(ctxId?: string): string {
-  return STORAGE_KEY_PREFIX + (ctxId || getCurrentContextFingerprint());
+/** 获取当前聊天 ID */
+function getCurrentChatId(): string {
+  return SillyTavern.getCurrentChatId() || 'default';
 }
 
 // ============================================================
 // 模块级单例状态（所有组件共享）
 // ============================================================
 
-/** 持久化锁定状态（从 localStorage 加载） */
+/** 持久化锁定状态（从 ConfigManager 加载） */
 const persistedLocks = ref<LockStorage>({});
 
 /** 批量模式下的临时锁定状态 */
 const pendingLocks = ref<LockStorage>({});
 
-/** 当前上下文 ID（用于判断是否需要重新加载） */
-let currentContextId: string | null = null;
+/** 当前聊天 ID（用于判断是否需要重新加载） */
+let currentChatId: string | null = null;
 
 // ============================================================
 // 主 Composable
 // ============================================================
 
 export function useCellLock() {
-  /** 从 localStorage 加载锁定数据 */
-  function loadLocks(): LockStorage {
-    const ctxId = getCurrentContextFingerprint();
+  const configManager = getACUConfigManager();
 
-    // 上下文变化时重新加载
-    if (currentContextId !== ctxId) {
-      currentContextId = ctxId;
-      try {
-        const stored = localStorage.getItem(getStorageKey(ctxId));
-        if (stored) {
-          const data = JSON.parse(stored);
-          delete data._lastAccess;
-          persistedLocks.value = data;
-        } else {
-          persistedLocks.value = {};
-        }
-      } catch {
-        persistedLocks.value = {};
-      }
+  /** 从 ConfigManager 加载锁定数据 */
+  function loadLocks(): LockStorage {
+    const chatId = getCurrentChatId();
+
+    // 聊天变化时重新加载
+    if (currentChatId !== chatId) {
+      currentChatId = chatId;
+      const chatConfig = configManager.getChatConfig(chatId);
+      persistedLocks.value = chatConfig.cellLocks || {};
     }
 
     return persistedLocks.value;
   }
 
-  /** 保存锁定数据到 localStorage */
+  /** 保存锁定数据到 ConfigManager */
   function saveLocks(): void {
-    try {
-      const dataToSave = { ...persistedLocks.value, _lastAccess: Date.now() };
-      localStorage.setItem(getStorageKey(), JSON.stringify(dataToSave));
-      cleanupOldContexts();
-    } catch (e) {
-      console.warn('[CellLock] 保存失败', e);
-    }
-  }
-
-  /** 清理过旧的锁定数据，只保留最近使用的 N 个 */
-  function cleanupOldContexts(): void {
-    try {
-      const allKeys: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key?.startsWith(STORAGE_KEY_PREFIX)) {
-          allKeys.push(key);
-        }
-      }
-
-      if (allKeys.length <= MAX_CONTEXTS) return;
-
-      const keyWithTime = allKeys.map(key => {
-        try {
-          const data = JSON.parse(localStorage.getItem(key) || '{}');
-          return { key, time: data?._lastAccess || 0 };
-        } catch {
-          return { key, time: 0 };
-        }
-      });
-
-      keyWithTime.sort((a, b) => b.time - a.time);
-      const toDelete = keyWithTime.slice(MAX_CONTEXTS);
-      toDelete.forEach(item => localStorage.removeItem(item.key));
-
-      if (toDelete.length > 0) {
-        console.log(`[CellLock] 清理了 ${toDelete.length} 个过期的锁定数据`);
-      }
-    } catch (e) {
-      console.warn('[CellLock] 清理失败', e);
-    }
+    const chatId = getCurrentChatId();
+    configManager.setChatConfig(chatId, { cellLocks: { ...persistedLocks.value } });
+    console.info('[CellLock] 锁定数据已保存到 ConfigManager');
   }
 
   // ============================================================
@@ -284,15 +194,14 @@ export function useCellLock() {
         lock._fields[fieldName] = value;
         result = true; // 锁定
       }
+    } else if (lock._fields[fieldName] !== undefined) {
+      // 字段级锁定切换 - 已锁定则解锁
+      delete lock._fields[fieldName];
+      result = false; // 解锁
     } else {
-      // 字段级锁定切换
-      if (lock._fields[fieldName] !== undefined) {
-        delete lock._fields[fieldName];
-        result = false; // 解锁
-      } else {
-        lock._fields[fieldName] = value;
-        result = true; // 锁定
-      }
+      // 字段级锁定切换 - 未锁定则锁定
+      lock._fields[fieldName] = value;
+      result = true; // 锁定
     }
 
     // 清理空锁定

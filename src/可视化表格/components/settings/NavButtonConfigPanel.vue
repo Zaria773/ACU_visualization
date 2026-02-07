@@ -165,16 +165,16 @@ const getButtonLabel = (btnId: string): string => {
  * 展示区的按钮卡片列表
  */
 const visibleButtonCards = computed<ButtonCard[]>(() => {
-  const order = configStore.config.buttonOrder;
-  const visible = configStore.config.visibleButtons;
-  const groups = configStore.config.buttonGroups || [];
+  const order = configStore.buttonsConfig.buttonOrder;
+  const visible = configStore.buttonsConfig.visibleButtons;
+  const groups = configStore.buttonsConfig.buttonGroups || [];
 
   // 按顺序过滤出可见按钮
-  const sortedVisible = order.filter(id => visible.includes(id));
+  const sortedVisible = order.filter((id: string) => visible.includes(id));
 
-  return sortedVisible.map(id => {
+  return sortedVisible.map((id: string) => {
     const btn = NAV_BUTTONS.find(b => b.id === id);
-    const group = groups.find(g => g.primaryId === id);
+    const group = groups.find((g: { primaryId: string }) => g.primaryId === id);
     return {
       id,
       icon: btn?.icon || 'fa-circle',
@@ -190,9 +190,9 @@ const visibleButtonCards = computed<ButtonCard[]>(() => {
  * - 排除已作为附属按钮的按钮
  */
 const hiddenButtons = computed(() => {
-  const visible = configStore.config.visibleButtons;
-  const groups = configStore.config.buttonGroups || [];
-  const usedSecondaries = groups.map(g => g.secondaryId).filter(Boolean);
+  const visible = configStore.buttonsConfig.visibleButtons;
+  const groups = configStore.buttonsConfig.buttonGroups || [];
+  const usedSecondaries = groups.map((g: { secondaryId: string }) => g.secondaryId).filter(Boolean);
 
   return NAV_BUTTONS.filter(btn => !btn.hidden && !visible.includes(btn.id) && !usedSecondaries.includes(btn.id));
 });
@@ -203,8 +203,8 @@ const hiddenButtons = computed(() => {
  * - 排除当前选择器目标按钮
  */
 const availableSecondaryButtons = computed(() => {
-  const groups = configStore.config.buttonGroups || [];
-  const usedSecondaries = groups.map(g => g.secondaryId).filter(Boolean);
+  const groups = configStore.buttonsConfig.buttonGroups || [];
+  const usedSecondaries = groups.map((g: { secondaryId: string }) => g.secondaryId).filter(Boolean);
 
   return NAV_BUTTONS.filter(btn => {
     // 排除当前目标
@@ -244,16 +244,16 @@ const handleDrop = (e: DragEvent, targetIndex: number) => {
   if (draggedIndex.value === null || draggedIndex.value === targetIndex) return;
 
   // 重新排序 buttonOrder 中的可见按钮
-  const currentOrder = [...configStore.config.buttonOrder];
-  const visibleIds = configStore.config.visibleButtons;
+  const currentOrder = [...configStore.buttonsConfig.buttonOrder];
+  const visibleIds = configStore.buttonsConfig.visibleButtons;
 
   // 获取当前可见按钮在 order 中的索引
-  const visibleInOrder = currentOrder.filter(id => visibleIds.includes(id));
+  const visibleInOrder = currentOrder.filter((id: string) => visibleIds.includes(id));
   const [removed] = visibleInOrder.splice(draggedIndex.value, 1);
   visibleInOrder.splice(targetIndex, 0, removed);
 
   // 重建完整顺序：可见按钮按新顺序 + 不可见按钮保持原位
-  const hiddenInOrder = currentOrder.filter(id => !visibleIds.includes(id));
+  const hiddenInOrder = currentOrder.filter((id: string) => !visibleIds.includes(id));
   configStore.setButtonOrder([...visibleInOrder, ...hiddenInOrder]);
 
   // 清理
@@ -274,8 +274,8 @@ const handleDragEnd = (e: DragEvent) => {
 // ============================================================
 
 const handleShowButton = (btnId: string) => {
-  const currentVisible = [...configStore.config.visibleButtons];
-  const currentOrder = [...configStore.config.buttonOrder];
+  const currentVisible = [...configStore.buttonsConfig.visibleButtons];
+  const currentOrder = [...configStore.buttonsConfig.buttonOrder];
 
   // 添加到 visibleButtons
   if (!currentVisible.includes(btnId)) {
@@ -298,7 +298,7 @@ const handleShowButton = (btnId: string) => {
 
 const handleHideButton = (btnId: string) => {
   if (btnId === 'settings') return; // 设置按钮不可隐藏
-  const current = [...configStore.config.visibleButtons];
+  const current = [...configStore.buttonsConfig.visibleButtons];
   const index = current.indexOf(btnId);
   if (index > -1) {
     current.splice(index, 1);
