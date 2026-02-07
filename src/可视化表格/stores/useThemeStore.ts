@@ -185,6 +185,14 @@ export const useThemeStore = defineStore('acu-theme', () => {
   async function loadFromStorage(force = false) {
     // ConfigManager 在初始化时已加载配置，这里只需要处理背景图片恢复
     try {
+      // 确保 ConfigManager 已加载完成
+      if (!configManager.isLoaded.value) {
+        console.warn('[ACU Theme] ConfigManager 尚未加载，延迟加载背景图片');
+        // 简单的重试机制
+        setTimeout(() => loadFromStorage(force), 500);
+        return;
+      }
+
       const activeId = activePresetId.value;
       const bgConfig = backgroundConfig.value;
 

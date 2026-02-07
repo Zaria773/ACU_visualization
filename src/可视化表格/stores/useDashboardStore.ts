@@ -50,18 +50,24 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
   /** 从 ConfigManager 加载配置 */
   function loadConfigFromManager() {
     const stored = configManager.config.dashboard as DashboardConfig | undefined;
+    // 只有当 stored 存在且包含 widgets 数组时才认为是有效配置
+    // 否则可能是 ConfigManager 尚未加载完成，或者确实是首次使用
     if (stored && Array.isArray(stored.widgets)) {
       config.value = klona({
         ...DEFAULT_DASHBOARD_CONFIG,
         ...stored,
       });
+      console.info('[DashboardStore] 配置已加载，widgets 数量:', config.value.widgets.length);
     } else {
-      config.value = { ...DEFAULT_DASHBOARD_CONFIG };
+      // 如果 ConfigManager 中的配置为空，不要急着覆盖为默认值
+      // 可能是 ConfigManager 还没加载完
+      // 但如果是首次初始化，ensureDefaultWidgets 会处理
+      console.info('[DashboardStore] 未从 ConfigManager 读取到有效配置，保持当前状态');
     }
-    console.info('[DashboardStore] 配置已加载，widgets 数量:', config.value.widgets.length);
   }
 
   // 监听配置变化，自动保存
+  // 默认设为 true，只有在明确加载完成后才设为 false
   let isDashboardConfigInitializing = true;
   watch(
     config,
@@ -72,11 +78,6 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     },
     { deep: true },
   );
-
-  // 初始化完成后允许保存
-  setTimeout(() => {
-    isDashboardConfigInitializing = false;
-  }, 100);
 
   // ============================================================
   // Getters
@@ -138,6 +139,13 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     try {
       // 从 ConfigManager 加载配置
       loadConfigFromManager();
+
+      // 只有在成功加载配置后，才允许自动保存
+      // 延迟一点时间，确保状态稳定
+      setTimeout(() => {
+        isDashboardConfigInitializing = false;
+      }, 500);
+
       const loadedExistingConfig = config.value.widgets.length > 0;
 
       // 确保默认组件存在
@@ -151,6 +159,8 @@ export const useDashboardStore = defineStore('acu-dashboard', () => {
     } catch (error) {
       console.warn('[ACU Dashboard] 加载配置失败:', error);
       isInitialized.value = true;
+      // 即使失败，也要允许后续操作
+      isDashboardConfigInitializing = false;
     }
   }
 

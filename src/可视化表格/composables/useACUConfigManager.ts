@@ -186,7 +186,18 @@ export function useACUConfigManager() {
   function loadConfig(): void {
     try {
       // extensionSettings 在页面加载时就已可用，无需等待 API
-      const stored = SillyTavern.extensionSettings[EXT_SETTINGS_KEY];
+      // 但在 iOS iframe 重载等极端情况下，可能尚未就绪
+      const stored = SillyTavern?.extensionSettings?.[EXT_SETTINGS_KEY];
+
+      // 如果 extensionSettings 不可用，尝试从 localStorage 恢复
+      if (!stored) {
+        console.warn('[ACU] extensionSettings 未就绪或为空，尝试从本地缓存恢复');
+        if (restoreFromCache()) {
+          console.info('[ACU] 已从本地缓存恢复配置');
+          isLoaded.value = true;
+          return;
+        }
+      }
 
       if (stored) {
         const merged = deepMergeConfig(stored);
@@ -194,9 +205,10 @@ export function useACUConfigManager() {
         console.info('[ACU] 配置加载成功');
       } else {
         // 首次使用，初始化默认配置
+        // 注意：这里不要急着 saveConfig，以免覆盖可能存在的配置
+        // 只有当用户明确进行操作时才保存
         Object.assign(config, DEFAULT_CONFIG);
-        saveConfig(); // 保存默认配置
-        console.info('[ACU] 首次使用，初始化默认配置');
+        console.info('[ACU] 首次使用或配置丢失，初始化默认配置');
       }
 
       // 加载本地状态

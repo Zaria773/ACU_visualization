@@ -11,7 +11,7 @@
  * - 次版本号：新功能
  * - 修订号：bug 修复
  */
-export const VERSION = '8.2.4';
+export const VERSION = '8.2.5';
 
 /**
  * 存储键版本（只取主版本号）
