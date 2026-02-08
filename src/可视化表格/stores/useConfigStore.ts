@@ -32,6 +32,7 @@ export const DEFAULT_BALL_APPEARANCE: FloatingBallAppearance = {
   bgColor: '#ffffff',
   bgOpacity: 25,
   imageInvert: false,
+  enableNotifyAnimation: true,
 };
 
 /** 导航栏按钮定义 */
@@ -786,6 +787,14 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
   }
 
   /**
+   * 设置是否启用通知动画
+   * @param enabled 是否启用
+   */
+  function setEnableNotifyAnimation(enabled: boolean) {
+    appearance.value.enableNotifyAnimation = enabled;
+  }
+
+  /**
    * 重置为默认外观
    */
   function resetAppearance() {
@@ -888,6 +897,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     setBorderColor,
     setBgColor,
     setNotifyAnimation,
+    setEnableNotifyAnimation,
     resetAppearance,
     setAppearance,
 

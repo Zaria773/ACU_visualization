@@ -35,16 +35,16 @@
 
     <!-- 工具栏（底部） -->
     <div class="acu-graph-toolbar">
-      <button class="acu-graph-btn" :class="{ active: isSearchMode }" title="搜索模式" @click="toggleSearchMode">
+      <button class="acu-icon-btn" :class="{ active: isSearchMode }" title="搜索模式" @click="toggleSearchMode">
         <i class="fas fa-search"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
-      <button class="acu-graph-btn" title="适应视图" @click="fitToView">
+      <button class="acu-icon-btn" title="适应视图" @click="fitToView">
         <i class="fas fa-compress-arrows-alt"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
       <button
-        class="acu-graph-btn"
+        class="acu-icon-btn"
         :class="{ active: layoutMode === 'fcose' }"
         title="力导向布局"
         @click="setLayout('fcose')"
@@ -52,7 +52,7 @@
         <i class="fas fa-project-diagram"></i>
       </button>
       <button
-        class="acu-graph-btn"
+        class="acu-icon-btn"
         :class="{ active: layoutMode === 'cola' }"
         title="势力分组布局"
         @click="setLayout('cola')"
@@ -60,7 +60,7 @@
         <i class="fas fa-object-group"></i>
       </button>
       <button
-        class="acu-graph-btn"
+        class="acu-icon-btn"
         :class="{ active: layoutMode === 'circle' }"
         title="环形布局"
         @click="setLayout('circle')"
@@ -68,15 +68,15 @@
         <i class="fas fa-circle-notch"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
-      <button class="acu-graph-btn" title="重置布局" @click="clearSavedPositions">
+      <button class="acu-icon-btn" title="重置布局" @click="clearSavedPositions">
         <i class="fas fa-undo"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
-      <button class="acu-graph-btn" title="图形设置" @click.stop="openGraphSettings">
+      <button class="acu-icon-btn" title="图形设置" @click.stop="openGraphSettings">
         <i class="fas fa-cog"></i>
       </button>
       <span class="acu-toolbar-divider"></span>
-      <button class="acu-graph-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
+      <button class="acu-icon-btn" title="返回仪表盘" @click.stop="handleBackToDashboard">
         <i class="fas fa-arrow-left"></i>
       </button>
     </div>

@@ -373,6 +373,8 @@ export interface FloatingBallAppearance {
   imageScale?: number;
   /** 是否对图片应用反色效果，仅 type='image' 时有效 */
   imageInvert?: boolean;
+  /** 是否启用通知动画 */
+  enableNotifyAnimation?: boolean;
 }
 
 // ============================================================

@@ -120,6 +120,15 @@
       box-shadow: 0 0 0 2px rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.15) !important;
       outline: none !important;
     }
+
+    // 重置占位符样式
+    &::placeholder {
+      color: var(--acu-text-sub) !important;
+      opacity: 0.6 !important;
+      font-family: inherit !important;
+      font-weight: normal !important;
+      font-style: normal !important;
+    }
   }
 
   // 重置所有 button 的酒馆主题样式 - 防止酒馆主题污染
@@ -250,6 +259,29 @@
     background-repeat: no-repeat !important;
     background-position: right 8px center !important;
     background-size: 16px !important;
+  }
+
+  // 代码块重置 - 防止酒馆主题污染
+  code,
+  pre {
+    font-family: inherit !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: inherit !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    // 覆盖 code span.comment 等子元素污染
+    * {
+      color: inherit !important;
+      background: transparent !important;
+      text-shadow: none !important;
+    }
   }
 
   // 字体重置 - 所有元素使用 ACU 字体

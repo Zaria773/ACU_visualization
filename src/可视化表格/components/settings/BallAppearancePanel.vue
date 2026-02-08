@@ -34,8 +34,14 @@
             <button class="acu-tool-btn" @click.stop="playPreviewAnim">▶️ 播放</button>
             <button class="acu-tool-btn" @click.stop="playNotifyEffect">🔔 通知</button>
           </div>
+          <div class="acu-settings-control">
+            <label class="acu-switch">
+              <input v-model="localAppearance.enableNotifyAnimation" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
-        <div class="acu-anim-grid">
+        <div class="acu-anim-grid" :class="{ disabled: !localAppearance.enableNotifyAnimation }">
           <div
             class="acu-anim-option"
             :class="{ active: localAppearance.notifyAnimation === 'ripple' }"
@@ -177,14 +183,13 @@
         </div>
         <!-- URL 图片模式：显示 URL 输入框 -->
         <div v-else-if="localAppearance.type === 'image' && isUrlImage" class="acu-icon-input-area">
-          <div class="acu-url-input">
+          <div class="acu-icon-input">
             <input
               v-model="imageUrlInput"
               placeholder="https://example.com/image.png"
               @blur="applyImageUrl"
               @keyup.enter="applyImageUrl"
             />
-            <span class="acu-input-hint">输入图片 URL（支持 catbox、imgur 等外链）</span>
           </div>
           <!-- 如果有图片，显示预览和调整按钮 -->
           <div

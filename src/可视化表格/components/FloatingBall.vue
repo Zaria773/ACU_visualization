@@ -105,7 +105,10 @@ function clearAiNotify() {
 /** 计算的 class 列表 */
 const ballClasses = computed(() => {
   // 无论是正在生成中，还是生成完成后的通知期，都显示动画
-  const showAnimation = isAiGenerating.value || isAiNotifying.value;
+  // 必须开启 enableNotifyAnimation 才显示
+  const showAnimation =
+    (isAiGenerating.value || isAiNotifying.value) && appearance.value.enableNotifyAnimation !== false;
+
   return {
     docked: isDocked.value,
     'has-issues': hasIntegrityIssues.value,
@@ -267,7 +270,7 @@ useParentEventListener('resize', () => {
 
 onMounted(() => {
   // 从全局变量加载外观配置
-  ballAppearanceStore.loadFromGlobalVariables();
+  // ballAppearanceStore.loadFromGlobalVariables(); // 已移除，由 ConfigManager 自动管理
 });
 
 // 监听 AI 通知信号

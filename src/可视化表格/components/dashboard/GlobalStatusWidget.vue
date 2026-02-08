@@ -1,5 +1,9 @@
 <template>
-  <div class="acu-global-widget" :class="{ 'is-editing': isEditing }">
+  <div
+    class="acu-global-widget"
+    :class="{ 'is-editing': isEditing, 'acu-dash-interactive': !isEditing }"
+    @click.stop="handleWidgetClick"
+  >
     <!-- 头部区域 (Location + Time) -->
     <div class="acu-global-header">
       <!-- Location (H1) -->
@@ -99,7 +103,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ProcessedTable, TableCell } from '../../types';
+import type { ProcessedTable, TableCell, TableRow } from '../../types';
 
 interface Props {
   tableData: ProcessedTable | null;
@@ -107,6 +111,10 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  'row-click': [row: TableRow];
+}>();
 
 // ============================================================
 // Smart Parser Logic
@@ -291,5 +299,12 @@ function getAttributeIcon(key: string): string {
   if (['态', 'state', 'status', 'hp', 'mp'].some(w => k.includes(w))) return 'fa-heart-pulse';
   if (['级', 'level', 'lv', 'rank'].some(w => k.includes(w))) return 'fa-layer-group';
   return 'fa-info-circle';
+}
+
+function handleWidgetClick() {
+  if (props.isEditing) return;
+  if (firstRow.value) {
+    emit('row-click', firstRow.value);
+  }
 }
 </script>

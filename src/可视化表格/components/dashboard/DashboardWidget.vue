@@ -94,7 +94,11 @@
 
       <!-- 全局状态组件 (无表头，沉浸式) -->
       <template v-else-if="config.displayStyle === 'global'">
-        <GlobalStatusWidget :table-data="tableData" :is-editing="isEditing" />
+        <GlobalStatusWidget
+          :table-data="tableData"
+          :is-editing="isEditing"
+          @row-click="handleRowClick"
+        />
       </template>
 
       <!-- 普通表格组件 -->

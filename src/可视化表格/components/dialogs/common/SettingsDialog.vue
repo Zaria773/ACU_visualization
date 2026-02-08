@@ -10,7 +10,7 @@
           </button>
           <span class="acu-modal-title">{{ panelTitle }}</span>
           <!-- 胶囊式完成按钮 -->
-          <button class="acu-close-pill" @click.stop="handleClose">完成</button>
+          <button class="acu-close-pill" @click.stop="handleClose">{{ currentPanel === 'ballAppearance' ? '保存' : '完成' }}</button>
         </div>
 
         <!-- 内容 -->
@@ -342,7 +342,9 @@
 import { onClickOutside } from '@vueuse/core';
 import { computed, provide, reactive, ref, watch } from 'vue';
 import { useCellLock } from '../../../composables';
+import { useToast } from '../../../composables/useToast';
 import { useBallAppearanceStore, useConfigStore } from '../../../stores/useConfigStore';
+import { useThemeStore } from '../../../stores/useThemeStore';
 import { useUIStore } from '../../../stores/useUIStore';
 import type { ACUConfig } from '../../../types';
 import { VERSION } from '../../../version';
@@ -377,6 +379,7 @@ const emit = defineEmits<{
 const dialogRef = ref<HTMLElement>();
 const configStore = useConfigStore();
 const ballStore = useBallAppearanceStore();
+const toast = useToast();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
 
@@ -526,6 +529,14 @@ onClickOutside(dialogRef, () => {
 
 // 关闭弹窗（点击完成按钮）
 const handleClose = () => {
+  // 如果是悬浮球外观面板，点击完成时保存到当前预设
+  if (currentPanel.value === 'ballAppearance') {
+    const themeStore = useThemeStore();
+    if (themeStore.activePresetId && themeStore.activePreset) {
+      themeStore.saveCurrentToPreset(themeStore.activePreset.name);
+      toast.success('已保存至当前主题预设');
+    }
+  }
   emit('update:visible', false);
 };
 

@@ -164,40 +164,7 @@
   margin: 0 4px;
 }
 
-.acu-graph-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--acu-text-main);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 14px;
-
-  &:hover {
-    background: var(--acu-table-hover);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  &.active {
-    background: var(--acu-title-color-bg);
-    color: var(--acu-title-color);
-  }
-
-  // 保存成功状态
-  &.saved {
-    background: var(--acu-success, #27ae60);
-    color: #fff;
-    animation: pulse-success 0.3s ease;
-  }
-}
+// 按钮已替换为通用 .acu-icon-btn (components/buttons.scss)
 
 // 保存成功动画
 @keyframes pulse-success {
@@ -408,7 +375,8 @@
     right: 0;
   }
 
-  .acu-graph-btn {
+  // 移动端按钮尺寸微调 (覆盖默认 icon-btn 样式)
+  .acu-icon-btn {
     width: 28px;
     height: 28px;
     font-size: 12px;
@@ -481,7 +449,7 @@
 // ============================================================
 
 // Cola 布局按钮激活状态（与其他布局按钮一致）
-.acu-graph-btn[title='势力分组布局'] {
+.acu-icon-btn[title='势力分组布局'] {
   &.active {
     background: var(--acu-title-color-bg);
     color: var(--acu-title-color);
