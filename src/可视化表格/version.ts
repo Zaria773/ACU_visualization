@@ -11,7 +11,7 @@
  * - 次版本号：新功能
  * - 修订号：bug 修复
  */
-export const VERSION = '8.2.8';
+export const VERSION = '8.3.0';
 
 /**
  * GitHub Release 版本号
@@ -21,7 +21,7 @@ export const VERSION = '8.2.8';
  * 注意：每次发布 release 时必须同步更新此值！
  * 格式：v0.0.x（与 GitHub release tag 保持一致）
  */
-export const RELEASE_VERSION = 'v0.0.49';
+export const RELEASE_VERSION = 'v0.0.54';
 
 /**
  * 生成 CDN URL 列表（用于加载脚本）
