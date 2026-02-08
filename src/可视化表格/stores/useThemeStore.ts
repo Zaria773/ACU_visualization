@@ -23,7 +23,7 @@ import {
   type ThemeVariables,
   type ThemeVarOpacities,
 } from '../types';
-import { HIGHLIGHT_COLORS, useConfigStore } from './useConfigStore';
+import { DEFAULT_BALL_APPEARANCE, HIGHLIGHT_COLORS, useBallAppearanceStore, useConfigStore } from './useConfigStore';
 
 /** 默认高亮颜色配置 */
 export const DEFAULT_HIGHLIGHT_CONFIG: HighlightConfig = {
@@ -294,6 +294,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 创建新预设
    */
   function createPreset(name: string): ThemePreset {
+    const ballStore = useBallAppearanceStore();
     const preset: ThemePreset = {
       id: `preset_${Date.now()}`,
       name,
@@ -304,6 +305,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
       highlight: { ...currentHighlight.value },
       backgroundConfig: { ...backgroundConfig.value },
       customCSS: customCSS.value,
+      ballAppearance: { ...ballStore.appearance },
     };
 
     presets.value = [...presets.value, preset];
@@ -314,6 +316,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
    * 保存当前配置到预设
    */
   function saveCurrentToPreset(name: string): ThemePreset {
+    const ballStore = useBallAppearanceStore();
     // 检查是否存在同名预设
     const currentPresets = [...presets.value];
     const existingIndex = currentPresets.findIndex(p => p.name === name);
@@ -329,6 +332,7 @@ export const useThemeStore = defineStore('acu-theme', () => {
         highlight: { ...currentHighlight.value },
         backgroundConfig: { ...backgroundConfig.value },
         customCSS: customCSS.value,
+        ballAppearance: { ...ballStore.appearance },
       };
 
       currentPresets[existingIndex] = updated;
@@ -477,6 +481,15 @@ export const useThemeStore = defineStore('acu-theme', () => {
 
       // 应用自定义 CSS
       customCSS.value = preset.customCSS || '';
+
+      // 应用悬浮球外观配置
+      const ballStore = useBallAppearanceStore();
+      if (preset.ballAppearance) {
+        ballStore.setAppearance(preset.ballAppearance);
+      } else {
+        // 如果预设没有悬浮球配置（旧预设），重置为默认值
+        ballStore.setAppearance(DEFAULT_BALL_APPEARANCE);
+      }
 
       // 同步高亮配置到 configStore
       syncToConfigStore();

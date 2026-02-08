@@ -729,6 +729,8 @@ export interface ThemePreset {
   backgroundConfig?: BackgroundConfig;
   /** 自定义 CSS 代码 */
   customCSS?: string;
+  /** 悬浮球外观配置 */
+  ballAppearance?: FloatingBallAppearance;
 }
 
 /**

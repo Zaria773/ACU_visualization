@@ -792,6 +792,14 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     appearance.value = { ...DEFAULT_BALL_APPEARANCE };
   }
 
+  /**
+   * 完全替换悬浮球外观配置（用于预设恢复）
+   * @param newAppearance 新的外观配置
+   */
+  function setAppearance(newAppearance: FloatingBallAppearance) {
+    appearance.value = { ...DEFAULT_BALL_APPEARANCE, ...newAppearance };
+  }
+
   // ============================================================
   // 自定义字体 Actions
   // ============================================================
@@ -881,6 +889,7 @@ export const useBallAppearanceStore = defineStore('acu-ball-appearance', () => {
     setBgColor,
     setNotifyAnimation,
     resetAppearance,
+    setAppearance,
 
     // 自定义字体
     addFont,
