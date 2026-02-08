@@ -11,7 +11,31 @@
  * - 次版本号：新功能
  * - 修订号：bug 修复
  */
-export const VERSION = '8.2.7';
+export const VERSION = '8.2.8';
+
+/**
+ * GitHub Release 版本号
+ *
+ * 用途：生成 CDN URL，确保各镜像站能立即获取最新版本
+ *
+ * 注意：每次发布 release 时必须同步更新此值！
+ * 格式：v0.0.x（与 GitHub release tag 保持一致）
+ */
+export const RELEASE_VERSION = 'v0.0.49';
+
+/**
+ * 生成 CDN URL 列表（用于加载脚本）
+ * @param path 资源路径，如 'dist/可视化表格/index.js'
+ * @returns CDN URL 数组，按优先级排序
+ */
+export function getCdnUrls(path: string): string[] {
+  const repo = 'Zaria773/ACU_visualization';
+  return [
+    `https://cdn.jsdelivr.net/gh/${repo}@${RELEASE_VERSION}/${path}`,
+    `https://fastly.jsdelivr.net/gh/${repo}@${RELEASE_VERSION}/${path}`,
+    `https://gcore.jsdelivr.net/gh/${repo}@${RELEASE_VERSION}/${path}`,
+  ];
+}
 
 /**
  * 存储键版本（只取主版本号）
