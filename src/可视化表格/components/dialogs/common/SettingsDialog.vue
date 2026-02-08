@@ -10,7 +10,9 @@
           </button>
           <span class="acu-modal-title">{{ panelTitle }}</span>
           <!-- 胶囊式完成按钮 -->
-          <button class="acu-close-pill" @click.stop="handleClose">{{ currentPanel === 'ballAppearance' ? '保存' : '完成' }}</button>
+          <button class="acu-close-pill" @click.stop="handleClose">
+            {{ currentPanel === 'ballAppearance' ? '保存' : '完成' }}
+          </button>
         </div>
 
         <!-- 内容 -->
