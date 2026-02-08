@@ -227,20 +227,6 @@
     line-height: 1.5;
   }
 
-  // 强制文本颜色继承或重置，防御酒馆全局样式
-  // 使用 !important 覆盖酒馆的 p, div, span { color: ... }
-  p,
-  span,
-  div,
-  label,
-  li {
-    color: inherit !important;
-    text-shadow: none !important;
-  }
-
-  // 确保根容器有颜色可供继承
-  color: var(--acu-text-main) !important;
-
   // 图标字体保护 - Font Awesome 不应被覆盖
   // 支持 FA5 (fas/far/fab) 和 FA6 (fa-solid/fa-regular/fa-brands) 类名
   i.fa,

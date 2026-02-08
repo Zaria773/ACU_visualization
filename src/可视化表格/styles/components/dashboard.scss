@@ -37,7 +37,7 @@
 .acu-dash-title {
   font-size: 1.2em;
   font-weight: bold;
-  color: var(--acu-title-color) !important;
+  color: var(--acu-title-color);
   border-bottom: 1px dashed var(--acu-border);
   padding: 0 16px 2px 16px;
   margin-bottom: 0;
@@ -128,7 +128,7 @@
   border: 1px solid transparent;
   transition: all 0.2s;
   font-weight: 500;
-  color: var(--acu-text-main) !important;
+  color: var(--acu-text-main);
   font-size: 1em;
   // 改为 flex 布局以支持编辑按钮
   display: flex;
@@ -159,7 +159,7 @@
 .acu-dash-list-item {
   padding: 6px 16px;
   border-bottom: 1px solid var(--acu-border);
-  color: var(--acu-text-sub) !important;
+  color: var(--acu-text-sub);
   font-size: 1em;
   display: flex;
   align-items: center;
@@ -173,7 +173,7 @@
   }
 
   &:hover {
-    color: var(--acu-text-main) !important;
+    color: var(--acu-text-main);
     padding-left: 20px;
   }
 
@@ -369,7 +369,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  color: var(--acu-text-sub) !important;
+  color: var(--acu-text-sub);
   text-align: center;
 
   i {
@@ -582,7 +582,7 @@
 .acu-dash-header-title {
   font-size: 1.1em;
   font-weight: 600;
-  color: var(--acu-text-main) !important;
+  color: var(--acu-text-main);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -665,7 +665,7 @@
   justify-content: center;
   padding: 48px 24px;
   text-align: center;
-  color: var(--acu-text-sub) !important;
+  color: var(--acu-text-sub);
 
   i {
     font-size: 48px;
