@@ -12,7 +12,11 @@
   border-radius: var(--acu-radius-sm, 4px);
   font-size: calc(var(--acu-font-size, 13px) - 1px);
   background: var(--acu-badge-bg, rgba(0, 0, 0, 0.05));
-  color: var(--acu-text-main, #333);
+  // 提升优先级
+  &,
+  .acu-wrapper & {
+    color: var(--acu-text-main, #333) !important;
+  }
   line-height: 1.4;
   word-break: break-word;
   white-space: pre-wrap;
@@ -58,30 +62,43 @@
 
 // 主题色 (Subtle)
 .acu-badge-primary {
-  background: var(--acu-title-color-bg);
-  color: var(--acu-title-color);
+  // 提升优先级以覆盖 base.scss 的 .acu-wrapper span 规则
+  &,
+  .acu-wrapper & {
+    background: var(--acu-title-color-bg) !important;
+    color: var(--acu-title-color) !important;
+  }
 }
 
 // 次要色/灰色 (Subtle)
 .acu-badge-secondary {
-  background: var(--acu-table-head);
-  color: var(--acu-text-sub);
+  &,
+  .acu-wrapper & {
+    background: var(--acu-table-head) !important;
+    color: var(--acu-text-sub) !important;
+  }
 }
 
 // 轮廓样式 (Outline)
 .acu-badge-outline {
-  background: transparent;
-  border: 1px solid var(--acu-border);
-  color: var(--acu-text-sub);
+  &,
+  .acu-wrapper & {
+    background: transparent !important;
+    border: 1px solid var(--acu-border) !important;
+    color: var(--acu-text-sub) !important;
+  }
   // 轮廓样式稍微减小 padding 以保持视觉平衡
   padding: 1px 7px;
 }
 
 // 主题轮廓 (Outline Primary)
 .acu-badge-outline-primary {
-  background: transparent;
-  border: 1px solid var(--acu-title-color);
-  color: var(--acu-title-color);
+  &,
+  .acu-wrapper & {
+    background: transparent !important;
+    border: 1px solid var(--acu-title-color) !important;
+    color: var(--acu-title-color) !important;
+  }
   padding: 1px 7px;
 }
 

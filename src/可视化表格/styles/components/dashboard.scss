@@ -37,7 +37,7 @@
 .acu-dash-title {
   font-size: 1.2em;
   font-weight: bold;
-  color: var(--acu-title-color);
+  color: var(--acu-title-color) !important;
   border-bottom: 1px dashed var(--acu-border);
   padding: 0 16px 2px 16px;
   margin-bottom: 0;
@@ -67,7 +67,7 @@
 // 折叠指示器图标 - 垂直居中
 .acu-dash-collapse-icon {
   font-size: 0.7em;
-  color: var(--acu-text-sub);
+  color: var(--acu-text-sub) !important;
   transition: transform 0.2s;
   flex-shrink: 0;
   display: flex;
@@ -93,10 +93,18 @@
     font-size: 0.9em;
   }
 
+  // 提升优先级，防止被 base.scss 或主题覆盖
+  &,
+  .acu-wrapper & {
+    i {
+      color: var(--acu-title-color) !important;
+    }
+  }
+
   // 可点击状态时的 hover 效果
   .acu-dash-title-clickable & {
     &:hover {
-      color: var(--acu-highlight, var(--acu-title-color));
+      color: var(--acu-highlight, var(--acu-title-color)) !important;
       background: rgba(var(--acu-highlight-rgb, 144, 205, 244), 0.15);
     }
   }
@@ -179,7 +187,7 @@
 
   i {
     font-size: 0.8em;
-    color: var(--acu-title-color);
+    color: var(--acu-title-color) !important;
   }
 }
 
@@ -347,6 +355,14 @@
   i {
     font-size: 10px;
     opacity: 0.7;
+  }
+
+  // 修复：在 Grid 模式下图标也应为主题色（与 List 模式保持一致）
+  &,
+  .acu-wrapper & {
+    i {
+      color: var(--acu-title-color) !important;
+    }
   }
 
   &:hover {
@@ -582,13 +598,13 @@
 .acu-dash-header-title {
   font-size: 1.1em;
   font-weight: 600;
-  color: var(--acu-text-main);
+  color: var(--acu-text-main) !important;
   display: flex;
   align-items: center;
   gap: 6px;
 
   i {
-    color: var(--acu-title-color);
+    color: var(--acu-title-color) !important;
   }
 }
 
@@ -969,6 +985,11 @@
   td {
     color: var(--acu-highlight-ai) !important;
     font-weight: 600;
+
+    // 修复：强制 span 继承颜色，防止被 base.scss 全局 span 样式覆盖
+    span {
+      color: inherit !important;
+    }
   }
 
   .acu-status-name {

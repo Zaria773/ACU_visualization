@@ -126,22 +126,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: transparent !important;
   border: none;
   border-radius: 4px;
-  color: var(--acu-text-sub);
+  // 强制使用主要文本色，并提升权重防止被 base.scss 或父级覆盖
+  color: var(--acu-text-main) !important;
+  opacity: 1 !important;
   cursor: pointer;
   transition: all 0.2s;
 
+  // 修复：强制图标继承按钮颜色，防止被酒馆全局样式(如 i { color: ... })覆盖
+  i {
+    color: inherit !important;
+  }
+
   &:hover {
-    background: var(--acu-btn-hover);
-    color: var(--acu-title-color);
+    background: var(--acu-btn-hover) !important;
+    color: var(--acu-title-color) !important;
+    opacity: 1 !important;
   }
 
   // 激活状态
   &.active {
-    background: var(--acu-title-color-bg);
-    color: var(--acu-title-color);
+    background: var(--acu-title-color-bg) !important;
+    color: var(--acu-title-color) !important;
+    opacity: 1 !important;
   }
 }
 

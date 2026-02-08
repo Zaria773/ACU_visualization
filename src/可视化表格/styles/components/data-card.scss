@@ -235,62 +235,7 @@
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   align-items: center;
-  gap: 2px; // PC端间距（原2px太小看起来像重叠）
-}
-
-// 通用历史按钮样式
-.acu-undo-trigger,
-.acu-history-trigger {
-  width: 26px;
-  height: 26px;
-  min-width: 26px; // 防止被压缩
-  min-height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  color: var(--acu-text-sub);
-  cursor: pointer;
-  font-size: 11px;
-  transition: all 0.2s ease;
-  opacity: 0.6;
-  padding: 0;
-
-  &:hover {
-    background: var(--acu-table-hover);
-    color: var(--acu-title-color);
-    opacity: 1;
-  }
-
-  &:active {
-    transform: scale(0.9);
-  }
-
-  // 移动端增大触控区域 (最小44px触控区域)
-  @media (max-width: 768px) {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    font-size: 13px;
-  }
-}
-
-// 撤回按钮特有样式
-.acu-undo-trigger {
-  // 加载状态
-  &.acu-loading {
-    opacity: 0.5;
-    cursor: wait;
-    pointer-events: none;
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
+  gap: 2px;
 }
 
 // 行锁定按钮（锁定编辑模式下显示在卡片头部右侧）

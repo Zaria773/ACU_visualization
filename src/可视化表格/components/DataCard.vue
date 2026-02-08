@@ -62,7 +62,7 @@
       <div v-if="showHistoryButton && !uiStore.isLockEditMode" class="acu-history-btns">
         <!-- 撤回按钮 -->
         <button
-          class="acu-undo-trigger"
+          class="acu-icon-btn"
           :class="{ 'acu-loading': isUndoing }"
           :disabled="isUndoing"
           title="撤回到上一版本"
@@ -71,7 +71,7 @@
           <i :class="isUndoing ? 'fas fa-spinner fa-spin' : 'fas fa-undo'"></i>
         </button>
         <!-- 查看历史按钮 -->
-        <button class="acu-history-trigger" title="查看历史记录" @click.stop="emit('showHistory')">
+        <button class="acu-icon-btn" title="查看历史记录" @click.stop="emit('showHistory')">
           <i class="fas fa-search"></i>
         </button>
       </div>

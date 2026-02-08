@@ -61,10 +61,11 @@
   gap: 8px;
   font-size: 1.2em;
   font-weight: 600;
-  color: var(--acu-title-color);
+  color: var(--acu-title-color) !important; // 必须用 !important 覆盖 base.scss 的防护层
 
-  // 确保子元素继承字体大小
-  * {
+  // 确保子元素也使用标题色
+  span {
+    color: var(--acu-title-color) !important;
     font-size: inherit;
   }
 
@@ -90,7 +91,7 @@
   font-size: 1.3em; // 增大字号
   font-weight: 600; // 加粗
   line-height: 1.4;
-  color: var(--acu-text-main);
+  color: var(--acu-text-main) !important; // 必须用 !important 覆盖 base.scss 的防护层
 
   // 确保子元素继承字体大小
   * {
@@ -98,7 +99,7 @@
   }
 
   i {
-    color: var(--acu-title-color); // 图标使用主题色
+    color: var(--acu-title-color) !important; // 图标使用主题色
     font-size: 0.9em;
     flex-shrink: 0;
     opacity: 0.8;
@@ -113,16 +114,17 @@
 
   .location-part {
     font-weight: 500;
+    color: var(--acu-text-main) !important;
 
     // 最后一级加粗高亮
     &:last-child {
-      color: var(--acu-title-color);
+      color: var(--acu-title-color) !important;
       font-weight: 600;
     }
   }
 
   .location-sep {
-    color: var(--acu-text-sub);
+    color: var(--acu-text-sub) !important;
     font-size: 0.8em;
     opacity: 0.6;
   }

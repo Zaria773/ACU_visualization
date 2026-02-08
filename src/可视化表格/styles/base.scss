@@ -11,17 +11,17 @@
 // =========================================
 
 // =========================================
-// 0.1 全局文本样式隔离 - 防御酒馆主题的 p, div, span 全局选择器
-// 使用高权重选择器覆盖酒馆主题，但不使用 !important 以便组件覆盖
+// 0.1 文本颜色防护层 - 使用高权重选择器覆盖酒馆主题
+// 酒馆主题常用 `p, div, span { color: xxx }` 全局选择器
+// 我们使用 `.acu-wrapper p` 等更高权重选择器 + !important 来覆盖
 // =========================================
 .acu-wrapper,
 .acu-modal-container {
-  // 根容器设置基础颜色
+  // 容器本身设置基础文本颜色
   color: var(--acu-text-main) !important;
   text-shadow: none !important;
 
-  // 所有文本元素强制使用 ACU 颜色 - 必须使用 !important 覆盖酒馆主题
-  // 组件样式也用 !important，由于后加载会覆盖这里的规则
+  // 所有文本元素默认使用 --acu-text-main
   p,
   div,
   span,
@@ -39,7 +39,7 @@
     text-shadow: none !important;
   }
 
-  // 标题元素使用主题色
+  // 标题元素使用 --acu-title-color
   h1,
   h2,
   h3,
@@ -49,6 +49,33 @@
     color: var(--acu-title-color) !important;
     text-shadow: none !important;
     font-weight: 600;
+  }
+
+  // 卡片标题、面板标题等使用 --acu-title-color
+  .acu-card-label,
+  .acu-grid-label,
+  .acu-full-label,
+  .acu-panel-title,
+  .acu-editable-title {
+    color: var(--acu-title-color) !important;
+    text-shadow: none !important;
+    font-weight: 600;
+  }
+
+  // 弹窗标题、设置标题使用 --acu-text-main
+  .acu-modal-title,
+  .acu-settings-title {
+    color: var(--acu-text-main) !important;
+    text-shadow: none !important;
+    font-weight: 600;
+  }
+
+  // 次要文本使用 --acu-text-sub
+  .hint,
+  .acu-text-sub,
+  .acu-settings-label .hint {
+    color: var(--acu-text-sub) !important;
+    font-size: 11px;
   }
 }
 
@@ -96,31 +123,48 @@
   }
 
   // 重置所有 button 的酒馆主题样式 - 防止酒馆主题污染
-  // 注意：只重置关键属性（毛玻璃、阴影、滤镜），背景色由组件类自行定义
-  // 这样组件类可以不使用 !important 就能覆盖
   button {
-    // 关键：移除毛玻璃效果和酒馆主题污染
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    filter: none !important;
-    text-shadow: none !important;
-    color: var(--acu-text-main) !important; // 强制重置按钮文字颜色，防止被主题覆盖
+    // 重置背景 - 使用 ACU 按钮背景色
+    background: var(--acu-btn-bg) !important;
+    background-color: var(--acu-btn-bg) !important;
+    background-image: none !important;
+
+    // 重置边框
+    border: 1px solid transparent !important;
+    border-radius: 6px !important;
 
     // 重置字体
     font-family: inherit !important;
     font-size: inherit !important;
+    color: var(--acu-text-main) !important;
+    text-shadow: none !important;
 
-    // 其他属性不使用 !important，让组件类可以覆盖
-    cursor: pointer;
-    transition: all 0.2s ease;
+    // 重置阴影和滤镜 - 关键：移除毛玻璃效果
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+
+    // 重置其他
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
 
     &:hover {
+      background: var(--acu-btn-hover) !important;
+      background-color: var(--acu-btn-hover) !important;
+      background-image: none !important;
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
     }
 
     &:focus {
       outline: none !important;
+      box-shadow: 0 0 0 2px rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.15) !important;
+    }
+
+    &:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
     }
   }
 
