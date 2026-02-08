@@ -51,6 +51,52 @@
     }
   }
 
+  // 重置所有 button 的酒馆主题样式 - 防止酒馆主题污染
+  button {
+    // 重置背景 - 使用 ACU 按钮背景色
+    background: var(--acu-btn-bg) !important;
+    background-color: var(--acu-btn-bg) !important;
+    background-image: none !important;
+
+    // 重置边框
+    border: 1px solid transparent !important;
+    border-radius: 6px !important;
+
+    // 重置字体
+    font-family: inherit !important;
+    font-size: inherit !important;
+    color: var(--acu-text-main) !important;
+    text-shadow: none !important;
+
+    // 重置阴影和滤镜 - 关键：移除毛玻璃效果
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+
+    // 重置其他
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+
+    &:hover {
+      background: var(--acu-btn-hover) !important;
+      background-color: var(--acu-btn-hover) !important;
+      background-image: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    &:focus {
+      outline: none !important;
+      box-shadow: 0 0 0 2px rgba(var(--acu-title-color-rgb, 52, 152, 219), 0.15) !important;
+    }
+
+    &:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+    }
+  }
+
   // 滑块 (Range Input) 完全重置
   input[type='range'] {
     -webkit-appearance: none !important;
@@ -246,21 +292,49 @@
   }
 
   // 图标字体保护 - Font Awesome 不应被覆盖
+  // 支持 FA5 (fas/far/fab) 和 FA6 (fa-solid/fa-regular/fa-brands) 类名
   i.fa,
   i.fas,
   i.far,
   i.fab,
+  i.fa-solid,
+  i.fa-regular,
+  i.fa-brands,
+  i.fa-light,
+  i.fa-thin,
+  i.fa-duotone,
   .fa,
   .fas,
   .far,
-  .fab {
-    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome !important;
+  .fab,
+  .fa-solid,
+  .fa-regular,
+  .fa-brands,
+  .fa-light,
+  .fa-thin,
+  .fa-duotone,
+  [class*='fa-'] {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro', 'Font Awesome 5 Free', FontAwesome !important;
     font-weight: 900 !important; // Solid icons need 900
     font-style: normal !important;
     font-variant: normal !important;
     line-height: 1 !important;
     text-rendering: auto !important;
     -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+  }
+
+  // Regular 图标需要 font-weight: 400
+  .far,
+  .fa-regular {
+    font-weight: 400 !important;
+  }
+
+  // Brands 图标需要 font-weight: 400
+  .fab,
+  .fa-brands {
+    font-family: 'Font Awesome 6 Brands', 'Font Awesome 5 Brands', FontAwesome !important;
+    font-weight: 400 !important;
   }
 }
 
