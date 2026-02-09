@@ -462,3 +462,38 @@ input[type='color'] {
     font-size: 0.8em;
   }
 }
+
+// =========================================
+// iOS 防自动缩放补丁
+// 修复 iOS 浏览器在输入框字体小于 16px 时自动放大页面且不还原的问题
+// 仅在开启设置开关时生效（通过 .acu-fix-ios-zoom 类控制）
+// =========================================
+@media screen and (max-width: 768px) {
+  .acu-fix-ios-zoom {
+    // 强制所有输入类控件在移动端使用 16px 字体
+    .acu-search-input,
+    .acu-edit-textarea,
+    .acu-textarea-scrollable,
+    .acu-settings-input,
+    .acu-select,
+    .acu-textarea,
+    .acu-search-box .acu-search-input,
+    .acu-inline-editor textarea,
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+
+      // 稍微调整行高以适应大字体，防止内容被截断
+      line-height: 1.4 !important;
+    }
+
+    // 针对搜索框做特殊微调，防止 16px 撑破布局
+    .acu-search-input {
+      width: 120px;
+      &:focus {
+        width: 160px;
+      }
+    }
+  }
+}

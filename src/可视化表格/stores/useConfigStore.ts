@@ -107,6 +107,7 @@ export const DEFAULT_CONFIG: ACUConfig = {
   showCollapseTabButton: true,
   mobileSafeAreaBottom: 50,
   autoImportInteractions: false,
+  enableIOSInputFix: false,
 };
 
 /** 主题配置列表 */

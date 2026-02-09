@@ -76,6 +76,8 @@ export interface ACUConfig {
   mobileSafeAreaBottom?: number;
   /** 是否自动存入交互标签 */
   autoImportInteractions?: boolean;
+  /** iOS 输入防缩放模式（强制输入框使用 16px 字体） */
+  enableIOSInputFix?: boolean;
 }
 
 /** 导航栏按钮配置 */

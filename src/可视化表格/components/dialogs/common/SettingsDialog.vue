@@ -277,6 +277,21 @@
                     ></button>
                   </div>
                 </div>
+
+                <!-- iOS 输入防缩放 -->
+                <div class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    iOS 输入防缩放
+                    <span class="hint">开启后输入框字体变大，防止 iOS 自动放大页面</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.enableIOSInputFix }"
+                      @click="localConfig.enableIOSInputFix = !localConfig.enableIOSInputFix"
+                    ></button>
+                  </div>
+                </div>
               </div>
             </div>
           </template>

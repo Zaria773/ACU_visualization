@@ -539,6 +539,7 @@ const appClasses = computed(() => [
     'acu-mobile': uiStore.isMobile,
     'acu-layout-horizontal': configStore.config.layout === 'horizontal',
     'acu-layout-vertical': configStore.config.layout === 'vertical',
+    'acu-fix-ios-zoom': configStore.config.enableIOSInputFix,
   },
 ]);
 
