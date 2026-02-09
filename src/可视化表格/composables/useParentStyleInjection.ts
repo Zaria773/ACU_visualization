@@ -82,21 +82,49 @@ export function useParentStyleInjection() {
   // 是否已初始化
   const isInitialized = ref(false);
 
+  // 字体 URL 映射
+  const FONT_IMPORT_URLS: Record<string, string> = {
+    hanchan: 'https://fontsapi.zeoseven.com/3/main/result.css',
+    maple: 'https://fontsapi.zeoseven.com/442/main/result.css',
+    huiwen: 'https://fontsapi.zeoseven.com/256/main/result.css',
+    cooper: 'https://fontsapi.zeoseven.com/482/main/result.css',
+    yffyt: 'https://fontsapi.zeoseven.com/446/main/result.css',
+    fusion: 'https://fontsapi.zeoseven.com/570/main/result.css',
+    wenkai: 'https://fontsapi.zeoseven.com/292/main/result.css',
+    notosans: 'https://fontsapi.zeoseven.com/69/main/result.css',
+    zhuque: 'https://fontsapi.zeoseven.com/7/main/result.css',
+  };
+
+  // 已加载字体缓存
+  const loadedFonts = new Set<string>();
+
   /**
-   * 获取字体导入 CSS
+   * 加载字体（非阻塞）
    */
-  const getFontImportCSS = (): string => {
-    return `
-      @import url("https://fontsapi.zeoseven.com/3/main/result.css");   /* 寒蝉全圆体 */
-      @import url("https://fontsapi.zeoseven.com/442/main/result.css"); /* Maple Mono */
-      @import url("https://fontsapi.zeoseven.com/256/main/result.css"); /* 汇文明朝 */
-      @import url("https://fontsapi.zeoseven.com/482/main/result.css"); /* Cooper正楷 */
-      @import url("https://fontsapi.zeoseven.com/446/main/result.css"); /* YFFYT */
-      @import url("https://fontsapi.zeoseven.com/570/main/result.css"); /* Fusion Pixel */
-      @import url("https://fontsapi.zeoseven.com/292/main/result.css"); /* 霞鹜文楷 */
-      @import url("https://fontsapi.zeoseven.com/69/main/result.css");  /* 思源黑体 */
-      @import url("https://fontsapi.zeoseven.com/7/main/result.css");   /* 朱雀仿宋 */
-    `;
+  const loadFont = (fontId: string): void => {
+    const url = FONT_IMPORT_URLS[fontId];
+    if (!url || fontId === 'default' || loadedFonts.has(fontId)) {
+      return;
+    }
+
+    const parentDoc = getParentDoc();
+    const linkId = `acu-font-${fontId}`;
+
+    // 检查是否已存在
+    if (parentDoc.getElementById(linkId)) {
+      loadedFonts.add(fontId);
+      return;
+    }
+
+    // 创建 link 元素
+    const link = parentDoc.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = url;
+    link.setAttribute('data-source', 'acu-visualizer-font');
+    parentDoc.head.appendChild(link);
+
+    loadedFonts.add(fontId);
   };
 
   /**
@@ -151,8 +179,6 @@ export function useParentStyleInjection() {
 
     const fontFamily = getFontFamilyValue();
     styleEl.textContent = `
-      ${getFontImportCSS()}
-
       /* 主容器字体 */
       .acu-wrapper,
       .acu-modal-container,
@@ -984,10 +1010,15 @@ export function useParentStyleInjection() {
    * 应用字体
    */
   const applyFont = (fontId?: string): void => {
+    const targetFontId = fontId || configStore.config.fontFamily || 'default';
+
+    // 加载字体（非阻塞）
+    loadFont(targetFontId);
+
     // 重新注入字体样式
     injectFontStyles();
 
-    console.info(`[ACU Styles] Font applied: ${fontId || configStore.config.fontFamily}`);
+    console.info(`[ACU Styles] Font applied: ${targetFontId}`);
   };
 
   /**
@@ -1018,6 +1049,12 @@ export function useParentStyleInjection() {
     // 移除字体样式
     parentDoc.getElementById(`${DYNAMIC_FONT_ID}-${id}`)?.remove();
 
+    // 移除所有动态加载的字体 link
+    loadedFonts.forEach(fontId => {
+      parentDoc.getElementById(`acu-font-${fontId}`)?.remove();
+    });
+    loadedFonts.clear();
+
     // 移除主题自定义样式
     parentDoc.getElementById(`${THEME_CUSTOM_ID}-${id}`)?.remove();
 
@@ -1042,8 +1079,8 @@ export function useParentStyleInjection() {
     // 注入静态样式
     injectBaseStyles();
 
-    // 注入字体样式
-    injectFontStyles();
+    // 初始加载字体
+    applyFont();
 
     // 创建动态样式元素
     createDynamicStyleElement();

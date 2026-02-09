@@ -1,13 +1,14 @@
 <template>
   <Teleport :to="parentBody">
-    <Transition name="modal">
-      <div
-        v-if="visible"
-        class="acu-modal-container"
-        :class="{ 'acu-center-modal': uiStore.isMobile }"
-        @click.self="handleClose"
-      >
-        <div class="acu-modal acu-prompt-editor-modal">
+    <div :class="`acu-theme-${configStore.config.theme}`">
+      <Transition name="modal">
+        <div
+          v-if="visible"
+          class="acu-modal-container"
+          :class="{ 'acu-center-modal': uiStore.isMobile }"
+          @click.self="handleClose"
+        >
+          <div class="acu-modal acu-prompt-editor-modal">
           <!-- 头部 -->
           <div class="acu-modal-header">
             <span class="acu-modal-title">
@@ -46,9 +47,10 @@
             <button class="acu-modal-btn secondary" @click.stop="handleClear">清空</button>
             <button class="acu-modal-btn primary" @click.stop="handleSave">保存</button>
           </div>
+          </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -56,6 +58,7 @@
 import { ref, watch } from 'vue';
 import { useToast } from '../../../composables/useToast';
 import { useUIStore } from '../../../stores/useUIStore';
+import { useConfigStore } from '../../../stores/useConfigStore';
 
 interface Props {
   visible: boolean;
@@ -70,6 +73,7 @@ const emit = defineEmits<{
 }>();
 
 const uiStore = useUIStore();
+const configStore = useConfigStore();
 const toast = useToast();
 const localPrompt = ref('');
 
