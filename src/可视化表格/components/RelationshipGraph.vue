@@ -2351,7 +2351,12 @@ onBeforeUnmount(() => {
   cy = null;
 
   // 清理背景图片的 ObjectURL
-  if (currentBackgroundUrl.value?.startsWith('blob:')) {
+  // 关键修复：仅当 currentBackgroundUrl 与 themeStore 中的不同时才销毁
+  // 避免销毁了 themeStore 正在使用的共享背景图片
+  if (
+    currentBackgroundUrl.value?.startsWith('blob:') &&
+    currentBackgroundUrl.value !== themeStore.backgroundConfig.imageUrl
+  ) {
     revokeBlobUrl(currentBackgroundUrl.value);
     currentBackgroundUrl.value = null;
   }

@@ -343,6 +343,12 @@
       @save="handlePromptEditorSave"
     />
 
+    <!-- 添加表格弹窗 (TableStatusBoard 使用) -->
+    <AddTableDialog
+      v-model:visible="uiStore.addTableDialog.visible"
+      @confirm="uiStore.handleAddTableConfirm"
+    />
+
     <!-- 全局图标选择弹窗 -->
     <IconSelectDialog
       :visible="uiStore.iconSelectDialog.visible"
@@ -382,6 +388,7 @@ import {
   Toast,
 } from './components';
 import {
+  AddTableDialog,
   AdvancedPurgeDialog,
   AvatarCropDialog,
   AvatarManagerDialog,
@@ -1600,7 +1607,8 @@ onMounted(() => {
 
 // 监听移动端安全区配置，将值注入到父窗口 CSS 变量
 watchEffect(() => {
-  const safeArea = configStore.config.mobileSafeAreaBottom ?? 50;
+  // 仅在移动模式下应用安全区，PC 端强制为 0
+  const safeArea = uiStore.isMobile ? (configStore.config.mobileSafeAreaBottom ?? 50) : 0;
   if (window.parent?.document?.documentElement) {
     window.parent.document.documentElement.style.setProperty('--acu-safe-area-bottom', `${safeArea}px`);
   }

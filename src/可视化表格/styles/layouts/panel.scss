@@ -25,7 +25,7 @@
   overscroll-behavior: contain;
   isolation: isolate;
   pointer-events: auto !important;
-  overflow: hidden; // 不在这层滚动，滚动在 .acu-cards-container
+  overflow: clip; // 使用 clip 而非 hidden，防止背景图片 ::before 伪元素 scale 后的溢出在移动端被触摸拖动
 
   &.visible {
     display: flex;
@@ -43,13 +43,13 @@
   // 横向布局模式 - 滚动在卡片容器
   &.acu-layout-horizontal {
     touch-action: pan-x pan-y !important;
-    overflow: hidden;
+    overflow: clip;
   }
 
   // 纵向布局模式 - 滚动在卡片容器
   &.acu-layout-vertical {
     touch-action: pan-y !important;
-    overflow: hidden;
+    overflow: clip;
   }
 }
 

@@ -18,7 +18,7 @@
           <button class="acu-tool-btn" :disabled="selectedKeys.size === 0" title="删除" @click.stop="handleDelete">
             <i class="fas fa-trash"></i>
           </button>
-          <button class="acu-tool-btn" title="添加" @click.stop="showAddDialog = true">
+          <button class="acu-tool-btn" title="添加" @click.stop="handleOpenAddDialog">
             <i class="fas fa-plus"></i>
           </button>
           <button
@@ -55,8 +55,6 @@
       </div>
     </div>
 
-    <!-- 添加表格弹窗 -->
-    <AddTableDialog v-model:visible="showAddDialog" @confirm="handleAddTables" />
 
     <!-- 表格 -->
     <div class="acu-status-table-wrapper">
@@ -148,7 +146,6 @@ import { toast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/useDataStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { getCore } from '../../utils';
-import AddTableDialog from '../dialogs/common/AddTableDialog.vue';
 
 // ============================================================
 // Emits
@@ -185,8 +182,6 @@ const pendingFrequencyChanges = ref<Map<string, number>>(new Map());
 // 待添加的新表格
 const pendingNewTables = ref<any[]>([]);
 
-// 弹窗状态
-const showAddDialog = ref(false);
 
 // ============================================================
 // Computed
@@ -455,10 +450,12 @@ function handleOpenPurgeDialog() {
   );
 }
 
-// 处理添加表格
-function handleAddTables(tables: any[]) {
-  pendingNewTables.value.push(...tables);
-  toast.success(`已添加 ${tables.length} 个表格到待保存列表`);
+// 打开添加表格弹窗（通过全局弹窗管理）
+function handleOpenAddDialog() {
+  uiStore.openAddTableDialog((tables: any[]) => {
+    pendingNewTables.value.push(...tables);
+    toast.success(`已添加 ${tables.length} 个表格到待保存列表`);
+  });
 }
 
 // 批量启用/禁用

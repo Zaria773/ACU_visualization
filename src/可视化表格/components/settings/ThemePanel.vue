@@ -649,62 +649,61 @@ function syncCssToSliders() {
     cssVarToKey[v] = k as keyof ThemeVariables;
   }
 
-  // 2. 逐行解析
-  const lines = customCSSText.value.split('\n');
-  const remainingLines: string[] = [];
+  // 2. 全局解析 (支持压缩格式和多行)
+  let newCss = customCSSText.value;
   let convertedCount = 0;
 
-  for (const line of lines) {
-    // 匹配 CSS 变量定义: --acu-xxx: value;
-    // 允许前导空白，捕获变量名和值
-    const match = line.match(/^\s*(--acu-[a-z0-9-]+)\s*:\s*([^;]+);/);
+  // 匹配模式: --acu-xxx: value; (支持压缩格式，忽略前后空白)
+  const regex = /(--acu-[a-z0-9-]+)\s*:\s*([^;]+?)\s*(?:!important)?\s*;/gi;
+  let match;
 
-    if (match) {
-      const cssVar = match[1];
-      const value = match[2].trim();
-      const key = cssVarToKey[cssVar];
+  while ((match = regex.exec(customCSSText.value)) !== null) {
+    const cssVar = match[1];
+    const value = match[2].trim();
+    const key = cssVarToKey[cssVar];
 
-      if (key) {
-        // 是已知的主题变量，同步到 store
-        // 如果值包含 !important，清理它
-        const cleanValue = value.replace(/\s*!important\s*$/, '').trim();
+    if (key) {
+      // 是已知的主题变量，同步到 store
+      const cleanValue = value; // 正则已处理 !important
 
-        // 尝试解析颜色和透明度 (支持 rgba 和 hex8)
-        const parsed = parseColorValue(cleanValue);
-        if (parsed) {
-          themeStore.setThemeVar(key, parsed.hex);
-          themeStore.setThemeVarOpacity(key, parsed.opacity);
-        } else {
-          themeStore.setThemeVar(key, cleanValue);
-          // 如果是普通颜色，重置透明度为 100 (默认)
-          themeStore.setThemeVarOpacity(key, 100);
-        }
-
-        convertedCount++;
-        continue; // 从 CSS 中移除此行
+      // 尝试解析颜色和透明度 (支持 rgba 和 hex8)
+      const parsed = parseColorValue(cleanValue);
+      if (parsed) {
+        themeStore.setThemeVar(key, parsed.hex);
+        themeStore.setThemeVarOpacity(key, parsed.opacity);
+      } else {
+        themeStore.setThemeVar(key, cleanValue);
+        // 如果是普通颜色，重置透明度为 100 (默认)
+        themeStore.setThemeVarOpacity(key, 100);
       }
-    }
 
-    // 未匹配或是未知变量，保留
-    remainingLines.push(line);
+      convertedCount++;
+    }
   }
 
   if (convertedCount > 0) {
-    // 3. 更新 Custom CSS (移除已同步的行)
-    // 过滤掉可能的空行块（可选，这里简单处理）
-    let newCss = remainingLines.join('\n');
-    // 清理多余的空行
+    // 3. 从 CSS 中移除已同步的变量
+    // 简单粗暴地移除所有已匹配的变量定义
+    for (const [k, v] of Object.entries(THEME_VAR_CSS_MAP)) {
+      // 移除匹配的变量定义，不管值是什么
+      const removeRegex = new RegExp(`${v}\\s*:\\s*[^;]+?;`, 'gi');
+      newCss = newCss.replace(removeRegex, '');
+    }
+
+    // 清理可能留下的空选择器块 (简单清理)
+    // newCss = newCss.replace(/\{\s*\}/g, '');
+    // 清理多余空行
     newCss = newCss.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 
     customCSSText.value = newCss;
     themeStore.setCustomCSS(newCss);
 
     // 4. 更新 UI
-    syncColorInputs(); // 如果涉及高亮色（虽然高亮色不在 ThemeVariables 中，但以防万一）
+    syncColorInputs();
 
     toast.success(`成功提取 ${convertedCount} 个变量到滑块设置`);
   } else {
-    toast.info('未找到可同步的主题变量 (格式需为 --acu-xxx: val;)');
+    toast.info('未找到可同步的主题变量');
   }
 }
 

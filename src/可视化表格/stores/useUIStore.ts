@@ -684,6 +684,16 @@ export const useUIStore = defineStore('acu-ui', () => {
   /** Tab 收纳浮窗 */
   const tabsPopup = ref(false);
 
+  /** 添加表格弹窗状态 */
+  const addTableDialog = reactive<{
+    visible: boolean;
+  }>({
+    visible: false,
+  });
+
+  /** 添加表格弹窗回调 - 使用 shallowRef 避免被 reactive 代理 */
+  const addTableOnConfirm = shallowRef<((tables: any[]) => void) | null>(null);
+
   /** 预设保存弹窗状态 */
   const presetSaveDialog = reactive<{
     visible: boolean;
@@ -1678,6 +1688,38 @@ export const useUIStore = defineStore('acu-ui', () => {
   }
 
   // ============================================================
+  // 添加表格弹窗 Actions
+  // ============================================================
+
+  /**
+   * 打开添加表格弹窗
+   * @param onConfirm 确认回调
+   */
+  function openAddTableDialog(onConfirm: (tables: any[]) => void): void {
+    addTableOnConfirm.value = onConfirm;
+    addTableDialog.visible = true;
+  }
+
+  /**
+   * 关闭添加表格弹窗
+   */
+  function closeAddTableDialog(): void {
+    addTableDialog.visible = false;
+    addTableOnConfirm.value = null;
+  }
+
+  /**
+   * 处理添加表格确认
+   * @param tables 要添加的表格列表
+   */
+  function handleAddTableConfirm(tables: any[]): void {
+    if (addTableOnConfirm.value) {
+      addTableOnConfirm.value(tables);
+    }
+    closeAddTableDialog();
+  }
+
+  // ============================================================
   // 标签系统弹窗 Actions
   // ============================================================
 
@@ -2024,6 +2066,12 @@ export const useUIStore = defineStore('acu-ui', () => {
     openPresetSaveDialog,
     closePresetSaveDialog,
     handlePresetSave,
+
+    // 添加表格弹窗
+    addTableDialog,
+    openAddTableDialog,
+    closeAddTableDialog,
+    handleAddTableConfirm,
 
     // 标签系统弹窗
     categorySelectDialog,
