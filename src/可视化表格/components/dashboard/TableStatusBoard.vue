@@ -55,7 +55,6 @@
       </div>
     </div>
 
-
     <!-- 表格 -->
     <div class="acu-status-table-wrapper">
       <table class="acu-status-table">
@@ -181,7 +180,6 @@ const pendingFrequencyChanges = ref<Map<string, number>>(new Map());
 
 // 待添加的新表格
 const pendingNewTables = ref<any[]>([]);
-
 
 // ============================================================
 // Computed
