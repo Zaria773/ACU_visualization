@@ -344,10 +344,7 @@
     />
 
     <!-- 添加表格弹窗 (TableStatusBoard 使用) -->
-    <AddTableDialog
-      v-model:visible="uiStore.addTableDialog.visible"
-      @confirm="uiStore.handleAddTableConfirm"
-    />
+    <AddTableDialog v-model:visible="uiStore.addTableDialog.visible" @confirm="uiStore.handleAddTableConfirm" />
 
     <!-- 全局图标选择弹窗 -->
     <IconSelectDialog
