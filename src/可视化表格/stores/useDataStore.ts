@@ -457,9 +457,9 @@ export const useDataStore = defineStore('acu-data', () => {
   /**
    * 设置暂存数据 (用于外部加载数据)
    * 自动应用单元格锁定保护，并返回处理后的数据
-   * @returns 应用锁定后的数据（用于保存快照）
+   * @returns 包含处理后数据和锁定恢复数量的结果对象
    */
-  function setStagedData(data: RawDatabaseData): RawDatabaseData {
+  function setStagedData(data: RawDatabaseData): { data: RawDatabaseData; locksRestored: number } {
     // 应用单元格锁定 - 恢复被 AI 修改的锁定值
     const modifiedData = klona(data);
     let totalRestored = 0;
@@ -484,8 +484,8 @@ export const useDataStore = defineStore('acu-data', () => {
     tables.value = processed;
     console.info('[ACU] 暂存数据已设置');
 
-    // 返回处理后的数据，供外部保存快照使用
-    return modifiedData;
+    // 返回处理后的数据和锁定恢复数量
+    return { data: modifiedData, locksRestored: totalRestored };
   }
 
   /**
@@ -825,6 +825,38 @@ export const useDataStore = defineStore('acu-data', () => {
       await ST.saveChatDebounced();
     } else if (ST?.saveChat) {
       await ST.saveChat();
+    }
+  }
+
+  /**
+   * 静默回写锁定恢复后的数据到数据库
+   * 只写入楼层 + 保存聊天记录，不清除高亮、不更新快照
+   * 用于 AI 填表回调后，锁定恢复的数据需要持久化但不影响 UI 状态
+   */
+  async function silentWriteBack(data: RawDatabaseData): Promise<boolean> {
+    if (isSaving.value) {
+      console.warn('[ACU] 保存进行中，跳过静默回写');
+      return false;
+    }
+
+    try {
+      isSaving.value = true;
+      const targetFloor = findTargetFloor();
+      if (targetFloor === -1) {
+        console.warn('[ACU] 静默回写：未找到目标楼层');
+        return false;
+      }
+
+      await writeToFloor(targetFloor, data);
+      await saveChatDebounced();
+
+      console.info(`[ACU] 锁定恢复数据已静默回写到第 ${targetFloor} 楼`);
+      return true;
+    } catch (error) {
+      console.error('[ACU] 静默回写失败:', error);
+      return false;
+    } finally {
+      isSaving.value = false;
     }
   }
 
@@ -1396,6 +1428,7 @@ export const useDataStore = defineStore('acu-data', () => {
 
     // 数据保存
     saveToDatabase,
+    silentWriteBack,
     saveToFloor,
     purgeFloorRange,
 

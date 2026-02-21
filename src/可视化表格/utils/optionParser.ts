@@ -13,76 +13,78 @@ export interface OptionItem {
 
 /**
  * 判断表格是否为矩阵模式
- * 条件：表头有 >= 2 个含"选项/Option/分支"的字段
+ * 只要是选项表，默认都视为矩阵模式
+ * 1. 优先查找含"选项/Option/分支"的列
+ * 2. 若无关键词，则默认第一列为标签，其余列均为选项
  */
 export function isMatrixMode(table: ProcessedTable): { isMatrix: boolean; optionColIndices: number[] } {
   const headers = table.headers || [];
   const optionColIndices: number[] = [];
 
+  // 1. 尝试通过关键词识别
   headers.forEach((h, idx) => {
     if (h && /(选项|Option|分支)/i.test(String(h))) {
       optionColIndices.push(idx);
     }
   });
 
+  // 2. 兜底策略：如果没找到关键词，默认除了第一列以外的都是选项
+  if (optionColIndices.length === 0 && headers.length > 0) {
+    if (headers.length === 1) {
+      // 只有一列，那它就是选项
+      optionColIndices.push(0);
+    } else {
+      // 多列情况，第0列做标签，1~N列做选项
+      for (let i = 1; i < headers.length; i++) {
+        optionColIndices.push(i);
+      }
+    }
+  }
+
   return {
-    isMatrix: optionColIndices.length >= 2,
+    isMatrix: true, // 强制启用矩阵模式
     optionColIndices,
   };
 }
 
 /**
  * 解析表格中的所有选项项
- * 根据矩阵模式/普通模式分别处理
- *
- * 矩阵模式：每行可能有多个选项列，每个选项列单独生成一个选项项
- * 普通模式：每行最后一个有值单元格作为选项文本，其他作为标签
+ * 统一使用矩阵模式处理：每行可能有多个选项列，每个选项列单独生成一个选项项
  */
 export function parseOptionItems(table: ProcessedTable): OptionItem[] {
   if (!table || !table.rows) return [];
 
   const items: OptionItem[] = [];
-  const { isMatrix, optionColIndices } = isMatrixMode(table);
+  const { optionColIndices } = isMatrixMode(table);
   const headers = table.headers || [];
 
   table.rows.forEach(row => {
     const rowData = row.cells.map(c => String(c.value || '').trim());
 
-    if (isMatrix) {
-      // 矩阵模式：提取公共标签，每个选项列单独生成一个选项项
-      const commonTags: string[] = [];
-      rowData.forEach((cellText, idx) => {
-        if (!optionColIndices.includes(idx) && cellText) {
-          commonTags.push(cellText);
-        }
-      });
+    // 1. 提取公共标签 (不属于选项列的列)
+    const commonTags: string[] = [];
+    rowData.forEach((cellText, idx) => {
+      if (!optionColIndices.includes(idx) && cellText) {
+        commonTags.push(cellText);
+      }
+    });
 
-      optionColIndices.forEach(colIdx => {
-        const cellText = rowData[colIdx];
-        if (cellText) {
-          const currentHeaderTag = headers[colIdx] || '';
-          const allTags = [...commonTags];
-          if (currentHeaderTag) {
-            allTags.push(currentHeaderTag);
-          }
-          items.push({
-            text: cellText,
-            tags: allTags,
-          });
+    // 2. 遍历选项列生成选项
+    optionColIndices.forEach(colIdx => {
+      const cellText = rowData[colIdx];
+      if (cellText) {
+        const currentHeaderTag = headers[colIdx] || '';
+        const allTags = [...commonTags];
+        // 只有当表头有内容时才作为标签添加
+        if (currentHeaderTag) {
+          allTags.push(currentHeaderTag);
         }
-      });
-    } else {
-      // 普通模式：最后一个有值单元格作为选项文本，其他作为标签
-      const validCells = rowData.filter(c => c !== '');
-      if (validCells.length === 0) return;
-
-      const targetText = validCells[validCells.length - 1];
-      const tags = validCells.slice(0, validCells.length - 1);
-      items.push({
-        text: targetText,
-        tags,
-      });
-    }
+        items.push({
+          text: cellText,
+          tags: allTags,
+        });
+      }
+    });
   });
 
   return items;

@@ -5,7 +5,6 @@
 > **架构**: 跨 iframe 脚本（iframe 运行逻辑，UI 渲染到父窗口）
 > **调试**: 使用pnpm watch实时热重载监听，界面、脚本代码到酒馆网页的实时同步已经建立好了: 在代码变更后, 酒馆网页上将热重载新的脚本或界面代码, 因此你不需要刷新酒馆网页, 也不需要自己运行 `pnpm build` 来更新代码打包结果, 直接查看网页即可.
 
-> **推送github**:每次推送之前更改版本号：src\可视化表格\components\dialogs\SettingsDialog.vue:330-331
 ```
         <div class="acu-bottom-spacer">—— ACU Visualizer 版本号 ——</div>
 

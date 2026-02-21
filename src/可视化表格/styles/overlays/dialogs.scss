@@ -177,10 +177,23 @@
 }
 
 // =========================================
+// 防御性规则：确保 toastr 库的 #toast-container 内的通知不被 ACU 样式干扰
+// 数据库插件也使用 .acu-toast 类名，需要撤销我们可能泄漏的定位样式
+// =========================================
+#toast-container .acu-toast {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  margin: 0 auto 6px !important;
+}
+
+// =========================================
 // Toast 通知
 // 自定义通知组件，确保不被其他元素遮挡
+// 使用 .acu-app 限定作用域，避免与数据库插件的 .acu-toast 冲突
 // =========================================
-.acu-toast {
+.acu-app .acu-toast {
   position: fixed;
   top: 20px;
   left: 50%;
@@ -213,18 +226,18 @@
   }
 }
 
-// Toast 动画
-.toast-enter-active,
-.toast-leave-active {
+// Toast 动画 (限定在 .acu-app 内)
+.acu-app .toast-enter-active,
+.acu-app .toast-leave-active {
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.toast-enter-from {
+.acu-app .toast-enter-from {
   opacity: 0;
   transform: translateX(-50%) translateY(-20px) scale(0.9);
 }
 
-.toast-leave-to {
+.acu-app .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(-10px) scale(0.95);
 }

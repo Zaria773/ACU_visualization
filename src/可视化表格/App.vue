@@ -188,7 +188,7 @@
       :table-name="uiStore.rowEditDialog.props.tableName"
       :table-id="uiStore.rowEditDialog.props.tableId"
       :row-index="uiStore.rowEditDialog.props.rowIndex"
-      :current-row-data="uiStore.rowEditDialog.props.currentRowData"
+      :current-row-data="currentEditingRow"
       @close="uiStore.closeRowEditDialog"
       @show-history="uiStore.switchFromRowEditToHistory"
     />
@@ -693,6 +693,20 @@ const currentTable = computed(() => {
   return processedTables.value.find(t => t.id === uiStore.activeTab) || null;
 });
 
+/** 当前正在编辑的行数据 (实时响应) - 修复 RowEditDialog 数据不更新的问题 */
+const currentEditingRow = computed(() => {
+  const { tableId, rowIndex } = uiStore.rowEditDialog.props;
+  if (!tableId) return null;
+
+  const table = processedTables.value.find(t => t.id === tableId);
+  if (!table) return null;
+
+  // 确保 rowIndex 有效
+  if (rowIndex < 0 || rowIndex >= table.rows.length) return null;
+
+  return table.rows[rowIndex];
+});
+
 /** 当前目标楼层 */
 const currentTargetFloor = computed(() => {
   // 从 dataStore 获取目标楼层信息
@@ -1101,7 +1115,7 @@ async function loadData(): Promise<void> {
   const data = getTableData();
   if (data) {
     // setStagedData 内部应用锁定保护并返回处理后的数据
-    const processedData = dataStore.setStagedData(data);
+    const { data: processedData } = dataStore.setStagedData(data);
     // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
     dataStore.saveSnapshot(processedData);
 

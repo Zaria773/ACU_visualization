@@ -183,7 +183,7 @@ export function useParentStyleInjection() {
       .acu-wrapper,
       .acu-modal-container,
       .acu-attachment-picker-overlay,
-      .acu-toast,
+      .acu-app .acu-toast,
       .acu-edit-dialog,
       .acu-cell-menu,
       .acu-nav-container,
@@ -217,19 +217,19 @@ export function useParentStyleInjection() {
         font-family: ${fontFamily} !important;
       }
 
-      /* Toast - 字体跟随设置，颜色使用主文本色 */
-      .acu-toast,
-      .acu-toast p,
-      .acu-toast div,
-      .acu-toast span,
-      .acu-toast-message {
+      /* Toast - 字体跟随设置，颜色使用主文本色（限定在 .acu-app 内，避免与数据库插件冲突） */
+      .acu-app .acu-toast,
+      .acu-app .acu-toast p,
+      .acu-app .acu-toast div,
+      .acu-app .acu-toast span,
+      .acu-app .acu-toast-message {
         font-family: ${fontFamily} !important;
         color: var(--acu-text-main) !important;
         text-shadow: none !important;
       }
 
       /* Toast 图标 */
-      .acu-toast i {
+      .acu-app .acu-toast i {
         font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', FontAwesome !important;
         color: var(--acu-text-main) !important;
       }
@@ -520,7 +520,7 @@ export function useParentStyleInjection() {
       .acu-wrapper,
       .acu-modal-container,
       .acu-attachment-picker-overlay,
-      .acu-toast,
+      .acu-app .acu-toast,
       .acu-cell-menu {
         /* 卡片配置 */
         --acu-card-width: ${config.cardWidth || 280}px;
