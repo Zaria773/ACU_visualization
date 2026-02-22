@@ -678,7 +678,7 @@ const handleCellSave = (colIndex: number, value: string) => {
   dataStore.updateCell(props.tableName, props.data.index, colIndex, value);
 
   // 如果该单元格被锁定，同步更新锁定存储的值
-  // 这样用户修改锁定单元格后，新值会被保护，而不是被 applyLocks 回滚
+  // 这样用户修改锁定单元格后，新值会被保护（后端 API 将拦截 AI 对该单元格的修改）
   const cell = props.data.cells[colIndex];
   const rowKey = currentRowLockKey.value;
   if (cell && rowKey) {

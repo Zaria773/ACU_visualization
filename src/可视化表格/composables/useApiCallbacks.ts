@@ -182,22 +182,12 @@ export function useApiCallbacks() {
             await saveAiChangesToHistory(oldSnapshot, newData);
           }
 
-          const { data: processedData, locksRestored } = dataStore.setStagedData(newData);
-
-          // 锁定恢复后静默回写到数据库，确保数据持久化
-          if (locksRestored > 0) {
-            console.info(`[ACU] 检测到 ${locksRestored} 个锁定值被恢复，静默回写到数据库...`);
-            dataStore.silentWriteBack(processedData).catch(err => {
-              console.error('[ACU] 锁定恢复数据静默回写失败:', err);
-            });
-          }
+          const processedData = dataStore.setStagedData(newData);
 
           // 【已移除】syncNewTablesToVisibleTabs 会错误地把"用户隐藏的表格"当成"新表格"添加
           // 用户应该通过设置面板手动管理 Tab 可见性
 
           // 生成 AI 差异映射（高亮 AI 填表的变更）
-          // 注意：这里用 processedData（锁定恢复后的数据），
-          // 锁定单元格不会产生 AI 高亮，因为快照中保存的就是恢复后的值
           dataStore.generateDiffMap(processedData);
 
           // 触发悬浮球通知动画

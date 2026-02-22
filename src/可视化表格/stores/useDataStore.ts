@@ -456,36 +456,13 @@ export const useDataStore = defineStore('acu-data', () => {
 
   /**
    * 设置暂存数据 (用于外部加载数据)
-   * 自动应用单元格锁定保护，并返回处理后的数据
-   * @returns 包含处理后数据和锁定恢复数量的结果对象
    */
-  function setStagedData(data: RawDatabaseData): { data: RawDatabaseData; locksRestored: number } {
-    // 应用单元格锁定 - 恢复被 AI 修改的锁定值
-    const modifiedData = klona(data);
-    let totalRestored = 0;
-
-    for (const sheetId in modifiedData) {
-      const sheet = modifiedData[sheetId];
-      if (!sheet?.name || !sheet.content || !Array.isArray(sheet.content)) continue;
-
-      const result = cellLock.applyLocks(sheet.name, sheet.content);
-      if (result.modified) {
-        totalRestored += result.restored.length;
-        console.info(`[ACU] 表 "${sheet.name}" 应用了锁定保护`);
-      }
-    }
-
-    if (totalRestored > 0) {
-      console.info(`[ACU] 共恢复 ${totalRestored} 个被 AI 修改的锁定值`);
-    }
-
-    stagedData.value = modifiedData;
-    const processed = processToTableData(modifiedData);
-    tables.value = processed;
+  function setStagedData(data: RawDatabaseData): RawDatabaseData {
+    const cloned = klona(data);
+    stagedData.value = cloned;
+    tables.value = processToTableData(cloned);
     console.info('[ACU] 暂存数据已设置');
-
-    // 返回处理后的数据和锁定恢复数量
-    return { data: modifiedData, locksRestored: totalRestored };
+    return cloned;
   }
 
   /**
@@ -597,27 +574,9 @@ export const useDataStore = defineStore('acu-data', () => {
         return;
       }
 
-      // 应用单元格锁定 - 恢复被 AI 修改的锁定值
-      const modifiedData = klona(rawData);
-      let totalRestored = 0;
-
-      for (const sheetId in modifiedData) {
-        const sheet = modifiedData[sheetId];
-        if (!sheet?.name || !sheet.content || !Array.isArray(sheet.content)) continue;
-
-        const result = cellLock.applyLocks(sheet.name, sheet.content);
-        if (result.modified) {
-          totalRestored += result.restored.length;
-          console.info(`[ACU] 表 "${sheet.name}" 应用了锁定保护，恢复了 ${result.restored.length} 项`);
-        }
-      }
-
-      if (totalRestored > 0) {
-        console.info(`[ACU] 共恢复 ${totalRestored} 个被 AI 修改的锁定值`);
-      }
-
-      stagedData.value = modifiedData;
-      const processed = processToTableData(modifiedData);
+      const clonedData = klona(rawData);
+      stagedData.value = clonedData;
+      const processed = processToTableData(clonedData);
 
       // 添加图标属性
       const tabsWithIcons = Object.entries(processed).reduce((acc, [key, rows]) => {
@@ -627,14 +586,14 @@ export const useDataStore = defineStore('acu-data', () => {
       }, {} as VueTableData);
 
       tables.value = processed;
-      snapshot.value = klona(modifiedData);
+      snapshot.value = klona(clonedData);
       aiDiffMap.clear();
       manualDiffMap.clear();
       pendingDeletes.clear();
-      saveSnapshot(modifiedData);
+      saveSnapshot(clonedData);
 
       // 初始加载时清除警告（没有 AI 变更）
-      integrityChecker.checkIntegrity(modifiedData, null, new Set());
+      integrityChecker.checkIntegrity(clonedData, null, new Set());
 
       console.info('[ACU] 数据加载完成，表格数量:', Object.keys(processed).length);
     } catch (error) {
@@ -829,38 +788,6 @@ export const useDataStore = defineStore('acu-data', () => {
   }
 
   /**
-   * 静默回写锁定恢复后的数据到数据库
-   * 只写入楼层 + 保存聊天记录，不清除高亮、不更新快照
-   * 用于 AI 填表回调后，锁定恢复的数据需要持久化但不影响 UI 状态
-   */
-  async function silentWriteBack(data: RawDatabaseData): Promise<boolean> {
-    if (isSaving.value) {
-      console.warn('[ACU] 保存进行中，跳过静默回写');
-      return false;
-    }
-
-    try {
-      isSaving.value = true;
-      const targetFloor = findTargetFloor();
-      if (targetFloor === -1) {
-        console.warn('[ACU] 静默回写：未找到目标楼层');
-        return false;
-      }
-
-      await writeToFloor(targetFloor, data);
-      await saveChatDebounced();
-
-      console.info(`[ACU] 锁定恢复数据已静默回写到第 ${targetFloor} 楼`);
-      return true;
-    } catch (error) {
-      console.error('[ACU] 静默回写失败:', error);
-      return false;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  /**
    * 保存数据到数据库
    */
   async function saveToDatabase(): Promise<SaveResult> {
@@ -1007,9 +934,21 @@ export const useDataStore = defineStore('acu-data', () => {
 
       if (purgedCount > 0) {
         await saveChatDebounced();
-        clearSnapshot();
-        clearChanges(true);
         await syncWorldbook();
+
+        // 重新拉取清除后的最新合并数据，刷新界面和快照
+        const latestData = getTableData();
+        if (latestData) {
+          const clonedData = klona(latestData);
+          stagedData.value = clonedData;
+          tables.value = processToTableData(clonedData);
+          saveSnapshot(clonedData);
+        } else {
+          stagedData.value = null;
+          tables.value = {};
+          clearSnapshot();
+        }
+        clearChanges(true);
       }
 
       console.info(`[ACU] 已清除 ${purgedCount} 个楼层的数据`);
@@ -1428,7 +1367,6 @@ export const useDataStore = defineStore('acu-data', () => {
 
     // 数据保存
     saveToDatabase,
-    silentWriteBack,
     saveToFloor,
     purgeFloorRange,
 

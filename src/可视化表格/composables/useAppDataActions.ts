@@ -35,9 +35,7 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
   async function loadData(): Promise<void> {
     const data = getTableData();
     if (data) {
-      // setStagedData 内部应用锁定保护并返回处理后的数据
-      const { data: processedData } = dataStore.setStagedData(data);
-      // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
+      const processedData = dataStore.setStagedData(data);
       dataStore.saveSnapshot(processedData);
 
       // 【注意】这里不调用 syncNewTablesToVisibleTabs

@@ -1154,6 +1154,28 @@ export interface ImportResult {
 // ============================================================
 
 export interface AutoCardUpdaterAPI {
+  // 表格数据导出
+  exportTableAsJson?: () => RawDatabaseData;
+
+  // 表格锁定 API
+  getTableLockState?(sheetKey: string): {
+    rows: number[];
+    cols: number[];
+    cells: string[];
+  } | null;
+
+  setTableLockState?(
+    sheetKey: string,
+    lockState: { rows?: number[]; cols?: number[]; cells?: (string | [number, number])[] },
+    options?: { merge?: boolean }
+  ): boolean;
+
+  clearTableLocks?(sheetKey: string): boolean;
+  lockTableRow?(sheetKey: string, rowIndex: number, locked?: boolean): boolean;
+  lockTableCell?(sheetKey: string, rowIndex: number, colIndex: number, locked?: boolean): boolean;
+  toggleTableRowLock?(sheetKey: string, rowIndex: number): boolean;
+  toggleTableCellLock?(sheetKey: string, rowIndex: number, colIndex: number): boolean;
+
   // 表格模板相关
   getTemplatePresetNames: () => string[];
   switchTemplatePreset: (name: string) => Promise<{ success: boolean; message: string }>;

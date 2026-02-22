@@ -1111,9 +1111,7 @@ function handleHeightReset() {
 async function loadData(): Promise<void> {
   const data = getTableData();
   if (data) {
-    // setStagedData 内部应用锁定保护并返回处理后的数据
-    const { data: processedData } = dataStore.setStagedData(data);
-    // 使用处理后的数据保存快照，避免锁定单元格产生 AI 高亮
+    const processedData = dataStore.setStagedData(data);
     dataStore.saveSnapshot(processedData);
 
     // 获取所有表格 ID
@@ -1626,6 +1624,9 @@ watchEffect(() => {
 });
 
 // 监听数据变化，自动更新 diffMap
+// 注意：deep watcher 会在 updateCell → syncToStagedData 后触发，
+// 重新计算 aiDiffMap（清除并重算），同时保留 manualDiffMap 不受影响。
+// tableUpdateCallback 中的 generateDiffMap 调用也会触发此 watcher（幂等）。
 watch(
   () => dataStore.stagedData,
   newData => {

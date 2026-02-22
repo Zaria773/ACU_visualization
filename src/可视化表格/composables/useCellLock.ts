@@ -5,10 +5,14 @@
  * - 单元格级锁定和整行锁定
  * - 按聊天 ID 隔离（存储在 ConfigManager 中）
  * - 批量锁定模式（临时锁定 → 保存）
- * - AI 数据保护（applyLocks 恢复被修改的值）
+ * - 同步到数据库 API（syncToDatabase），由后端原生拦截 AI 修改
+ *
+ * 注意：applyLocks 为遗留方法，当前由 syncToDatabase 替代，
+ * 后端 API 原生支持锁定拦截，无需前端在 AI 填表后手动恢复值。
  */
 
 import { computed, ref } from 'vue';
+import { getCore } from '../utils/index';
 import type { LockStorage, RowLockInfo } from './storageKeys';
 import { getACUConfigManager } from './useACUConfigManager';
 
@@ -83,6 +87,111 @@ export function useCellLock() {
     console.info('[CellLock] 锁定数据已保存到 ConfigManager');
   }
 
+  /**
+   * 解析 rowKey 字符串，提取主键信息
+   * rowKey 格式：
+   * - "fieldName=fieldValue" (主键匹配)
+   * - "_row_N" (索引匹配)
+   */
+  function parseRowKey(rowKey: string): { type: 'pk'; field: string; value: string } | { type: 'index'; index: number } | null {
+    if (rowKey.startsWith('_row_')) {
+      const idx = parseInt(rowKey.substring(5), 10);
+      return Number.isFinite(idx) ? { type: 'index', index: idx } : null;
+    }
+    const eqIdx = rowKey.indexOf('=');
+    if (eqIdx > 0) {
+      return { type: 'pk', field: rowKey.substring(0, eqIdx), value: rowKey.substring(eqIdx + 1) };
+    }
+    return null;
+  }
+
+  /**
+   * 根据前端 rowKey 找到数据中的行索引
+   * 直接解析 rowKey 格式进行匹配，避免依赖 getRowKey() 的 fallback 逻辑导致不一致
+   */
+  function findRowIndexByKey(
+    _tableName: string,
+    rowKey: string,
+    content: (string | number | null)[][],
+    headers: string[]
+  ): number {
+    const parsed = parseRowKey(rowKey);
+    if (!parsed) return -1;
+
+    if (parsed.type === 'index') {
+      // 直接索引引用，验证范围有效性
+      return parsed.index < content.length - 1 ? parsed.index : -1;
+    }
+
+    // 主键查找：在 headers 中找到字段列，然后在数据行中匹配值
+    const colIdx = headers.indexOf(parsed.field);
+    if (colIdx === -1) return -1;
+
+    for (let i = 1; i < content.length; i++) {
+      if (String(content[i][colIdx] ?? '') === parsed.value) {
+        return i - 1; // 返回 0-based 行索引
+      }
+    }
+
+    return -1;
+  }
+
+  /** 同步前端锁定状态到数据库 API */
+  function syncToDatabase(locks: LockStorage): void {
+    const api = getCore().getDB();
+    if (!api?.setTableLockState) {
+      console.warn('[CellLock] 数据库锁定 API 不可用，仅保存到 ConfigManager');
+      return;
+    }
+
+    const tableData = api.exportTableAsJson?.();
+    if (!tableData) return;
+
+    for (const sheetKey in tableData) {
+      if (!sheetKey.startsWith('sheet_')) continue;
+      const tableName = tableData[sheetKey]?.name;
+      if (!tableName) continue;
+
+      const tableLocks = locks[tableName];
+      if (!tableLocks || Object.keys(tableLocks).length === 0) {
+        api.clearTableLocks?.(sheetKey);
+        continue;
+      }
+
+      const content = tableData[sheetKey]?.content;
+      if (!content || content.length < 2) continue;
+
+      const headers = content[0] as string[];
+      const rowIndices: number[] = [];
+      const cellKeys: string[] = [];
+
+      for (const [rowKey, lock] of Object.entries(tableLocks)) {
+        const rowIndex = findRowIndexByKey(tableName, rowKey, content, headers);
+        if (rowIndex === -1) continue;
+
+        if (lock._fullRow) {
+          rowIndices.push(rowIndex);
+        } else {
+          for (const fieldName of Object.keys(lock._fields)) {
+            const colIndex = headers.indexOf(fieldName);
+            // 后端列索引是 0-based 数据列（headers[0] 始终为 null，需要减 1）
+            if (colIndex > 0) {
+              cellKeys.push(`${rowIndex}:${colIndex - 1}`);
+            }
+          }
+        }
+      }
+
+      api.setTableLockState(sheetKey, {
+        rows: rowIndices,
+        cols: [],
+        cells: cellKeys,
+      });
+    }
+
+    console.info('[CellLock] 锁定状态已同步到数据库 API');
+  }
+
   // ============================================================
   // 批量锁定模式操作
   // ============================================================
@@ -92,12 +201,17 @@ export function useCellLock() {
     loadLocks();
     // 深拷贝持久化状态作为初始值
     pendingLocks.value = JSON.parse(JSON.stringify(persistedLocks.value));
+    // 首次同步：确保数据库锁定状态与 ConfigManager 一致
+    if (Object.keys(persistedLocks.value).length > 0) {
+      syncToDatabase(persistedLocks.value);
+    }
   }
 
   /** 保存临时锁定到持久化存储 */
   function savePendingLocks(): void {
     persistedLocks.value = JSON.parse(JSON.stringify(pendingLocks.value));
     saveLocks();
+    syncToDatabase(persistedLocks.value);  // 新增：同步到数据库 API
   }
 
   /** 丢弃临时锁定，恢复到持久化状态 */
