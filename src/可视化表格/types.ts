@@ -1167,7 +1167,7 @@ export interface AutoCardUpdaterAPI {
   setTableLockState?(
     sheetKey: string,
     lockState: { rows?: number[]; cols?: number[]; cells?: (string | [number, number])[] },
-    options?: { merge?: boolean }
+    options?: { merge?: boolean },
   ): boolean;
 
   clearTableLocks?(sheetKey: string): boolean;

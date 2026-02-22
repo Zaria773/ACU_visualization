@@ -93,7 +93,9 @@ export function useCellLock() {
    * - "fieldName=fieldValue" (主键匹配)
    * - "_row_N" (索引匹配)
    */
-  function parseRowKey(rowKey: string): { type: 'pk'; field: string; value: string } | { type: 'index'; index: number } | null {
+  function parseRowKey(
+    rowKey: string,
+  ): { type: 'pk'; field: string; value: string } | { type: 'index'; index: number } | null {
     if (rowKey.startsWith('_row_')) {
       const idx = parseInt(rowKey.substring(5), 10);
       return Number.isFinite(idx) ? { type: 'index', index: idx } : null;
@@ -113,7 +115,7 @@ export function useCellLock() {
     _tableName: string,
     rowKey: string,
     content: (string | number | null)[][],
-    headers: string[]
+    headers: string[],
   ): number {
     const parsed = parseRowKey(rowKey);
     if (!parsed) return -1;
@@ -211,7 +213,7 @@ export function useCellLock() {
   function savePendingLocks(): void {
     persistedLocks.value = JSON.parse(JSON.stringify(pendingLocks.value));
     saveLocks();
-    syncToDatabase(persistedLocks.value);  // 新增：同步到数据库 API
+    syncToDatabase(persistedLocks.value); // 新增：同步到数据库 API
   }
 
   /** 丢弃临时锁定，恢复到持久化状态 */
