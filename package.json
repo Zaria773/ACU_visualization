@@ -88,10 +88,13 @@
     "@vueuse/shared": "^13.9.0",
     "async-wait-until": "^2.0.31",
     "compare-versions": "^6.1.1",
+<<<<<<< HEAD
     "cytoscape": "^3.33.1",
     "cytoscape-cola": "^2.5.1",
     "cytoscape-fcose": "^2.2.0",
     "cytoscape-node-html-label": "^1.2.2",
+=======
+>>>>>>> da0118dfd92c2c94f015b40b73e9666c996c3fe8
     "dedent": "^1.7.2",
     "gsap": "^3.14.2",
     "jquery": "^3.7.1",
