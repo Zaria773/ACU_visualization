@@ -154,7 +154,9 @@ import { getCore } from '../../utils';
  * 获取模板（带 fallback）
  * 优先使用 getTableTemplate()，若返回 null 则从 exportTableAsJson() 构建最小模板
  */
-function getTemplateWithFallback(api: ReturnType<typeof getCore>['getDB'] extends () => infer R ? R : never): Record<string, any> | null {
+function getTemplateWithFallback(
+  api: ReturnType<typeof getCore>['getDB'] extends () => infer R ? R : never,
+): Record<string, any> | null {
   // 优先使用模板 API
   if (typeof api?.getTableTemplate === 'function') {
     const tmpl = api.getTableTemplate();

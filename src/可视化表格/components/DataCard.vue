@@ -61,12 +61,7 @@
       <!-- 历史记录按钮组 / 菜单按钮 -->
       <div v-if="showHistoryButton && !uiStore.isLockEditMode" class="acu-history-btns">
         <!-- 移动端菜单模式：⋮ 菜单按钮替代撤回按钮 -->
-        <button
-          v-if="isMobileMenuMode"
-          class="acu-icon-btn"
-          title="操作菜单"
-          @click.stop="handleMenuButton"
-        >
+        <button v-if="isMobileMenuMode" class="acu-icon-btn" title="操作菜单" @click.stop="handleMenuButton">
           <i class="fas fa-ellipsis-v"></i>
         </button>
         <!-- 默认模式：撤回按钮 -->

@@ -350,7 +350,17 @@ const selectedEmptyCheckColumns = ref<string[]>([]);
 // Composables & Stores
 // ============================================================
 
-const { settings, loadSettings, saveSettings, executeManualUpdate, getTableList, executeWithPreset, loadManualSelectedTables, saveManualSelectedTables, clearManualSelectedTables } = useDbSettings();
+const {
+  settings,
+  loadSettings,
+  saveSettings,
+  executeManualUpdate,
+  getTableList,
+  executeWithPreset,
+  loadManualSelectedTables,
+  saveManualSelectedTables,
+  clearManualSelectedTables,
+} = useDbSettings();
 const presetsManager = useUpdatePresets();
 const dataStore = useDataStore();
 
@@ -540,10 +550,12 @@ function handleAutoFixPresetChange() {
  */
 function openSavePresetDialog() {
   const selectedTableLabels = selectedSheetKeys.value.length
-    ? selectedSheetKeys.value.map(key => {
-        const t = availableTables.value.find(t => t.key === key);
-        return t ? t.name : key;
-      }).join(', ')
+    ? selectedSheetKeys.value
+        .map(key => {
+          const t = availableTables.value.find(t => t.key === key);
+          return t ? t.name : key;
+        })
+        .join(', ')
     : '全部表格';
 
   const summaryItems = [
