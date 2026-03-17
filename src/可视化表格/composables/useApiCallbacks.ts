@@ -322,8 +322,8 @@ export function useApiCallbacks() {
         console.info('[ACU] 自动触发修复:', summary);
 
         try {
-          // 使用新 API: executeWithPreset，直接传入四参数 + 表格选择
-          const targetTables = autoFixPreset.autoTrigger.updateTargetTables || [];
+          // 使用新 API: 传入参数 + 表格 sheetKeys 列表
+          const targetSheetKeys = autoFixPreset.autoTrigger.updateTargetTables || [];
           const result = await dbSettings.executeWithPreset(
             {
               autoUpdateThreshold: autoFixPreset.settings.autoUpdateThreshold,
@@ -331,7 +331,7 @@ export function useApiCallbacks() {
               updateBatchSize: autoFixPreset.settings.updateBatchSize,
               skipUpdateFloors: autoFixPreset.settings.skipUpdateFloors,
             },
-            targetTables,
+            targetSheetKeys,
           );
 
           if (result.success) {

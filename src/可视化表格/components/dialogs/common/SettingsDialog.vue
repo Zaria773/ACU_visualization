@@ -292,6 +292,21 @@
                     ></button>
                   </div>
                 </div>
+
+                <!-- 移动端菜单模式（仅移动端显示） -->
+                <div v-if="uiStore.isMobile" class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    移动端菜单模式
+                    <span class="hint">以菜单按钮替代滑动手势增删行</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.mobileMenuMode }"
+                      @click="localConfig.mobileMenuMode = !localConfig.mobileMenuMode"
+                    ></button>
+                  </div>
+                </div>
               </div>
             </div>
           </template>

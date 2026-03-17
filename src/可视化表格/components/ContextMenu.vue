@@ -17,12 +17,6 @@
         <span>插入行</span>
       </div>
 
-      <!-- 复制内容 -->
-      <div class="acu-menu-item" @click.stop="handleCopy">
-        <i class="fas fa-copy"></i>
-        <span>复制内容</span>
-      </div>
-
       <!-- 分隔线 -->
       <div class="acu-menu-divider"></div>
 
@@ -57,7 +51,6 @@
  * - 删除行 / 撤销删除（互斥显示）
  */
 
-import { useClipboard } from '@vueuse/core';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useDataStore } from '../stores/useDataStore';
 
@@ -78,8 +71,6 @@ interface Props {
   tableName?: string;
   /** 行索引 */
   rowIndex: number;
-  /** 单元格值（用于复制） */
-  cellValue?: string;
 }
 
 const props = defineProps<Props>();
@@ -93,8 +84,6 @@ const emit = defineEmits<{
   delete: [tableId: string, rowIndex: number];
   /** 撤销删除事件 */
   undoDelete: [tableId: string, rowIndex: number];
-  /** 复制成功事件 */
-  copied: [];
 }>();
 
 // ============================================================
@@ -103,7 +92,6 @@ const emit = defineEmits<{
 
 const menuRef = ref<HTMLElement>();
 const dataStore = useDataStore();
-const { copy, copied } = useClipboard();
 
 // ============================================================
 // Computed
@@ -238,20 +226,6 @@ const handleInsertRow = () => {
   close();
 };
 
-/** 处理复制 */
-const handleCopy = async () => {
-  if (props.cellValue) {
-    try {
-      await copy(props.cellValue);
-      emit('copied');
-      // 可以通过 toastr 提示复制成功（由父组件处理）
-    } catch (e) {
-      console.error('[ACU] Copy failed:', e);
-    }
-  }
-  close();
-};
-
 /** 处理删除 */
 const handleDelete = () => {
   emit('delete', props.tableId, props.rowIndex);
@@ -271,8 +245,6 @@ const handleUndoDelete = () => {
 defineExpose({
   /** 关闭菜单 */
   close,
-  /** 是否已复制 */
-  copied,
 });
 </script>
 

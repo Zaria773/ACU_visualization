@@ -17,7 +17,7 @@
     <!-- 横向布局：顶部下拉新增提示（必须在最前面，与原版 prepend 一致） -->
     <!-- 注意：使用 v-show 替代 v-if 保持 DOM 存在，配合 watchEffect 直接操作样式 -->
     <div
-      v-show="layout === 'horizontal' && isMobile && gestureType === 'insert'"
+      v-show="layout === 'horizontal' && isMobile && !isMobileMenuMode && gestureType === 'insert'"
       ref="pullTopRef"
       class="acu-pull-overlay acu-pull-top"
     >
@@ -58,10 +58,20 @@
       >
         <i :class="isCurrentRowLocked ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
       </button>
-      <!-- 历史记录按钮组 -->
+      <!-- 历史记录按钮组 / 菜单按钮 -->
       <div v-if="showHistoryButton && !uiStore.isLockEditMode" class="acu-history-btns">
-        <!-- 撤回按钮 -->
+        <!-- 移动端菜单模式：⋮ 菜单按钮替代撤回按钮 -->
         <button
+          v-if="isMobileMenuMode"
+          class="acu-icon-btn"
+          title="操作菜单"
+          @click.stop="handleMenuButton"
+        >
+          <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <!-- 默认模式：撤回按钮 -->
+        <button
+          v-else
           class="acu-icon-btn"
           :class="{ 'acu-loading': isUndoing }"
           :disabled="isUndoing"
@@ -70,7 +80,7 @@
         >
           <i :class="isUndoing ? 'fas fa-spinner fa-spin' : 'fas fa-undo'"></i>
         </button>
-        <!-- 查看历史按钮 -->
+        <!-- 查看历史按钮（始终显示） -->
         <button class="acu-icon-btn" title="查看历史记录" @click.stop="emit('showHistory')">
           <i class="fas fa-search"></i>
         </button>
@@ -167,7 +177,7 @@
     <!-- 横向布局：底部上划删除提示（在内容区域之后，与原版 append 一致） -->
     <!-- 注意：使用 v-show 替代 v-if 保持 DOM 存在，配合 watchEffect 直接操作样式 -->
     <div
-      v-show="layout === 'horizontal' && isMobile && gestureType === 'delete'"
+      v-show="layout === 'horizontal' && isMobile && !isMobileMenuMode && gestureType === 'delete'"
       ref="pullBottomRef"
       class="acu-pull-overlay acu-pull-bottom"
       :class="{ 'acu-pull-restore': isDeleting }"
@@ -183,7 +193,7 @@
 
     <!-- 竖向布局：左右滑动反馈（与原版 .acu-swipe-overlay 一致） -->
     <!-- 注意：使用 v-show 替代 v-if 保持 DOM 存在，配合 watchEffect 直接操作样式 -->
-    <template v-if="layout === 'vertical' && isMobile">
+    <template v-if="layout === 'vertical' && isMobile && !isMobileMenuMode">
       <!-- 左侧右滑删除提示 -->
       <div
         v-show="gestureType === 'delete'"
@@ -218,6 +228,7 @@
 import { computed, ref, watch, watchEffect } from 'vue';
 import { useCardGestures, useCellLock, useIsMobile, useRowHistory, useSelectionGuardEnhanced } from '../composables';
 import { toast } from '../composables/useToast';
+import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
 import type { TableCell, TableRow } from '../types';
@@ -283,6 +294,7 @@ const emit = defineEmits<{
 const cardRef = ref<HTMLElement>();
 const editingCell = ref<number | null>(null);
 const isUndoing = ref(false);
+const configStore = useConfigStore();
 const dataStore = useDataStore();
 const uiStore = useUIStore();
 const cellLock = useCellLock();
@@ -296,6 +308,9 @@ const swipeRightRef = ref<HTMLElement>();
 
 // 移动端检测
 const { isMobile } = useIsMobile();
+
+// 移动端菜单模式快捷计算属性
+const isMobileMenuMode = computed(() => isMobile.value && !!configStore.config.mobileMenuMode);
 
 // 边缘提示状态
 const showEdgeHint = ref(false);
@@ -431,11 +446,15 @@ const { isSelecting, shouldBlockInteraction, wasSelecting } = useSelectionGuardE
 
 /** 手势回调 */
 const handleInsertRow = () => {
+  // 菜单模式下不响应手势
+  if (isMobileMenuMode.value) return;
   console.info('[ACU DataCard] 手势触发新增行');
   emit('insertRow');
 };
 
 const handleToggleDelete = () => {
+  // 菜单模式下不响应手势
+  if (isMobileMenuMode.value) return;
   console.info('[ACU DataCard] 手势触发切换删除', { isDeleting: isDeleting.value });
   emit('toggleDelete');
 };
@@ -738,8 +757,9 @@ const handleUndoRow = async () => {
 };
 
 /**
- * 右键菜单（仅 PC 端）
- * 移动端不应触发右键菜单，长按应保留系统原生复制功能
+ * 右键菜单（仅 PC 端，或移动端菜单模式）
+ * 移动端默认不应触发右键菜单，长按应保留系统原生复制功能
+ * 但菜单模式下允许触发
  */
 const handleContextMenu = (e: MouseEvent) => {
   // 使用 UA 检测真正的移动设备，避免 PC 触摸屏或小窗口被误判
@@ -747,10 +767,27 @@ const handleContextMenu = (e: MouseEvent) => {
   const MOBILE_UA_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
   const isTrulyMobile = MOBILE_UA_REGEX.test(navigator.userAgent);
 
-  if (isTrulyMobile) {
+  // 移动端非菜单模式下不触发右键菜单
+  if (isTrulyMobile && !isMobileMenuMode.value) {
     console.info('[ACU] 移动端不触发右键菜单');
     return;
   }
   emit('contextMenu', e, props.data.index);
+};
+
+/**
+ * 菜单按钮点击（移动端菜单模式）
+ * 模拟右键菜单事件，复用 ContextMenu 组件
+ */
+const handleMenuButton = (e: MouseEvent) => {
+  const btn = e.currentTarget as HTMLElement;
+  const rect = btn.getBoundingClientRect();
+  // 在按钮下方弹出菜单
+  const syntheticEvent = new MouseEvent('contextmenu', {
+    clientX: rect.left,
+    clientY: rect.bottom + 4,
+    bubbles: false,
+  });
+  emit('contextMenu', syntheticEvent, props.data.index);
 };
 </script>

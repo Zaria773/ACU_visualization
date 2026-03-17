@@ -37,7 +37,7 @@ export const AutoTriggerConfigSchema = z.object({
   onIndexGap: z.boolean().default(true),
   /** 监控的表格名称列表 (用于智能检测) */
   targetTables: z.array(z.string()).default(['总结表', '大纲表']),
-  /** 更新时指定的表格名称列表 (为空数组=更新全部表格) */
+  /** 更新时指定的表格 sheetKey 列表 (为空数组=更新全部表格) */
   updateTargetTables: z.array(z.string()).default([]),
   /** 空值检测的列名列表 (为空数组=检测所有列) */
   emptyCheckColumns: z.array(z.string()).default([]),

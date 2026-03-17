@@ -5,7 +5,7 @@
  * 用于管理 AutoCardUpdater 数据库的设置配置
  *
  * 配置存储逻辑：
- * - 优先使用 api.getSettings() / api.updateSettings() 操作
+ * - 优先使用 api.getUpdateConfigParams() / api.setUpdateConfigParams() 操作
  * - 回退到 localStorage 读写 shujuku_*_allSettings_v2
  */
 
@@ -24,7 +24,7 @@ export interface DbSettings {
   autoUpdateFrequency?: number;
   /** 每批次更新楼层数 */
   updateBatchSize?: number;
-  /** 保留X层楼不更新 */
+  /** 保留X层楼不更新（前端预设参数） */
   skipUpdateFloors?: number;
   /** 其他设置项 */
   [key: string]: unknown;
@@ -45,6 +45,12 @@ export interface PresetExecuteResult {
   success: boolean;
   message: string;
   affectedTables?: string[];
+}
+
+/** 手动更新表选择结果 */
+export interface ManualSelectedTablesResult {
+  selectedTables: string[];
+  hasManualSelection: boolean;
 }
 
 // ============================================================
@@ -113,13 +119,31 @@ export function useDbSettings() {
 
   /**
    * 读取设置
-   * 从 localStorage 读取数据库插件设置
+   * 优先使用 api.getUpdateConfigParams()，回退到 localStorage
    */
   async function loadSettings(): Promise<DbSettings> {
     isLoading.value = true;
 
     try {
-      // 从 localStorage 读取数据库插件设置
+      const api = getCore().getDB();
+
+      // 优先使用 5.5 新 API: getUpdateConfigParams
+      if (api && typeof api.getUpdateConfigParams === 'function') {
+        const configParams = api.getUpdateConfigParams();
+        // 同时读取 localStorage 中的前端独有参数（如 skipUpdateFloors）
+        const localSettings = readFromLocalStorage();
+        const merged: DbSettings = {
+          ...localSettings,
+          autoUpdateThreshold: configParams.autoUpdateThreshold,
+          autoUpdateFrequency: configParams.autoUpdateFrequency,
+          updateBatchSize: configParams.updateBatchSize,
+        };
+        settings.value = merged;
+        console.info('[ACU] 通过 getUpdateConfigParams 读取设置');
+        return merged;
+      }
+
+      // 回退到 localStorage
       const localSettings = readFromLocalStorage();
       settings.value = localSettings;
       console.info('[ACU] 从 localStorage 读取设置');
@@ -136,7 +160,7 @@ export function useDbSettings() {
 
   /**
    * 保存设置
-   * 优先使用 API，回退到 localStorage
+   * 优先使用 api.setUpdateConfigParams()，回退到 localStorage
    * @param newSettings 要保存的设置
    */
   async function saveSettings(newSettings: Partial<DbSettings>): Promise<boolean> {
@@ -146,11 +170,25 @@ export function useDbSettings() {
       // 合并设置
       const mergedSettings = { ...settings.value, ...newSettings };
 
-      // 优先使用 API
-      if (api && typeof api.updateSettings === 'function') {
-        await api.updateSettings(mergedSettings);
+      // 优先使用 5.5 新 API: setUpdateConfigParams
+      if (api && typeof api.setUpdateConfigParams === 'function') {
+        // 只传后端认识的参数
+        const apiParams: Record<string, number> = {};
+        if (mergedSettings.autoUpdateThreshold !== undefined) {
+          apiParams.autoUpdateThreshold = mergedSettings.autoUpdateThreshold;
+        }
+        if (mergedSettings.autoUpdateFrequency !== undefined) {
+          apiParams.autoUpdateFrequency = mergedSettings.autoUpdateFrequency;
+        }
+        if (mergedSettings.updateBatchSize !== undefined) {
+          apiParams.updateBatchSize = mergedSettings.updateBatchSize;
+        }
+
+        api.setUpdateConfigParams(apiParams);
         settings.value = mergedSettings;
-        console.info('[ACU] 通过 API 保存设置成功');
+        // 前端独有参数（如 skipUpdateFloors）也写入 localStorage 保存
+        writeToLocalStorage(mergedSettings);
+        console.info('[ACU] 通过 setUpdateConfigParams 保存设置成功');
         return true;
       }
 
@@ -219,6 +257,7 @@ export function useDbSettings() {
   /**
    * 获取所有表格的元信息列表
    * 用于表格选择器 UI
+   * 从 exportTableAsJson 解析表格名称和 key
    */
   function getTableList(): TableInfo[] {
     try {
@@ -229,14 +268,7 @@ export function useDbSettings() {
         return [];
       }
 
-      // 优先使用新 API
-      if (typeof api.getTableList === 'function') {
-        const list = api.getTableList();
-        console.info('[ACU] 获取表格列表成功:', list?.length || 0);
-        return list || [];
-      }
-
-      // 回退：从 exportTableAsJson 解析表格名称
+      // 从 exportTableAsJson 解析表格名称
       if (typeof api.exportTableAsJson === 'function') {
         const data = api.exportTableAsJson();
         if (data && typeof data === 'object') {
@@ -249,6 +281,7 @@ export function useDbSettings() {
             const isSummaryOrOutline =
               name.includes('总结') ||
               name.includes('大纲') ||
+              name.includes('纪要') ||
               name.toLowerCase().includes('summary') ||
               name.toLowerCase().includes('outline');
             tables.push({ key, name, isSummaryOrOutline });
@@ -266,17 +299,78 @@ export function useDbSettings() {
     }
   }
 
+  // ============================================================
+  // 手动更新表选择 API（5.5 新增）
+  // ============================================================
+
   /**
-   * 使用预设参数执行更新（调用新 API）
-   * 支持指定表格和四参数，不影响全局设置
+   * 读取后端保存的手动更新表选择
+   * @returns {ManualSelectedTablesResult} 包含 selectedTables (sheetKeys) 和 hasManualSelection
+   */
+  function loadManualSelectedTables(): ManualSelectedTablesResult {
+    try {
+      const api = getCore().getDB();
+      if (api && typeof api.getManualSelectedTables === 'function') {
+        const result = api.getManualSelectedTables();
+        console.info('[ACU] 读取手动更新表选择:', result);
+        return result;
+      }
+      return { selectedTables: [], hasManualSelection: false };
+    } catch (e) {
+      console.warn('[ACU] 读取手动更新表选择失败:', e);
+      return { selectedTables: [], hasManualSelection: false };
+    }
+  }
+
+  /**
+   * 保存手动更新表选择到后端
+   * @param sheetKeys 要选择的表格 key 数组 (如 ['sheet_0', 'sheet_1'])
+   */
+  function saveManualSelectedTables(sheetKeys: string[]): boolean {
+    try {
+      const api = getCore().getDB();
+      if (api && typeof api.setManualSelectedTables === 'function') {
+        const result = api.setManualSelectedTables(sheetKeys);
+        console.info('[ACU] 保存手动更新表选择:', sheetKeys, '结果:', result);
+        return result;
+      }
+      console.warn('[ACU] setManualSelectedTables API 不可用');
+      return false;
+    } catch (e) {
+      console.warn('[ACU] 保存手动更新表选择失败:', e);
+      return false;
+    }
+  }
+
+  /**
+   * 清除手动更新表选择（恢复全选状态）
+   */
+  function clearManualSelectedTables(): boolean {
+    try {
+      const api = getCore().getDB();
+      if (api && typeof api.clearManualSelectedTables === 'function') {
+        const result = api.clearManualSelectedTables();
+        console.info('[ACU] 清除手动更新表选择, 结果:', result);
+        return result;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[ACU] 清除手动更新表选择失败:', e);
+      return false;
+    }
+  }
+
+  /**
+   * 使用预设参数执行更新
+   * 流程: setUpdateConfigParams → setManualSelectedTables → manualUpdate
    *
-   * @param presetSettings 四参数设置
-   * @param targetTableNames 要更新的表格名称列表（空数组=更新全部）
-   * @param silent 是否静默模式
+   * @param presetSettings 更新参数设置
+   * @param targetSheetKeys 要更新的表格 sheetKey 列表（空数组=更新全部）
+   * @param silent 是否静默模式（暂未使用）
    */
   async function executeWithPreset(
     presetSettings: Partial<DbSettings>,
-    targetTableNames: string[] = [],
+    targetSheetKeys: string[] = [],
     silent = false,
   ): Promise<PresetExecuteResult> {
     try {
@@ -286,25 +380,40 @@ export function useDbSettings() {
         return { success: false, message: '数据库 API 不可用' };
       }
 
-      // 优先使用新 API: executeWithPreset
-      if (typeof api.executeWithPreset === 'function') {
-        const result = await api.executeWithPreset({
-          settings: {
-            autoUpdateThreshold: presetSettings.autoUpdateThreshold,
-            updateBatchSize: presetSettings.updateBatchSize,
-            skipUpdateFloors: presetSettings.skipUpdateFloors,
-            autoUpdateFrequency: presetSettings.autoUpdateFrequency,
-          },
-          targetTableNames: targetTableNames.length > 0 ? targetTableNames : null,
-          silent,
-        });
-        console.info('[ACU] executeWithPreset 结果:', result);
-        return result as PresetExecuteResult;
+      // 步骤1: 设置更新参数
+      if (typeof api.setUpdateConfigParams === 'function') {
+        const apiParams: Record<string, number> = {};
+        if (presetSettings.autoUpdateThreshold !== undefined) {
+          apiParams.autoUpdateThreshold = presetSettings.autoUpdateThreshold;
+        }
+        if (presetSettings.autoUpdateFrequency !== undefined) {
+          apiParams.autoUpdateFrequency = presetSettings.autoUpdateFrequency;
+        }
+        if (presetSettings.updateBatchSize !== undefined) {
+          apiParams.updateBatchSize = presetSettings.updateBatchSize;
+        }
+        api.setUpdateConfigParams(apiParams);
+        console.info('[ACU] 已设置更新配置参数:', apiParams);
+      } else {
+        // 回退：保存到 localStorage
+        await saveSettings(presetSettings);
       }
 
-      // 回退：先保存设置再执行旧方法
-      console.info('[ACU] 回退到旧方式: saveSettings + executeManualUpdate');
-      await saveSettings(presetSettings);
+      // 步骤2: 设置手动更新表选择
+      if (targetSheetKeys.length > 0) {
+        if (typeof api.setManualSelectedTables === 'function') {
+          api.setManualSelectedTables(targetSheetKeys);
+          console.info('[ACU] 已设置手动更新表选择:', targetSheetKeys);
+        }
+      } else {
+        // 空数组 = 更新全部，清除手动选择
+        if (typeof api.clearManualSelectedTables === 'function') {
+          api.clearManualSelectedTables();
+          console.info('[ACU] 已清除手动更新表选择（更新全部）');
+        }
+      }
+
+      // 步骤3: 执行手动更新
       const success = await executeManualUpdate();
       return {
         success,
@@ -329,6 +438,11 @@ export function useDbSettings() {
     executeManualUpdate,
     getTableList,
     executeWithPreset,
+
+    // 手动更新表选择 API (5.5)
+    loadManualSelectedTables,
+    saveManualSelectedTables,
+    clearManualSelectedTables,
 
     // 工具
     findDatabaseSettingsKey,

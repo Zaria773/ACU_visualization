@@ -78,6 +78,8 @@ export interface ACUConfig {
   autoImportInteractions?: boolean;
   /** iOS 输入防缩放模式（强制输入框使用 16px 字体） */
   enableIOSInputFix?: boolean;
+  /** 移动端使用菜单按钮替代滑动手势增删行 (默认 false = 手势模式) */
+  mobileMenuMode?: boolean;
 }
 
 /** 导航栏按钮配置 */

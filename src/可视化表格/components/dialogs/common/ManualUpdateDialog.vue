@@ -170,7 +170,7 @@
                 </div>
                 <div v-show="tableSelectorExpanded" class="acu-table-selector-mobile">
                   <SwitchList
-                    v-model="selectedTableNames"
+                    v-model="selectedSheetKeys"
                     :items="tableListItems"
                     empty-text="暂无可用表格"
                     footer-template="已选择: {selected}/{total} 个表格"
@@ -236,7 +236,7 @@
             <!-- 右侧：表格选择 (PC端显示) -->
             <div class="acu-update-right acu-hide-mobile">
               <SwitchList
-                v-model="selectedTableNames"
+                v-model="selectedSheetKeys"
                 :items="tableListItems"
                 empty-text="暂无可用表格"
                 footer-template="已选择: {selected}/{total} 个表格"
@@ -293,6 +293,7 @@ import { toast } from '../../../composables/useToast';
 import { useUpdatePresets } from '../../../composables/useUpdatePresets';
 import { useDataStore } from '../../../stores/useDataStore';
 import { useUIStore } from '../../../stores/useUIStore';
+import { getTableData } from '../../../utils';
 import { SwitchList } from '../../ui';
 
 // ============================================================
@@ -338,7 +339,7 @@ const autoExecuteEnabled = ref(false);
 
 // 表格选择相关
 const availableTables = ref<TableInfo[]>([]);
-const selectedTableNames = ref<string[]>([]);
+const selectedSheetKeys = ref<string[]>([]);
 const tableSelectorExpanded = ref(false);
 
 // 空值检测列相关
@@ -349,7 +350,7 @@ const selectedEmptyCheckColumns = ref<string[]>([]);
 // Composables & Stores
 // ============================================================
 
-const { settings, loadSettings, saveSettings, executeManualUpdate, getTableList, executeWithPreset } = useDbSettings();
+const { settings, loadSettings, saveSettings, executeManualUpdate, getTableList, executeWithPreset, loadManualSelectedTables, saveManualSelectedTables, clearManualSelectedTables } = useDbSettings();
 const presetsManager = useUpdatePresets();
 const dataStore = useDataStore();
 
@@ -369,15 +370,15 @@ const integritySummary = computed(() => dataStore.getIntegritySummary());
 /** 是否全选了所有表格 */
 const isAllSelected = computed(() => {
   if (availableTables.value.length === 0) return false;
-  return selectedTableNames.value.length === availableTables.value.length;
+  return selectedSheetKeys.value.length === availableTables.value.length;
 });
 
 /** 是否只选择了总结表/大纲表 */
 const isOnlySummarySelected = computed(() => {
   const summaryTables = availableTables.value.filter(t => t.isSummaryOrOutline);
   if (summaryTables.length === 0) return false;
-  if (selectedTableNames.value.length !== summaryTables.length) return false;
-  return summaryTables.every(t => selectedTableNames.value.includes(t.name));
+  if (selectedSheetKeys.value.length !== summaryTables.length) return false;
+  return summaryTables.every(t => selectedSheetKeys.value.includes(t.key));
 });
 
 /** 空值检测列转换为 SwitchList 格式 */
@@ -391,7 +392,7 @@ const columnListItems = computed(() => {
 /** 表格列表转换为 SwitchList 格式 */
 const tableListItems = computed(() => {
   return availableTables.value.map(table => ({
-    key: table.name,
+    key: table.key,
     label: table.name,
     badge: table.isSummaryOrOutline ? '★' : undefined,
   }));
@@ -432,15 +433,24 @@ watch(
         autoTriggerEnabled.value = presetsManager.globalAutoTriggerEnabled.value;
         autoExecuteEnabled.value = presetsManager.globalAutoExecuteEnabled.value;
 
-        // 加载已保存的表格选择（从当前预设加载）
-        const activePreset = presetsManager.activePreset.value;
-        if (activePreset) {
-          selectedTableNames.value = activePreset.autoTrigger.updateTargetTables || [];
-          selectedEmptyCheckColumns.value = activePreset.autoTrigger.emptyCheckColumns || [];
-        }
-
-        // 加载可用表格列表
+        // 加载可用表格列表（需要在加载表选择之前，以便进行 key 映射）
         availableTables.value = getTableList();
+
+        // 加载已保存的表格选择：优先从后端 API 读取，回退到预设
+        const backendSelection = loadManualSelectedTables();
+        if (backendSelection.hasManualSelection && backendSelection.selectedTables.length > 0) {
+          // 后端有保存的选择（sheetKeys），直接使用
+          selectedSheetKeys.value = backendSelection.selectedTables;
+        } else {
+          // 回退到当前预设的表格选择
+          const activePreset = presetsManager.activePreset.value;
+          if (activePreset) {
+            selectedSheetKeys.value = activePreset.autoTrigger.updateTargetTables || [];
+            selectedEmptyCheckColumns.value = activePreset.autoTrigger.emptyCheckColumns || [];
+          } else {
+            selectedSheetKeys.value = [];
+          }
+        }
 
         // 加载可用列列表（从总结表/大纲表获取）
         loadAvailableColumns();
@@ -455,8 +465,10 @@ watch(
   { immediate: true },
 );
 
-// 点击外部关闭
+// 点击外部关闭（排除其他弹窗打开的情况）
 onClickOutside(dialogRef, () => {
+  // 如果预设保存弹窗正在显示，不关闭手动更新弹窗
+  if (uiStore.presetSaveDialog.visible) return;
   handleClose();
 });
 
@@ -497,11 +509,18 @@ async function handlePresetChange() {
     // 应用预设设置到本地
     Object.assign(localSettings, preset.settings);
 
-    // 应用预设的表格选择
-    selectedTableNames.value = preset.autoTrigger.updateTargetTables || [];
+    // 应用预设的表格选择（sheetKeys）
+    selectedSheetKeys.value = preset.autoTrigger.updateTargetTables || [];
 
     // 保存到数据库设置
     await saveSettings(preset.settings);
+
+    // 同步表选择到后端
+    if (selectedSheetKeys.value.length > 0) {
+      saveManualSelectedTables(selectedSheetKeys.value);
+    } else {
+      clearManualSelectedTables();
+    }
 
     presetsManager.setActivePreset(selectedPresetId.value);
     toast.success('已应用预设配置');
@@ -520,12 +539,19 @@ function handleAutoFixPresetChange() {
  * 打开预设保存弹窗
  */
 function openSavePresetDialog() {
+  const selectedTableLabels = selectedSheetKeys.value.length
+    ? selectedSheetKeys.value.map(key => {
+        const t = availableTables.value.find(t => t.key === key);
+        return t ? t.name : key;
+      }).join(', ')
+    : '全部表格';
+
   const summaryItems = [
     `上下文层数: ${localSettings.autoUpdateThreshold}`,
     `更新频率: 每 ${localSettings.autoUpdateFrequency} 层`,
     `批次大小: ${localSettings.updateBatchSize}`,
     `跳过层数: ${localSettings.skipUpdateFloors}`,
-    `表格选择: ${selectedTableNames.value.length ? selectedTableNames.value.join(', ') : '全部表格'}`,
+    `表格选择: ${selectedTableLabels}`,
   ];
 
   uiStore.openPresetSaveDialog(
@@ -550,7 +576,7 @@ function openSavePresetDialog() {
             onEmptyCell: true,
             onIndexGap: true,
             targetTables: ['总结表', '大纲表'],
-            updateTargetTables: selectedTableNames.value,
+            updateTargetTables: selectedSheetKeys.value,
             emptyCheckColumns: selectedEmptyCheckColumns.value,
           },
         );
@@ -589,25 +615,10 @@ function handleAutoTriggerChange() {
   // 保存全局开关状态
   presetsManager.setGlobalAutoTrigger(autoTriggerEnabled.value);
 
-  // 如果有选中的预设，同时更新预设配置
-  if (selectedPresetId.value) {
-    presetsManager.updatePreset(selectedPresetId.value, {
-      autoTrigger: {
-        enabled: autoTriggerEnabled.value,
-        onEmptyCell: true,
-        onIndexGap: true,
-        targetTables: ['总结表', '大纲表'],
-        updateTargetTables: selectedTableNames.value,
-        emptyCheckColumns: selectedEmptyCheckColumns.value,
-      },
-    });
-  }
-
   // 如果关闭了检测，同时关闭自动执行并清除所有警告
   if (!autoTriggerEnabled.value) {
     autoExecuteEnabled.value = false;
     presetsManager.setAutoFixPreset(null);
-    // 清除所有完整性警告
     dataStore.clearIntegrityIssues();
   }
 }
@@ -644,34 +655,28 @@ function handleAutoExecuteChange() {
 /**
  * 切换表格选择（旧方法，保留兼容）
  */
-function toggleTableSelection(tableName: string) {
-  const index = selectedTableNames.value.indexOf(tableName);
+function toggleTableSelection(sheetKey: string) {
+  const index = selectedSheetKeys.value.indexOf(sheetKey);
   if (index === -1) {
-    selectedTableNames.value.push(tableName);
+    selectedSheetKeys.value.push(sheetKey);
   } else {
-    selectedTableNames.value.splice(index, 1);
+    selectedSheetKeys.value.splice(index, 1);
   }
 
-  handleTableSelectionChange(selectedTableNames.value);
+  handleTableSelectionChange(selectedSheetKeys.value);
 }
 
 /**
  * 处理表格选择变更（SwitchList 组件使用）
  */
 function handleTableSelectionChange(newSelection: string[]) {
-  // 更新当前预设的表格选择
-  if (selectedPresetId.value) {
-    presetsManager.updatePreset(selectedPresetId.value, {
-      autoTrigger: {
-        enabled: autoTriggerEnabled.value,
-        onEmptyCell: true,
-        onIndexGap: true,
-        targetTables: ['总结表', '大纲表'],
-        updateTargetTables: newSelection,
-        emptyCheckColumns: selectedEmptyCheckColumns.value,
-      },
-    });
+  // 同步表选择到后端 API（实时生效）
+  if (newSelection.length > 0) {
+    saveManualSelectedTables(newSelection);
+  } else {
+    clearManualSelectedTables();
   }
+  // 注意：不自动写入预设，仅在用户点"保存为预设"时才保存
 }
 
 /**
@@ -680,10 +685,10 @@ function handleTableSelectionChange(newSelection: string[]) {
 function handleSelectAll() {
   if (isAllSelected.value) {
     // 取消全选
-    selectedTableNames.value = [];
+    selectedSheetKeys.value = [];
   } else {
     // 全选
-    selectedTableNames.value = availableTables.value.map(t => t.name);
+    selectedSheetKeys.value = availableTables.value.map(t => t.key);
   }
 }
 
@@ -692,7 +697,7 @@ function handleSelectAll() {
  */
 function handleSelectSummaryOnly() {
   const summaryTables = availableTables.value.filter(t => t.isSummaryOrOutline);
-  selectedTableNames.value = summaryTables.map(t => t.name);
+  selectedSheetKeys.value = summaryTables.map(t => t.key);
 }
 
 /**
@@ -772,18 +777,7 @@ function handleClearColumns() {
  * 保存列选择到预设
  */
 function saveColumnSelection() {
-  if (selectedPresetId.value) {
-    presetsManager.updatePreset(selectedPresetId.value, {
-      autoTrigger: {
-        enabled: autoTriggerEnabled.value,
-        onEmptyCell: true,
-        onIndexGap: true,
-        targetTables: ['总结表', '大纲表'],
-        updateTargetTables: selectedTableNames.value,
-        emptyCheckColumns: selectedEmptyCheckColumns.value,
-      },
-    });
-  }
+  // 注意：不自动写入预设，仅在用户点"保存为预设"时才保存
 }
 
 /**
@@ -795,7 +789,15 @@ async function handleExecuteUpdate() {
   isUpdating.value = true;
 
   try {
-    // 使用新 API，传入四参数 + 表格列表
+    // 手动更新前保存快照，确保 diff 高亮能正确对比
+    dataStore.saveLastState();
+    const currentData = getTableData();
+    if (currentData && Object.keys(currentData).length > 0) {
+      dataStore.saveSnapshot(currentData);
+      console.info('[ACU] 手动更新前快照已保存');
+    }
+
+    // 使用新 API，传入参数 + 表格 sheetKeys
     const result = await executeWithPreset(
       {
         autoUpdateThreshold: localSettings.autoUpdateThreshold,
@@ -803,7 +805,7 @@ async function handleExecuteUpdate() {
         skipUpdateFloors: localSettings.skipUpdateFloors,
         autoUpdateFrequency: localSettings.autoUpdateFrequency,
       },
-      selectedTableNames.value,
+      selectedSheetKeys.value,
     );
 
     if (result.success) {

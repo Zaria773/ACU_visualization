@@ -147,6 +147,42 @@ import { useUIStore } from '../../stores/useUIStore';
 import { getCore } from '../../utils';
 
 // ============================================================
+// 工具函数
+// ============================================================
+
+/**
+ * 获取模板（带 fallback）
+ * 优先使用 getTableTemplate()，若返回 null 则从 exportTableAsJson() 构建最小模板
+ */
+function getTemplateWithFallback(api: ReturnType<typeof getCore>['getDB'] extends () => infer R ? R : never): Record<string, any> | null {
+  // 优先使用模板 API
+  if (typeof api?.getTableTemplate === 'function') {
+    const tmpl = api.getTableTemplate();
+    if (tmpl) return tmpl;
+  }
+
+  // fallback: 从当前数据构建最小模板
+  const tableData = api?.exportTableAsJson?.();
+  if (!tableData || typeof tableData !== 'object') return null;
+
+  const minimal: Record<string, any> = {
+    mate: tableData.mate || { type: 'chatSheets', version: 1, updateConfigUiSentinel: -1 },
+  };
+
+  Object.keys(tableData).forEach(key => {
+    if (!key.startsWith('sheet_')) return;
+    const sheet = tableData[key];
+    if (!sheet || typeof sheet !== 'object') return;
+    // 保留完整的 sheet 结构以便 importTemplateFromData 验证通过
+    minimal[key] = { ...sheet };
+  });
+
+  // 至少要有一个 sheet_ 才有效
+  if (!Object.keys(minimal).some(k => k.startsWith('sheet_'))) return null;
+  return minimal;
+}
+
+// ============================================================
 // Emits
 // ============================================================
 
@@ -325,13 +361,13 @@ function handleExport() {
   if (selectedKeys.value.size === 0) return;
 
   const api = getCore().getDB();
-  if (!api?.getTableTemplate) {
+  if (!api) {
     toast.error('数据库 API 不可用');
     return;
   }
 
   try {
-    const fullTemplate = api.getTableTemplate();
+    const fullTemplate = getTemplateWithFallback(api);
     if (!fullTemplate) {
       toast.error('无法获取当前模板');
       return;
@@ -383,7 +419,7 @@ async function handleDelete() {
   }
 
   const api = getCore().getDB();
-  if (!api?.getTableTemplate || !api?.importTemplateFromData) {
+  if (!api?.importTemplateFromData) {
     toast.error('数据库 API 不可用');
     return;
   }
@@ -400,7 +436,7 @@ async function handleDelete() {
     }
 
     // 2. 删除模板定义
-    const template = api.getTableTemplate();
+    const template = getTemplateWithFallback(api);
     if (!template) {
       toast.error('无法获取当前模板');
       return;
@@ -483,14 +519,14 @@ async function handleSave() {
   }
 
   const api = getCore().getDB();
-  if (!api?.getTableTemplate || !api?.importTemplateFromData) {
+  if (!api?.importTemplateFromData) {
     toast.error('数据库 API 不可用');
     return;
   }
 
   try {
-    // 1. 获取当前模板
-    const template = api.getTableTemplate();
+    // 1. 获取当前模板（带 fallback）
+    const template = getTemplateWithFallback(api);
     if (!template) {
       toast.error('无法获取当前模板');
       return;
@@ -500,7 +536,11 @@ async function handleSave() {
 
     // 2. 应用频率变更
     for (const [sheetKey, newFreq] of pendingFrequencyChanges.value) {
-      if (template[sheetKey]?.updateConfig) {
+      if (template[sheetKey]) {
+        // 确保 updateConfig 存在（fallback 模板可能没有此字段）
+        if (!template[sheetKey].updateConfig) {
+          template[sheetKey].updateConfig = {};
+        }
         template[sheetKey].updateConfig.updateFrequency = newFreq;
         changeCount++;
       }
