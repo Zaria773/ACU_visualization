@@ -270,9 +270,12 @@ importers:
       unplugin-vue-components:
         specifier: ^29.2.0
         version: 29.2.0(@babel/parser@7.29.2)(vue@3.5.30(typescript@6.0.0-dev.20250807))
+<<<<<<< HEAD
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.49.2)(@types/node@25.5.0)(@types/react@19.2.14)(axios@1.13.6)(lightningcss@1.32.0)(postcss@8.5.8)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.98.0)(search-insights@2.17.3)(terser@5.46.1)(typescript@6.0.0-dev.20250807)
+=======
+>>>>>>> 68ec069ef06d920c2018e14dffb39c8904448003
       vue-eslint-parser:
         specifier: ^10.4.0
         version: 10.4.0(eslint@9.39.4(jiti@2.6.1))
@@ -2269,9 +2272,12 @@ packages:
 
   electron-to-chromium@1.5.321:
     resolution: {integrity: sha512-L2C7Q279W2D/J4PLZLk7sebOILDSWos7bMsMNN06rK482umHUrh/3lM8G7IlHFOYip2oAg5nha1rCMxr/rs6ZQ==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 68ec069ef06d920c2018e14dffb39c8904448003
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -6644,8 +6650,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.321: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 68ec069ef06d920c2018e14dffb39c8904448003
 
   emoji-regex@8.0.0: {}
 
