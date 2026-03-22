@@ -19,9 +19,4 @@ export {
 } from '../stores/useUpdatePresetsStore';
 
 // Re-export Types
-export type {
-  AutoTriggerConfig,
-  PresetStorage,
-  UpdatePreset,
-  UpdateSettings,
-} from '../stores/useUpdatePresetsStore';
+export type { AutoTriggerConfig, PresetStorage, UpdatePreset, UpdateSettings } from '../stores/useUpdatePresetsStore';
