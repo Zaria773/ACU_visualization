@@ -369,7 +369,7 @@ const dataStore = useDataStore();
 // ============================================================
 
 /** 预设列表 */
-const presets = computed(() => presetsManager.presets.value);
+const presets = computed(() => presetsManager.presets);
 
 /** 是否有完整性问题 */
 const hasIntegrityIssues = computed(() => dataStore.hasIntegrityIssues);
@@ -436,12 +436,12 @@ watch(
 
         // 加载预设状态
         presetsManager.loadPresets();
-        const autoFixId = presetsManager.autoFixPreset.value?.id;
+        const autoFixId = presetsManager.autoFixPreset?.id;
         autoFixPresetId.value = autoFixId || '';
 
         // 加载智能检测配置（使用全局开关状态）
-        autoTriggerEnabled.value = presetsManager.globalAutoTriggerEnabled.value;
-        autoExecuteEnabled.value = presetsManager.globalAutoExecuteEnabled.value;
+        autoTriggerEnabled.value = presetsManager.globalAutoTriggerEnabled;
+        autoExecuteEnabled.value = presetsManager.globalAutoExecuteEnabled;
 
         // 加载可用表格列表（需要在加载表选择之前，以便进行 key 映射）
         availableTables.value = getTableList();
@@ -453,7 +453,7 @@ watch(
           selectedSheetKeys.value = backendSelection.selectedTables;
         } else {
           // 回退到当前预设的表格选择
-          const activePreset = presetsManager.activePreset.value;
+          const activePreset = presetsManager.activePreset;
           if (activePreset) {
             selectedSheetKeys.value = activePreset.autoTrigger.updateTargetTables || [];
             selectedEmptyCheckColumns.value = activePreset.autoTrigger.emptyCheckColumns || [];

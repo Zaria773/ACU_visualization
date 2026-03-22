@@ -712,8 +712,12 @@ const currentTargetFloor = computed(() => {
 
 /** 最大楼层索引 */
 const maxFloorIndex = computed(() => {
-  // 从聊天记录获取最大楼层
-  const chat = (window as any).SillyTavern?.chat;
+  // 从聊天记录获取最大楼层（兼容跨iframe）
+  let ST = (window as any).SillyTavern || (window.parent ? (window.parent as any).SillyTavern : null);
+  if (!ST && (window as any).top && (window as any).top.SillyTavern) {
+    ST = (window as any).top.SillyTavern;
+  }
+  const chat = ST?.chat;
   return Array.isArray(chat) ? chat.length - 1 : 0;
 });
 
@@ -1402,9 +1406,21 @@ function handleOpenNative() {
 /** 保存到指定楼层 */
 async function handleSaveToFloor(floorIndex: number) {
   try {
-    const success = await saveToDatabase(null, false, false, floorIndex);
+    let targetIndex = floorIndex;
+    if (floorIndex < 0) {
+      // 负数表示倒数楼层
+      const maxFloor = maxFloorIndex.value;
+      // floorIndex 为 -1 时表示最后一楼，即 maxFloor
+      targetIndex = maxFloor + 1 + floorIndex;
+      if (targetIndex < 0) targetIndex = 0;
+    }
+
+    // 防止 targetIndex 为负数误触发 saveToDatabase 的增量保存（默认值为-1）行为
+    if (targetIndex < 0) targetIndex = 0;
+
+    const success = await saveToDatabase(null, false, false, targetIndex);
     if (success) {
-      console.info(`[ACU] 数据已保存到第 ${floorIndex} 楼`);
+      console.info(`[ACU] 数据已保存到第 ${targetIndex} 楼`);
       // 另存为后刷新界面以显示最新数据
       await loadData();
     }

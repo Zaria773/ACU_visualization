@@ -20,4 +20,6 @@ export { useDivinationStore } from './useDivinationStore';
 export { DEFAULT_GRAPH_CONFIG, useGraphConfigStore } from './useGraphConfigStore';
 export { useTagLibraryStore } from './useTagLibraryStore';
 export { DEFAULT_HIGHLIGHT_CONFIG, useThemeStore } from './useThemeStore';
+export { useUpdatePresetsStore } from './useUpdatePresetsStore';
+export type { AutoTriggerConfig, PresetStorage, UpdatePreset, UpdateSettings } from './useUpdatePresetsStore';
 export { STORAGE_KEYS, TAB_DASHBOARD, TAB_OPTIONS, useUIStore } from './useUIStore';

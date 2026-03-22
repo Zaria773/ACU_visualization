@@ -180,7 +180,7 @@ const getButtonClass = (buttonId: string): string[] => {
 
   // 保存按钮有更改时的样式
   if (buttonId === 'save' && props.hasChanges) {
-    classes.push('has-changes');
+    classes.push('acu-save-alert');
   }
 
   // 有附属按钮的样式

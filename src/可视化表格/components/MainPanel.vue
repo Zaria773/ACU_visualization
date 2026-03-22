@@ -304,7 +304,7 @@ const getButtonClass = (buttonId: string): string[] => {
 
   // 保存按钮有更改时的样式
   if (buttonId === 'save' && props.hasChanges) {
-    classes.push('has-changes');
+    classes.push('acu-save-alert');
   }
 
   // 刷新按钮旋转动画

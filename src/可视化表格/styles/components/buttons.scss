@@ -326,22 +326,7 @@
   }
 }
 
-// 保存按钮有更改时的样式
-.has-changes {
-  color: #f39c12;
-  animation: pulse 1.5s infinite;
-}
 
-// 脉冲动画
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
 
 // =========================================
 // 按钮收纳组相关样式

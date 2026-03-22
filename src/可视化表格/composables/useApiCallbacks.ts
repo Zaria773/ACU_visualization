@@ -197,7 +197,7 @@ export function useApiCallbacks() {
           tableUpdateStatus.refresh();
 
           // 【关键修复】只有开启智能检测时才执行完整性检测
-          if (presetsManager.globalAutoTriggerEnabled.value) {
+          if (presetsManager.globalAutoTriggerEnabled) {
             // 执行完整性检测
             dataStore.checkIntegrity(newData);
 
@@ -284,7 +284,7 @@ export function useApiCallbacks() {
   async function checkAndNotifyIssues() {
     // 【关键修复】首先检查全局开关是否开启
     // 全局开关关闭时（默认状态），不进行任何检测和提示
-    if (!presetsManager.globalAutoTriggerEnabled.value) {
+    if (!presetsManager.globalAutoTriggerEnabled) {
       return;
     }
 
@@ -299,7 +299,7 @@ export function useApiCallbacks() {
     if (isAutoUpdating) return;
 
     // 检查是否配置了自动修复预设
-    const autoFixPreset = presetsManager.autoFixPreset.value;
+    const autoFixPreset = presetsManager.autoFixPreset;
 
     if (autoFixPreset && autoFixPreset.autoTrigger.enabled) {
       // 检查触发条件 - 始终检测所有问题类型
