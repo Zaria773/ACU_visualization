@@ -1,9 +1,5 @@
 lockfileVersion: '9.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 importers:
 
   .:
@@ -2269,12 +2265,9 @@ packages:
 
   electron-to-chromium@1.5.322:
     resolution: {integrity: sha512-vFU34OcrvMcH66T+dYC3G4nURmgfDVewMIu6Q2urXpumAPSMmzvcn04KVVV8Opikq8Vs5nUbO/8laNhNRqSzYw==}
-<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
-=======
->>>>>>> b80a86e4d72312ede7f291df2c1c65bd1f7e93eb
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -3819,7 +3812,6 @@ packages:
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
     deprecated: |-
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
-
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
   quansync@0.2.11:
@@ -6647,11 +6639,8 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.322: {}
-<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
-=======
->>>>>>> b80a86e4d72312ede7f291df2c1c65bd1f7e93eb
 
   emoji-regex@8.0.0: {}
 
