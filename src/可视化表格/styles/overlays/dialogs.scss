@@ -20,6 +20,13 @@
   backdrop-filter: blur(4px);
   animation: acu-fadeIn 0.2s ease;
   pointer-events: auto !important; // 修复：确保弹窗可以接收点击事件
+
+  // 全屏模式降级处理 (防崩溃)
+  .acu-fullscreen-mode & {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
 }
 
 // 模态框主体
@@ -223,6 +230,12 @@
   .acu-toast-message {
     max-width: 300px;
     line-height: 1.4;
+  }
+
+  // 全屏模式降级处理 (防崩溃)
+  .acu-fullscreen-mode & {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 

@@ -194,6 +194,13 @@ export function useFullscreenSupport() {
       copyACUStyles(parentDoc, targetDoc);
     }
 
+    // 提前降级样式，防止在 appendChild 的瞬间触发渲染崩溃竞态 (GPU crash)
+    container.classList.add('acu-fullscreen-mode');
+
+    // 【关键修复】隐藏元素一帧，强行打断浏览器对于 DOM 树迁移时的混合渲染计算，避免彻底白屏
+    const originalDisplay = container.style.display;
+    container.style.display = 'none';
+
     // 迁移整个 ACU 容器到全屏元素内
     fullscreenElement.appendChild(container);
 
@@ -215,9 +222,14 @@ export function useFullscreenSupport() {
     state.value.isMigrated = true;
     console.info('[ACU Fullscreen] ACU container migrated to fullscreen element');
 
-    // 延迟调整悬浮球位置（等待 DOM 更新）
-    nextTick(() => {
-      adjustBallPositionForFullscreen(fullscreenElement);
+    // 延迟一帧恢复显示，跳过 DOM 变动的危险渲染周期
+    requestAnimationFrame(() => {
+      container.style.display = originalDisplay;
+      
+      // 再等待 Vue 响应式更新
+      nextTick(() => {
+        adjustBallPositionForFullscreen(fullscreenElement);
+      });
     });
   }
 

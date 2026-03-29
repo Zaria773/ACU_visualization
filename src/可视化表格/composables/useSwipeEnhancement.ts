@@ -136,7 +136,7 @@ export function useSwipeEnhancement() {
   /**
    * 处理 Swipe 事件 - 功能 A：简单清除表格
    */
-  async function handleSwipeClearOnly(): Promise<void> {
+  async function handleSwipeClearOnly(swipedMesId?: number): Promise<void> {
     console.info('[ACU Swipe] handleSwipeClearOnly 开始执行');
 
     if (isProcessing.value) {
@@ -152,6 +152,17 @@ export function useSwipeEnhancement() {
 
     const lastIndex = ctx.chat.length - 1;
     const lastMessage = ctx.chat[lastIndex] as STChatMessage;
+
+    // 精准修复：只有在滑动最后一条且最后一条为AI消息时才清除
+    if (swipedMesId !== undefined && swipedMesId !== lastIndex) {
+      console.info('[ACU Swipe] 滑动的不是最后一楼，跳过清除');
+      return;
+    }
+
+    if (lastMessage.is_user) {
+      console.info('[ACU Swipe] 最后一楼是用户消息，跳过清除');
+      return;
+    }
 
     console.info('[ACU Swipe] 检查最后一楼:', {
       index: lastIndex,
@@ -191,7 +202,7 @@ export function useSwipeEnhancement() {
    * 统一的 Swipe 处理入口
    * 从 configStore 读取配置
    */
-  async function handleSwipe(event?: Event): Promise<void> {
+  async function handleSwipe(swipedMesId?: number): Promise<void> {
     // 从 configStore 读取配置
     const clearEnabled = configStore.config.clearTableOnSwipe ?? config.value.clearTableOnSwipe;
 
@@ -203,7 +214,7 @@ export function useSwipeEnhancement() {
     }
 
     console.info('[ACU Swipe] 执行清除表格');
-    await handleSwipeClearOnly();
+    await handleSwipeClearOnly(swipedMesId);
   }
 
   // ============================================================
@@ -237,6 +248,28 @@ export function useSwipeEnhancement() {
       const clearEnabled = configStore.config.clearTableOnSwipe ?? config.value.clearTableOnSwipe;
       if (!clearEnabled) return;
 
+      // 获取被滑动消息的 mesid
+      const mesEl = target.closest('.mes');
+      const swipedMesId = mesEl ? parseInt(mesEl.getAttribute('mesid') || '-1', 10) : -1;
+
+      // --- 精准拦截跳过逻辑 ---
+      const ctx = getSillyTavernContext();
+      if (!ctx?.chat?.length) return;
+      const lastIndex = ctx.chat.length - 1;
+
+      // 如果滑动的不是最后一楼，直接不拦截 (让酒馆正常处理翻页，避免翻页两次的bug)
+      if (swipedMesId !== lastIndex) return;
+
+      const lastMessage = ctx.chat[lastIndex] as STChatMessage;
+      if (lastMessage.is_user) return;
+
+      const currentSwipeId = lastMessage.swipe_id ?? 0;
+      const totalSwipes = lastMessage.swipes?.length ?? 1;
+
+      // 如果不是在最后一个 swipe 上点击右滑，那仅仅是普通翻页，不会触发生成。不拦截！
+      if (currentSwipeId < totalSwipes - 1) return;
+      // -------------------------
+
       console.info('[ACU Swipe] 拦截 swipe_right 点击，准备清理数据');
 
       // 1. 拦截原始事件，阻止酒馆处理
@@ -245,7 +278,7 @@ export function useSwipeEnhancement() {
 
       try {
         // 2. 执行清理 (等待世界书同步完成)
-        await handleSwipe(e);
+        await handleSwipe(swipedMesId);
       } catch (err) {
         console.error('[ACU Swipe] 清理过程出错，仍继续触发 Swipe', err);
       }
@@ -300,25 +333,12 @@ export function useSwipeEnhancement() {
 
       console.info('[ACU Swipe] MESSAGE_SWIPED 事件触发，message_id:', message_id);
 
-      // 检查是否会触发新生成（与 handleSwipeClearOnly 逻辑一致）
-      const ctx = getSillyTavernContext();
-      if (!ctx?.chat?.length) return;
-
-      const lastIndex = ctx.chat.length - 1;
-      const lastMessage = ctx.chat[lastIndex] as STChatMessage;
-
-      if (!willTriggerNewGeneration(lastMessage)) {
-        console.info('[ACU Swipe] 查看历史 swipe，跳过清除');
-        return;
-      }
-
-      if (!hasACUData(lastMessage)) {
-        console.info('[ACU Swipe] 最后一楼无 ACU 数据，跳过清除');
-        return;
-      }
-
-      console.info('[ACU Swipe] 通过事件监听执行清理...');
-      await handleSwipeClearOnly();
+      // MESSAGE_SWIPED 不应该用来清理数据，因为它只会在"翻页后"立刻触发。
+      // 如果翻到了最后一页，就会被误判成"要生成了"而提前清理数据。
+      // 此事件仅用作 fallback，如果必须清理，应在GENERATION_STARTED。
+      // 因此此处不再调用 handleSwipeClearOnly() 以防倒数第二翻页到倒数第一时误清。
+      console.info('[ACU Swipe] 跳过 MESSAGE_SWIPED 的清理，因已在 click 拦截精确处理');
+      return;
     };
 
     // 使用 eventMakeFirst 确保我们的 listener 最先执行

@@ -136,6 +136,13 @@
 
   // 确保菜单可以接收点击事件（不被穿透）
   pointer-events: auto !important;
+
+  // 全屏模式降级处理 (防崩溃)
+  .acu-fullscreen-mode & {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--acu-menu-bg, #fff) !important;
+  }
 }
 
 // Vue 菜单项样式
