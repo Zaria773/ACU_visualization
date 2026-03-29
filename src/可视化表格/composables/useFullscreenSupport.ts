@@ -225,7 +225,7 @@ export function useFullscreenSupport() {
     // 延迟一帧恢复显示，跳过 DOM 变动的危险渲染周期
     requestAnimationFrame(() => {
       container.style.display = originalDisplay;
-      
+
       // 再等待 Vue 响应式更新
       nextTick(() => {
         adjustBallPositionForFullscreen(fullscreenElement);
