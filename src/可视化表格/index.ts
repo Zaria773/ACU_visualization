@@ -248,12 +248,119 @@ function cleanup() {
   console.info('[ACU] 资源清理完成');
 }
 
+/**
+ * 自动检测并更新过时的加载器脚本 (Loader)
+ * 当我们在代码里修正了加载逻辑，下一次用户加载时，会自动把用户的脚本内容替换成最新版
+ */
+function autoUpdateLoaderScript() {
+  try {
+    if (typeof updateScriptTreesWith !== 'function') return;
+
+    const PERFECT_LOADER = `(async function loadACU() {
+  const repo = 'Zaria773/ACU_visualization';
+  const path = 'dist/可视化表格/index.js';
+  
+  async function fetchLatestVersion() {
+    const apiSources = [
+      \`https://data.jsdelivr.com/v1/packages/gh/\${repo}\`,
+      \`https://api.github.com/repos/\${repo}/releases/latest\`
+    ];
+    for (const api of apiSources) {
+      try {
+        const res = await fetch(api, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          let ver = data.tag_name || data.versions?.[0]?.version;
+          if (ver && !ver.startsWith('v')) ver = 'v' + ver;
+          console.log('[ACU-Loader] 探测到最新发布版本:', ver);
+          return ver;
+        }
+      } catch (e) {
+        console.warn('[ACU-Loader] 版本查询 API 暂时不可用:', api);
+      }
+    }
+    return null;
+  }
+
+  async function tryImportFromList(urls) {
+    for (const url of urls) {
+      try {
+        await import(url);
+        console.log('[ACU-Loader] 加载成功:', url);
+        return true; 
+      } catch (e) {
+        console.warn('[ACU-Loader] 节点尝试失败:', url);
+      }
+    }
+    return false;
+  }
+
+  const version = await fetchLatestVersion();
+  let success = false;
+
+  if (version) {
+    console.log(\`[ACU-Loader] 正在尝试拉取精准版本: \${version}\`);
+    const preciseUrls = [
+      \`https://fastly.jsdelivr.net/gh/\${repo}@\${version}/\${path}\`,
+      \`https://gcore.jsdelivr.net/gh/\${repo}@\${version}/\${path}\`,
+      \`https://cdn.jsdelivr.net/gh/\${repo}@\${version}/\${path}\`,
+    ];
+    success = await tryImportFromList(preciseUrls);
+  }
+
+  if (!success) {
+    if (version) console.warn('[ACU-Loader] 精准版本加载失败或文件尚未就绪，尝试 @latest 兜底...');
+    const latestUrls = [
+      \`https://fastly.jsdelivr.net/gh/\${repo}@latest/\${path}\`,
+      \`https://gcore.jsdelivr.net/gh/\${repo}@latest/\${path}\`,
+      \`https://cdn.jsdelivr.net/gh/\${repo}@latest/\${path}\`,
+    ];
+    success = await tryImportFromList(latestUrls);
+  }
+
+  if (!success) {
+    console.error('[ACU Loader] 所有 CDN 节点及回退方案均加载失败，请检查网络或仓库状态');
+  }
+})();`;
+
+    // 执行更新
+    updateScriptTreesWith((trees) => {
+      let updated = false;
+      const processTrees = (nodes: any[]) => {
+        for (const node of nodes) {
+          if (node.type === 'folder' && node.scripts) {
+            processTrees(node.scripts);
+          } else if (node.type === 'script' && typeof node.content === 'string') {
+            // 通过特征字符串判断是否为我们的加载脚本
+            if (node.content.includes('Zaria773/ACU_visualization') && node.content.includes('dist/可视化表格/index.js')) {
+              // 通过核心标志位判断是否已经是最新版，只有没包含 'tryImportFromList' 的老版本才更新
+              if (!node.content.includes('tryImportFromList') || !node.content.includes('fetchLatestVersion')) {
+                node.content = PERFECT_LOADER;
+                updated = true;
+                console.info(`[ACU] 成功自动修正更新了用户的加载器脚本 (${node.name})`);
+              }
+            }
+          }
+        }
+      };
+      
+      processTrees(trees);
+      return trees;
+    }, { type: 'global' });
+  } catch (e) {
+    console.warn('[ACU] 加载器脚本自动检测更新失败', e);
+  }
+}
+
 // ============================================================
 // 入口点
 // ============================================================
 
 $(() => {
   console.info(`[ACU] v${VERSION} 脚本加载`);
+  
+  // 自动监测并修补用户加载器脚本
+  autoUpdateLoaderScript();
 
   // 注册脚本按钮
   replaceScriptButtons([{ name: '🎴 隐藏提示词', visible: true }]);
