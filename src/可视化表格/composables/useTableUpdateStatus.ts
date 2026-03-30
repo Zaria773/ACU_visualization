@@ -203,26 +203,14 @@ function getDbGlobalSettings(): DbGlobalSettings {
           activeIsolationCode = String(meta.activeIsolationCode || '').trim();
         }
 
-        // 回退：globalMeta 没有时，从 profile key 反推最近可用 code（排除 __default__）
+        // 不再根据 profile key 盲推激活标签
+        // 状态检测应优先基于当前聊天历史，而不是浏览器当前 profile 环境
         if (!activeIsolationCode) {
           const profileSettingsKeys = Object.keys(settingsContainer).filter(
             k => k.startsWith(`${versionPrefix}_profile_v1__`) && k.endsWith('__settings'),
           );
-          const decodedCodes = profileSettingsKeys
-            .map(k => k.slice(`${versionPrefix}_profile_v1__`.length, -'__settings'.length))
-            .map(segment => {
-              if (segment === '__default__') return '';
-              try {
-                return decodeURIComponent(segment);
-              } catch {
-                return segment;
-              }
-            })
-            .filter(code => !!String(code).trim());
-
-          if (decodedCodes.length > 0) {
-            activeIsolationCode = String(decodedCodes[decodedCodes.length - 1] || '');
-            console.warn(`[ACU] globalMeta 未提供激活标签，回退使用 profile 推断标签: "${activeIsolationCode}"`);
+          if (profileSettingsKeys.length > 0) {
+            console.warn('[ACU] globalMeta 未提供激活标签；已忽略 profile 推断，后续将由当前聊天历史决定活跃槽位');
           }
         }
 
@@ -343,7 +331,10 @@ function checkIsSummaryOrOutline(name: string): boolean {
 
 /**
  * 从最近聊天中推断“当前活跃槽位 key”
- * 用于 globalMeta 缺失/不可靠时的读状态兜底
+ * 新规则：聊天历史优先
+ * - 优先返回最近聊天中最常见的非 __default__ 槽位（包括 ''）
+ * - 若只有 __default__，则返回 __default__
+ * - 若完全没有 ACU 历史，返回 null
  */
 function getDominantIsolationSlotKey(chat: ChatMessage[], limit: number = 50): string | null {
   const freq = new Map<string, number>();
@@ -368,12 +359,15 @@ function getDominantIsolationSlotKey(chat: ChatMessage[], limit: number = 50): s
     });
   }
 
-  const sorted = Array.from(freq.entries())
-    // 仅排除 __default__；空标签 '' 也是合法历史槽位
+  const sortedNonDefault = Array.from(freq.entries())
     .filter(([k]) => k !== '__default__')
     .sort((a, b) => b[1] - a[1]);
 
-  return sorted[0]?.[0] ?? null;
+  if (sortedNonDefault.length > 0) {
+    return sortedNonDefault[0][0];
+  }
+
+  return freq.has('__default__') ? '__default__' : null;
 }
 
 /**
@@ -417,7 +411,13 @@ function getLastUpdatedPosition(
       // 新版优先：当前槽位 key + 推断出的活跃槽位
       // 兼容旧数据：raw code / 空字符串 / __default__
       const candidateKeys = Array.from(
-        new Set([currentIsolationSlotKey, currentIsolationCode, ...preferredSlotKeys, '', '__default__']),
+        new Set([
+          ...preferredSlotKeys, // 聊天历史主槽位优先
+          currentIsolationSlotKey, // 配置侧仅作兜底
+          currentIsolationCode, // 兼容极旧数据 raw code
+          '',
+          '__default__',
+        ]),
       );
       for (const key of candidateKeys) {
         const tagData = isolatedData[key];
@@ -600,11 +600,13 @@ export function useTableUpdateStatus() {
 
       const results: TableUpdateStatus[] = [];
 
-      // 推断当前活跃槽位（用于补偿 globalMeta 丢失/延迟）
+      // 推断当前活跃槽位：聊天历史优先，不再让 profile 推断主导
       const dominantSlotKey = getDominantIsolationSlotKey(chat, 50);
       const preferredSlotKeys = dominantSlotKey !== null ? [dominantSlotKey] : [];
       if (dominantSlotKey !== null) {
-        console.info(`[ACU] 表格状态读取使用活跃槽位兜底: ${dominantSlotKey}`);
+        console.info(`[ACU] 表格状态读取采用聊天历史主槽位: ${dominantSlotKey}`);
+      } else {
+        console.info('[ACU] 当前聊天无 ACU 历史，表格状态读取将退回配置侧兜底');
       }
 
       // 获取所有表格 key 并按顺序编号排序

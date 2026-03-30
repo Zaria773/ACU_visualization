@@ -104,43 +104,40 @@ function getRecentSlotKeyFrequency(chat: any[], limit: number = 50): Map<string,
 }
 
 /**
- * 解析本次写入应使用的槽位 key
- * 目标：尽量复用聊天中已有“主槽位”，避免新造乱码 key / 误写 __default__
+ * 从当前聊天历史中推断“主槽位”
+ * 规则：
+ * 1. 优先使用最近聊天里出现频率最高的非 __default__ 槽位（包括 '' 空标签）
+ * 2. 如果只有 __default__，则返回 __default__
+ * 3. 如果聊天里完全没有 ACU 槽位，返回 null
  */
-function resolveWriteSlotKeyFromRecentChat(chat: any[], fallbackSlotKey: string): string {
-  const freq = getRecentSlotKeyFrequency(chat, 50);
-  const fallbackCount = freq.get(fallbackSlotKey) || 0;
+function getDominantSlotKeyFromChat(chat: any[], limit: number = 50): string | null {
+  const freq = getRecentSlotKeyFrequency(chat, limit);
+  if (freq.size === 0) return null;
 
   const nonDefault = Array.from(freq.entries())
-    // 仅排除 __default__；空标签 '' 也是合法历史槽位
     .filter(([k]) => k !== '__default__')
     .sort((a, b) => b[1] - a[1]);
 
-  const dominant = nonDefault[0]?.[0];
-  const dominantCount = nonDefault[0]?.[1] || 0;
-
-  // 0) 如果 fallback 在最近聊天里从未出现过，禁止直接用它创建新槽位
-  //    这能挡住 “脏 code -> encodeURIComponent -> 新乱码 key”
-  if (fallbackSlotKey && fallbackCount === 0 && dominant !== undefined && dominantCount >= 1) {
-    return dominant;
+  if (nonDefault.length > 0) {
+    return nonDefault[0][0];
   }
 
-  // 1) fallback 本身就是活跃槽位，直接沿用（包括空标签 ''）
-  if (fallbackSlotKey !== '__default__' && fallbackCount > 0) {
-    return fallbackSlotKey;
+  return freq.has('__default__') ? '__default__' : null;
+}
+
+/**
+ * 解析本次写入应使用的槽位 key
+ * 新规则：聊天历史优先，配置只在“当前聊天完全没有 ACU 历史”时兜底
+ */
+function resolveWriteSlotKey(chat: any[], fallbackSlotKey: string): string {
+  const dominantSlotKey = getDominantSlotKeyFromChat(chat, 50);
+
+  // 当前聊天已有历史：完全信聊天历史，不再信 profile / globalMeta 推断
+  if (dominantSlotKey !== null) {
+    return dominantSlotKey;
   }
 
-  // 2) fallback 是默认槽位，且最近存在活跃非默认槽位，优先切到主槽位（含 ''）
-  if (fallbackSlotKey === '__default__' && dominant !== undefined) {
-    return dominant;
-  }
-
-  // 3) fallback 非默认但近期没出现，且存在更可靠主槽位，切换
-  if (fallbackSlotKey !== '__default__' && fallbackCount === 0 && dominant !== undefined && dominantCount >= 1) {
-    return dominant;
-  }
-
-  // 保留原值，避免把 '' 强制改写成 __default__
+  // 当前聊天完全无 ACU 历史：才允许使用配置侧兜底
   return fallbackSlotKey;
 }
 
@@ -186,28 +183,13 @@ function getActiveIsolationCode(): string {
           }
         }
 
-        // 2) 回退：根据 profile settings 键反推可用 code（过滤 __default__）
+        // 2) 不再根据 profile key 盲推激活标签
+        // 因为这会被当前浏览器环境污染，导致“别人的聊天记录 + 我的 profile 标签”串台
         const profileSettingsKeys = Object.keys(settingsContainer).filter(
           k => k.startsWith(`${versionPrefix}_profile_v1__`) && k.endsWith('__settings'),
         );
-        const decodedCodes = profileSettingsKeys
-          .map(k => k.slice(`${versionPrefix}_profile_v1__`.length, -'__settings'.length))
-          .map(segment => {
-            if (segment === '__default__') return '';
-            try {
-              return decodeURIComponent(segment);
-            } catch {
-              return segment;
-            }
-          })
-          .filter(code => !!String(code).trim());
-
-        if (decodedCodes.length > 0) {
-          // 注意：这里不能再盲猜“最后一个”，因为顺序不可靠，容易取到脏标签/半截标签
-          // 保存时会再结合最近聊天实际出现过的槽位做最终裁决
-          const fallbackCode = decodedCodes[0];
-          console.warn(`[ACU] globalMeta 未提供激活标签，存在候选 profile 标签:`, decodedCodes);
-          return fallbackCode;
+        if (profileSettingsKeys.length > 0) {
+          console.warn('[ACU] globalMeta 未提供激活标签；已忽略 profile 推断，后续将由当前聊天历史决定写入槽位');
         }
       }
     }
@@ -477,14 +459,15 @@ export function useDataPersistence() {
         ST = (window as any).top.SillyTavern;
       }
 
-      // C. 获取隔离配置 Key（兼容 9.5 / 10.5+ / 12.1）
+      // C. 获取写入槽位
+      // 新规则：聊天历史优先；只有当前聊天完全没有 ACU 历史时，才用配置兜底
       const isolationCode = getActiveIsolationCode();
       const fallbackSlotKey = toIsolationSlotKey(isolationCode);
-      const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
+      const configKey = resolveWriteSlotKey(ST.chat || [], fallbackSlotKey);
 
       if (configKey !== fallbackSlotKey) {
         console.warn(
-          `[ACU] 全量保存槽位修正: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
+          `[ACU] 全量保存槽位采用聊天历史主槽位: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
         );
       }
 
@@ -600,12 +583,13 @@ export function useDataPersistence() {
 
   /**
    * 查找表格最近一次出现的数据楼层
+   * 规则：优先按“当前聊天主槽位”匹配，其次才是兼容空标签 / __default__
    * @param ST SillyTavern 核心对象
    * @param tableId 表格 ID (sheet_xxx)
-   * @param configKey 隔离配置键
+   * @param primarySlotKey 当前聊天主槽位
    * @returns 楼层索引，未找到返回 -1
    */
-  function findFloorForTable(ST: any, tableId: string, configKey: string): number {
+  function findFloorForTable(ST: any, tableId: string, primarySlotKey: string): number {
     if (!ST || !ST.chat) return -1;
 
     // 倒序查找
@@ -624,9 +608,7 @@ export function useDataPersistence() {
         }
       }
       if (isolatedData && typeof isolatedData === 'object') {
-        // 优先检查当前隔离键
-        // 优先查当前激活槽位；再兼容历史空标签写法与 v2.5 默认槽位
-        const candidateKeys = [configKey, '', '__default__'];
+        const candidateKeys = Array.from(new Set([primarySlotKey, '', '__default__']));
         for (const key of candidateKeys) {
           const tagData = isolatedData[key];
           if (tagData && tagData.independentData && tagData.independentData[tableId]) {
@@ -695,14 +677,15 @@ export function useDataPersistence() {
         ST = (window as any).top.SillyTavern;
       }
 
-      // C. 获取隔离配置 Key（兼容 9.5 / 10.5+ / 12.1）
+      // C. 获取隔离配置 Key
+      // 新规则：增量保存不再“推断标签”，优先信当前聊天历史主槽位
       const isolationCode = getActiveIsolationCode();
       const fallbackSlotKey = toIsolationSlotKey(isolationCode);
-      const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
+      const configKey = resolveWriteSlotKey(ST.chat || [], fallbackSlotKey);
 
       if (configKey !== fallbackSlotKey) {
         console.warn(
-          `[ACU] 增量保存槽位修正: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
+          `[ACU] 增量保存槽位采用聊天历史主槽位: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
         );
       }
 
