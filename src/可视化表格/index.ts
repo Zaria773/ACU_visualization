@@ -324,29 +324,35 @@ function autoUpdateLoaderScript() {
 })();`;
 
     // 执行更新
-    updateScriptTreesWith((trees) => {
-      let updated = false;
-      const processTrees = (nodes: any[]) => {
-        for (const node of nodes) {
-          if (node.type === 'folder' && node.scripts) {
-            processTrees(node.scripts);
-          } else if (node.type === 'script' && typeof node.content === 'string') {
-            // 通过特征字符串判断是否为我们的加载脚本
-            if (node.content.includes('Zaria773/ACU_visualization') && node.content.includes('dist/可视化表格/index.js')) {
-              // 通过核心标志位判断是否已经是最新版，只有没包含 'tryImportFromList' 的老版本才更新
-              if (!node.content.includes('tryImportFromList') || !node.content.includes('fetchLatestVersion')) {
-                node.content = PERFECT_LOADER;
-                updated = true;
-                console.info(`[ACU] 成功自动修正更新了用户的加载器脚本 (${node.name})`);
+    updateScriptTreesWith(
+      trees => {
+        let updated = false;
+        const processTrees = (nodes: any[]) => {
+          for (const node of nodes) {
+            if (node.type === 'folder' && node.scripts) {
+              processTrees(node.scripts);
+            } else if (node.type === 'script' && typeof node.content === 'string') {
+              // 通过特征字符串判断是否为我们的加载脚本
+              if (
+                node.content.includes('Zaria773/ACU_visualization') &&
+                node.content.includes('dist/可视化表格/index.js')
+              ) {
+                // 通过核心标志位判断是否已经是最新版，只有没包含 'tryImportFromList' 的老版本才更新
+                if (!node.content.includes('tryImportFromList') || !node.content.includes('fetchLatestVersion')) {
+                  node.content = PERFECT_LOADER;
+                  updated = true;
+                  console.info(`[ACU] 成功自动修正更新了用户的加载器脚本 (${node.name})`);
+                }
               }
             }
           }
-        }
-      };
-      
-      processTrees(trees);
-      return trees;
-    }, { type: 'global' });
+        };
+
+        processTrees(trees);
+        return trees;
+      },
+      { type: 'global' },
+    );
   } catch (e) {
     console.warn('[ACU] 加载器脚本自动检测更新失败', e);
   }
@@ -358,7 +364,7 @@ function autoUpdateLoaderScript() {
 
 $(() => {
   console.info(`[ACU] v${VERSION} 脚本加载`);
-  
+
   // 自动监测并修补用户加载器脚本
   autoUpdateLoaderScript();
 
