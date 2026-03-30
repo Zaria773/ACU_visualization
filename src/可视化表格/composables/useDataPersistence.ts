@@ -112,28 +112,36 @@ function resolveWriteSlotKeyFromRecentChat(chat: any[], fallbackSlotKey: string)
   const fallbackCount = freq.get(fallbackSlotKey) || 0;
 
   const nonDefault = Array.from(freq.entries())
-    .filter(([k]) => !!k && k !== '__default__')
+    // 仅排除 __default__；空标签 '' 也是合法历史槽位
+    .filter(([k]) => k !== '__default__')
     .sort((a, b) => b[1] - a[1]);
 
   const dominant = nonDefault[0]?.[0];
   const dominantCount = nonDefault[0]?.[1] || 0;
 
-  // 1) fallback 本身就是活跃槽位，直接沿用
-  if (fallbackSlotKey && fallbackSlotKey !== '__default__' && fallbackCount > 0) {
+  // 0) 如果 fallback 在最近聊天里从未出现过，禁止直接用它创建新槽位
+  //    这能挡住 “脏 code -> encodeURIComponent -> 新乱码 key”
+  if (fallbackSlotKey && fallbackCount === 0 && dominant !== undefined && dominantCount >= 1) {
+    return dominant;
+  }
+
+  // 1) fallback 本身就是活跃槽位，直接沿用（包括空标签 ''）
+  if (fallbackSlotKey !== '__default__' && fallbackCount > 0) {
     return fallbackSlotKey;
   }
 
-  // 2) fallback 是默认槽位，但最近存在明显的非默认槽位，优先切到主槽位
-  if ((fallbackSlotKey === '__default__' || !fallbackSlotKey) && dominant) {
+  // 2) fallback 是默认槽位，且最近存在活跃非默认槽位，优先切到主槽位（含 ''）
+  if (fallbackSlotKey === '__default__' && dominant !== undefined) {
     return dominant;
   }
 
   // 3) fallback 非默认但近期没出现，且存在更可靠主槽位，切换
-  if (fallbackSlotKey && fallbackSlotKey !== '__default__' && fallbackCount === 0 && dominant && dominantCount >= 3) {
+  if (fallbackSlotKey !== '__default__' && fallbackCount === 0 && dominant !== undefined && dominantCount >= 1) {
     return dominant;
   }
 
-  return fallbackSlotKey || '__default__';
+  // 保留原值，避免把 '' 强制改写成 __default__
+  return fallbackSlotKey;
 }
 
 /**
@@ -195,9 +203,10 @@ function getActiveIsolationCode(): string {
           .filter(code => !!String(code).trim());
 
         if (decodedCodes.length > 0) {
-          // 取最后一个非空 code（通常是最近使用）
-          const fallbackCode = decodedCodes[decodedCodes.length - 1];
-          console.warn(`[ACU] globalMeta 未提供激活标签，回退使用 profile 推断标签: "${fallbackCode}"`);
+          // 注意：这里不能再盲猜“最后一个”，因为顺序不可靠，容易取到脏标签/半截标签
+          // 保存时会再结合最近聊天实际出现过的槽位做最终裁决
+          const fallbackCode = decodedCodes[0];
+          console.warn(`[ACU] globalMeta 未提供激活标签，存在候选 profile 标签:`, decodedCodes);
           return fallbackCode;
         }
       }
@@ -474,7 +483,9 @@ export function useDataPersistence() {
       const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
 
       if (configKey !== fallbackSlotKey) {
-        console.warn(`[ACU] 全量保存槽位修正: ${fallbackSlotKey} -> ${configKey}`);
+        console.warn(
+          `[ACU] 全量保存槽位修正: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
+        );
       }
 
       // D. 定位目标楼层并保存
@@ -690,7 +701,9 @@ export function useDataPersistence() {
       const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
 
       if (configKey !== fallbackSlotKey) {
-        console.warn(`[ACU] 增量保存槽位修正: ${fallbackSlotKey} -> ${configKey}`);
+        console.warn(
+          `[ACU] 增量保存槽位修正: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
+        );
       }
 
       // D. 分组：为每个表寻找目标楼层
@@ -757,7 +770,8 @@ export function useDataPersistence() {
         }
 
         // 2. 获取当前标签的数据槽
-        const slotKey = configKey || '__default__';
+        // 保留空标签 '' 的语义，不要强制转 __default__
+        const slotKey = configKey;
 
         if (!isolatedData[slotKey]) {
           isolatedData[slotKey] = {

@@ -369,10 +369,11 @@ function getDominantIsolationSlotKey(chat: ChatMessage[], limit: number = 50): s
   }
 
   const sorted = Array.from(freq.entries())
-    .filter(([k]) => !!k && k !== '__default__')
+    // 仅排除 __default__；空标签 '' 也是合法历史槽位
+    .filter(([k]) => k !== '__default__')
     .sort((a, b) => b[1] - a[1]);
 
-  return sorted[0]?.[0] || null;
+  return sorted[0]?.[0] ?? null;
 }
 
 /**
@@ -601,8 +602,8 @@ export function useTableUpdateStatus() {
 
       // 推断当前活跃槽位（用于补偿 globalMeta 丢失/延迟）
       const dominantSlotKey = getDominantIsolationSlotKey(chat, 50);
-      const preferredSlotKeys = dominantSlotKey ? [dominantSlotKey] : [];
-      if (dominantSlotKey) {
+      const preferredSlotKeys = dominantSlotKey !== null ? [dominantSlotKey] : [];
+      if (dominantSlotKey !== null) {
         console.info(`[ACU] 表格状态读取使用活跃槽位兜底: ${dominantSlotKey}`);
       }
 
