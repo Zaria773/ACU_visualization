@@ -49,10 +49,26 @@ export const EXT_SETTINGS_KEY = 'acu_visualizer';
 
 // === 类型定义 ===
 
+/** 全局表格 Tab 配置（跨聊天共享，按表名） */
+export interface GlobalTabConfig {
+  /** 可见表格名列表；空数组=全部显示 */
+  visibleTabs: string[];
+  /** 表格名排序；空数组=默认顺序 */
+  tabOrder: string[];
+}
+
 /** 聊天特定配置 */
 export interface ChatSpecificConfig {
-  visibleTabs: string[];
-  tabOrder: string[];
+  /**
+   * @deprecated 旧版本遗留字段（按聊天）
+   * 现在表格展示配置已改为全局 globalTabConfig，保留仅用于迁移读取
+   */
+  visibleTabs?: string[];
+  /**
+   * @deprecated 旧版本遗留字段（按聊天）
+   * 现在表格展示配置已改为全局 globalTabConfig，保留仅用于迁移读取
+   */
+  tabOrder?: string[];
   tableHeights: Record<string, number>;
   tableStyles: Record<string, 'list' | 'card'>;
   reverseTables: string[];
@@ -98,7 +114,8 @@ export interface ACUExtensionSettings {
   lastUpdated: number;
 
   // 全局配置（跨聊天共享）
-  tabs: string[]; // 保留，可能用于未来的 Tab 配置
+  tabs: string[]; // 旧字段，保留兼容
+  globalTabConfig: GlobalTabConfig; // 表格展示配置（按表名，跨聊天共享）
   buttons: ButtonsConfig;
   theme: ThemeConfig;
   ui: Partial<ACUConfig>;
@@ -162,10 +179,13 @@ export const DEFAULT_LOCAL_STATE: ACULocalState = {
 };
 
 export const DEFAULT_CHAT_CONFIG: ChatSpecificConfig = {
-  visibleTabs: [],
-  tabOrder: [],
   tableHeights: {},
   tableStyles: {},
   reverseTables: [],
   cellLocks: {},
+};
+
+export const DEFAULT_GLOBAL_TAB_CONFIG: GlobalTabConfig = {
+  visibleTabs: [],
+  tabOrder: [],
 };

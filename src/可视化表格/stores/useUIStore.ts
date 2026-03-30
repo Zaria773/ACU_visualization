@@ -9,7 +9,7 @@ import { useStorage } from '@vueuse/core';
 import { klona } from 'klona';
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import type { DivinationResult } from '../components/dialogs/divination/types';
-import { DEFAULT_CHAT_CONFIG, type ChatSpecificConfig } from '../composables/storageKeys';
+import { DEFAULT_CHAT_CONFIG, DEFAULT_GLOBAL_TAB_CONFIG, type ChatSpecificConfig } from '../composables/storageKeys';
 import { getACUConfigManager } from '../composables/useACUConfigManager';
 import type { BallPosition, DashboardWidgetConfig, TableRow, WidgetActionId } from '../types';
 import { useDataStore } from './useDataStore';
@@ -244,33 +244,109 @@ export const useUIStore = defineStore('acu-ui', () => {
   // ============================================================
   const configManager = getACUConfigManager();
 
-  /** 获取当前聊天 ID */
-  const currentChatId = computed(() => SillyTavern.getCurrentChatId() || 'default');
+  /**
+   * 获取当前聊天 ID（稳定版）
+   * 注意：不能直接用 computed(() => SillyTavern.getCurrentChatId())
+   * 因为它不依赖 Vue 响应式数据，聊天切换时不会自动重新计算。
+   */
+  const currentChatIdRef = ref<string>('default');
+
+  function resolveCurrentChatId(): string {
+    try {
+      const chatId = SillyTavern?.getCurrentChatId?.();
+      if (chatId !== undefined && chatId !== null && String(chatId).trim() !== '') {
+        return String(chatId);
+      }
+    } catch (e) {
+      console.warn('[UIStore] getCurrentChatId 读取失败:', e);
+    }
+
+    return 'default';
+  }
+
+  function refreshCurrentChatId(nextChatId?: string): void {
+    const normalized =
+      nextChatId !== undefined && nextChatId !== null && String(nextChatId).trim() !== ''
+        ? String(nextChatId)
+        : resolveCurrentChatId();
+
+    if (normalized !== currentChatIdRef.value) {
+      currentChatIdRef.value = normalized;
+      console.info('[UIStore] 聊天 ID 已更新:', normalized);
+    }
+  }
+
+  /** 对外暴露的当前聊天 ID */
+  const currentChatId = computed(() => currentChatIdRef.value);
+
+  // 初始化时先同步一次（处理脚本刚加载时 getCurrentChatId 可能未就绪）
+  refreshCurrentChatId();
+
+  // 监听聊天切换事件，确保按聊天隔离配置读取/保存
+  if (typeof tavern_events !== 'undefined') {
+    eventOn(tavern_events.CHAT_CHANGED, (newChatId: string) => {
+      refreshCurrentChatId(newChatId);
+    });
+  }
 
   /** 聊天配置 - 使用 ref 实现响应式 */
   const chatConfigRef = ref<ChatSpecificConfig>({ ...DEFAULT_CHAT_CONFIG });
 
   /**
-   * Tab 可见性配置 - 使用独立 ref 避免 computed getter/setter 的响应式问题
+   * 全局 Tab 可见性配置（按表名，跨聊天共享）
+   * 使用独立 ref 避免 computed getter/setter 的响应式问题
    * 空数组表示全部显示，非空数组表示只显示指定的 Tab
    * 存储的是表格名称 (name)，特殊 Tab 使用常量 ID
    */
   const visibleTabsRef = ref<string[]>([]);
 
   /**
-   * Tab 排序配置 - 使用独立 ref
-   * 空数组表示使用默认顺序
+   * 全局 Tab 排序配置（按表名，跨聊天共享）
+   * 使用独立 ref，空数组表示使用默认顺序
    */
   const tabOrderRef = ref<string[]>([]);
 
-  /** 从 ConfigManager 加载当前聊天的配置 */
+  /** 加载全局 Tab 配置（按表名，跨聊天共享）并兼容迁移旧数据 */
+  function loadGlobalTabConfig() {
+    const globalTabConfig = configManager.config.globalTabConfig;
+    const chatId = currentChatId.value;
+    const legacyChatConfig = configManager.config.chats[chatId];
+
+    const migratedVisibleTabs = Array.isArray(globalTabConfig?.visibleTabs)
+      ? globalTabConfig.visibleTabs
+      : Array.isArray(legacyChatConfig?.visibleTabs)
+        ? legacyChatConfig.visibleTabs
+        : DEFAULT_GLOBAL_TAB_CONFIG.visibleTabs;
+
+    const migratedTabOrder = Array.isArray(globalTabConfig?.tabOrder)
+      ? globalTabConfig.tabOrder
+      : Array.isArray(legacyChatConfig?.tabOrder)
+        ? legacyChatConfig.tabOrder
+        : DEFAULT_GLOBAL_TAB_CONFIG.tabOrder;
+
+    visibleTabsRef.value = [...migratedVisibleTabs];
+    tabOrderRef.value = [...migratedTabOrder];
+
+    // 若还没有 globalTabConfig，则从旧聊天配置迁移并保存
+    if (!configManager.config.globalTabConfig) {
+      configManager.config.globalTabConfig = {
+        visibleTabs: [...migratedVisibleTabs],
+        tabOrder: [...migratedTabOrder],
+      };
+      configManager.saveConfig();
+      console.info('[UIStore] 已将旧聊天 Tab 配置迁移到全局配置');
+    }
+  }
+
+  /** 从 ConfigManager 加载当前聊天的配置（聊天隔离部分） */
   function loadChatConfig() {
     const chatId = currentChatId.value;
     const stored = configManager.config.chats[chatId];
     chatConfigRef.value = stored ? klona(stored) : { ...DEFAULT_CHAT_CONFIG };
-    // 同步 Tab 配置到独立 ref
-    visibleTabsRef.value = [...chatConfigRef.value.visibleTabs];
-    tabOrderRef.value = [...chatConfigRef.value.tabOrder];
+
+    // Tab 配置改为全局读取
+    loadGlobalTabConfig();
+
     console.info('[UIStore] 已加载聊天配置:', chatId, 'visibleTabs:', visibleTabsRef.value);
   }
 
@@ -295,15 +371,17 @@ export const useUIStore = defineStore('acu-ui', () => {
     { deep: true },
   );
 
-  // 监听 Tab 配置变化，同步到 chatConfigRef 并触发保存
+  // 监听 Tab 配置变化，保存到全局配置（跨聊天生效）
   watch(
     visibleTabsRef,
     newValue => {
       if (isChatConfigInitializing) return;
-      chatConfigRef.value.visibleTabs = [...newValue];
-      const chatId = currentChatId.value;
-      configManager.setChatConfig(chatId, klona(chatConfigRef.value));
-      console.info('[UIStore] visibleTabs 已保存:', newValue);
+      configManager.config.globalTabConfig = {
+        visibleTabs: [...newValue],
+        tabOrder: [...tabOrderRef.value],
+      };
+      configManager.saveConfig();
+      console.info('[UIStore] 全局 visibleTabs 已保存:', newValue);
     },
     { deep: true },
   );
@@ -312,10 +390,12 @@ export const useUIStore = defineStore('acu-ui', () => {
     tabOrderRef,
     newValue => {
       if (isChatConfigInitializing) return;
-      chatConfigRef.value.tabOrder = [...newValue];
-      const chatId = currentChatId.value;
-      configManager.setChatConfig(chatId, klona(chatConfigRef.value));
-      console.info('[UIStore] tabOrder 已保存:', newValue);
+      configManager.config.globalTabConfig = {
+        visibleTabs: [...visibleTabsRef.value],
+        tabOrder: [...newValue],
+      };
+      configManager.saveConfig();
+      console.info('[UIStore] 全局 tabOrder 已保存:', newValue);
     },
     { deep: true },
   );

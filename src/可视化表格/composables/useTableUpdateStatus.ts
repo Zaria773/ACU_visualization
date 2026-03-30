@@ -41,6 +41,10 @@ export interface TableUpdateStatus {
   lastUpdatedChatIndex: number;
   /** 未记录楼层数（基于 AI 楼层计算） */
   unrecordedFloors: number;
+  /** 有效积累楼层（减去跳过楼层后的实际计算值） */
+  effectiveUnrecordedFloors: number;
+  /** 跳过更新楼层数 */
+  skipFloors: number;
   /** 当前总 AI 楼层数 */
   totalAiFloors: number;
   /** 当前总楼层数（chat.length） */
@@ -134,6 +138,16 @@ function findHighestVersionKey(keys: string[], pattern: RegExp): string | null {
 }
 
 /**
+ * 将隔离 code 转换为 IsolatedData 槽位 key（对齐 v2.5 数据库）
+ * - 空 code => "__default__"
+ * - 非空 code => encodeURIComponent(code)
+ */
+function toIsolationSlotKey(code: string): string {
+  const raw = String(code || '');
+  return raw ? encodeURIComponent(raw) : '__default__';
+}
+
+/**
  * 数据库配置缓存（用于跨函数共享）
  */
 interface DbConfigCache {
@@ -186,7 +200,30 @@ function getDbGlobalSettings(): DbGlobalSettings {
         if (settingsContainer[globalMetaKey]) {
           const metaRaw = settingsContainer[globalMetaKey];
           const meta = typeof metaRaw === 'string' ? JSON.parse(metaRaw) : (metaRaw as Record<string, unknown>);
-          activeIsolationCode = String(meta.activeIsolationCode || '');
+          activeIsolationCode = String(meta.activeIsolationCode || '').trim();
+        }
+
+        // 回退：globalMeta 没有时，从 profile key 反推最近可用 code（排除 __default__）
+        if (!activeIsolationCode) {
+          const profileSettingsKeys = Object.keys(settingsContainer).filter(
+            k => k.startsWith(`${versionPrefix}_profile_v1__`) && k.endsWith('__settings'),
+          );
+          const decodedCodes = profileSettingsKeys
+            .map(k => k.slice(`${versionPrefix}_profile_v1__`.length, -'__settings'.length))
+            .map(segment => {
+              if (segment === '__default__') return '';
+              try {
+                return decodeURIComponent(segment);
+              } catch {
+                return segment;
+              }
+            })
+            .filter(code => !!String(code).trim());
+
+          if (decodedCodes.length > 0) {
+            activeIsolationCode = String(decodedCodes[decodedCodes.length - 1] || '');
+            console.warn(`[ACU] globalMeta 未提供激活标签，回退使用 profile 推断标签: "${activeIsolationCode}"`);
+          }
         }
 
         // 构建 profile 设置键
@@ -305,6 +342,40 @@ function checkIsSummaryOrOutline(name: string): boolean {
 }
 
 /**
+ * 从最近聊天中推断“当前活跃槽位 key”
+ * 用于 globalMeta 缺失/不可靠时的读状态兜底
+ */
+function getDominantIsolationSlotKey(chat: ChatMessage[], limit: number = 50): string | null {
+  const freq = new Map<string, number>();
+  const start = Math.max(0, chat.length - limit);
+
+  for (let i = start; i < chat.length; i++) {
+    const msg = chat[i];
+    if (!msg || msg.is_user) continue;
+
+    let isolatedData = msg.TavernDB_ACU_IsolatedData;
+    if (typeof isolatedData === 'string') {
+      try {
+        isolatedData = JSON.parse(isolatedData);
+      } catch {
+        isolatedData = null;
+      }
+    }
+    if (!isolatedData || typeof isolatedData !== 'object') continue;
+
+    Object.keys(isolatedData).forEach(k => {
+      freq.set(k, (freq.get(k) || 0) + 1);
+    });
+  }
+
+  const sorted = Array.from(freq.entries())
+    .filter(([k]) => !!k && k !== '__default__')
+    .sort((a, b) => b[1] - a[1]);
+
+  return sorted[0]?.[0] || null;
+}
+
+/**
  * 计算单个表格的上次更新位置
  * 逻辑来源: .kilocode/数据库/10.5index .js 第 6882-6950 行
  *
@@ -319,8 +390,10 @@ function getLastUpdatedPosition(
   chat: ChatMessage[],
   settings: DbGlobalSettings,
   isSummary: boolean,
+  preferredSlotKeys: string[] = [],
 ): LastUpdateResult {
-  const currentIsolationKey = settings.dataIsolationEnabled ? settings.dataIsolationCode : '';
+  const currentIsolationCode = settings.dataIsolationEnabled ? settings.dataIsolationCode : '';
+  const currentIsolationSlotKey = toIsolationSlotKey(currentIsolationCode);
 
   // 从后向前扫描聊天记录
   for (let i = chat.length - 1; i >= 0; i--) {
@@ -330,19 +403,38 @@ function getLastUpdatedPosition(
     let wasUpdated = false;
 
     // [优先级1] 检查新版隔离数据 TavernDB_ACU_IsolatedData
-    const isolatedData = msg.TavernDB_ACU_IsolatedData;
-    if (isolatedData && isolatedData[currentIsolationKey]) {
-      const tagData = isolatedData[currentIsolationKey];
-      const updateGroupKeys = tagData.updateGroupKeys || [];
-      const modifiedKeys = tagData.modifiedKeys || [];
-      const independentData = tagData.independentData || {};
+    // ★ 兼容：TavernDB_ACU_IsolatedData 可能被序列化成字符串（v2.5 数据库）
+    let isolatedData = msg.TavernDB_ACU_IsolatedData;
+    if (typeof isolatedData === 'string') {
+      try {
+        isolatedData = JSON.parse(isolatedData);
+      } catch {
+        isolatedData = null;
+      }
+    }
+    if (isolatedData && typeof isolatedData === 'object') {
+      // 新版优先：当前槽位 key + 推断出的活跃槽位
+      // 兼容旧数据：raw code / 空字符串 / __default__
+      const candidateKeys = Array.from(
+        new Set([currentIsolationSlotKey, currentIsolationCode, ...preferredSlotKeys, '', '__default__']),
+      );
+      for (const key of candidateKeys) {
+        const tagData = isolatedData[key];
+        if (!tagData) continue;
 
-      if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
-        wasUpdated = updateGroupKeys.includes(sheetKey);
-      } else if (modifiedKeys.includes(sheetKey)) {
-        wasUpdated = true;
-      } else if (independentData[sheetKey]) {
-        wasUpdated = true;
+        const updateGroupKeys = tagData.updateGroupKeys || [];
+        const modifiedKeys = tagData.modifiedKeys || [];
+        const independentData = tagData.independentData || {};
+
+        if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
+          wasUpdated = updateGroupKeys.includes(sheetKey);
+        } else if (modifiedKeys.includes(sheetKey)) {
+          wasUpdated = true;
+        } else if (independentData[sheetKey]) {
+          wasUpdated = true;
+        }
+
+        if (wasUpdated) break;
       }
     }
 
@@ -507,6 +599,13 @@ export function useTableUpdateStatus() {
 
       const results: TableUpdateStatus[] = [];
 
+      // 推断当前活跃槽位（用于补偿 globalMeta 丢失/延迟）
+      const dominantSlotKey = getDominantIsolationSlotKey(chat, 50);
+      const preferredSlotKeys = dominantSlotKey ? [dominantSlotKey] : [];
+      if (dominantSlotKey) {
+        console.info(`[ACU] 表格状态读取使用活跃槽位兜底: ${dominantSlotKey}`);
+      }
+
       // 获取所有表格 key 并按顺序编号排序
       const sheetKeys = Object.keys(tableData)
         .filter(k => k.startsWith('sheet_'))
@@ -535,20 +634,30 @@ export function useTableUpdateStatus() {
         // ★ 从模板读取 updateConfig（这才是正确的数据源）
         const updateConfig = templateEntry?.updateConfig || {};
         const rawFreq = updateConfig.updateFrequency ?? -1;
+        const rawSkip = updateConfig.skipFloors ?? -1;
 
-        // 计算有效频率
-        // -1 = 沿用全局设置
-        // 0 = 禁用自动更新
-        // >0 = 表级更新频率
+        // 频率与跳过楼层：-1 = 沿用全局设置；其余为表级覆盖
         const effectiveFreq = rawFreq === -1 ? settings.autoUpdateFrequency : rawFreq;
+        const effectiveSkip = rawSkip === -1 ? settings.skipUpdateFloors : rawSkip;
 
         const isSummaryOrOutline = checkIsSummaryOrOutline(name);
 
-        // 计算上次更新位置
-        const { aiFloor, chatIndex, hasHistory } = getLastUpdatedPosition(sheetKey, chat, settings, isSummaryOrOutline);
+        // 计算上次更新位置（携带活跃槽位兜底）
+        const { aiFloor, chatIndex, hasHistory } = getLastUpdatedPosition(
+          sheetKey,
+          chat,
+          settings,
+          isSummaryOrOutline,
+          preferredSlotKeys,
+        );
 
         // 计算未记录楼层（基于 AI 楼层）
         const unrecordedFloors = hasHistory ? totalAiFloors - aiFloor : totalAiFloors;
+        // 计算有效积累楼层（用于判断进度）：减去跳过楼层
+        // 算法同步自 v2.5.js: effectiveUnrecorded = Math.max(0, (totalAiMessages - skipFloors) - lastUpdatedAiFloor)
+        const effectiveUnrecordedFloors = hasHistory
+          ? Math.max(0, totalAiFloors - effectiveSkip - aiFloor)
+          : Math.max(0, totalAiFloors - effectiveSkip);
 
         results.push({
           sheetKey,
@@ -558,6 +667,8 @@ export function useTableUpdateStatus() {
           lastUpdatedAiFloor: aiFloor,
           lastUpdatedChatIndex: chatIndex,
           unrecordedFloors,
+          effectiveUnrecordedFloors,
+          skipFloors: effectiveSkip,
           totalAiFloors,
           totalFloors,
           hasHistory,

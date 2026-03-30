@@ -10,6 +10,7 @@ import { reactive, ref } from 'vue';
 import { DEFAULT_BACKGROUND_CONFIG } from '../types';
 import {
   DEFAULT_CHAT_CONFIG,
+  DEFAULT_GLOBAL_TAB_CONFIG,
   DEFAULT_LOCAL_STATE,
   EXT_SETTINGS_KEY,
   LOCAL_KEYS,
@@ -109,6 +110,7 @@ const DEFAULT_CONFIG: ACUExtensionSettings = {
   version: 1,
   lastUpdated: Date.now(),
   tabs: [],
+  globalTabConfig: { ...DEFAULT_GLOBAL_TAB_CONFIG },
   buttons: { ...DEFAULT_BUTTONS_CONFIG },
   theme: { ...DEFAULT_THEME_CONFIG },
   ui: {},
@@ -132,6 +134,10 @@ export function useACUConfigManager() {
       ...DEFAULT_CONFIG,
       ...stored,
       // 深度合并嵌套对象，确保新字段有默认值
+      globalTabConfig: {
+        ...DEFAULT_GLOBAL_TAB_CONFIG,
+        ...(stored.globalTabConfig || {}),
+      },
       buttons: {
         ...DEFAULT_BUTTONS_CONFIG,
         ...(stored.buttons || {}),

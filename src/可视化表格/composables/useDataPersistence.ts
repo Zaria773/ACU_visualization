@@ -65,7 +65,79 @@ function findHighestVersionKey(keys: string[], pattern: RegExp): string | null {
 }
 
 /**
- * 获取当前激活的隔离标签
+ * 将隔离标识 code 转换为 IsolatedData 槽位 key
+ * 与 v2.5 数据库保持一致：空标识 => "__default__"，非空 => encodeURIComponent(code)
+ */
+function toIsolationSlotKey(code: string): string {
+  const normalized = typeof code === 'string' ? code.trim() : '';
+  return normalized ? encodeURIComponent(normalized) : '__default__';
+}
+
+/**
+ * 统计最近聊天中 IsolatedData 槽位 key 的出现频次
+ */
+function getRecentSlotKeyFrequency(chat: any[], limit: number = 50): Map<string, number> {
+  const freq = new Map<string, number>();
+  if (!Array.isArray(chat) || chat.length === 0) return freq;
+
+  const start = Math.max(0, chat.length - limit);
+  for (let i = start; i < chat.length; i++) {
+    const msg = chat[i];
+    if (!msg || msg.is_user) continue;
+
+    let isolatedData = msg.TavernDB_ACU_IsolatedData;
+    if (typeof isolatedData === 'string') {
+      try {
+        isolatedData = JSON.parse(isolatedData);
+      } catch {
+        isolatedData = null;
+      }
+    }
+    if (!isolatedData || typeof isolatedData !== 'object') continue;
+
+    Object.keys(isolatedData).forEach(k => {
+      freq.set(k, (freq.get(k) || 0) + 1);
+    });
+  }
+
+  return freq;
+}
+
+/**
+ * 解析本次写入应使用的槽位 key
+ * 目标：尽量复用聊天中已有“主槽位”，避免新造乱码 key / 误写 __default__
+ */
+function resolveWriteSlotKeyFromRecentChat(chat: any[], fallbackSlotKey: string): string {
+  const freq = getRecentSlotKeyFrequency(chat, 50);
+  const fallbackCount = freq.get(fallbackSlotKey) || 0;
+
+  const nonDefault = Array.from(freq.entries())
+    .filter(([k]) => !!k && k !== '__default__')
+    .sort((a, b) => b[1] - a[1]);
+
+  const dominant = nonDefault[0]?.[0];
+  const dominantCount = nonDefault[0]?.[1] || 0;
+
+  // 1) fallback 本身就是活跃槽位，直接沿用
+  if (fallbackSlotKey && fallbackSlotKey !== '__default__' && fallbackCount > 0) {
+    return fallbackSlotKey;
+  }
+
+  // 2) fallback 是默认槽位，但最近存在明显的非默认槽位，优先切到主槽位
+  if ((fallbackSlotKey === '__default__' || !fallbackSlotKey) && dominant) {
+    return dominant;
+  }
+
+  // 3) fallback 非默认但近期没出现，且存在更可靠主槽位，切换
+  if (fallbackSlotKey && fallbackSlotKey !== '__default__' && fallbackCount === 0 && dominant && dominantCount >= 3) {
+    return dominant;
+  }
+
+  return fallbackSlotKey || '__default__';
+}
+
+/**
+ * 获取当前激活的隔离标签（原始 code）
  * 兼容多版本存储格式（9.5 / 10.5+ / 12.1）
  * @returns 隔离标签字符串，未启用隔离或获取失败返回空字符串
  */
@@ -85,7 +157,6 @@ function getActiveIsolationCode(): string {
       const allKeys = Object.keys(userscripts);
 
       // ★ 选择版本号最高的设置键
-      // 匹配: shujuku_v数字__userscript_settings_v1 (10.5+/12.1)
       const settingsKey = findHighestVersionKey(allKeys, /shujuku_v\d+__userscript_settings_v1/i);
 
       if (settingsKey && userscripts[settingsKey]) {
@@ -95,16 +166,39 @@ function getActiveIsolationCode(): string {
         // 提取版本前缀（如 shujuku_v104）
         const versionPrefix = settingsKey.replace(/__userscript_settings_v1$/i, '');
 
-        // 读取 globalMeta 获取当前激活的隔离标识
+        // 1) 首选 globalMeta.activeIsolationCode
         const globalMetaKey = `${versionPrefix}_globalMeta_v1`;
         if (settingsContainer[globalMetaKey]) {
           const metaRaw = settingsContainer[globalMetaKey];
           const meta = typeof metaRaw === 'string' ? JSON.parse(metaRaw) : (metaRaw as Record<string, unknown>);
-          const activeCode = String(meta.activeIsolationCode || '');
+          const activeCode = String(meta.activeIsolationCode || '').trim();
           if (activeCode) {
-            console.info(`[ACU] 使用隔离标签: "${activeCode}" (from extensionSettings)`);
+            console.info(`[ACU] 使用隔离标签: "${activeCode}" (from extensionSettings.globalMeta)`);
+            return activeCode;
           }
-          return activeCode;
+        }
+
+        // 2) 回退：根据 profile settings 键反推可用 code（过滤 __default__）
+        const profileSettingsKeys = Object.keys(settingsContainer).filter(
+          k => k.startsWith(`${versionPrefix}_profile_v1__`) && k.endsWith('__settings'),
+        );
+        const decodedCodes = profileSettingsKeys
+          .map(k => k.slice(`${versionPrefix}_profile_v1__`.length, -'__settings'.length))
+          .map(segment => {
+            if (segment === '__default__') return '';
+            try {
+              return decodeURIComponent(segment);
+            } catch {
+              return segment;
+            }
+          })
+          .filter(code => !!String(code).trim());
+
+        if (decodedCodes.length > 0) {
+          // 取最后一个非空 code（通常是最近使用）
+          const fallbackCode = decodedCodes[decodedCodes.length - 1];
+          console.warn(`[ACU] globalMeta 未提供激活标签，回退使用 profile 推断标签: "${fallbackCode}"`);
+          return fallbackCode;
         }
       }
     }
@@ -198,6 +292,7 @@ function buildSheetGuideData(rawData: RawDatabaseData): Record<string, unknown> 
         updateFrequency: -1,
         batchSize: -1,
         skipFloors: -1,
+        sendLatestRows: -1,
       },
       exportConfig: sheet.exportConfig || {
         enabled: false,
@@ -374,7 +469,13 @@ export function useDataPersistence() {
       }
 
       // C. 获取隔离配置 Key（兼容 9.5 / 10.5+ / 12.1）
-      const configKey = getActiveIsolationCode();
+      const isolationCode = getActiveIsolationCode();
+      const fallbackSlotKey = toIsolationSlotKey(isolationCode);
+      const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
+
+      if (configKey !== fallbackSlotKey) {
+        console.warn(`[ACU] 全量保存槽位修正: ${fallbackSlotKey} -> ${configKey}`);
+      }
 
       // D. 定位目标楼层并保存
       if (ST && ST.chat && ST.chat.length > 0) {
@@ -409,11 +510,20 @@ export function useDataPersistence() {
         // 写入数据
         if (targetMsg) {
           // 确定存储的 Key
-          let finalKey = configKey;
+          // ★ 兼容：TavernDB_ACU_IsolatedData 可能被序列化成字符串（v2.5 数据库）
+          const finalKey = configKey;
           if (targetMsg.TavernDB_ACU_IsolatedData) {
-            const existingKeys = Object.keys(targetMsg.TavernDB_ACU_IsolatedData);
-            if (existingKeys.length > 0) {
-              finalKey = existingKeys[0]; // 沿用已有的 Key
+            if (typeof targetMsg.TavernDB_ACU_IsolatedData === 'string') {
+              try {
+                targetMsg.TavernDB_ACU_IsolatedData = JSON.parse(targetMsg.TavernDB_ACU_IsolatedData);
+              } catch {
+                targetMsg.TavernDB_ACU_IsolatedData = {};
+              }
+            }
+            if (targetMsg.TavernDB_ACU_IsolatedData && typeof targetMsg.TavernDB_ACU_IsolatedData === 'object') {
+              // 不再“沿用第一个已有 key”，必须写入当前激活槽位，避免串标签
+            } else {
+              targetMsg.TavernDB_ACU_IsolatedData = {};
             }
           } else {
             targetMsg.TavernDB_ACU_IsolatedData = {};
@@ -493,30 +603,30 @@ export function useDataPersistence() {
       if (msg.is_user) continue;
 
       // 检查 TavernDB_ACU_IsolatedData
-      if (msg.TavernDB_ACU_IsolatedData && typeof msg.TavernDB_ACU_IsolatedData === 'object') {
-        // 优先检查当前隔离键
-        const tagData = msg.TavernDB_ACU_IsolatedData[configKey];
-        if (tagData && tagData.independentData && tagData.independentData[tableId]) {
-          return i;
+      // ★ 兼容：TavernDB_ACU_IsolatedData 可能被序列化成字符串（v2.5 数据库）
+      let isolatedData = msg.TavernDB_ACU_IsolatedData;
+      if (typeof isolatedData === 'string') {
+        try {
+          isolatedData = JSON.parse(isolatedData);
+        } catch {
+          isolatedData = null;
         }
-
-        // 也可以检查无标签槽位（如果当前是空标签）
-        if (
-          !configKey &&
-          msg.TavernDB_ACU_IsolatedData[''] &&
-          msg.TavernDB_ACU_IsolatedData[''].independentData &&
-          msg.TavernDB_ACU_IsolatedData[''].independentData[tableId]
-        ) {
-          return i;
+      }
+      if (isolatedData && typeof isolatedData === 'object') {
+        // 优先检查当前隔离键
+        // 优先查当前激活槽位；再兼容历史空标签写法与 v2.5 默认槽位
+        const candidateKeys = [configKey, '', '__default__'];
+        for (const key of candidateKeys) {
+          const tagData = isolatedData[key];
+          if (tagData && tagData.independentData && tagData.independentData[tableId]) {
+            return i;
+          }
         }
       }
 
       // 兼容性：检查旧数据结构
       if (msg.TavernDB_ACU_IndependentData && msg.TavernDB_ACU_IndependentData[tableId]) {
-        // 如果开启了隔离，且旧数据有 Identity 且不匹配，则跳过
-        if (configKey && msg.TavernDB_ACU_Identity && msg.TavernDB_ACU_Identity !== configKey) {
-          continue;
-        }
+        // 旧字段兼容：此处不再用 slotKey 与 Identity 比较（两者语义不同）
         return i;
       }
     }
@@ -575,7 +685,13 @@ export function useDataPersistence() {
       }
 
       // C. 获取隔离配置 Key（兼容 9.5 / 10.5+ / 12.1）
-      const configKey = getActiveIsolationCode();
+      const isolationCode = getActiveIsolationCode();
+      const fallbackSlotKey = toIsolationSlotKey(isolationCode);
+      const configKey = resolveWriteSlotKeyFromRecentChat(ST.chat || [], fallbackSlotKey);
+
+      if (configKey !== fallbackSlotKey) {
+        console.warn(`[ACU] 增量保存槽位修正: ${fallbackSlotKey} -> ${configKey}`);
+      }
 
       // D. 分组：为每个表寻找目标楼层
       const floorMap = new Map<number, Set<string>>(); // floorIndex -> Set<tableId>
@@ -641,8 +757,7 @@ export function useDataPersistence() {
         }
 
         // 2. 获取当前标签的数据槽
-        // 注意：我们必须使用空字符串 "" 作为无标签的 key，而不是 undefined
-        const slotKey = configKey || '';
+        const slotKey = configKey || '__default__';
 
         if (!isolatedData[slotKey]) {
           isolatedData[slotKey] = {
@@ -672,8 +787,9 @@ export function useDataPersistence() {
         targetMsg.TavernDB_ACU_IsolatedData = isolatedData;
 
         // 6. 兼容性更新 (旧字段)
-        if (configKey) {
-          targetMsg.TavernDB_ACU_Identity = configKey;
+        // 注意：Identity 存的是“原始隔离标签 code”，不是槽位 key
+        if (isolationCode) {
+          targetMsg.TavernDB_ACU_Identity = isolationCode;
         }
         // 仅当没有其他标签干扰时，才敢更新根级别的 IndependentData
         // 简单起见，我们总是更新根级别字段以保持最大兼容性 (假设当前环境以此插件为主)

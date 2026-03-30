@@ -198,8 +198,48 @@ export const useGraphConfigStore = defineStore('graphConfig', () => {
   // ============================================================
   const configManager = getACUConfigManager();
 
-  /** 获取当前聊天 ID - 使用 computed 自动获取 */
-  const currentChatId = computed(() => SillyTavern.getCurrentChatId() || '');
+  /**
+   * 获取当前聊天 ID（稳定版）
+   * 不能直接 computed(() => SillyTavern.getCurrentChatId())，否则聊天切换时不会响应更新。
+   */
+  const currentChatIdRef = ref<string>('');
+
+  function resolveCurrentChatId(): string {
+    try {
+      const chatId = SillyTavern?.getCurrentChatId?.();
+      if (chatId !== undefined && chatId !== null && String(chatId).trim() !== '') {
+        return String(chatId);
+      }
+    } catch (e) {
+      console.warn('[GraphConfigStore] getCurrentChatId 读取失败:', e);
+    }
+    return '';
+  }
+
+  function refreshCurrentChatId(nextChatId?: string): void {
+    const normalized =
+      nextChatId !== undefined && nextChatId !== null && String(nextChatId).trim() !== ''
+        ? String(nextChatId)
+        : resolveCurrentChatId();
+
+    if (normalized !== currentChatIdRef.value) {
+      currentChatIdRef.value = normalized;
+      console.info('[GraphConfigStore] 聊天 ID 已更新:', normalized);
+    }
+  }
+
+  /** 对外使用的当前聊天 ID */
+  const currentChatId = computed(() => currentChatIdRef.value);
+
+  // 初始化时同步一次
+  refreshCurrentChatId();
+
+  // 监听聊天切换事件
+  if (typeof tavern_events !== 'undefined') {
+    eventOn(tavern_events.CHAT_CHANGED, (newChatId: string) => {
+      refreshCurrentChatId(newChatId);
+    });
+  }
 
   // ============================================================
   // 使用 ref + watch 模式确保响应式正确工作
