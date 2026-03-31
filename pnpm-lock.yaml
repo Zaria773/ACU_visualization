@@ -19,7 +19,11 @@ importers:
         version: 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations':
         specifier: ^13.9.0
+<<<<<<< HEAD
         version: 13.9.0(axios@1.14.1)(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807))
+=======
+        version: 13.9.0(axios@1.14.1)(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807))
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
       '@vueuse/shared':
         specifier: ^13.9.0
         version: 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
@@ -88,7 +92,11 @@ importers:
         version: 3.5.31(typescript@6.0.0-dev.20250807)
       vue-final-modal:
         specifier: ^4.5.5
+<<<<<<< HEAD
         version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807))
+=======
+        version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807))
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
       vue-router:
         specifier: ^4.6.4
         version: 4.6.4(vue@3.5.31(typescript@6.0.0-dev.20250807))
@@ -2269,9 +2277,12 @@ packages:
 
   electron-to-chromium@1.5.329:
     resolution: {integrity: sha512-/4t+AS1l4S3ZC0Ja7PHFIWeBIxGA3QGqV8/yKsP36v7NcyUCl+bIcmw6s5zVuMIECWwBrAK/6QLzTmbJChBboQ==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -5807,6 +5818,7 @@ snapshots:
       '@vueuse/shared': 14.2.1(vue@3.5.31(typescript@6.0.0-dev.20250807))
       vue: 3.5.31(typescript@6.0.0-dev.20250807)
 
+<<<<<<< HEAD
   '@vueuse/integrations@12.8.2(axios@1.14.1)(focus-trap@7.8.0)(typescript@6.0.0-dev.20250807)':
     dependencies:
       '@vueuse/core': 12.8.2(typescript@6.0.0-dev.20250807)
@@ -5819,13 +5831,20 @@ snapshots:
       - typescript
 
   '@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807))':
+=======
+  '@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807))':
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
     dependencies:
       '@vueuse/core': 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
       '@vueuse/shared': 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
       vue: 3.5.31(typescript@6.0.0-dev.20250807)
     optionalDependencies:
       axios: 1.14.1
+<<<<<<< HEAD
       focus-trap: 7.8.0
+=======
+      focus-trap: 7.6.5
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
 
   '@vueuse/metadata@10.11.1': {}
 
@@ -6652,8 +6671,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.329: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
 
   emoji-regex@8.0.0: {}
 
@@ -9293,11 +9315,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+<<<<<<< HEAD
   vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807)):
     dependencies:
       '@vueuse/core': 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations': 13.9.0(axios@1.14.1)(focus-trap@7.8.0)(vue@3.5.31(typescript@6.0.0-dev.20250807))
       focus-trap: 7.8.0
+=======
+  vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.1)(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807)):
+    dependencies:
+      '@vueuse/core': 13.9.0(vue@3.5.31(typescript@6.0.0-dev.20250807))
+      '@vueuse/integrations': 13.9.0(axios@1.14.1)(focus-trap@7.6.5)(vue@3.5.31(typescript@6.0.0-dev.20250807))
+      focus-trap: 7.6.5
+>>>>>>> 9f9d4a629e598c1c7452062fdb7482361ad09c6f
       vue: 3.5.31(typescript@6.0.0-dev.20250807)
 
   vue-loader@17.4.2(vue@3.5.31(typescript@6.0.0-dev.20250807))(webpack@5.105.4):
