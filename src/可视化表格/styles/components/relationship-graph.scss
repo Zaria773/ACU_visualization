@@ -35,19 +35,6 @@
   flex-direction: column;
 }
 
-// 背景层 - 绝对定位，在图容器下方
-.acu-graph-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0; // 最底层
-  pointer-events: none; // 不影响交互
-  background-color: transparent;
-  background-repeat: no-repeat;
-}
-
 // 当显示关系图时，面板内容区域高度最大化
 .acu-panel-content:has(.acu-relationship-graph) {
   // 使用 flex 布局让关系图能够撑满
@@ -89,8 +76,8 @@
   left: 0;
   right: 0;
   overflow: hidden;
-  z-index: 1; // 在背景层之上
-  background: transparent; // 透明背景以显示背景层
+  z-index: 1; // 在根容器背景之上
+  background: transparent;
 }
 
 // 搜索框 - 工具栏上方

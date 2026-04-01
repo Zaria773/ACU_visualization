@@ -45,6 +45,58 @@ const LOCAL_KEYS = {
   UI_COLLAPSE: 'acu_ui_collapse_state',
 } as const;
 
+const DEFAULT_CENTERED_WIN_CONFIG = {
+  width: 400,
+  left: '50%',
+  bottom: '50%',
+  isCentered: true,
+} as const;
+
+function getLocalStorageUsageSummary(): Array<{ key: string; length: number }> {
+  try {
+    const summary: Array<{ key: string; length: number }> = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const value = localStorage.getItem(key) ?? '';
+      summary.push({ key, length: value.length });
+    }
+    return summary.sort((a, b) => b.length - a.length).slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
+function safeSetLocalStorage(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn('[ACU] localStorage 写入失败，已跳过，不阻断启动', {
+      key,
+      valueLength: value.length,
+      topKeys: getLocalStorageUsageSummary(),
+      error,
+    });
+    return false;
+  }
+}
+
+function safeRemoveLocalStorage(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn('[ACU] localStorage 删除失败，已跳过，不阻断启动', { key, error });
+  }
+}
+
+function applySafeCenteredModeReset(reason: string): void {
+  safeSetLocalStorage(LOCAL_KEYS.WIN_CONFIG, JSON.stringify(DEFAULT_CENTERED_WIN_CONFIG));
+  safeRemoveLocalStorage(LOCAL_KEYS.ACTIVE_TAB);
+  safeSetLocalStorage(LOCAL_KEYS.UI_COLLAPSE, 'false');
+  console.info(`[ACU] ${reason}`);
+}
+
 /**
  * 【关键修复】参照 6.4.1：初始化时检测居中模式并重置状态
  *
@@ -61,14 +113,7 @@ function checkAndResetCenteredMode(): void {
 
     // 情况1：没有保存过位置（首次加载）
     if (!winConfigRaw) {
-      // 设置默认居中配置
-      const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
-      localStorage.setItem(LOCAL_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
-      // 清除 activeTab，确保不显示内容区域
-      localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
-      // 确保面板展开（不显示悬浮球）
-      localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
-      console.info('[ACU] 首次加载：设置居中模式，清除 activeTab');
+      applySafeCenteredModeReset('首次加载：设置居中模式，清除 activeTab');
       return;
     }
 
@@ -76,18 +121,15 @@ function checkAndResetCenteredMode(): void {
     const winConfig = JSON.parse(winConfigRaw);
     if (winConfig?.isCentered === true) {
       // 居中模式下清除 activeTab，只显示导航栏
-      localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
+      safeRemoveLocalStorage(LOCAL_KEYS.ACTIVE_TAB);
       // 确保面板展开（不显示悬浮球）
-      localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
+      safeSetLocalStorage(LOCAL_KEYS.UI_COLLAPSE, 'false');
       console.info('[ACU] 居中模式：清除 activeTab，确保面板展开');
     }
   } catch (e) {
-    // 解析失败，重置为安全的居中状态
-    const defaultConfig = { width: 400, left: '50%', bottom: '50%', isCentered: true };
-    localStorage.setItem(LOCAL_KEYS.WIN_CONFIG, JSON.stringify(defaultConfig));
-    localStorage.removeItem(LOCAL_KEYS.ACTIVE_TAB);
-    localStorage.setItem(LOCAL_KEYS.UI_COLLAPSE, 'false');
-    console.warn('[ACU] 解析 win_config 失败，重置为居中模式:', e);
+    // 解析失败或 localStorage 异常时，尽量重置为安全的居中状态，但不阻断脚本启动
+    console.warn('[ACU] 解析 win_config 失败，尝试重置为居中模式', e);
+    applySafeCenteredModeReset('win_config 异常：已尝试重置为居中模式');
   }
 }
 
@@ -259,7 +301,7 @@ function autoUpdateLoaderScript() {
     const PERFECT_LOADER = `(async function loadACU() {
   const repo = 'Zaria773/ACU_visualization';
   const path = 'dist/可视化表格/index.js';
-  
+
   async function fetchLatestVersion() {
     const apiSources = [
       \`https://data.jsdelivr.com/v1/packages/gh/\${repo}\`,
@@ -287,7 +329,7 @@ function autoUpdateLoaderScript() {
       try {
         await import(url);
         console.log('[ACU-Loader] 加载成功:', url);
-        return true; 
+        return true;
       } catch (e) {
         console.warn('[ACU-Loader] 节点尝试失败:', url);
       }

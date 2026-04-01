@@ -1,8 +1,5 @@
 <template>
-  <div class="acu-relationship-graph">
-    <!-- 背景层 -->
-    <div v-if="backgroundStyle.enabled" class="acu-graph-background" :style="backgroundStyle.style"></div>
-
+  <div class="acu-relationship-graph" :style="backgroundStyle">
     <!-- 图例（顶部） -->
     <div v-if="graphConfigStore.config.showLegend" class="acu-graph-legend">
       <div v-for="item in legend" :key="item.level" class="acu-legend-item">
@@ -127,12 +124,63 @@ import {
 } from '../utils';
 import SearchBox from './SearchBox.vue';
 
-// 注册布局扩展
-cytoscape.use(fcose); // fcose: 自由模式（边交叉优化好）
-cytoscape.use(cola); // cola: 势力容器模式（支持复合节点）
+// 扩展可用性标记
+const graphExtensionStatus: Record<'fcose' | 'cola' | 'nodeHtmlLabel', boolean> = {
+  fcose: false,
+  cola: false,
+  nodeHtmlLabel: false,
+};
 
-// 注册 node-html-label 扩展（用于 HTML 渲染节点头像）
-nodeHtmlLabel(cytoscape);
+/** 模块级扩展注册状态，避免热重载/重复挂载时重复注册 */
+const cytoscapeCoreWithExtensions = cytoscape as typeof cytoscape & {
+  __acuRelationshipGraphExtensionsRegistered?: {
+    fcose?: boolean;
+    cola?: boolean;
+    nodeHtmlLabel?: boolean;
+  };
+};
+
+const extensionRegisterState = (cytoscapeCoreWithExtensions.__acuRelationshipGraphExtensionsRegistered ??= {});
+
+/** 安全注册 Cytoscape 扩展：只注册一次，重复加载时直接复用状态 */
+function ensureCytoscapeExtensionsRegistered() {
+  if (!extensionRegisterState.fcose) {
+    try {
+      cytoscape.use(fcose); // fcose: 自由模式（边交叉优化好）
+      extensionRegisterState.fcose = true;
+      console.info('[RelationshipGraph] fcose 扩展注册成功');
+    } catch (error) {
+      console.error('[RelationshipGraph] fcose 扩展注册失败，将降级到基础布局:', error);
+    }
+  }
+
+  if (!extensionRegisterState.cola) {
+    try {
+      cytoscape.use(cola); // cola: 势力容器模式（支持复合节点）
+      extensionRegisterState.cola = true;
+      console.info('[RelationshipGraph] cola 扩展注册成功');
+    } catch (error) {
+      console.error('[RelationshipGraph] cola 扩展注册失败，将降级到基础布局:', error);
+    }
+  }
+
+  if (!extensionRegisterState.nodeHtmlLabel) {
+    try {
+      // 注册 node-html-label 扩展（用于 HTML 渲染节点头像）
+      nodeHtmlLabel(cytoscape);
+      extensionRegisterState.nodeHtmlLabel = true;
+      console.info('[RelationshipGraph] node-html-label 扩展注册成功');
+    } catch (error) {
+      console.error('[RelationshipGraph] node-html-label 扩展注册失败，将降级到纯节点渲染:', error);
+    }
+  }
+
+  graphExtensionStatus.fcose = !!extensionRegisterState.fcose;
+  graphExtensionStatus.cola = !!extensionRegisterState.cola;
+  graphExtensionStatus.nodeHtmlLabel = !!extensionRegisterState.nodeHtmlLabel;
+}
+
+ensureCytoscapeExtensionsRegistered();
 
 // Stores
 const configStore = useConfigStore();
@@ -381,47 +429,35 @@ async function preloadCanvasFont(): Promise<void> {
 /** 图例数据 */
 const legend = computed(() => getRelationLegend());
 
-/** 背景样式配置 */
+/** 背景样式配置：直接挂到根容器，避免独立背景层参与前景层叠 */
 const backgroundStyle = computed(() => {
-  // 检查本地开关 (是否显示背景)
   if (!graphConfigStore.config.showBackground) {
-    return { enabled: false, style: {} };
+    return undefined;
   }
 
   const bg = themeStore.backgroundConfig;
-  // 使用运行时的 currentBackgroundUrl 或 externalUrl
   const imageUrl = currentBackgroundUrl.value || bg.externalUrl || '';
 
   if (!bg.enabled || !imageUrl) {
-    return { enabled: false, style: {} };
+    return undefined;
   }
 
-  // 使用与 useThemeStore 一致的逻辑：transform 实现位移和缩放
   const scale = (bg.scale || 100) / 100;
   const size = bg.size === 'auto' ? '100%' : bg.size;
 
   return {
-    enabled: true,
-    style: {
-      backgroundImage: `url(${imageUrl})`,
-      backgroundPosition: 'center center', // 固定居中
-      backgroundSize: size,
-      backgroundRepeat: 'no-repeat',
-      // 使用 transform 实现位移和缩放
-      transform: `translate(${bg.offsetX || 0}%, ${bg.offsetY || 0}%) scale(${scale})`,
-      transformOrigin: 'center center',
-      opacity: bg.opacity / 100,
-      filter: bg.blur > 0 ? `blur(${bg.blur}px)` : 'none',
-      // 确保覆盖整个容器且不阻挡交互
-      position: 'absolute' as const,
-      top: '0',
-      left: '0',
-      width: '100%',
-      height: '100%',
-      zIndex: '0', // 在父容器背景之上，但在图容器(z-index: 1)之下
-      pointerEvents: 'none' as const,
-    },
-  };
+    backgroundColor: 'transparent',
+    backgroundImage: `url(${imageUrl})`,
+    backgroundPosition: 'center center',
+    backgroundSize: size,
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'scroll',
+    backgroundOrigin: 'padding-box',
+    backgroundClip: 'padding-box',
+    '--acu-graph-bg-transform': `translate(${bg.offsetX || 0}%, ${bg.offsetY || 0}%) scale(${scale})`,
+    '--acu-graph-bg-opacity': `${bg.opacity / 100}`,
+    '--acu-graph-bg-filter': bg.blur > 0 ? `blur(${bg.blur}px)` : 'none',
+  } as Record<string, string>;
 });
 
 /** 获取自定义图例配置（转换为解析器需要的格式） */
@@ -519,11 +555,47 @@ function handleBackToDashboard() {
 /**
  * 获取布局配置
  */
+function getFallbackLayoutConfig(mode: LayoutType): LayoutOptions {
+  if (mode === 'circle') {
+    return {
+      name: 'concentric',
+      concentric: (node: { id: () => string; data: (key: string) => string }) => {
+        if (centerNodeId.value && node.id() === centerNodeId.value) return 100;
+        if (!centerNodeId.value && node.data('type') === 'protagonist') return 100;
+        return 1;
+      },
+      levelWidth: () => 1,
+      minNodeSpacing: 80,
+      animate: true,
+      animationDuration: 500,
+      fit: true,
+      padding: 30,
+    } as LayoutOptions;
+  }
+
+  return {
+    name: 'cose',
+    animate: true,
+    animationDuration: 500,
+    fit: true,
+    padding: 30,
+    nodeRepulsion: 4500,
+    idealEdgeLength: 120,
+    edgeElasticity: 0.45,
+    nestingFactor: 0.1,
+    gravity: 0.25,
+    numIter: 1000,
+  } as LayoutOptions;
+}
+
 function getLayoutConfig(mode: LayoutType): LayoutOptions {
   switch (mode) {
     case 'cola':
-      // cola: 势力容器布局（支持复合节点）
-      // 改用 fcose 以获得更好的力导向效果，同时支持复合节点
+      // cola 模式依赖复合节点 + 力导向布局；若 fcose 扩展异常则降级到内置 cose
+      if (!graphExtensionStatus.fcose) {
+        console.warn('[RelationshipGraph] fcose 扩展不可用，cola 模式降级为基础 cose 布局');
+        return getFallbackLayoutConfig(mode);
+      }
       return {
         name: 'fcose',
         quality: 'proof',
@@ -551,27 +623,14 @@ function getLayoutConfig(mode: LayoutType): LayoutOptions {
         tilingPaddingHorizontal: 10,
       } as LayoutOptions;
     case 'circle':
-      // 使用 concentric 布局实现星形效果，支持切换中心节点
-      return {
-        name: 'concentric',
-        concentric: (node: { id: () => string; data: (key: string) => string }) => {
-          // 如果指定了中心节点，该节点放中心
-          if (centerNodeId.value && node.id() === centerNodeId.value) return 100;
-          // 没有指定中心节点时，主角放中心
-          if (!centerNodeId.value && node.data('type') === 'protagonist') return 100;
-          // 其他角色放外圈
-          return 1;
-        },
-        levelWidth: () => 1, // 每层一圈
-        minNodeSpacing: 80,
-        animate: true,
-        animationDuration: 500,
-        fit: true,
-        padding: 30,
-      } as LayoutOptions;
+      return getFallbackLayoutConfig(mode);
     case 'fcose':
     default:
       // fcose: 边交叉优化好的力导向布局（自由模式使用）
+      if (!graphExtensionStatus.fcose) {
+        console.warn('[RelationshipGraph] fcose 扩展不可用，自由模式降级为基础 cose 布局');
+        return getFallbackLayoutConfig(mode);
+      }
       return {
         name: 'fcose',
         quality: 'proof', // 最高质量
@@ -603,10 +662,70 @@ function getLayoutConfig(mode: LayoutType): LayoutOptions {
 // ============================================================
 
 /**
+ * 诊断关系图层级（仅用于排查背景遮挡）
+ */
+function logGraphLayeringDiagnostics() {
+  try {
+    const root = containerRef.value?.closest('.acu-relationship-graph') as HTMLElement | null;
+    const bg = root?.querySelector('.acu-graph-background') as HTMLElement | null;
+    const container = containerRef.value as HTMLElement | null;
+    const firstCanvas = container?.querySelector('canvas') as HTMLElement | null;
+    const htmlLabelLayer = container?.querySelector('div[style*="z-index: 10"]') as HTMLElement | null;
+
+    if (!root || !container) {
+      console.warn('[RelationshipGraph][层级诊断] 缺少 root 或 container，跳过诊断');
+      return;
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const centerX = Math.floor(rootRect.left + rootRect.width / 2);
+    const centerY = Math.floor(rootRect.top + rootRect.height / 2);
+    const topElement = document.elementFromPoint(centerX, centerY) as HTMLElement | null;
+
+    const pick = (el: HTMLElement | null) =>
+      el
+        ? {
+            className: el.className,
+            tagName: el.tagName,
+            inlineStyle: el.getAttribute('style') || '',
+            computed: {
+              position: getComputedStyle(el).position,
+              zIndex: getComputedStyle(el).zIndex,
+              opacity: getComputedStyle(el).opacity,
+              transform: getComputedStyle(el).transform,
+              pointerEvents: getComputedStyle(el).pointerEvents,
+            },
+          }
+        : null;
+
+    console.info('[RelationshipGraph][层级诊断]', {
+      root: pick(root),
+      background: pick(bg),
+      container: pick(container),
+      firstCanvas: pick(firstCanvas),
+      htmlLabelLayer: pick(htmlLabelLayer),
+      topElementAtCenter: pick(topElement),
+      centerPoint: { x: centerX, y: centerY },
+    });
+  } catch (error) {
+    console.warn('[RelationshipGraph][层级诊断] 执行失败:', error);
+  }
+}
+
+/**
  * 初始化 Cytoscape 实例
  */
 function initCytoscape() {
   if (!containerRef.value) return;
+
+  const canUseHtmlAvatarLabels =
+    graphExtensionStatus.nodeHtmlLabel && typeof (cytoscape as any).prototype?.nodeHtmlLabel === 'function';
+
+  console.info('[RelationshipGraph] 初始化头像渲染模式:', {
+    nodeHtmlLabelRegistered: graphExtensionStatus.nodeHtmlLabel,
+    nodeHtmlLabelAvailableOnPrototype: typeof (cytoscape as any).prototype?.nodeHtmlLabel === 'function',
+    canUseHtmlAvatarLabels,
+  });
 
   // 读取主题颜色（Cytoscape 不支持 CSS 变量）
   const colors = getThemeColors();
@@ -764,21 +883,21 @@ function initCytoscape() {
           'border-color': colors.textMain,
         },
       },
-      // 有头像的节点 - 使用 nodeHtmlLabel 扩展渲染 HTML 头像
-      // Cytoscape 节点本身设为透明，只保留交互区域
-      // 放在最后以确保覆盖角色类型样式（如主角的样式）
+      // 有头像的节点
+      // 只有在 nodeHtmlLabel 可用时才将节点本体透明化
+      // 否则保留 Cytoscape 原生节点作为安全降级，避免出现透明空白
       {
         selector: 'node[avatarUrl]',
         style: {
-          // 节点透明，头像由 HTML label 渲染
-          'background-color': 'transparent',
-          'background-opacity': 0,
-          'border-width': 0,
+          'background-color': canUseHtmlAvatarLabels ? 'transparent' : colors.btnBg,
+          'background-opacity': canUseHtmlAvatarLabels ? 0 : 1,
+          'border-width': canUseHtmlAvatarLabels ? 0 : 1.5,
+          'border-color': colors.textMain,
           // 保留节点大小用于交互和布局
           width: graphConfigStore.config.nodeSize,
           height: graphConfigStore.config.nodeSize,
-          // 隐藏 Canvas 渲染的标签（由 HTML label 渲染）
-          label: '',
+          // 只有 HTML label 可用时才隐藏 Canvas 标签
+          label: canUseHtmlAvatarLabels ? '' : 'data(label)',
         },
       },
       // 边样式 - 实线
@@ -938,68 +1057,72 @@ function initCytoscape() {
 
   // 使用 nodeHtmlLabel 扩展为有头像的节点渲染 HTML 头像
   // 这样可以使用真正的 CSS 渲染，与头像预览完全一致
-  (cy as any).nodeHtmlLabel([
-    {
-      query: 'node[avatarUrl]',
-      halign: 'center',
-      valign: 'center',
-      halignBox: 'center',
-      valignBox: 'center',
-      tpl: (data: any) => {
-        const avatarUrl = data.avatarUrl || '';
-        const offsetX = data.avatarOffsetX ?? 50;
-        const offsetY = data.avatarOffsetY ?? 50;
-        const scale = data.avatarScale ?? 150;
-        const fullName = data.fullName || data.id || '';
-        // 头像下方人名字体大小受设置影响
-        const nameFontSize = graphConfigStore.config.nameLabelFontSize || 14;
-        // 头像大小和形状
-        const nodeSize = data.nodeSize || graphConfigStore.config.nodeSize || 50;
-        const nodeShape = data.nodeShape || 'ellipse';
-        // 边框设置 - 默认使用主题文本颜色
-        const borderWidth = data.nodeBorderWidth ?? 0;
-        const defaultBorderColor = getThemeColors().textMain;
-        const borderColor = data.nodeBorderColor ?? defaultBorderColor;
+  if (canUseHtmlAvatarLabels && typeof (cy as any).nodeHtmlLabel === 'function') {
+    (cy as any).nodeHtmlLabel([
+      {
+        query: 'node[avatarUrl]',
+        halign: 'center',
+        valign: 'center',
+        halignBox: 'center',
+        valignBox: 'center',
+        tpl: (data: any) => {
+          const avatarUrl = data.avatarUrl || '';
+          const offsetX = data.avatarOffsetX ?? 50;
+          const offsetY = data.avatarOffsetY ?? 50;
+          const scale = data.avatarScale ?? 150;
+          const fullName = data.fullName || data.id || '';
+          // 头像下方人名字体大小受设置影响
+          const nameFontSize = graphConfigStore.config.nameLabelFontSize || 14;
+          // 头像大小和形状
+          const nodeSize = data.nodeSize || graphConfigStore.config.nodeSize || 50;
+          const nodeShape = data.nodeShape || 'ellipse';
+          // 边框设置 - 默认使用主题文本颜色
+          const borderWidth = data.nodeBorderWidth ?? 0;
+          const defaultBorderColor = getThemeColors().textMain;
+          const borderColor = data.nodeBorderColor ?? defaultBorderColor;
 
-        // 根据形状决定圆角和 clip-path
-        let borderRadius: string;
-        let clipPath: string = 'none';
-        if (nodeShape === 'ellipse') {
-          borderRadius = '50%';
-        } else if (nodeShape === 'round-rectangle') {
-          borderRadius = '12px';
-        } else if (nodeShape === 'hexagon') {
-          // 六边形使用 clip-path
-          borderRadius = '0';
-          clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-        } else {
-          borderRadius = '0';
-        }
+          // 根据形状决定圆角和 clip-path
+          let borderRadius: string;
+          let clipPath: string = 'none';
+          if (nodeShape === 'ellipse') {
+            borderRadius = '50%';
+          } else if (nodeShape === 'round-rectangle') {
+            borderRadius = '12px';
+          } else if (nodeShape === 'hexagon') {
+            // 六边形使用 clip-path
+            borderRadius = '0';
+            clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
+          } else {
+            borderRadius = '0';
+          }
 
-        // 计算实际内容区大小（扣除边框）
-        const contentSize = nodeSize - borderWidth * 2;
+          // 计算实际内容区大小（扣除边框）
+          const contentSize = nodeSize - borderWidth * 2;
 
-        // 使用与头像预览完全相同的 CSS，但大小动态，并支持边框和形状
-        return `
-          <div class="acu-graph-avatar-wrapper">
-            <div class="acu-graph-avatar" style="
-              width: ${contentSize}px;
-              height: ${contentSize}px;
-              border-radius: ${borderRadius};
-              border: ${borderWidth}px solid ${borderColor};
-              background-image: url('${avatarUrl}');
-              background-position: ${offsetX}% ${offsetY}%;
-              background-size: ${scale}%;
-              background-repeat: no-repeat;
-              box-sizing: content-box;
-              clip-path: ${clipPath};
-            "></div>
-            <div class="acu-graph-avatar-name" style="font-size: ${nameFontSize}px;">${fullName}</div>
-          </div>
-        `;
+          // 使用与头像预览完全相同的 CSS，但大小动态，并支持边框和形状
+          return `
+            <div class="acu-graph-avatar-wrapper">
+              <div class="acu-graph-avatar" style="
+                width: ${contentSize}px;
+                height: ${contentSize}px;
+                border-radius: ${borderRadius};
+                border: ${borderWidth}px solid ${borderColor};
+                background-image: url('${avatarUrl}');
+                background-position: ${offsetX}% ${offsetY}%;
+                background-size: ${scale}%;
+                background-repeat: no-repeat;
+                box-sizing: content-box;
+                clip-path: ${clipPath};
+              "></div>
+              <div class="acu-graph-avatar-name" style="font-size: ${nameFontSize}px;">${fullName}</div>
+            </div>
+          `;
+        },
       },
-    },
-  ]);
+    ]);
+  } else {
+    console.warn('[RelationshipGraph] node-html-label 不可用，头像节点降级为 Cytoscape 原生节点渲染');
+  }
 }
 
 /**
@@ -2320,12 +2443,24 @@ onMounted(async () => {
   // 先加载别名映射和背景图片
   await Promise.all([loadAliasMap(), loadBackgroundImage()]);
 
+  console.info('[RelationshipGraph] 挂载初始化状态:', {
+    hasData: hasData.value,
+    nodeCount: parsedData.value.nodeCount,
+    elementCount: parsedData.value.elements.length,
+    hasContainer: !!containerRef.value,
+    extensions: graphExtensionStatus,
+  });
+
   // 如果数据已准备好，预加载头像和字体后再初始化
   if (hasData.value) {
     await preloadAvatars();
     await preloadCanvasFont();
-    initCytoscape();
-    isInitialized.value = true;
+    try {
+      initCytoscape();
+      isInitialized.value = true;
+    } catch (error) {
+      console.error('[RelationshipGraph] 初始化 Cytoscape 失败:', error);
+    }
   }
 });
 
@@ -2334,12 +2469,20 @@ watch(
   hasData,
   async newValue => {
     if (newValue && !isInitialized.value && containerRef.value) {
-      console.info('[RelationshipGraph] 数据准备就绪，预加载头像和字体...');
+      console.info('[RelationshipGraph] 数据准备就绪，预加载头像和字体...', {
+        nodeCount: parsedData.value.nodeCount,
+        elementCount: parsedData.value.elements.length,
+        extensions: graphExtensionStatus,
+      });
       await preloadAvatars();
       await preloadCanvasFont();
       console.info('[RelationshipGraph] 初始化图形');
-      initCytoscape();
-      isInitialized.value = true;
+      try {
+        initCytoscape();
+        isInitialized.value = true;
+      } catch (error) {
+        console.error('[RelationshipGraph] 监听阶段初始化 Cytoscape 失败:', error);
+      }
     }
   },
   { immediate: true },
