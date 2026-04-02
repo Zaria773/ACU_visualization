@@ -87,6 +87,7 @@
     "@vueuse/integrations": "^13.9.0",
     "@vueuse/shared": "^13.9.0",
     "async-wait-until": "^2.0.31",
+    "axios": "1.14.0",
     "compare-versions": "^6.1.1",
     "cytoscape": "^3.33.1",
     "cytoscape-cola": "^2.5.1",
