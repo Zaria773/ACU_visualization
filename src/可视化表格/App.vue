@@ -14,6 +14,7 @@
       :is-pinned="uiStore.isPinned"
       :is-content-hidden="isContentHidden"
       :lock-panel="configStore.config.lockPanel"
+      :left-tab-rail-enabled="isLeftTabRailEnabled"
       :has-changes="dataStore.hasUnsavedChanges"
       @refresh="handleRefresh"
       @save="handleSave"
@@ -513,6 +514,15 @@ const searchTerm = ref('');
 /** 内容区域隐藏状态 */
 const isContentHidden = ref(false);
 
+/** Tab+数字 快捷键状态（试点） */
+const isTabShortcutArmed = ref(false);
+/** 当前按下的按键集合（解决按住 Tab 时连切不稳定） */
+const pressedKeys = ref<Set<string>>(new Set());
+/** Tab 快捷键解除计时器（支持连续切换） */
+const tabShortcutDisarmTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+/** 快捷键事件清理函数 */
+const tabShortcutCleanup = ref<(() => void) | null>(null);
+
 // 弹窗状态已迁移到 useUIStore，此处不再需要独立的 ref
 
 /** 右键菜单状态 */
@@ -605,6 +615,12 @@ const hasOptionsTabs = computed(() => {
 /** 是否收纳Tab栏 */
 const isTabBarCollapsed = computed(() => {
   return configStore.config.collapseTabBar === true;
+});
+
+/** 是否启用左侧 Tab 栏（PC 判定放在 MainPanel 内按 media 执行） */
+const isLeftTabRailEnabled = computed(() => {
+  if (isTabBarCollapsed.value) return false;
+  return configStore.config.leftTabRailMode === true;
 });
 
 /** 选项类表格 */
@@ -740,6 +756,72 @@ function getTableIcon(tableName: string): string {
   }
 
   return 'fas fa-table';
+}
+
+/** 是否为输入态目标元素（输入时不触发快捷键） */
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return Boolean(el.closest('input, textarea, [contenteditable="true"], .acu-edit-textarea, .acu-inline-editor'));
+}
+
+/** 维持 Tab 快捷键激活窗口，便于连续切换 */
+function armTabShortcutWindow(ms = 1200): void {
+  isTabShortcutArmed.value = true;
+  if (tabShortcutDisarmTimer.value) {
+    clearTimeout(tabShortcutDisarmTimer.value);
+  }
+  tabShortcutDisarmTimer.value = setTimeout(() => {
+    isTabShortcutArmed.value = false;
+    tabShortcutDisarmTimer.value = null;
+  }, ms);
+}
+
+/** Tab+数字 快捷键（试点：Tab+1/Tab+2 切表格 Tab） */
+function handleTabShortcutKeydown(event: KeyboardEvent): void {
+  if (isTypingTarget(event.target)) return;
+
+  // 记录按下状态（用于组合键稳定判定）
+  pressedKeys.value.add(event.code);
+
+  if (event.code === 'Tab') {
+    // 按下 Tab 时打开快捷键窗口，避免每次都必须持续按住 Tab
+    armTabShortcutWindow();
+    event.preventDefault();
+    return;
+  }
+
+  const isDigit1 = event.code === 'Digit1' || event.code === 'Numpad1' || event.key === '1';
+  const isDigit2 = event.code === 'Digit2' || event.code === 'Numpad2' || event.key === '2';
+  if (!isDigit1 && !isDigit2) return;
+
+  // 允许两种触发方式：
+  // 1) 真正按住 Tab 再按 1/2
+  // 2) 先按一下 Tab，在激活窗口内按 1/2
+  const tabHeld = pressedKeys.value.has('Tab');
+  if (!tabHeld && !isTabShortcutArmed.value) return;
+
+  const targetIndex = isDigit1 ? 0 : 1;
+  event.preventDefault();
+
+  const targetTable = processedTables.value[targetIndex];
+  if (!targetTable) {
+    toast.warning(`没有第 ${targetIndex + 1} 个表格 Tab`);
+    return;
+  }
+
+  handleTabChange(targetTable.id);
+  // 命中一次后延长激活窗口，支持连续切换
+  armTabShortcutWindow();
+}
+
+/** Tab 松开后不立即关闭，保留短窗口用于连续切换 */
+function handleTabShortcutKeyup(event: KeyboardEvent): void {
+  pressedKeys.value.delete(event.code);
+
+  if (event.code === 'Tab') {
+    armTabShortcutWindow();
+  }
 }
 
 // ============================================================
@@ -1461,6 +1543,15 @@ onMounted(async () => {
     console.error('[ACU] Swipe 增强功能初始化失败:', error);
   }
 
+  // 绑定 Tab+数字 快捷键（试点：Tab+1 / Tab+2）
+  const shortcutDoc = window.parent?.document || document;
+  shortcutDoc.addEventListener('keydown', handleTabShortcutKeydown, true);
+  shortcutDoc.addEventListener('keyup', handleTabShortcutKeyup, true);
+  tabShortcutCleanup.value = () => {
+    shortcutDoc.removeEventListener('keydown', handleTabShortcutKeydown, true);
+    shortcutDoc.removeEventListener('keyup', handleTabShortcutKeyup, true);
+  };
+
   // 检测移动端
   uiStore.setMobile(window.innerWidth <= 768);
 
@@ -1517,6 +1608,16 @@ onUnmounted(() => {
 
   // 停止自动保存 (防止内存泄露)
   stopAutoSave();
+
+  // 清理快捷键监听
+  tabShortcutCleanup.value?.();
+  tabShortcutCleanup.value = null;
+  if (tabShortcutDisarmTimer.value) {
+    clearTimeout(tabShortcutDisarmTimer.value);
+    tabShortcutDisarmTimer.value = null;
+  }
+  isTabShortcutArmed.value = false;
+  pressedKeys.value.clear();
 
   // 清理 DOM 拦截
   cleanupSendIntercept();

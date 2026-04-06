@@ -9,6 +9,7 @@
 import { watchDebounced } from '@vueuse/core';
 import { klona } from 'klona';
 import type { WatchStopHandle } from 'vue';
+import { getSummaryWorldbookSourceBridge } from '../shared/summaryWorldbookSourceBridge';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import type { RawDatabaseData } from '../types';
@@ -33,6 +34,77 @@ function findACUSettingsKey(storage: Storage): string | null {
   if (anyKey) return anyKey;
 
   return null;
+}
+
+/**
+ * 收集当前数据库中的所有表名（优先 sheet.name，回退 sheetId）
+ */
+function collectAllTableNames(data: RawDatabaseData): string[] {
+  const names = new Set<string>();
+
+  Object.keys(data).forEach(sheetId => {
+    if (!sheetId.startsWith('sheet_')) return;
+    const sheet = data[sheetId];
+    if (!sheet) return;
+    names.add(String(sheet.name || sheetId));
+  });
+
+  return Array.from(names);
+}
+
+/**
+ * 将表格 ID 列表转换为表名列表（优先 sheet.name，回退 sheetId）
+ */
+function resolveTableNamesByIds(data: RawDatabaseData, tableIds: string[]): string[] {
+  const names = new Set<string>();
+
+  tableIds.forEach(tableId => {
+    const sheet = data[tableId];
+    if (sheet) {
+      names.add(String(sheet.name || tableId));
+      return;
+    }
+    if (tableId.startsWith('sheet_') && data[tableId]) {
+      names.add(String(data[tableId].name || tableId));
+      return;
+    }
+    names.add(String(tableId));
+  });
+
+  return Array.from(names);
+}
+
+/**
+ * 保存完成后，向纪要世界书 Source Bridge 记录一次“命中纪要表”的变更
+ * 注意：这里只更新前端 bridge 状态，不触发同步侧消费逻辑
+ */
+function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affectedTableNames: string[]): void {
+  if (!savedData || !Array.isArray(affectedTableNames) || affectedTableNames.length === 0) return;
+
+  try {
+    const bridge = getSummaryWorldbookSourceBridge();
+    const summarySheetAffected = bridge.isSummarySheetAffected({
+      affectedTableNames,
+      databaseJson: savedData,
+    });
+
+    if (!summarySheetAffected) {
+      console.info('[ACU-Bridge] 保存未命中纪要表，跳过 bridge 更新');
+      return;
+    }
+
+    bridge.notifySummaryWorldbookSourceUpdated({
+      reason: 'frontend_json_saved',
+      affectedTableNames,
+      summarySheetAffected,
+      isolationSlotKey: bridge.getActiveIsolationSlotKey(),
+      timestamp: Date.now(),
+    });
+
+    console.info('[ACU-Bridge] 保存命中纪要表，已更新 Source Bridge');
+  } catch (error) {
+    console.warn('[ACU-Bridge] 保存场景 bridge 更新失败:', error);
+  }
 }
 
 // ============================================================
@@ -882,6 +954,13 @@ export function useDataPersistence() {
         $saveBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
       }
 
+      // 预计算 bridge 所需的受影响表名
+      // - 全量保存(另存为)：按“所有表”处理
+      // - 增量保存(默认)：按“实际变更表”处理
+      const modifiedTableIds = dataStore.getModifiedTableIds();
+      const affectedTableNamesForBridge =
+        targetIndex >= 0 ? collectAllTableNames(dataToUse) : resolveTableNamesByIds(dataToUse, modifiedTableIds);
+
       // 执行保存 (模式分发)
       let savedData: RawDatabaseData | null = null;
 
@@ -892,7 +971,6 @@ export function useDataPersistence() {
       } else {
         // [模式1] 增量更新模式 (默认保存)
         console.info('[ACU] 执行增量保存 (默认模式)...');
-        const modifiedTableIds = dataStore.getModifiedTableIds();
 
         if (modifiedTableIds.length === 0) {
           console.info('[ACU] 无变更，跳过保存');
@@ -902,6 +980,11 @@ export function useDataPersistence() {
         }
 
         savedData = await executeIncrementalSave(dataToUse, commitDeletes, modifiedTableIds);
+      }
+
+      // 保存成功后，更新纪要世界书 Source Bridge（仅命中纪要表时）
+      if (savedData && affectedTableNamesForBridge.length > 0) {
+        notifySummaryWorldbookBridgeOnSave(savedData, affectedTableNamesForBridge);
       }
 
       if (!skipRender) {

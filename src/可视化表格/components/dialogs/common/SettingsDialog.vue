@@ -106,6 +106,29 @@
               </div>
             </div>
 
+            <!-- 设置切换 -->
+            <div class="acu-settings-section">
+              <div class="acu-settings-title">
+                <i class="fas fa-desktop"></i>
+                设置切换
+              </div>
+              <div class="acu-settings-group">
+                <div class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    设置切换
+                    <span class="hint">选择当前配置保存到哪个槽位</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <select v-model="saveTargetSlot" class="acu-select">
+                      <option value="pc">PC</option>
+                      <option value="mobile">手机</option>
+                    </select>
+                    <button class="acu-tool-btn" @click.stop="handleSaveToTargetSlot">保存</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- 界面配置入口（使用圆角容器）-->
             <div class="acu-settings-section">
               <div class="acu-settings-title">
@@ -252,6 +275,21 @@
                   </div>
                 </div>
 
+                <!-- PC 左侧 Tab 栏模式（用 media 控制显隐，不依赖运行态 isMobile） -->
+                <div class="acu-settings-row acu-pc-only-row">
+                  <div class="acu-settings-label">
+                    Tab 左侧栏（PC）
+                    <span class="hint">开启后 Tab 栏固定在左侧，不再占用底部高度</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.leftTabRailMode === true }"
+                      @click="localConfig.leftTabRailMode = !(localConfig.leftTabRailMode === true)"
+                    ></button>
+                  </div>
+                </div>
+
                 <!-- 移动端底部安全区（仅移动端显示） -->
                 <div v-if="uiStore.isMobile" class="acu-settings-row">
                   <div class="acu-settings-label">
@@ -374,6 +412,7 @@
 import { onClickOutside } from '@vueuse/core';
 import { computed, provide, reactive, ref, watch } from 'vue';
 import { useCellLock } from '../../../composables';
+import { getACUConfigManager } from '../../../composables/useACUConfigManager';
 import { useToast } from '../../../composables/useToast';
 import { useBallAppearanceStore, useConfigStore } from '../../../stores/useConfigStore';
 import { useThemeStore } from '../../../stores/useThemeStore';
@@ -404,12 +443,15 @@ const emit = defineEmits<{
   'update:visible': [value: boolean];
 }>();
 
+type SettingsSlotOption = 'pc' | 'mobile';
+
 // ============================================================
 // Refs & State
 // ============================================================
 
 const dialogRef = ref<HTMLElement>();
 const configStore = useConfigStore();
+const configManager = getACUConfigManager();
 const ballStore = useBallAppearanceStore();
 const toast = useToast();
 const uiStore = useUIStore();
@@ -426,6 +468,9 @@ const currentPanel = ref<PanelType>('main');
 const panelHistory = ref<PanelType[]>([]);
 /** 自定义标题映射 */
 const customTitles = ref<Record<string, string>>({});
+
+/** 设置切换：仅作为本次“保存目标槽位”选择，不做持久化记忆 */
+const saveTargetSlot = ref<SettingsSlotOption>('pc');
 
 // 本地配置副本 - 自动保存
 const localConfig = reactive<ACUConfig>({ ...configStore.config });
@@ -537,6 +582,8 @@ watch(
   visible => {
     if (visible) {
       Object.assign(localConfig, configStore.config);
+      // 每次打开设置都按 media 自动命中的槽位设置默认值，不记忆上次手动选择
+      saveTargetSlot.value = configManager.resolveSlotByMedia();
 
       // 检查是否有指定的初始面板
       if (uiStore.initialSettingsPanel) {
@@ -577,6 +624,12 @@ const handleCancel = () => {
   emit('update:visible', false);
 };
 
+/** 保存当前运行态配置到指定槽位（不切换当前运行槽位，不持久化下拉选择） */
+const handleSaveToTargetSlot = async () => {
+  await configManager.saveConfigToSlot(saveTargetSlot.value);
+  toast.success(`已保存到${saveTargetSlot.value === 'pc' ? 'PC' : '手机'}槽位`);
+};
+
 // ============================================================
 // 高度切换功能
 // ============================================================
@@ -615,5 +668,14 @@ const handleAddFont = () => {
 </script>
 
 <style scoped lang="scss">
-/* 样式已迁移至 styles/overlays/dialogs.scss */
+/* 仅 PC 显示：避免依赖运行态 isMobile 导致误隐藏 */
+.acu-pc-only-row {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .acu-pc-only-row {
+    display: none !important;
+  }
+}
 </style>

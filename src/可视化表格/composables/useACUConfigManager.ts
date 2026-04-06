@@ -14,8 +14,12 @@ import {
   DEFAULT_LOCAL_STATE,
   EXT_SETTINGS_KEY,
   LOCAL_KEYS,
+  createDefaultExtensionSettingsV2,
+  type ACUCoreSlotConfig,
   type ACUExtensionSettings,
+  type ACUExtensionSettingsV2,
   type ACULocalState,
+  type AcuSettingsSlotKey,
   type BallConfig,
   type ButtonsConfig,
   type ChatSpecificConfig,
@@ -105,9 +109,9 @@ export const DEFAULT_BALL_CONFIG: BallConfig = {
   customFonts: [],
 };
 
-// 默认配置
+// 默认运行态配置（当前槽位投影）
 const DEFAULT_CONFIG: ACUExtensionSettings = {
-  version: 1,
+  version: 2,
   lastUpdated: Date.now(),
   tabs: [],
   globalTabConfig: { ...DEFAULT_GLOBAL_TAB_CONFIG },
@@ -126,14 +130,111 @@ export function useACUConfigManager() {
   const config = reactive<ACUExtensionSettings>({ ...DEFAULT_CONFIG });
   const localState = reactive<ACULocalState>({ ...DEFAULT_LOCAL_STATE });
 
-  /**
-   * 深度合并配置（确保嵌套默认值存在）
-   */
-  function deepMergeConfig(stored: Partial<ACUExtensionSettings>): ACUExtensionSettings {
+  // 双槽位原始结构
+  const rawSettings = reactive<ACUExtensionSettingsV2>(createDefaultExtensionSettingsV2());
+
+  // 当前按 media 解析出的运行槽位
+  const resolvedSlotKey = ref<AcuSettingsSlotKey>('pc');
+
+  // 投影锁（防止切槽过程中误保存）
+  const isApplyingSlot = ref(false);
+
+  function isMobileMedia(): boolean {
+    // 关键：脚本运行在 iframe 中，优先按父窗口（酒馆主页面）判断设备类型
+    // 避免使用 iframe 自身宽度导致“PC 被误判为手机”
+    const query = '(max-width: 768px)';
+
+    try {
+      if (window.parent && window.parent !== window && typeof window.parent.matchMedia === 'function') {
+        return window.parent.matchMedia(query).matches;
+      }
+    } catch (error) {
+      // 访问父窗口失败（极少数场景），回退到当前窗口
+      console.warn('[ACU] 读取父窗口 media 失败，回退当前窗口判断:', error);
+    }
+
+    return window.matchMedia(query).matches;
+  }
+
+  function resolveSlotByMedia(): AcuSettingsSlotKey {
+    return isMobileMedia() ? 'mobile' : 'pc';
+  }
+
+  function deepMergeSlotConfig(stored: Partial<ACUCoreSlotConfig> | undefined): ACUCoreSlotConfig {
+    return {
+      globalTabConfig: {
+        ...DEFAULT_GLOBAL_TAB_CONFIG,
+        ...(stored?.globalTabConfig || {}),
+      },
+      buttons: {
+        ...DEFAULT_BUTTONS_CONFIG,
+        ...(stored?.buttons || {}),
+      },
+      theme: {
+        ...DEFAULT_THEME_CONFIG,
+        ...(stored?.theme || {}),
+        highlight: {
+          ...DEFAULT_THEME_CONFIG.highlight,
+          ...((stored?.theme as any)?.highlight || {}),
+        },
+        backgroundConfig: {
+          ...DEFAULT_THEME_CONFIG.backgroundConfig,
+          ...((stored?.theme as any)?.backgroundConfig || {}),
+        },
+      },
+      ui: {
+        ...DEFAULT_CONFIG.ui,
+        ...(stored?.ui || {}),
+      },
+      dashboard: {
+        ...DEFAULT_CONFIG.dashboard,
+        ...(stored?.dashboard || {}),
+      },
+      tagLibrary: {
+        categories: (stored?.tagLibrary as any)?.categories || [],
+        tags: (stored?.tagLibrary as any)?.tags || [],
+      },
+      divination: {
+        ...DEFAULT_DIVINATION_CONFIG,
+        ...(stored?.divination || {}),
+        config: {
+          ...DEFAULT_DIVINATION_CONFIG.config,
+          ...((stored?.divination as any)?.config || {}),
+        },
+      },
+      ball: {
+        ...DEFAULT_BALL_CONFIG,
+        ...(stored?.ball || {}),
+        appearance: {
+          ...DEFAULT_BALL_CONFIG.appearance,
+          ...((stored?.ball as any)?.appearance || {}),
+        },
+      },
+    };
+  }
+
+  function deepMergeV2Settings(stored: Partial<ACUExtensionSettingsV2> | undefined): ACUExtensionSettingsV2 {
+    const defaults = createDefaultExtensionSettingsV2();
+    return {
+      ...defaults,
+      ...stored,
+      version: typeof stored?.version === 'number' ? stored.version : defaults.version,
+      lastUpdated: typeof stored?.lastUpdated === 'number' ? stored.lastUpdated : defaults.lastUpdated,
+      shared: {
+        tabs: stored?.shared?.tabs || [],
+        chats: stored?.shared?.chats || {},
+      },
+      slots: {
+        pc: deepMergeSlotConfig(stored?.slots?.pc),
+        mobile: deepMergeSlotConfig(stored?.slots?.mobile),
+      },
+    };
+  }
+
+  function deepMergeLegacyConfig(stored: Partial<ACUExtensionSettings>): ACUExtensionSettings {
     return {
       ...DEFAULT_CONFIG,
-      ...stored,
-      // 深度合并嵌套对象，确保新字段有默认值
+      ...(stored || {}),
       globalTabConfig: {
         ...DEFAULT_GLOBAL_TAB_CONFIG,
         ...(stored.globalTabConfig || {}),
@@ -186,68 +287,246 @@ export function useACUConfigManager() {
     };
   }
 
+  function isV2Settings(value: unknown): value is ACUExtensionSettingsV2 {
+    const data = value as any;
+    return Boolean(data && typeof data === 'object' && data.shared && data.slots && data.slots.pc && data.slots.mobile);
+  }
+
+  function normalizeStoredSettingsInput(value: unknown, source: string): unknown {
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        console.info(`[ACU 迁移排查] ${source} 为字符串，已解析为对象`);
+        return parsed;
+      } catch (error) {
+        console.warn(`[ACU 迁移排查] ${source} 字符串 JSON 解析失败，按旧配置处理`, error);
+        return {};
+      }
+    }
+    return value;
+  }
+
+  function migrateLegacySettingsToV2(legacy: Partial<ACUExtensionSettings>): ACUExtensionSettingsV2 {
+    const mergedLegacy = deepMergeLegacyConfig(legacy);
+    const slotPayload = deepMergeSlotConfig({
+      globalTabConfig: mergedLegacy.globalTabConfig,
+      buttons: mergedLegacy.buttons,
+      theme: mergedLegacy.theme,
+      ui: mergedLegacy.ui,
+      dashboard: mergedLegacy.dashboard,
+      tagLibrary: mergedLegacy.tagLibrary,
+      divination: mergedLegacy.divination,
+      ball: mergedLegacy.ball,
+    });
+
+    return {
+      version: 2,
+      lastUpdated: typeof mergedLegacy.lastUpdated === 'number' ? mergedLegacy.lastUpdated : Date.now(),
+      shared: {
+        tabs: mergedLegacy.tabs || [],
+        chats: mergedLegacy.chats || {},
+      },
+      slots: {
+        // 迁移规则：旧配置完整复制到 pc + mobile
+        pc: deepMergeSlotConfig(slotPayload),
+        mobile: deepMergeSlotConfig(slotPayload),
+      },
+    };
+  }
+
+  function applySlotToRuntime(slotKey: AcuSettingsSlotKey): void {
+    isApplyingSlot.value = true;
+    try {
+      const slot = rawSettings.slots[slotKey];
+      Object.assign(config, {
+        version: rawSettings.version,
+        lastUpdated: rawSettings.lastUpdated,
+        tabs: [...rawSettings.shared.tabs],
+        globalTabConfig: { ...slot.globalTabConfig },
+        buttons: { ...slot.buttons },
+        theme: {
+          ...slot.theme,
+          highlight: { ...slot.theme.highlight },
+          backgroundConfig: { ...slot.theme.backgroundConfig },
+        },
+        ui: { ...(slot.ui || {}) },
+        dashboard: { ...(slot.dashboard || {}) },
+        tagLibrary: {
+          categories: [...(slot.tagLibrary?.categories || [])],
+          tags: [...(slot.tagLibrary?.tags || [])],
+        },
+        divination: {
+          ...slot.divination,
+          config: { ...slot.divination.config },
+          presets: [...(slot.divination.presets || [])],
+        },
+        ball: {
+          ...slot.ball,
+          appearance: { ...slot.ball.appearance },
+          customFonts: [...(slot.ball.customFonts || [])],
+        },
+        chats: rawSettings.shared.chats || {},
+      });
+      resolvedSlotKey.value = slotKey;
+    } finally {
+      isApplyingSlot.value = false;
+    }
+  }
+
+  function commitRuntimeToSlot(slotKey: AcuSettingsSlotKey): void {
+    rawSettings.version = 2;
+    rawSettings.lastUpdated = Date.now();
+
+    rawSettings.shared = {
+      tabs: [...(config.tabs || [])],
+      chats: config.chats || {},
+    };
+
+    rawSettings.slots[slotKey] = deepMergeSlotConfig({
+      globalTabConfig: config.globalTabConfig,
+      buttons: config.buttons,
+      theme: config.theme,
+      ui: config.ui,
+      dashboard: config.dashboard,
+      tagLibrary: config.tagLibrary,
+      divination: config.divination,
+      ball: config.ball,
+    });
+
+    config.version = rawSettings.version;
+    config.lastUpdated = rawSettings.lastUpdated;
+  }
+
+  async function persistRawSettings(): Promise<void> {
+    try {
+      console.info('[ACU 迁移排查] 开始持久化 rawSettings 到 extensionSettings', {
+        key: EXT_SETTINGS_KEY,
+        version: rawSettings.version,
+        hasPcSlot: Boolean(rawSettings?.slots?.pc),
+        hasMobileSlot: Boolean(rawSettings?.slots?.mobile),
+      });
+
+      if (!SillyTavern?.extensionSettings) {
+        console.warn('[ACU 迁移排查] extensionSettings 不可用，仅写入本地缓存');
+        cacheToLocal();
+        return;
+      }
+
+      SillyTavern.extensionSettings[EXT_SETTINGS_KEY] = JSON.parse(JSON.stringify(rawSettings));
+      await SillyTavern.saveSettingsDebounced();
+      cacheToLocal();
+      console.info('[ACU 迁移排查] 持久化完成（extensionSettings + 本地缓存）');
+    } catch (error) {
+      console.error('[ACU 迁移排查] 持久化失败，保留本地缓存兜底', error);
+      cacheToLocal();
+    }
+  }
+
   /**
    * 加载配置（从 extensionSettings，同步操作）
    */
   function loadConfig(): void {
-    try {
-      // extensionSettings 在页面加载时就已可用，无需等待 API
-      // 但在 iOS iframe 重载等极端情况下，可能尚未就绪
-      const stored = SillyTavern?.extensionSettings?.[EXT_SETTINGS_KEY];
+    let migratedFromLegacy = false;
 
-      // 如果 extensionSettings 不可用，尝试从 localStorage 恢复
+    try {
+      const storedRaw = SillyTavern?.extensionSettings?.[EXT_SETTINGS_KEY];
+      const stored = normalizeStoredSettingsInput(storedRaw, 'extensionSettings');
+      console.info('[ACU 迁移排查] 读取 extensionSettings 完成', {
+        key: EXT_SETTINGS_KEY,
+        hasStored: Boolean(stored),
+        rawType: typeof storedRaw,
+      });
+
       if (!stored) {
         console.warn('[ACU] extensionSettings 未就绪或为空，尝试从本地缓存恢复');
-        if (restoreFromCache()) {
+        const cacheRestore = restoreFromCache();
+        if (cacheRestore.restored) {
+          // 关键修复：缓存为旧结构时，迁移后立即写回 extensionSettings，避免“只迁移到运行态不持久化”
+          if (cacheRestore.migratedFromLegacy) {
+            void persistRawSettings();
+          }
           console.info('[ACU] 已从本地缓存恢复配置');
+          loadLocalState();
           isLoaded.value = true;
           return;
         }
       }
 
       if (stored) {
-        const merged = deepMergeConfig(stored);
-        Object.assign(config, merged);
-        console.info('[ACU] 配置加载成功');
+        const storedIsV2 = isV2Settings(stored);
+        const mergedV2 = storedIsV2
+          ? deepMergeV2Settings(stored)
+          : migrateLegacySettingsToV2(stored as Partial<ACUExtensionSettings>);
+
+        migratedFromLegacy = !storedIsV2;
+        Object.assign(rawSettings, mergedV2);
+        console.info('[ACU 迁移排查] 读取到 extensionSettings 结构判定', {
+          storedIsV2,
+          migratedFromLegacy,
+          version: (stored as any)?.version,
+          slotsKeys: Object.keys(((stored as any)?.slots || {}) as Record<string, unknown>),
+        });
+        console.info(migratedFromLegacy ? '[ACU] 旧配置已迁移到双槽位结构' : '[ACU] 双槽位配置加载成功');
       } else {
-        // 首次使用，初始化默认配置
-        // 注意：这里不要急着 saveConfig，以免覆盖可能存在的配置
-        // 只有当用户明确进行操作时才保存
-        Object.assign(config, DEFAULT_CONFIG);
-        console.info('[ACU] 首次使用或配置丢失，初始化默认配置');
+        Object.assign(rawSettings, createDefaultExtensionSettingsV2());
+        console.info('[ACU] 首次使用或配置丢失，初始化双槽位默认配置');
       }
 
-      // 加载本地状态
-      loadLocalState();
+      resolvedSlotKey.value = resolveSlotByMedia();
+      applySlotToRuntime(resolvedSlotKey.value);
 
-      // 同时缓存到 localStorage（离线回退用）
+      loadLocalState();
       cacheToLocal();
+
+      if (migratedFromLegacy) {
+        console.info('[ACU 迁移排查] 检测到旧配置迁移，触发持久化写回 extensionSettings');
+        void persistRawSettings();
+      }
     } catch (e) {
       console.warn('[ACU] 配置加载失败，尝试从本地缓存恢复:', e);
 
-      if (!restoreFromCache()) {
-        Object.assign(config, DEFAULT_CONFIG);
-        console.warn('[ACU] 使用默认配置');
+      const cacheRestore = restoreFromCache();
+      if (!cacheRestore.restored) {
+        Object.assign(rawSettings, createDefaultExtensionSettingsV2());
+        resolvedSlotKey.value = resolveSlotByMedia();
+        applySlotToRuntime(resolvedSlotKey.value);
+        console.warn('[ACU] 使用默认双槽位配置');
+      } else if (cacheRestore.migratedFromLegacy) {
+        // 关键修复：异常恢复路径同样保证迁移结果写回 extensionSettings
+        void persistRawSettings();
       }
     }
 
     isLoaded.value = true;
   }
 
-  /**
-   * 保存配置（到 extensionSettings）
-   */
-  async function saveConfig(): Promise<void> {
+  async function saveCurrentConfig(): Promise<void> {
+    if (isApplyingSlot.value) return;
     try {
-      config.lastUpdated = Date.now();
-      SillyTavern.extensionSettings[EXT_SETTINGS_KEY] = { ...config };
-      await SillyTavern.saveSettingsDebounced();
-
-      // 同步更新本地缓存
-      cacheToLocal();
+      const autoSlot = resolveSlotByMedia();
+      resolvedSlotKey.value = autoSlot;
+      commitRuntimeToSlot(autoSlot);
+      await persistRawSettings();
     } catch (e) {
       console.error('[ACU] 配置保存失败:', e);
     }
+  }
+
+  async function saveConfigToSlot(slotKey: AcuSettingsSlotKey): Promise<void> {
+    if (isApplyingSlot.value) return;
+    try {
+      commitRuntimeToSlot(slotKey);
+      await persistRawSettings();
+    } catch (e) {
+      console.error(`[ACU] 保存到槽位 ${slotKey} 失败:`, e);
+    }
+  }
+
+  /**
+   * 兼容旧调用：保存到当前自动命中的槽位
+   */
+  async function saveConfig(): Promise<void> {
+    await saveCurrentConfig();
   }
 
   /**
@@ -280,7 +559,7 @@ export function useACUConfigManager() {
    */
   function cacheToLocal(): void {
     try {
-      localStorage.setItem(LOCAL_KEYS.CONFIG_CACHE, JSON.stringify(config));
+      localStorage.setItem(LOCAL_KEYS.CONFIG_CACHE, JSON.stringify(rawSettings));
     } catch (e) {
       // localStorage 可能满，忽略
     }
@@ -289,18 +568,32 @@ export function useACUConfigManager() {
   /**
    * 从本地缓存恢复
    */
-  function restoreFromCache(): boolean {
+  function restoreFromCache(): { restored: boolean; migratedFromLegacy: boolean } {
     try {
       const cached = localStorage.getItem(LOCAL_KEYS.CONFIG_CACHE);
-      if (cached) {
-        const merged = deepMergeConfig(JSON.parse(cached));
-        Object.assign(config, merged);
-        return true;
+      if (!cached) return { restored: false, migratedFromLegacy: false };
+
+      const parsedRaw = JSON.parse(cached);
+      const parsed = normalizeStoredSettingsInput(parsedRaw, 'localStorage.CONFIG_CACHE');
+      const cachedIsV2 = isV2Settings(parsed);
+      const mergedV2 = cachedIsV2
+        ? deepMergeV2Settings(parsed as Partial<ACUExtensionSettingsV2>)
+        : migrateLegacySettingsToV2(parsed as Partial<ACUExtensionSettings>);
+
+      Object.assign(rawSettings, mergedV2);
+      resolvedSlotKey.value = resolveSlotByMedia();
+      applySlotToRuntime(resolvedSlotKey.value);
+
+      // 关键修复：即使 extensionSettings 暂时不可写，也先把本地缓存升级为 V2，避免重复迁移
+      if (!cachedIsV2) {
+        cacheToLocal();
       }
+
+      return { restored: true, migratedFromLegacy: !cachedIsV2 };
     } catch (e) {
       // 忽略
     }
-    return false;
+    return { restored: false, migratedFromLegacy: false };
   }
 
   /**
@@ -327,9 +620,10 @@ export function useACUConfigManager() {
   function exportAllConfigs(): string {
     return JSON.stringify(
       {
-        exportVersion: 1,
+        exportVersion: 2,
         exportTime: Date.now(),
         config: { ...config },
+        rawSettings: JSON.parse(JSON.stringify(rawSettings)),
         localState: { ...localState },
       },
       null,
@@ -344,12 +638,18 @@ export function useACUConfigManager() {
     try {
       const data = JSON.parse(jsonString);
 
-      if (!data.exportVersion || !data.config) {
+      if (!data.exportVersion || (!data.config && !data.rawSettings)) {
         return { success: false, message: '无效的配置文件格式' };
       }
 
-      Object.assign(config, DEFAULT_CONFIG, data.config);
-      await saveConfig();
+      const nextRawSettings = isV2Settings(data.rawSettings)
+        ? deepMergeV2Settings(data.rawSettings as Partial<ACUExtensionSettingsV2>)
+        : migrateLegacySettingsToV2((data.config || {}) as Partial<ACUExtensionSettings>);
+
+      Object.assign(rawSettings, nextRawSettings);
+      resolvedSlotKey.value = resolveSlotByMedia();
+      applySlotToRuntime(resolvedSlotKey.value);
+      await persistRawSettings();
 
       if (data.localState) {
         Object.assign(localState, DEFAULT_LOCAL_STATE, data.localState);
@@ -366,10 +666,10 @@ export function useACUConfigManager() {
    * 重置为默认配置
    */
   async function resetToDefault(): Promise<void> {
-    Object.assign(config, DEFAULT_CONFIG);
-    config.version = 1;
-    config.lastUpdated = Date.now();
-    await saveConfig();
+    Object.assign(rawSettings, createDefaultExtensionSettingsV2());
+    resolvedSlotKey.value = resolveSlotByMedia();
+    applySlotToRuntime(resolvedSlotKey.value);
+    await persistRawSettings();
 
     Object.assign(localState, DEFAULT_LOCAL_STATE);
     saveLocalState();
@@ -377,9 +677,15 @@ export function useACUConfigManager() {
 
   return {
     isLoaded,
+    rawSettings,
+    resolvedSlotKey,
     config,
     localState,
     loadConfig,
+    resolveSlotByMedia,
+    applySlotToRuntime,
+    saveCurrentConfig,
+    saveConfigToSlot,
     saveConfig,
     loadLocalState,
     saveLocalState,

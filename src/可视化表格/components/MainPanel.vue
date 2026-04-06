@@ -9,95 +9,104 @@
         collapsed: isCollapsed,
         pinned: isPinned,
         'acu-centered-mode': windowConfig.isCentered,
+        'acu-left-tab-mode': showLeftTabRail,
       },
     ]"
   >
-    <!-- 1. 数据显示区（放在最前面） -->
-    <div
-      ref="dataAreaRef"
-      class="acu-data-display"
-      :class="{
-        visible: !isContentHidden,
-        'acu-layout-horizontal': layout === 'horizontal',
-        'acu-layout-vertical': layout === 'vertical',
-      }"
-    >
-      <!-- 内容区 -->
-      <div class="acu-panel-content">
-        <slot></slot>
-      </div>
+    <!-- 左侧 Tab 栏（仅 PC，独立滚动） -->
+    <div v-if="showLeftTabRail" class="acu-left-tab-rail">
+      <slot name="tabs"></slot>
     </div>
 
-    <!-- 2. 宽度调节把手 -->
-    <!-- 注意：事件绑定在 onMounted 中手动进行，避免跨 iframe 生产构建事件绑定失效 -->
-    <div v-if="!lockPanel" ref="resizeHandleRef" class="acu-resize-handle"></div>
+    <!-- 主体堆叠区：数据区 + 底部动作栏 -->
+    <div class="acu-main-stack">
+      <!-- 1. 数据显示区（放在最前面） -->
+      <div
+        ref="dataAreaRef"
+        class="acu-data-display"
+        :class="{
+          visible: !isContentHidden,
+          'acu-layout-horizontal': layout === 'horizontal',
+          'acu-layout-vertical': layout === 'vertical',
+        }"
+      >
+        <!-- 内容区 -->
+        <div class="acu-panel-content">
+          <slot></slot>
+        </div>
+      </div>
 
-    <!-- 3. 导航容器（放在最后，显示在底部） -->
-    <!-- 注意：拖拽事件绑定在 onMounted 中手动进行 -->
-    <div ref="navContainerRef" class="acu-nav-container" :class="{ 'acu-locked': lockPanel }">
-      <!-- Tab 区域 (由 slot 提供，TabBar 自带 .acu-nav-tabs-area) -->
-      <slot name="tabs"></slot>
+      <!-- 2. 宽度调节把手 -->
+      <!-- 注意：事件绑定在 onMounted 中手动进行，避免跨 iframe 生产构建事件绑定失效 -->
+      <div v-if="!lockPanel" ref="resizeHandleRef" class="acu-resize-handle"></div>
 
-      <!-- 分隔线 -->
-      <div class="acu-nav-separator"></div>
+      <!-- 3. 导航容器（放在最后，显示在底部） -->
+      <!-- 注意：拖拽事件绑定在 onMounted 中手动进行 -->
+      <div ref="navContainerRef" class="acu-nav-container" :class="{ 'acu-locked': lockPanel }">
+        <!-- Tab 区域 (左侧模式时不在底部渲染，避免挤压上下空间) -->
+        <slot v-if="!showLeftTabRail" name="tabs"></slot>
 
-      <!-- 动作按钮区（横排） -->
-      <div class="acu-nav-actions-area">
-        <!-- 常规按钮（始终显示） -->
-        <div v-for="btn in visibleButtons" :key="btn.id" class="acu-action-btn-wrapper">
-          <button
-            class="acu-action-btn"
-            :class="getButtonClass(btn.id)"
-            :title="getButtonTitle(btn.id)"
-            :style="getButtonStyle(btn.id)"
-            @click.stop="handleButtonClick(btn.id)"
-            @mousedown.stop="startLongPress(btn.id)"
-            @mouseup.stop="endLongPress"
-            @mouseleave="endLongPress"
-            @touchstart.passive.stop="startLongPress(btn.id)"
-            @touchend.stop="endLongPress"
-          >
-            <i :class="['fa-solid', btn.icon]"></i>
-            <!-- 附属按钮指示点 -->
-            <span v-if="hasSecondary(btn.id)" class="secondary-indicator"></span>
-          </button>
+        <!-- 分隔线 -->
+        <div v-if="!showLeftTabRail" class="acu-nav-separator"></div>
 
-          <!-- 长按弹出的附属按钮 -->
-          <transition name="popup">
+        <!-- 动作按钮区（横排） -->
+        <div class="acu-nav-actions-area">
+          <!-- 常规按钮（始终显示） -->
+          <div v-for="btn in visibleButtons" :key="btn.id" class="acu-action-btn-wrapper">
             <button
-              v-if="popupButtonId === btn.id && getSecondaryId(btn.id)"
-              class="acu-action-btn acu-popup-btn"
-              :title="getButtonLabel(getSecondaryId(btn.id)!)"
-              @click.stop="handleSecondaryClick(btn.id)"
+              class="acu-action-btn"
+              :class="getButtonClass(btn.id)"
+              :title="getButtonTitle(btn.id)"
+              :style="getButtonStyle(btn.id)"
+              @click.stop="handleButtonClick(btn.id)"
+              @mousedown.stop="startLongPress(btn.id)"
+              @mouseup.stop="endLongPress"
+              @mouseleave="endLongPress"
+              @touchstart.passive.stop="startLongPress(btn.id)"
+              @touchend.stop="endLongPress"
             >
-              <i :class="['fa-solid', getButtonIcon(getSecondaryId(btn.id)!)]"></i>
+              <i :class="['fa-solid', btn.icon]"></i>
+              <!-- 附属按钮指示点 -->
+              <span v-if="hasSecondary(btn.id)" class="secondary-indicator"></span>
             </button>
-          </transition>
+
+            <!-- 长按弹出的附属按钮 -->
+            <transition name="popup">
+              <button
+                v-if="popupButtonId === btn.id && getSecondaryId(btn.id)"
+                class="acu-action-btn acu-popup-btn"
+                :title="getButtonLabel(getSecondaryId(btn.id)!)"
+                @click.stop="handleSecondaryClick(btn.id)"
+              >
+                <i :class="['fa-solid', getButtonIcon(getSecondaryId(btn.id)!)]"></i>
+              </button>
+            </transition>
+          </div>
+
+          <!-- 更多按钮（仅当有隐藏按钮时显示） -->
+          <div v-if="hasHiddenButtons" class="acu-action-btn-wrapper">
+            <button
+              class="acu-action-btn acu-more-btn"
+              :class="{ active: isHiddenPopupVisible }"
+              title="更多按钮"
+              @click.stop="toggleHiddenPopup"
+            >
+              <i class="fa-solid fa-chevron-up"></i>
+            </button>
+          </div>
+
+          <!-- 隐藏按钮浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
+          <HiddenButtonsPopup
+            :visible="isHiddenPopupVisible"
+            :buttons="hiddenButtons"
+            :is-pinned="isPinned"
+            @close="isHiddenPopupVisible = false"
+            @button-click="handleHiddenButtonClick"
+          />
+
+          <!-- Tab浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
+          <slot name="tabs-popup"></slot>
         </div>
-
-        <!-- 更多按钮（仅当有隐藏按钮时显示） -->
-        <div v-if="hasHiddenButtons" class="acu-action-btn-wrapper">
-          <button
-            class="acu-action-btn acu-more-btn"
-            :class="{ active: isHiddenPopupVisible }"
-            title="更多按钮"
-            @click.stop="toggleHiddenPopup"
-          >
-            <i class="fa-solid fa-chevron-up"></i>
-          </button>
-        </div>
-
-        <!-- 隐藏按钮浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
-        <HiddenButtonsPopup
-          :visible="isHiddenPopupVisible"
-          :buttons="hiddenButtons"
-          :is-pinned="isPinned"
-          @close="isHiddenPopupVisible = false"
-          @button-click="handleHiddenButtonClick"
-        />
-
-        <!-- Tab浮窗（放在 actions-area 内，贴着 action 按钮显示） -->
-        <slot name="tabs-popup"></slot>
       </div>
     </div>
   </div>
@@ -133,6 +142,8 @@ import HiddenButtonsPopup from './HiddenButtonsPopup.vue';
 // ============================================================
 
 interface Props {
+  /** 是否启用左侧 Tab 栏（仅 PC 生效） */
+  leftTabRailEnabled?: boolean;
   /** 面板标题 */
   title?: string;
   /** 主题 */
@@ -157,6 +168,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: 'ACU 可视化表格',
   theme: 'retro',
   layout: 'vertical',
+  leftTabRailEnabled: false,
   isCollapsed: false,
   isPinned: false,
   isContentHidden: false,
@@ -205,6 +217,20 @@ const emit = defineEmits<{
 const uiStore = useUIStore();
 const cellLock = useCellLock();
 const configStore = useConfigStore();
+
+/** 左侧 Tab 栏启用态（按父窗口 media 判定 PC，避免受运行态 isMobile 误判影响） */
+const showLeftTabRail = computed(() => {
+  if (!props.leftTabRailEnabled) return false;
+  try {
+    const query = '(max-width: 768px)';
+    if (window.parent && window.parent !== window && typeof window.parent.matchMedia === 'function') {
+      return !window.parent.matchMedia(query).matches;
+    }
+    return !window.matchMedia(query).matches;
+  } catch {
+    return true;
+  }
+});
 
 // ============================================================
 // 导航按钮逻辑

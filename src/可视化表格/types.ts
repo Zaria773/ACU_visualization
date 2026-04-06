@@ -72,6 +72,8 @@ export interface ACUConfig {
   collapseTabBar?: boolean;
   /** 是否显示收纳Tab按钮（仅在收纳Tab栏开启时生效） */
   showCollapseTabButton?: boolean;
+  /** 是否启用 PC 左侧 Tab 栏模式（仅 PC 生效） */
+  leftTabRailMode?: boolean;
   /** 移动端底部安全区大小 (0-150px，0表示禁用) */
   mobileSafeAreaBottom?: number;
   /** 是否自动存入交互标签 */

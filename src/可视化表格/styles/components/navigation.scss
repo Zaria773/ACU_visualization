@@ -8,6 +8,65 @@
   width: 100%;
 }
 
+// 左侧 Tab 栏容器（PC）
+.acu-left-tab-rail {
+  width: 108px;
+  min-width: 108px;
+  max-width: 108px;
+  display: flex;
+  flex-direction: column;
+  background: var(--acu-bg-nav);
+  border: 1px solid var(--acu-border);
+  border-radius: 12px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  margin-right: 0;
+  pointer-events: auto;
+  // 高度跟随主面板可视高度，不再由内容撑高
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.acu-left-tab-rail .acu-tab-bar {
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.acu-left-tab-rail .acu-order-controls {
+  margin: 0;
+  border-radius: 0;
+}
+
+.acu-left-tab-rail .acu-nav-tabs-area {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none !important;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+}
+
+.acu-left-tab-rail .acu-nav-btn {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 34px;
+  padding: 8px 6px;
+}
+
+.acu-left-tab-rail .acu-nav-btn span {
+  white-space: normal;
+  line-height: 1.2;
+}
+
 // 导航容器
 .acu-nav-container {
   position: relative; // 关键：确保浮窗相对于此容器定位

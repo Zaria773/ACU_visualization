@@ -18,6 +18,7 @@ import { createApp, type App as VueApp } from 'vue';
 import App from './App.vue';
 import { getACUConfigManager } from './composables/useACUConfigManager';
 import { cleanupSendIntercept, setupFocusTracking, setupSendIntercept } from './composables/useHiddenPrompt';
+import { initializeSummaryWorldbookSourceBridgeGlobal } from './shared/summaryWorldbookSourceBridge';
 import { useDivinationStore } from './stores/useDivinationStore';
 import { useUIStore } from './stores/useUIStore';
 import { getCore } from './utils/index';
@@ -243,6 +244,9 @@ function initACU() {
   const configManager = getACUConfigManager();
   configManager.loadConfig();
   console.info('[ACU] 配置已同步加载');
+
+  // 1.5 初始化纪要世界书 Source Bridge 全局接口
+  initializeSummaryWorldbookSourceBridgeGlobal();
 
   // 2. 等待数据库 API 就绪（后台进行，不阻塞 UI）
   waitForDatabaseApi().then(() => {

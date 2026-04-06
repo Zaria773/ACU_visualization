@@ -10,6 +10,7 @@
  */
 
 import { onMounted, onUnmounted } from 'vue';
+import { getSummaryWorldbookSourceBridge } from '../shared/summaryWorldbookSourceBridge';
 import { useDataStore } from '../stores/useDataStore';
 import { useUIStore } from '../stores/useUIStore';
 import type { RawDatabaseData, TableRow } from '../types';
@@ -66,6 +67,39 @@ export function useApiCallbacks() {
       console.warn('[ACU] 获取 chatId 失败:', e);
     }
     return 'default';
+  }
+
+  /**
+   * AI 填表完成后，向纪要世界书 Source Bridge 记录一次“命中纪要表”的变更
+   * 注意：这里只更新前端 bridge 状态，不触发同步侧消费逻辑
+   */
+  function notifySummaryWorldbookBridgeOnAiFill(newData: RawDatabaseData, affectedTableNames: string[]): void {
+    if (!newData || !Array.isArray(affectedTableNames) || affectedTableNames.length === 0) return;
+
+    try {
+      const bridge = getSummaryWorldbookSourceBridge();
+      const summarySheetAffected = bridge.isSummarySheetAffected({
+        affectedTableNames,
+        databaseJson: newData,
+      });
+
+      if (!summarySheetAffected) {
+        console.info('[ACU-Bridge] AI 填表未命中纪要表，跳过 bridge 更新');
+        return;
+      }
+
+      bridge.notifySummaryWorldbookSourceUpdated({
+        reason: 'ai_fill_completed',
+        affectedTableNames,
+        summarySheetAffected,
+        isolationSlotKey: bridge.getActiveIsolationSlotKey(),
+        timestamp: Date.now(),
+      });
+
+      console.info('[ACU-Bridge] AI 填表命中纪要表，已更新 Source Bridge');
+    } catch (error) {
+      console.warn('[ACU-Bridge] AI 填表 bridge 更新失败:', error);
+    }
   }
 
   /**
@@ -189,6 +223,10 @@ export function useApiCallbacks() {
 
           // 生成 AI 差异映射（高亮 AI 填表的变更）
           dataStore.generateDiffMap(processedData);
+
+          // AI 变更已并入当前数据库状态后，再更新纪要世界书 Source Bridge（仅命中纪要表时）
+          const aiAffectedTableNames = dataStore.getTablesWithAiChanges();
+          notifySummaryWorldbookBridgeOnAiFill(newData, aiAffectedTableNames);
 
           // 触发悬浮球通知动画
           uiStore.triggerAiNotify();

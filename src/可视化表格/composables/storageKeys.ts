@@ -8,20 +8,21 @@
  */
 
 import type { GraphConfig } from '../stores/useGraphConfigStore';
-import type {
-  ACUConfig,
-  BackgroundConfig,
-  ButtonGroup,
-  CustomFont,
-  DashboardConfig,
-  DivinationConfig,
-  DivinationPreset,
-  FloatingBallAppearance,
-  GlobalTagLibrary,
-  HighlightConfig,
-  ThemePreset,
-  ThemeVarOpacities,
-  ThemeVariables,
+import {
+  DEFAULT_BACKGROUND_CONFIG,
+  type ACUConfig,
+  type BackgroundConfig,
+  type ButtonGroup,
+  type CustomFont,
+  type DashboardConfig,
+  type DivinationConfig,
+  type DivinationPreset,
+  type FloatingBallAppearance,
+  type GlobalTagLibrary,
+  type HighlightConfig,
+  type ThemePreset,
+  type ThemeVarOpacities,
+  type ThemeVariables,
 } from '../types';
 
 // === 单元格锁定类型 ===
@@ -108,14 +109,14 @@ export interface BallConfig {
   customFonts: CustomFont[];
 }
 
-/** ACU 配置根结构 - 存储在 extensionSettings.acu_visualizer */
+/** ACU 运行态配置投影（供 store 使用） */
 export interface ACUExtensionSettings {
   version: number;
   lastUpdated: number;
 
-  // 全局配置（跨聊天共享）
+  // 运行态保持与历史结构兼容
   tabs: string[]; // 旧字段，保留兼容
-  globalTabConfig: GlobalTabConfig; // 表格展示配置（按表名，跨聊天共享）
+  globalTabConfig: GlobalTabConfig;
   buttons: ButtonsConfig;
   theme: ThemeConfig;
   ui: Partial<ACUConfig>;
@@ -124,10 +125,38 @@ export interface ACUExtensionSettings {
   divination: DivinationFullConfig;
   ball: BallConfig;
 
-  // 聊天配置（按 ChatID 分隔）
+  // 聊天配置（共享，不槽位化）
   chats: {
     [chatId: string]: ChatSpecificConfig;
   };
+}
+
+/** 双槽位 key */
+export type AcuSettingsSlotKey = 'pc' | 'mobile';
+
+/** 槽位核心配置（仅 extensionSettings 核心域） */
+export interface ACUCoreSlotConfig {
+  globalTabConfig: GlobalTabConfig;
+  buttons: ButtonsConfig;
+  theme: ThemeConfig;
+  ui: Partial<ACUConfig>;
+  dashboard: Partial<DashboardConfig>;
+  tagLibrary: GlobalTagLibrary;
+  divination: DivinationFullConfig;
+  ball: BallConfig;
+}
+
+/** 双槽位存储结构（存储在 extensionSettings.acu_visualizer） */
+export interface ACUExtensionSettingsV2 {
+  version: number;
+  lastUpdated: number;
+  shared: {
+    tabs: string[];
+    chats: {
+      [chatId: string]: ChatSpecificConfig;
+    };
+  };
+  slots: Record<AcuSettingsSlotKey, ACUCoreSlotConfig>;
 }
 
 // === 本地存储键（localStorage） ===
@@ -189,3 +218,103 @@ export const DEFAULT_GLOBAL_TAB_CONFIG: GlobalTabConfig = {
   visibleTabs: [],
   tabOrder: [],
 };
+
+/** 默认槽位配置工厂（仅用于双槽位核心配置） */
+export function createDefaultCoreSlotConfig(): ACUCoreSlotConfig {
+  return {
+    globalTabConfig: { ...DEFAULT_GLOBAL_TAB_CONFIG },
+    buttons: {
+      visibleButtons: ['save', 'collapseTab', 'refresh', 'toggle', 'settings'],
+      buttonOrder: [
+        'save',
+        'collapseTab',
+        'refresh',
+        'toggle',
+        'settings',
+        'director',
+        'saveAs',
+        'undo',
+        'manualUpdate',
+        'purge',
+        'pin',
+        'openNative',
+      ],
+      buttonGroups: [],
+      longPressDirectExec: false,
+    },
+    theme: {
+      presets: [],
+      activePresetId: null,
+      themeVars: {},
+      themeVarOpacities: {},
+      highlight: {
+        manualColor: 'orange',
+        manualHex: '#d35400',
+        aiColor: 'blue',
+        aiHex: '#3498db',
+        titleColor: 'orange',
+        titleHex: '#d35400',
+      },
+      backgroundConfig: { ...DEFAULT_BACKGROUND_CONFIG },
+      customCSS: '',
+    },
+    ui: {},
+    dashboard: { widgets: [], layout: 'grid', columns: 2, showStats: true },
+    tagLibrary: { categories: [], tags: [] },
+    divination: {
+      config: {
+        enabled: true,
+        drawCount: 4,
+        enableBias: true,
+        autoSync: true,
+        cardBackImage: '',
+        themeColor: '#6b4c9a',
+        themeId: 'wafuku',
+        flipMode: 'auto',
+        peepMode: false,
+        dimensions: [],
+        customTemplate: '',
+        enableWordDrawing: true,
+        enableTableWords: true,
+        enableWordPool: false,
+        wordDrawMode: 'perItem',
+        wordsPerItem: 1,
+        tablePoolConfig: {},
+        categoryConfig: {},
+        tableSyncConfig: {},
+      },
+      presets: [],
+      activePresetId: null,
+    },
+    ball: {
+      appearance: {
+        type: 'icon',
+        content: 'fa-layer-group',
+        size: 50,
+        notifyAnimation: 'ripple',
+        borderColor: '#ffffff',
+        borderOpacity: 40,
+        bgColor: '#ffffff',
+        bgOpacity: 25,
+        imageInvert: false,
+      },
+      customFonts: [],
+    },
+  };
+}
+
+/** 默认双槽位配置工厂 */
+export function createDefaultExtensionSettingsV2(): ACUExtensionSettingsV2 {
+  return {
+    version: 2,
+    lastUpdated: Date.now(),
+    shared: {
+      tabs: [],
+      chats: {},
+    },
+    slots: {
+      pc: createDefaultCoreSlotConfig(),
+      mobile: createDefaultCoreSlotConfig(),
+    },
+  };
+}
