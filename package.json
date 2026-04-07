@@ -89,7 +89,7 @@
     "async-wait-until": "^2.0.31",
     "axios": "1.14.0",
     "compare-versions": "^6.1.1",
-    "cytoscape": "^3.33.1",
+    "cytoscape": "^3.33.2",
     "cytoscape-cola": "^2.5.1",
     "cytoscape-fcose": "^2.2.0",
     "cytoscape-node-html-label": "^1.2.2",
