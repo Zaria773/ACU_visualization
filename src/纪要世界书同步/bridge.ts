@@ -11,12 +11,17 @@ export interface SummaryWorldbookSyncStatus {
 export interface SummaryWorldbookSyncBridge {
   requestSummaryWorldbookRefresh: (reason: string) => void;
   refreshSummaryWorldbookNow: (reason: string) => Promise<void>;
+  /**
+   * 与设置弹窗“立即重新注入”按钮共用同一个函数入口（不接收参数，避免路径偏差）
+   */
+  triggerSummaryWorldbookResyncLikeUiButton: () => void;
   getSummaryWorldbookSyncStatus: () => SummaryWorldbookSyncStatus;
 }
 
 interface SummaryWorldbookSyncBridgeDeps {
   requestRefresh: (reason: string) => void;
   refreshNow: (reason: string) => Promise<void>;
+  triggerResyncLikeUiButton: () => void;
   getRuntimeStatus: () => RuntimeStatus;
   getStartedAt: () => number;
 }
@@ -33,22 +38,34 @@ function normalizeReason(reason: string): string {
 export function createSummaryWorldbookSyncBridge(deps: SummaryWorldbookSyncBridgeDeps): SummaryWorldbookSyncBridge {
   return {
     requestSummaryWorldbookRefresh: (reason: string): void => {
-      deps.requestRefresh(`外部桥接请求（防抖）：${normalizeReason(reason)}`);
+      const normalized = `外部桥接请求（防抖）：${normalizeReason(reason)}`;
+      console.info('[纪要同步桥接][诊断] 收到 requestSummaryWorldbookRefresh：', normalized);
+      deps.requestRefresh(normalized);
     },
 
     refreshSummaryWorldbookNow: async (reason: string): Promise<void> => {
-      await deps.refreshNow(`外部桥接请求（立即）：${normalizeReason(reason)}`);
+      const normalized = `外部桥接请求（立即）：${normalizeReason(reason)}`;
+      console.info('[纪要同步桥接][诊断] 收到 refreshSummaryWorldbookNow：', normalized);
+      await deps.refreshNow(normalized);
+      console.info('[纪要同步桥接][诊断] refreshSummaryWorldbookNow 执行完成：', normalized);
+    },
+
+    triggerSummaryWorldbookResyncLikeUiButton: (): void => {
+      console.info('[纪要同步桥接][诊断] 收到 triggerSummaryWorldbookResyncLikeUiButton：设置弹窗按钮：立即重新注入');
+      deps.triggerResyncLikeUiButton();
     },
 
     getSummaryWorldbookSyncStatus: (): SummaryWorldbookSyncStatus => {
       const status = deps.getRuntimeStatus();
-      return {
+      const payload = {
         startedAt: deps.getStartedAt(),
         currentSummarySheetName: status.current_summary_sheet_name,
         currentTargetWorldbookName: status.current_target_worldbook_name,
         syncInProgress: status.sync_in_progress,
         lastReason: status.last_reason,
       };
+      console.info('[纪要同步桥接][诊断] getSummaryWorldbookSyncStatus：', payload);
+      return payload;
     },
   };
 }

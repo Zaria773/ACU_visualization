@@ -16,6 +16,11 @@ export interface SummaryWorldbookChangeMeta {
   summarySheetAffected: boolean;
   isolationSlotKey: string | null;
   timestamp: number;
+  /**
+   * 可选：由调用方直接提供本次保存后的数据库快照。
+   * 用于避免“保存刚完成但 API 仍返回旧快照”的时间窗问题。
+   */
+  databaseJson?: RawDatabaseData | null;
 }
 
 export interface SummaryWorldbookAffectCheckPayload {
@@ -384,9 +389,27 @@ function isSummarySheetAffectedInternal(payload?: SummaryWorldbookAffectCheckPay
 
 const bridge: SummaryWorldbookSourceBridge = {
   getLatestDatabaseJson: () => {
+    /**
+     * 关键修复：
+     * - 保存后短时间内，API 可能仍返回旧快照
+     * - 若刚收到前端变更通知，优先返回 bridge 内缓存，避免被旧 API 覆盖
+     */
+    const now = Date.now();
+    const recentChangeMs = lastDatabaseChangeMeta ? now - lastDatabaseChangeMeta.timestamp : Number.POSITIVE_INFINITY;
+    const isRecentFrontendChange = recentChangeMs <= 2000;
+
+    if (latestDatabaseJson && isRecentFrontendChange) {
+      console.info('[ACU-Bridge][诊断] getLatestDatabaseJson 命中近期缓存（<=2s），跳过 API 覆盖。', {
+        reason: lastDatabaseChangeMeta?.reason ?? 'unknown',
+        recentChangeMs,
+      });
+      return cloneRawDatabaseData(latestDatabaseJson);
+    }
+
     const latestFromApi = readCurrentDatabaseJsonFromApi();
     if (latestFromApi) {
       latestDatabaseJson = cloneRawDatabaseData(latestFromApi);
+      return cloneRawDatabaseData(latestDatabaseJson);
     }
 
     return cloneRawDatabaseData(latestDatabaseJson);
@@ -417,7 +440,14 @@ const bridge: SummaryWorldbookSourceBridge = {
   },
 
   notifySummaryWorldbookSourceUpdated: meta => {
-    latestDatabaseJson = bridge.getLatestDatabaseJson();
+    const fromCaller = cloneRawDatabaseData(meta.databaseJson ?? null);
+    if (fromCaller) {
+      latestDatabaseJson = fromCaller;
+      console.info('[ACU-Bridge][诊断] Source Bridge 使用调用方提供的保存快照（databaseJson）。');
+    } else {
+      latestDatabaseJson = bridge.getLatestDatabaseJson();
+      console.info('[ACU-Bridge][诊断] Source Bridge 未收到保存快照，回退从 API 读取最新 JSON。');
+    }
 
     lastDatabaseChangeMeta = {
       reason: meta.reason,

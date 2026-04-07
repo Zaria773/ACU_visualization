@@ -718,12 +718,12 @@ function logGraphLayeringDiagnostics() {
 function initCytoscape() {
   if (!containerRef.value) return;
 
-  const canUseHtmlAvatarLabels =
-    graphExtensionStatus.nodeHtmlLabel && typeof (cytoscape as any).prototype?.nodeHtmlLabel === 'function';
+  // 这里不要用 cytoscape.prototype 判定，某些打包/扩展挂载方式下会误判为 false
+  // 先以扩展注册状态决定默认渲染策略，实例可用性在 cy 创建后再二次确认
+  const canUseHtmlAvatarLabels = graphExtensionStatus.nodeHtmlLabel;
 
   console.info('[RelationshipGraph] 初始化头像渲染模式:', {
     nodeHtmlLabelRegistered: graphExtensionStatus.nodeHtmlLabel,
-    nodeHtmlLabelAvailableOnPrototype: typeof (cytoscape as any).prototype?.nodeHtmlLabel === 'function',
     canUseHtmlAvatarLabels,
   });
 
@@ -1057,7 +1057,8 @@ function initCytoscape() {
 
   // 使用 nodeHtmlLabel 扩展为有头像的节点渲染 HTML 头像
   // 这样可以使用真正的 CSS 渲染，与头像预览完全一致
-  if (canUseHtmlAvatarLabels && typeof (cy as any).nodeHtmlLabel === 'function') {
+  const nodeHtmlLabelAvailableOnInstance = typeof (cy as any).nodeHtmlLabel === 'function';
+  if (canUseHtmlAvatarLabels && nodeHtmlLabelAvailableOnInstance) {
     (cy as any).nodeHtmlLabel([
       {
         query: 'node[avatarUrl]',
@@ -1121,7 +1122,22 @@ function initCytoscape() {
       },
     ]);
   } else {
-    console.warn('[RelationshipGraph] node-html-label 不可用，头像节点降级为 Cytoscape 原生节点渲染');
+    console.warn('[RelationshipGraph] node-html-label 实例不可用，头像节点降级为 Cytoscape 原生节点渲染', {
+      canUseHtmlAvatarLabels,
+      nodeHtmlLabelAvailableOnInstance,
+    });
+
+    // 关键兜底：如果实例上没有 nodeHtmlLabel，立即撤销“透明节点”策略，防止头像节点空白
+    cy.style()
+      .selector('node[avatarUrl]')
+      .style({
+        'background-color': colors.btnBg,
+        'background-opacity': 1,
+        'border-width': 1.5,
+        'border-color': colors.textMain,
+        label: 'data(label)',
+      })
+      .update();
   }
 }
 

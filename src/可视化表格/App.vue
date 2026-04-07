@@ -520,8 +520,15 @@ const isTabShortcutArmed = ref(false);
 const pressedKeys = ref<Set<string>>(new Set());
 /** Tab 快捷键解除计时器（支持连续切换） */
 const tabShortcutDisarmTimer = ref<ReturnType<typeof setTimeout> | null>(null);
-/** 快捷键事件清理函数 */
-const tabShortcutCleanup = ref<(() => void) | null>(null);
+/** 快捷键事件清理函数集合 */
+const tabShortcutCleanup = ref<Array<() => void>>([]);
+
+/** 全局快捷键注册键（用于热重载时清理旧监听，避免旧算法残留） */
+const TAB_SHORTCUT_REGISTRY_KEY = '__acu_tab_shortcut_registry__';
+
+/** 快捷键调试实例 ID（用于确认是否有旧监听残留） */
+const tabShortcutDebugId = `acu-shortcut-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+let tabShortcutEventSeq = 0;
 
 // 弹窗状态已迁移到 useUIStore，此处不再需要独立的 ref
 
@@ -777,40 +784,131 @@ function armTabShortcutWindow(ms = 1200): void {
   }, ms);
 }
 
-/** Tab+数字 快捷键（试点：Tab+1/Tab+2 切表格 Tab） */
+/** 获取快捷键可切换的 Tab 列表（与 TabBar 展示逻辑保持一致） */
+function getShortcutNavigableTabs(): string[] {
+  const visibleTabs = uiStore.visibleTabs;
+  const allTableTabs = tabList.value; // 普通表格 tab（id=sheetId，name=表名）
+
+  // 与 TabBar 保持一致：空数组表示“全部显示”
+  if (!visibleTabs || visibleTabs.length === 0) {
+    const ids: string[] = [];
+    ids.push(TAB_DASHBOARD);
+    ids.push(...allTableTabs.map(tab => String(tab.id)));
+    if (hasRelationshipData.value) {
+      ids.push(TAB_RELATIONSHIP_GRAPH);
+    }
+    if (hasOptionsTabs.value) {
+      ids.push(TAB_OPTIONS);
+    }
+    return ids;
+  }
+
+  // 非空时严格按 visibleTabs 顺序：
+  // 特殊 Tab 存 ID；普通表格存 name，需要反查到 id
+  const nameToId = new Map(allTableTabs.map(tab => [tab.name, String(tab.id)]));
+  const ids: string[] = [];
+  for (const item of visibleTabs) {
+    if (item === TAB_DASHBOARD) {
+      ids.push(TAB_DASHBOARD);
+      continue;
+    }
+    if (item === TAB_RELATIONSHIP_GRAPH) {
+      if (hasRelationshipData.value) ids.push(TAB_RELATIONSHIP_GRAPH);
+      continue;
+    }
+    if (item === TAB_OPTIONS) {
+      if (hasOptionsTabs.value) ids.push(TAB_OPTIONS);
+      continue;
+    }
+    const mappedId = nameToId.get(item);
+    if (mappedId) {
+      ids.push(mappedId);
+    }
+  }
+  return ids;
+}
+
+/** Tab+数字 快捷键（试点：Tab+1 上一个 / Tab+2 下一个，循环切换当前可见 Tab） */
 function handleTabShortcutKeydown(event: KeyboardEvent): void {
   if (isTypingTarget(event.target)) return;
+
+  const isTab = event.code === 'Tab';
+  const isDigit1 = event.code === 'Digit1' || event.code === 'Numpad1' || event.key === '1';
+  const isDigit2 = event.code === 'Digit2' || event.code === 'Numpad2' || event.key === '2';
+  const isShortcutKey = isTab || isDigit1 || isDigit2;
 
   // 记录按下状态（用于组合键稳定判定）
   pressedKeys.value.add(event.code);
 
-  if (event.code === 'Tab') {
+  if (isShortcutKey) {
+    tabShortcutEventSeq += 1;
+    console.info('[ACU Shortcut][keydown-enter]', {
+      debugId: tabShortcutDebugId,
+      seq: tabShortcutEventSeq,
+      key: event.key,
+      code: event.code,
+      activeTab: uiStore.activeTab,
+      armed: isTabShortcutArmed.value,
+      tabHeld: pressedKeys.value.has('Tab'),
+    });
+  }
+
+  if (isTab) {
     // 按下 Tab 时打开快捷键窗口，避免每次都必须持续按住 Tab
     armTabShortcutWindow();
     event.preventDefault();
+    console.info('[ACU Shortcut][tab-armed]', { debugId: tabShortcutDebugId, seq: tabShortcutEventSeq });
     return;
   }
 
-  const isDigit1 = event.code === 'Digit1' || event.code === 'Numpad1' || event.key === '1';
-  const isDigit2 = event.code === 'Digit2' || event.code === 'Numpad2' || event.key === '2';
   if (!isDigit1 && !isDigit2) return;
 
   // 允许两种触发方式：
   // 1) 真正按住 Tab 再按 1/2
   // 2) 先按一下 Tab，在激活窗口内按 1/2
   const tabHeld = pressedKeys.value.has('Tab');
-  if (!tabHeld && !isTabShortcutArmed.value) return;
-
-  const targetIndex = isDigit1 ? 0 : 1;
-  event.preventDefault();
-
-  const targetTable = processedTables.value[targetIndex];
-  if (!targetTable) {
-    toast.warning(`没有第 ${targetIndex + 1} 个表格 Tab`);
+  if (!tabHeld && !isTabShortcutArmed.value) {
+    console.info('[ACU Shortcut][digit-ignored-not-armed]', {
+      debugId: tabShortcutDebugId,
+      seq: tabShortcutEventSeq,
+      key: event.key,
+      code: event.code,
+    });
     return;
   }
 
-  handleTabChange(targetTable.id);
+  const navigableTabs = getShortcutNavigableTabs();
+  if (navigableTabs.length === 0) {
+    toast.warning('当前没有可切换的 Tab');
+    console.info('[ACU Shortcut][digit-ignored-empty-tabs]', { debugId: tabShortcutDebugId, seq: tabShortcutEventSeq });
+    return;
+  }
+
+  const activeTabId = uiStore.activeTab == null ? '' : String(uiStore.activeTab);
+  const currentIndex = navigableTabs.findIndex(id => id === activeTabId);
+
+  // Tab+1: 上一个；Tab+2: 下一个（循环）
+  const step = isDigit1 ? -1 : 1;
+  const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+  const targetIndex = (baseIndex + step + navigableTabs.length) % navigableTabs.length;
+
+  console.info('[ACU Shortcut][digit-resolve]', {
+    debugId: tabShortcutDebugId,
+    seq: tabShortcutEventSeq,
+    key: event.key,
+    code: event.code,
+    step,
+    activeTabId,
+    currentIndex,
+    baseIndex,
+    targetIndex,
+    targetTab: navigableTabs[targetIndex],
+    navigableTabs,
+  });
+
+  event.preventDefault();
+  handleTabChange(navigableTabs[targetIndex]);
+
   // 命中一次后延长激活窗口，支持连续切换
   armTabShortcutWindow();
 }
@@ -1532,6 +1630,24 @@ async function handleAdvancedPurgeConfirm(result: { changedCount: number; tables
 onMounted(async () => {
   console.info('[ACU] App 组件已挂载');
 
+  // 关键修复：热重载场景下，先清理全局残留监听（旧版本可能仍在把 Tab+1/2 固定到前两个）
+  try {
+    const host = (window.parent || window) as any;
+    const registry = host[TAB_SHORTCUT_REGISTRY_KEY] as
+      | { docs: Document[]; keydown: (e: KeyboardEvent) => void; keyup: (e: KeyboardEvent) => void }
+      | undefined;
+    if (registry) {
+      for (const doc of registry.docs) {
+        doc.removeEventListener('keydown', registry.keydown, true);
+        doc.removeEventListener('keyup', registry.keyup, true);
+      }
+      delete host[TAB_SHORTCUT_REGISTRY_KEY];
+      console.info('[ACU] 已清理旧版全局快捷键监听');
+    }
+  } catch (error) {
+    console.warn('[ACU] 清理旧版全局快捷键监听失败:', error);
+  }
+
   // 初始化样式注入
   initStyles();
 
@@ -1544,13 +1660,39 @@ onMounted(async () => {
   }
 
   // 绑定 Tab+数字 快捷键（试点：Tab+1 / Tab+2）
-  const shortcutDoc = window.parent?.document || document;
-  shortcutDoc.addEventListener('keydown', handleTabShortcutKeydown, true);
-  shortcutDoc.addEventListener('keyup', handleTabShortcutKeyup, true);
-  tabShortcutCleanup.value = () => {
-    shortcutDoc.removeEventListener('keydown', handleTabShortcutKeydown, true);
-    shortcutDoc.removeEventListener('keyup', handleTabShortcutKeyup, true);
-  };
+  // 关键：同时监听当前文档 + 父文档，避免跨 iframe 焦点漂移导致监听丢失
+  const shortcutDocs = new Set<Document>();
+  shortcutDocs.add(document);
+  try {
+    if (window.parent?.document) {
+      shortcutDocs.add(window.parent.document);
+    }
+  } catch (error) {
+    console.warn('[ACU] 访问父文档失败，快捷键仅绑定当前文档:', error);
+  }
+
+  tabShortcutCleanup.value = [];
+  const mountedDocs = Array.from(shortcutDocs);
+  for (const shortcutDoc of mountedDocs) {
+    shortcutDoc.addEventListener('keydown', handleTabShortcutKeydown, true);
+    shortcutDoc.addEventListener('keyup', handleTabShortcutKeyup, true);
+    tabShortcutCleanup.value.push(() => {
+      shortcutDoc.removeEventListener('keydown', handleTabShortcutKeydown, true);
+      shortcutDoc.removeEventListener('keyup', handleTabShortcutKeyup, true);
+    });
+  }
+
+  // 记录到全局，保证后续热重载可以抢先移除旧监听
+  try {
+    const host = (window.parent || window) as any;
+    host[TAB_SHORTCUT_REGISTRY_KEY] = {
+      docs: mountedDocs,
+      keydown: handleTabShortcutKeydown,
+      keyup: handleTabShortcutKeyup,
+    };
+  } catch (error) {
+    console.warn('[ACU] 记录全局快捷键监听失败:', error);
+  }
 
   // 检测移动端
   uiStore.setMobile(window.innerWidth <= 768);
@@ -1610,8 +1752,18 @@ onUnmounted(() => {
   stopAutoSave();
 
   // 清理快捷键监听
-  tabShortcutCleanup.value?.();
-  tabShortcutCleanup.value = null;
+  for (const cleanup of tabShortcutCleanup.value) {
+    cleanup();
+  }
+  tabShortcutCleanup.value = [];
+
+  // 同步清理全局注册，避免热重载遗留旧算法监听
+  try {
+    const host = (window.parent || window) as any;
+    delete host[TAB_SHORTCUT_REGISTRY_KEY];
+  } catch (error) {
+    console.warn('[ACU] 清理全局快捷键注册失败:', error);
+  }
   if (tabShortcutDisarmTimer.value) {
     clearTimeout(tabShortcutDisarmTimer.value);
     tabShortcutDisarmTimer.value = null;

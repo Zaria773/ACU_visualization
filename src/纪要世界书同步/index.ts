@@ -26,6 +26,8 @@ import {
   resolveTargetWorldbook,
 } from './worldbook';
 
+const UI_RESYNC_REASON = '设置弹窗按钮：立即重新注入';
+
 /**
  * 调试日志（受设置开关控制）。
  */
@@ -156,6 +158,11 @@ let listenersMounted = false;
  */
 async function performSync(ctx: RuntimeContext, reason: string): Promise<void> {
   logInfo(`开始同步。触发原因：${reason}`);
+  logInfo(
+    `[桥接诊断] performSync 入口：auto_sync_enabled=${String(ctx.settings.auto_sync_enabled)}; sync_in_progress=${String(
+      ctx.runtime_status.sync_in_progress,
+    )}; last_reason=${ctx.runtime_status.last_reason}`,
+  );
 
   if (!ctx.settings.auto_sync_enabled) {
     logInfo(`本轮跳过：自动同步已关闭。触发原因：${reason}`);
@@ -290,6 +297,12 @@ function createSyncScheduler(ctx: RuntimeContext): SyncScheduler {
   };
 
   const executeSync = async (reason: string): Promise<void> => {
+    logInfo(
+      `[桥接诊断] executeSync 收到请求：reason=${reason}; disposed=${String(disposed)}; syncInProgress=${String(syncInProgress)}; pendingRerunReason=${
+        pendingRerunReason ?? 'null'
+      }`,
+    );
+
     if (disposed) {
       logInfo(`调度器已销毁，忽略同步请求。原因：${reason}`);
       return;
@@ -359,6 +372,12 @@ function createSyncScheduler(ctx: RuntimeContext): SyncScheduler {
   };
 
   const flushSyncAsync = async (reason: string): Promise<void> => {
+    logInfo(
+      `[桥接诊断] flushSyncAsync 收到立即请求：reason=${reason}; disposed=${String(disposed)}; debounceTimer=${
+        debounceTimer === null ? 'null' : 'active'
+      }; syncInProgress=${String(syncInProgress)}`,
+    );
+
     if (disposed) {
       logInfo(`调度器已销毁，忽略立即同步请求。原因：${reason}`);
       return;
@@ -372,6 +391,7 @@ function createSyncScheduler(ctx: RuntimeContext): SyncScheduler {
     }
 
     await executeSync(reason);
+    logInfo(`[桥接诊断] flushSyncAsync 执行结束：reason=${reason}`);
   };
 
   const flushSync = (reason: string): void => {
@@ -555,8 +575,9 @@ function setupSettingsUi(ctx: RuntimeContext, scheduler: SyncScheduler): void {
         logInfo(`竞态诊断[${raceTraceId}] 同步写入流程结束：耗时=${elapsed}ms；时序=${relation}`);
       });
     },
-    triggerResync: (reason: string): void => {
-      scheduler.flushSync(reason);
+    triggerResync: (_reason: string): void => {
+      // 设置弹窗按钮与外部桥接使用同一调度路径和同一 reason
+      scheduler.flushSync(UI_RESYNC_REASON);
     },
   });
 
@@ -599,12 +620,20 @@ function init(): void {
     scheduler.dispose();
   });
 
+  // 与设置弹窗按钮“立即重新注入”共用的唯一函数入口
+  const triggerResyncLikeUiButton = (): void => {
+    scheduler.flushSync(UI_RESYNC_REASON);
+  };
+
   const syncBridge = createSummaryWorldbookSyncBridge({
     requestRefresh: (reason: string): void => {
       scheduler.scheduleSync(reason);
     },
     refreshNow: async (reason: string): Promise<void> => {
       await scheduler.flushSyncAsync(reason);
+    },
+    triggerResyncLikeUiButton: (): void => {
+      triggerResyncLikeUiButton();
     },
     getRuntimeStatus: () => ctx.runtime_status,
     getStartedAt: () => ctx.started_at,

@@ -75,11 +75,34 @@ function resolveTableNamesByIds(data: RawDatabaseData, tableIds: string[]): stri
 }
 
 /**
+ * 从 pendingDeletes 中提取“受影响表名”。
+ * pendingDeletes 的键格式：`${tableName}-row-${index}`
+ */
+function collectTableNamesFromPendingDeletes(pendingDeletes: Set<string>): string[] {
+  const names = new Set<string>();
+  if (!pendingDeletes || pendingDeletes.size === 0) return [];
+
+  pendingDeletes.forEach(key => {
+    if (typeof key !== 'string') return;
+    const marker = '-row-';
+    const idx = key.lastIndexOf(marker);
+    if (idx <= 0) return;
+    const tableName = key.slice(0, idx).trim();
+    if (!tableName) return;
+    names.add(tableName);
+  });
+
+  return Array.from(names);
+}
+
+/**
  * 保存完成后，向纪要世界书 Source Bridge 记录一次“命中纪要表”的变更
  * 注意：这里只更新前端 bridge 状态，不触发同步侧消费逻辑
  */
 function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affectedTableNames: string[]): void {
   if (!savedData || !Array.isArray(affectedTableNames) || affectedTableNames.length === 0) return;
+
+  const traceId = `acu-save-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   try {
     const bridge = getSummaryWorldbookSourceBridge();
@@ -88,8 +111,14 @@ function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affected
       databaseJson: savedData,
     });
 
+    console.info(`[ACU-Bridge][诊断][${traceId}] 保存后命中判定`, {
+      affectedTableNames,
+      summarySheetAffected,
+      savedSheetCount: Object.keys(savedData || {}).length,
+    });
+
     if (!summarySheetAffected) {
-      console.info('[ACU-Bridge] 保存未命中纪要表，跳过 bridge 更新');
+      console.info(`[ACU-Bridge][诊断][${traceId}] 保存未命中纪要表，跳过 bridge 更新`);
       return;
     }
 
@@ -99,11 +128,85 @@ function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affected
       summarySheetAffected,
       isolationSlotKey: bridge.getActiveIsolationSlotKey(),
       timestamp: Date.now(),
+      // 关键：直接把本次保存后的快照推给 Source Bridge，避免 API 读取延迟导致的旧数据同步
+      databaseJson: savedData,
     });
 
-    console.info('[ACU-Bridge] 保存命中纪要表，已更新 Source Bridge');
+    console.info(`[ACU-Bridge][诊断][${traceId}] 保存命中纪要表，已更新 Source Bridge`);
+
+    // 关键：前端保存命中纪要表后，主动触发纪要同步脚本立即刷新世界书注入
+    const host = window.parent || window;
+
+    const hostDiagnostics = {
+      window: Boolean((window as unknown as Record<string, unknown>).SummaryWorldbookSyncBridge),
+      parent: (() => {
+        try {
+          return Boolean((window.parent as unknown as Record<string, unknown>)?.SummaryWorldbookSyncBridge);
+        } catch {
+          return false;
+        }
+      })(),
+      top: (() => {
+        try {
+          return Boolean((window.top as unknown as Record<string, unknown>)?.SummaryWorldbookSyncBridge);
+        } catch {
+          return false;
+        }
+      })(),
+      selectedHost: host === window ? 'window' : host === window.parent ? 'parent' : 'other',
+    };
+
+    console.info(`[ACU-Bridge][诊断][${traceId}] SyncBridge 宿主可见性`, hostDiagnostics);
+
+    const syncBridge = (host as unknown as Record<string, unknown>).SummaryWorldbookSyncBridge as
+      | {
+          refreshSummaryWorldbookNow?: (reason: string) => Promise<void>;
+          requestSummaryWorldbookRefresh?: (reason: string) => void;
+          triggerSummaryWorldbookResyncLikeUiButton?: () => void;
+        }
+      | undefined;
+
+    console.info(`[ACU-Bridge][诊断][${traceId}] SyncBridge 方法可用性`, {
+      hasBridge: Boolean(syncBridge),
+      hasUiLikeResync: Boolean(syncBridge?.triggerSummaryWorldbookResyncLikeUiButton),
+      hasRefreshNow: Boolean(syncBridge?.refreshSummaryWorldbookNow),
+      hasRequestRefresh: Boolean(syncBridge?.requestSummaryWorldbookRefresh),
+    });
+
+    // 按实测保留“延迟同入口触发”一轮，避免保存瞬时竞态
+    if (syncBridge?.triggerSummaryWorldbookResyncLikeUiButton) {
+      window.setTimeout(() => {
+        try {
+          console.info(`[ACU-Bridge][诊断][${traceId}] 准备调用 triggerSummaryWorldbookResyncLikeUiButton（延迟380ms）`);
+          syncBridge.triggerSummaryWorldbookResyncLikeUiButton?.();
+          console.info(`[ACU-Bridge][诊断][${traceId}] triggerSummaryWorldbookResyncLikeUiButton 调用已发出（延迟）`);
+        } catch (error) {
+          console.warn(`[ACU-Bridge][诊断][${traceId}] 延迟同入口触发失败：`, error);
+        }
+      }, 380);
+    } else if (syncBridge?.refreshSummaryWorldbookNow) {
+      console.info(`[ACU-Bridge][诊断][${traceId}] 准备调用 refreshSummaryWorldbookNow`);
+      void syncBridge
+        .refreshSummaryWorldbookNow(`ACU 前端保存命中纪要表 [${traceId}]`)
+        .then(() => {
+          console.info(`[ACU-Bridge][诊断][${traceId}] refreshSummaryWorldbookNow 调用已返回`);
+        })
+        .catch(error => {
+          console.warn(`[ACU-Bridge][诊断][${traceId}] 调用立即刷新失败，回退防抖刷新：`, error);
+          if (syncBridge.requestSummaryWorldbookRefresh) {
+            console.info(`[ACU-Bridge][诊断][${traceId}] 准备回退调用 requestSummaryWorldbookRefresh`);
+            syncBridge.requestSummaryWorldbookRefresh(`ACU 前端保存命中纪要表（回退防抖） [${traceId}]`);
+          }
+        });
+    } else if (syncBridge?.requestSummaryWorldbookRefresh) {
+      console.info(`[ACU-Bridge][诊断][${traceId}] 准备调用 requestSummaryWorldbookRefresh`);
+      syncBridge.requestSummaryWorldbookRefresh(`ACU 前端保存命中纪要表 [${traceId}]`);
+      console.info(`[ACU-Bridge][诊断][${traceId}] requestSummaryWorldbookRefresh 调用已发出`);
+    } else {
+      console.warn(`[ACU-Bridge][诊断][${traceId}] 未找到 SummaryWorldbookSyncBridge，无法主动触发纪要同步刷新`);
+    }
   } catch (error) {
-    console.warn('[ACU-Bridge] 保存场景 bridge 更新失败:', error);
+    console.warn(`[ACU-Bridge][诊断][${traceId}] 保存场景 bridge 更新失败:`, error);
   }
 }
 

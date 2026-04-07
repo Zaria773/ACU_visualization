@@ -14,7 +14,7 @@
     ]"
   >
     <!-- 左侧 Tab 栏（仅 PC，独立滚动） -->
-    <div v-if="showLeftTabRail" class="acu-left-tab-rail">
+    <div v-if="showLeftTabRail" ref="leftTabRailRef" class="acu-left-tab-rail">
       <slot name="tabs"></slot>
     </div>
 
@@ -549,6 +549,7 @@ const panelRef = ref<HTMLElement>();
 const dataAreaRef = ref<HTMLElement>();
 const navContainerRef = ref<HTMLElement>();
 const resizeHandleRef = ref<HTMLElement>();
+const leftTabRailRef = ref<HTMLElement>();
 
 // ============================================================
 // 持久化窗口配置
@@ -577,15 +578,6 @@ try {
 if (!preCheckSavedWin) {
   needResetToCenter = true;
   console.info('[ACU MainPanel] 首次加载，设置默认居中配置');
-} else if (
-  // 2. 如果存过但值无效（bottom 太小导致看不到），也重置为居中
-  // 检测：非居中模式下，bottom 值小于 100px 就认为是异常（导航栏在屏幕底部外面）
-  !preCheckSavedWin.isCentered &&
-  typeof preCheckSavedWin.bottom === 'number' &&
-  preCheckSavedWin.bottom < 100
-) {
-  needResetToCenter = true;
-  console.warn('[ACU MainPanel] 检测到无效位置配置 (bottom=' + preCheckSavedWin.bottom + ')，重置为居中');
 }
 
 if (needResetToCenter) {
@@ -678,7 +670,7 @@ function validateAndFixWindowPosition() {
   let needUpdate = false;
   let resetToCenter = false;
   let newLeft = config.left;
-  const newBottom = config.bottom;
+  let newBottom = config.bottom;
 
   const safeBottomMargin = getMobileSafeBottomMargin();
   // 【关键修改】降低阈值要求，主要检测明显异常的情况（面板完全跑到屏幕外）
@@ -686,14 +678,17 @@ function validateAndFixWindowPosition() {
 
   // 验证 bottom 位置
   if (typeof config.bottom === 'number') {
-    // 检测异常情况：面板位置过低（太靠近屏幕底部，导航栏不可见）
+    // 底部越界改为钳制，不再重置居中（避免出现“初始化透明，拖一下才恢复”）
     if (config.bottom < minSafeBottom) {
-      console.warn(`[ACU MainPanel] 底部位置异常 (${config.bottom}px < ${minSafeBottom}px)，重置为居中模式`);
-      resetToCenter = true;
+      console.warn(`[ACU MainPanel] 底部位置过低 (${config.bottom}px < ${minSafeBottom}px)，已自动钳制`);
+      newBottom = minSafeBottom;
+      needUpdate = true;
     } else if (config.bottom > parentHeight - 50) {
       // 面板位置超出屏幕顶部
-      console.warn(`[ACU MainPanel] 顶部位置异常 (${config.bottom}px > ${parentHeight - 50}px)，重置为居中模式`);
-      resetToCenter = true;
+      const maxBottom = Math.max(minSafeBottom, parentHeight - 50);
+      console.warn(`[ACU MainPanel] 顶部位置过高 (${config.bottom}px > ${parentHeight - 50}px)，已自动钳制`);
+      newBottom = maxBottom;
+      needUpdate = true;
     }
   } else if (config.bottom !== '50%') {
     // bottom 既不是数字也不是 '50%'（格式无效），重置为居中
@@ -920,6 +915,13 @@ onMounted(() => {
     console.info('[ACU MainPanel] 导航栏拖拽事件已绑定');
   }
 
+  // 左侧 Tab 栏也支持拖动整个面板（保持与底部 Tab 区一致的拖动体验）
+  const leftRailEl = leftTabRailRef.value;
+  if (leftRailEl) {
+    leftRailEl.addEventListener('pointerdown', handleHeaderPointerDown);
+    console.info('[ACU MainPanel] 左侧 Tab 栏拖拽事件已绑定');
+  }
+
   // 手动绑定宽度调节事件
   const resizeEl = resizeHandleRef.value;
   if (resizeEl) {
@@ -933,6 +935,11 @@ onUnmounted(() => {
   const navEl = navContainerRef.value;
   if (navEl) {
     navEl.removeEventListener('pointerdown', handleHeaderPointerDown);
+  }
+
+  const leftRailEl = leftTabRailRef.value;
+  if (leftRailEl) {
+    leftRailEl.removeEventListener('pointerdown', handleHeaderPointerDown);
   }
 
   const resizeEl = resizeHandleRef.value;

@@ -94,6 +94,7 @@ export const RELATION_TYPES: RelationType[] = [
       '族',
       '祖',
       '儿',
+      '子',
       '女',
       '孙',
     ],
@@ -240,11 +241,47 @@ const COMPLEX_RELATION: Omit<RelationType, 'keywords'> = {
 // 工具函数
 // ============================================================
 
+/** 关系级别优先级（数字越小优先级越高） */
+const RELATION_PRIORITY: Record<RelationLevel, number> = {
+  S: 0,
+  A: 1,
+  E: 2,
+  D: 3,
+  B: 4,
+  C: 5,
+  '?': 6,
+};
+
 /**
- * 判断关系词是否匹配某个类型
+ * 为单个关系词选择最佳匹配类型
+ * 规则：
+ * 1) 长词优先（关键词长度更长者优先）
+ * 2) 长度相同按关系优先级（S > A > E > D > B > C）
  */
-function matchesType(word: string, type: RelationType): boolean {
-  return type.keywords.some(kw => word.includes(kw));
+function findBestTypeForWord(word: string): RelationType | null {
+  let bestType: RelationType | null = null;
+  let bestKeywordLength = -1;
+  let bestPriority = Number.MAX_SAFE_INTEGER;
+
+  for (const type of RELATION_TYPES) {
+    for (const keyword of type.keywords) {
+      if (!word.includes(keyword)) continue;
+
+      const keywordLength = keyword.length;
+      const priority = RELATION_PRIORITY[type.level];
+
+      const shouldReplace =
+        keywordLength > bestKeywordLength || (keywordLength === bestKeywordLength && priority < bestPriority);
+
+      if (shouldReplace) {
+        bestType = type;
+        bestKeywordLength = keywordLength;
+        bestPriority = priority;
+      }
+    }
+  }
+
+  return bestType;
 }
 
 /** 自定义图例项（用于 getRelationColor 的可选参数） */
@@ -282,33 +319,47 @@ export function getRelationColor(relationWords: string, customLegendItems?: Cust
     };
   }
 
-  // 优先使用自定义图例配置匹配
+  // 优先使用自定义图例配置匹配（长词优先）
   if (customLegendItems && customLegendItems.length > 0) {
+    let bestCustom:
+      | {
+          item: CustomLegendItem;
+          keywordLength: number;
+        }
+      | undefined;
+
     for (const item of customLegendItems) {
-      if (item.keywords && item.keywords.length > 0) {
-        for (const word of words) {
-          if (item.keywords.some(kw => word.includes(kw))) {
-            return {
-              color: item.color,
-              level: 'C' as RelationLevel, // 自定义图例使用默认级别
-              typeName: item.label,
-              isComplex: false,
-            };
+      if (!item.keywords || item.keywords.length === 0) continue;
+
+      for (const word of words) {
+        for (const keyword of item.keywords) {
+          if (!word.includes(keyword)) continue;
+
+          const keywordLength = keyword.length;
+          if (!bestCustom || keywordLength > bestCustom.keywordLength) {
+            bestCustom = { item, keywordLength };
           }
         }
       }
     }
+
+    if (bestCustom) {
+      return {
+        color: bestCustom.item.color,
+        level: 'C' as RelationLevel, // 自定义图例使用默认级别
+        typeName: bestCustom.item.label,
+        isComplex: false,
+      };
+    }
   }
 
-  // 收集匹配到的级别
+  // 收集匹配到的级别（每个词按“长词优先 + 同长按级别优先级”选择唯一类型）
   const matchedLevels = new Set<RelationLevel>();
 
   words.forEach(word => {
-    for (const type of RELATION_TYPES) {
-      if (matchesType(word, type)) {
-        matchedLevels.add(type.level);
-        break; // 每个词只匹配一个类型
-      }
+    const bestType = findBestTypeForWord(word);
+    if (bestType) {
+      matchedLevels.add(bestType.level);
     }
   });
 

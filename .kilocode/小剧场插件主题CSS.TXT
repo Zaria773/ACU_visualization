@@ -1,0 +1,1061 @@
+/* Titania Theater Silent Stone Theme
+    背景图像原作者：小红书LYRE
+*/
+
+:root {
+    /* =================================================================
+       【0. 全局配置区域 - 可在此处自定义修改】
+       ================================================================= */
+
+    /* ===== 唯一背景配置入口（只保留这里） ===== */
+    --t-bg-img: url('https://i.postimg.cc/yNhq40wy/shi-qiong-dao-wen.png');
+    --t-bg-root: #171b22;
+    --t-bg-panel: #202632;
+    --t-bg-panel-2: #262f3d;
+    --t-bg-card: #2b3545;
+    --t-bg-input: #1c2330;
+    --t-bg-hover: #334156;
+
+    /* ===== 酒馆主题变量映射 ===== */
+    --t-text-main: var(--SmartThemeBodyColor, #e6edf3);
+    --t-text-em: var(--SmartThemeEmColor, #9fd0ff);
+    --t-text-sub: var(--SmartThemeQuoteColor, #b8c4d4);
+    --t-accent: var(--SmartThemeUnderlineColor, #7fb0ff);
+    --t-border: var(--SmartThemeBorderColor, #4b5870);
+    --t-shadow: var(--SmartThemeShadowColor, rgba(0, 0, 0, 0.55));
+    --t-chat-tint: var(--SmartThemeChatTintColor, #2a3342);
+    --t-user-tint: var(--SmartThemeUserMesBlurTintColor, #2a3342);
+    --t-bot-tint: var(--SmartThemeBotMesBlurTintColor, #2f3a4a);
+    --t-blur-tint: var(--SmartThemeBlurTintColor, #2a3342);
+
+    /* ===== 兼容旧变量（避免旧规则失效） ===== */
+    --t-main-color: var(--t-accent);
+    --t-soft-color: var(--t-chat-tint);
+    --t-hover-color: var(--t-user-tint);
+    --t-text-dark: var(--t-text-main);
+    --t-glass-white: var(--t-bg-panel);
+    --t-sidebar-bg: var(--t-bg-panel-2);
+    --t-code-bg: var(--t-bg-card);
+    --t-solid-bg: var(--t-bg-panel-2);
+}
+
+/* =================================================================
+   1. 核心容器与背景透视逻辑
+   ================================================================= */
+
+/* 主窗口容器样式 */
+/* 设定全局背景图、圆角与阴影 */
+.t-box {
+    background: var(--t-bg-img) center/cover no-repeat !important;
+    border: 1px solid var(--t-border) !important;
+    border-radius: 12px !important; /* [可修改] 窗口圆角大小 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important;
+    color: var(--t-text-dark) !important;
+}
+
+/*
+   背景穿透逻辑：
+   将大部分内部容器背景设为透明，显示底层背景图。
+*/
+.t-box div:not(.t-img-preview):not(.t-fav-card-bg):not(.t-imp-box):not(.t-img-mgr-box):not(.t-selector-panel):not(.t-content-editor):not(.t-wi-selector):not(.t-wi-preview-box):not(.t-large-edit-view),
+.t-box aside,
+.t-box main,
+.t-box section,
+.t-box header,
+.t-box footer {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* =================================================================
+   2. 卡片、面板与磨砂玻璃效果
+   ================================================================= */
+
+/*
+   通用卡片样式：
+   应用深色半透明背景，营造暗黑磨砂质感。
+*/
+.t-box div[style*="background-color"],
+.t-box div[class*="card"],
+.t-box div[class*="panel"]:not(.t-selector-panel),
+.t-box div[class*="item"]:not(.t-img-item),\
+.t-preview-container,\
+.t-anim-option,\
+.t-css-hints,\
+.t-log-box {
+    background-color: var(--t-glass-white) !important; /* 引用配置中的深色玻璃 */
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 8px !important; /* [可修改] 卡片圆角 */
+    color: var(--t-text-dark) !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+}
+
+/* 侧边栏专属样式 */
+.t-box > div > div:first-child:not(.t-header) {
+    background-color: var(--t-sidebar-bg) !important;
+    border-right: 1px solid var(--t-border) !important;
+}
+
+/* 顶部导航栏样式 */
+.t-header {
+    background-color: rgba(30, 35, 40, 0.95) !important; /* 接近不透明的深灰 */
+    border-bottom: 1px solid var(--t-border) !important;
+}
+
+/* 统一所有分割线与边框的颜色 */
+.t-box div {
+    border-bottom-color: var(--t-border) !important;
+    border-top-color: var(--t-border) !important;
+    border-left-color: var(--t-border) !important;
+    border-right-color: var(--t-border) !important;
+}
+
+/* =================================================================
+   3. 字体排版与可读性优化
+   ================================================================= */
+
+/* 强制统一所有文本元素的颜色 */
+/* 确保在深色背景上文字始终清晰可见 (使用灰白) */
+.t-box h1, .t-box h2, .t-box h3, .t-box h4, .t-box h5, .t-box h6,
+.t-box p, .t-box span, .t-box div, .t-box label, .t-box td, .t-box li,
+.t-box b, .t-box strong, .t-box i, .t-box em,
+.t-box .text-muted, .t-box .dim, .t-box .opacity-50 {
+    color: var(--t-text-dark) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important; /* 增加黑色文字阴影以提高对比度 */
+}
+
+/* 顶部标题特殊样式 */
+/* 纯色加黑色描边效果 */
+.t-header .t-title-main,
+.t-header .t-title-sub,
+.t-header .t-title-sub span,
+.t-header #t-char-name {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: #CFD8DC !important; /* [可修改] 标题颜色 (冷灰) */
+    font-weight: 900 !important;
+    text-shadow: 0px 0px 4px #000000 !important; /* 黑色光晕增强对比度 */
+    opacity: 1 !important;
+}
+
+/* 标签 (Tag) 与徽章 (Badge) 样式 */
+/* 统一为深灰底色 + 浅灰文字 */
+.t-mgr-tag,
+.t-cat-tag,
+.t-header .tag,
+.t-header .badge,
+.t-header div[class*="tag"],
+.t-box .el-tag,
+.t-box .badge,
+.t-box span[class*="tag"] {
+    background-color: #37474F !important; /* [可修改] 标签背景色 (深蓝灰) */
+    border: 1px solid var(--t-main-color) !important;
+    color: #ECEFF1 !important;
+    -webkit-text-fill-color: initial !important;
+    font-weight: bold !important;
+    text-shadow: none !important;
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+}
+
+/* 强制标签内部文字颜色 */
+.t-mgr-tag *, .t-cat-tag *, .t-header .tag *, .t-box span[class*="tag"] * {
+    color: #ECEFF1 !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+/* 顶部栏按钮文字颜色强制为白色 */
+.t-header .t-btn, .t-header button, .t-header .t-btn *, .t-header button * {
+    color: #FFFFFF !important;
+}
+
+/* =================================================================
+   4. 输入控件 (Input, Textarea, Select)
+   ================================================================= */
+
+/* 输入框通用样式 */
+/* 设定背景为深灰，文字为浅色 */
+.t-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.t-box textarea,
+.t-box select,
+.t-box .t-input,
+.t-box textarea.t-input,
+.t-box input.t-input,
+.t-box .t-code-editor,
+.t-box .t-simple-editor,
+.t-box .el-input__inner,
+.t-box .el-textarea__inner {
+    background-color: #263238 !important; /* [可修改] 输入框背景 (深色) */
+    color: #ECEFF1 !important;
+    border: 1px solid var(--t-border) !important;
+    border-radius: 6px !important;
+    padding: 8px 10px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+/* 输入框聚焦 (Focus) 状态 */
+/* 聚焦时背景稍微变亮，边框高亮 */
+.t-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
+.t-box textarea:focus,
+.t-box select:focus,
+.t-box .t-input:focus,
+.t-box textarea.t-input:focus,
+.t-box input.t-input:focus,
+.t-box .t-code-editor:focus,
+.t-box .t-simple-editor:focus {
+    background-color: #37474F !important;
+    border-color: var(--t-main-color) !important;
+    box-shadow: 0 0 0 2px rgba(120, 144, 156, 0.3) !important;
+    outline: none !important;
+    color: #FFFFFF !important;
+}
+
+/* 占位符文字颜色 */
+.t-box ::placeholder {
+    color: #78909C !important;
+    opacity: 0.6 !important;
+}
+
+/* 复选框 (Checkbox) 与单选框 (Radio) 基础样式 */
+.t-box input[type="checkbox"],
+.t-box input[type="radio"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background-color: #263238 !important;
+    border: 2px solid var(--t-main-color) !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    position: relative !important;
+    display: inline-block !important;
+    margin-right: 5px !important;
+    flex-shrink: 0 !important;
+}
+
+/* 复选框与单选框 选中状态 */
+.t-box input[type="checkbox"]:checked,
+.t-box input[type="radio"]:checked {
+    background-color: var(--t-main-color) !important;
+    border-color: var(--t-main-color) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E") !important;
+    background-size: 80% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+
+/* =================================================================
+   5. 按钮交互样式
+   ================================================================= */
+
+/* 通用按钮外观 */
+/* 应用暗色金属渐变背景 */
+.t-bottom-bar .t-btn-grid,
+.t-bottom-bar #t-btn-run,
+.t-bottom-bar #t-btn-edit,
+.t-box .t-btn,
+.t-box button,
+.t-box .t-btn.primary,
+.titania-update-overlay button,
+.t-box button[style*="color:#ff6b6b"],
+.t-box button[style*="color: #ff6b6b"],
+.t-box .t-btn[style*="color:#ff6b6b"] {
+    /* [可修改] 按钮渐变色 (板岩灰到深灰) */
+    background-image: linear-gradient(135deg, #78909C 0%, #455A64 100%) !important;
+    background-color: #546E7A !important;
+
+    /* 边框：半透明白 */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+
+    border-radius: 12px !important; /* [可修改] 按钮圆角 */
+
+    /* 按钮阴影 */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+
+    /* 按钮文字颜色 */
+    color: #ECEFF1 !important;
+
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+/* 强制按钮内部元素颜色 */
+.t-bottom-bar .t-btn-grid *,
+.t-bottom-bar #t-btn-run *,
+.t-bottom-bar #t-btn-edit *,
+.t-box .t-btn *,
+.t-box button *,
+.t-box .t-btn i,
+.t-box .t-btn span,
+.t-box .t-btn svg {
+    color: #ECEFF1 !important;
+    fill: #ECEFF1 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+}
+
+/* 按钮悬停 (Hover) 效果 */
+.t-box .t-btn:hover,
+.t-box button:hover,
+.t-bottom-bar .t-btn-grid:hover {
+    background-image: linear-gradient(135deg, #90A4AE 0%, #607D8B 100%) !important;
+    transform: translateY(-3px) !important;
+    filter: brightness(1.1) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 按钮点击 (Active) 效果 */
+.t-box .t-btn:active, .t-box button:active {
+    transform: scale(0.96) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+
+/* =================================================================
+   6. 模态弹窗、下拉菜单与浮层
+   ================================================================= */
+
+/*
+   弹窗通用样式：
+   强制应用实心深色背景 (--t-solid-bg)。
+*/
+.t-box #t-wi-selector,
+.t-box .t-imp-box,
+.t-box .t-img-mgr-box,
+.t-box .t-selector-panel,
+.t-box .t-content-editor,
+.t-box #t-large-edit-view,
+.t-box .t-wi-preview-box,
+.t-filter-popover,
+.t-box .t-dropdown,
+.t-box .t-popper,
+div[style*="position: absolute"][style*="z-index"] {
+    background-color: var(--t-solid-bg) !important; /* 引用配置中的深色实心背景 */
+    background-image: none !important;
+    border: 1px solid var(--t-border) !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8) !important;
+    z-index: 99999 !important;
+    color: var(--t-text-dark) !important;
+    opacity: 1 !important;
+}
+
+/* 世界书弹窗定位逻辑 */
+.t-box #t-wi-selector {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    transition: opacity 0.2s, transform 0.2s !important;
+    margin-left: 0 !important;
+}
+
+/* 弹窗内部容器背景继承 */
+.t-box .t-selector-panel div,
+.t-box .t-img-mgr-box div,
+.t-box .t-imp-box div,
+.t-box .t-wi-selector div,
+.t-box .t-content-editor div {
+    background-color: inherit !important;
+    background-image: none !important;
+}
+
+/* 弹窗头部与底部的背景色 */
+.t-wi-header, .t-wi-footer, .t-wi-action-bar,
+.t-ce-header, .t-ce-footer,
+.t-sel-header {
+    background-color: #37474F !important; /* 深色头部 */
+    border-color: var(--t-border) !important;
+    opacity: 1 !important;
+}
+
+/* 下拉菜单/筛选列表项样式 */
+.t-filter-popover .t-filter-item,
+.t-dropdown-item,
+.t-box li,
+.t-filter-popover li,
+.t-box div[role="option"],
+.t-filter-popover div[role="option"] {
+    color: var(--t-text-dark) !important;
+    background-color: transparent !important;
+}
+
+/* 菜单项悬停样式 */
+.t-filter-popover .t-filter-item:hover,
+.t-dropdown-item:hover,
+.t-box li:hover,\
+.t-filter-popover li:hover,
+.t-box div[role="option"]:hover,
+.t-filter-popover div[role="option"]:hover {
+    background-color: #455A64 !important;
+    color: #FFFFFF !important;
+}
+
+/* 菜单项激活/选中样式 */
+.t-filter-popover .t-filter-item.active {
+    background-color: var(--t-main-color) !important;
+    color: #FFFFFF !important;
+    font-weight: bold !important;
+}
+
+/* 激活项图标颜色 */
+.t-filter-popover .t-filter-item.active i {
+    color: #FFFFFF !important;
+}
+
+/* 列表条目 (如世界书条目、图片项) 样式 */
+.t-wi-entry, .t-wi-book-header, .t-img-item {
+    background-color: #263238 !important; /* 深色条目背景 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+/* 条目悬停效果 */
+.t-wi-entry:hover, .t-img-item:hover {
+    background-color: #37474F !important;
+}
+
+/* =================================================================
+   7. 细节组件样式 (字体选择、动画选项、颜色选择器等)
+   ================================================================= */
+
+/* 字体来源选择标签 */
+label[data-font-source] {
+    background-color: #37474F !important;
+    border: 1px solid var(--t-border) !important;
+    border-radius: 8px !important;
+    transition: all 0.3s !important;
+}
+/* 选中状态 */
+label[data-font-source] input:checked + div {
+    background-color: rgba(120, 144, 156, 0.3) !important;
+}
+label[data-font-source] * {
+    color: var(--t-text-dark) !important;
+}
+
+/* 动画选项块 */
+.t-anim-option {
+    border-color: var(--t-border) !important;
+}
+.t-anim-option:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+.t-anim-option.active {
+    background-color: rgba(120, 144, 156, 0.3) !important;
+    border-color: var(--t-main-color) !important;
+}
+
+/* CSS 提示代码块 */
+.t-css-hints .t-css-hint-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.t-css-hint-item code {
+    background-color: var(--t-code-bg) !important;
+    color: #B0BEC5 !important;
+    border: 1px solid var(--t-border) !important;
+}
+
+/* 颜色选择器 (Color Input) */
+.t-box input[type="color"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 40px !important;
+    height: 35px !important;
+    cursor: pointer !important;
+}
+.t-box input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.t-box input[type="color"]::-webkit-color-swatch {
+    border: 2px solid var(--t-border) !important;
+    border-radius: 4px !important;
+}
+
+/* 输出内容区域 (Output Content) */
+.t-box #t-output-content {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    border: 2px dashed var(--t-border) !important;
+    color: #ECEFF1 !important;
+}
+
+/* =================================================================
+   8. 滚动条与滑块 (Range) 美化
+   ================================================================= */
+
+/* 滚动条整体宽度 */
+.t-box ::-webkit-scrollbar,
+.t-filter-popover ::-webkit-scrollbar {
+    width: 6px !important; /* [可修改] 滚动条厚度 */
+    height: 6px !important;
+}
+
+/* 滚动条轨道 */
+.t-box ::-webkit-scrollbar-track,
+.t-filter-popover ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 3px !important;
+}
+
+/* 滚动条滑块 */
+.t-box ::-webkit-scrollbar-thumb,
+.t-filter-popover ::-webkit-scrollbar-thumb {
+    background-color: var(--t-soft-color) !important;
+    border-radius: 3px !important;
+    border: 1px solid transparent !important;
+    background-clip: content-box !important;
+}
+
+/* 滚动条滑块悬停 */
+.t-box ::-webkit-scrollbar-thumb:hover,
+.t-filter-popover ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--t-main-color) !important;
+}
+
+/* 横向拖动滑块 (Range Input) 基础样式 */
+.t-box input[type=range] {
+    -webkit-appearance: none !important;
+    background: transparent !important;
+    border: none !important;
+    height: 20px !important;
+    padding: 0 !important;
+}
+
+/* 滑块轨道样式 */
+.t-box input[type=range]::-webkit-slider-runnable-track {
+    width: 100% !important;
+    height: 4px !important;
+    cursor: pointer !important;
+    background: #455A64 !important; /* [可修改] 轨道颜色 */
+    border-radius: 2px !important;
+    border: none !important;
+}
+
+/* 滑块圆钮样式 (无边框设计) */
+.t-box input[type=range]::-webkit-slider-thumb {
+    border: none !important;
+    height: 16px !important; /* [可修改] 圆钮大小 */
+    width: 16px !important;
+    border-radius: 50% !important;
+    background: var(--t-main-color) !important; /* [可修改] 圆钮颜色 */
+    cursor: pointer !important;
+    -webkit-appearance: none !important;
+    margin-top: -6px !important; /* 垂直居中校正 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5) !important;
+    transition: transform 0.1s !important;
+}
+
+/* 滑块圆钮悬停放大效果 */
+.t-box input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2) !important;
+    background: var(--t-hover-color) !important;
+}
+/* =================================================================
+   9. 酒馆主题色适配（不透明版）
+   - 背景配置放在前面
+   - 所有容器背景都不透明
+   - 仅保留 .t-tools-btn 与 .t-page-nav.t-page-prev 透明
+   ================================================================= */
+
+/* 背景与主题映射已统一收敛到文件开头 :root，这里不再重复定义 */
+
+/* ===== 全局可读性与透明禁用 ===== */
+#t-overlay,
+#t-overlay * {
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+/* ===== 主背景与根容器（全部不透明） ===== */
+#t-overlay {
+  background: var(--t-bg-root) !important;
+}
+
+#t-overlay .t-box,
+#t-overlay #t-main-view {
+  background: var(--t-bg-img) center / cover no-repeat, var(--t-bg-root) !important;
+  border: 1px solid var(--t-border) !important;
+  box-shadow: 0 12px 36px var(--t-shadow) !important;
+  color: var(--t-text-main) !important;
+}
+
+/* ===== 核心结构容器（全部不透明） ===== */
+#t-overlay .t-header,
+#t-overlay .t-top-bar,
+#t-overlay .t-content-wrapper,
+#t-overlay .t-content-area,
+#t-overlay .t-bottom-bar,
+#t-overlay .t-stats-hud,
+#t-overlay .t-mode-toggle,
+#t-overlay .t-mobile-row,
+#t-overlay .t-trigger-card,
+#t-overlay .t-action-group,
+#t-overlay .t-history-toggle,
+#t-overlay .t-run-group,
+#t-overlay .t-bot-left,
+#t-overlay .t-bot-center,
+#t-overlay .t-bot-right {
+  background-color: var(--t-bg-panel) !important;
+}
+
+/* 顶栏与底栏做层次区分 */
+#t-overlay .t-header,
+#t-overlay .t-bottom-bar {
+  background-color: var(--t-bg-panel-2) !important;
+  border-color: var(--t-border) !important;
+}
+
+/* ===== 世界书与预览模块（全部不透明） ===== */
+#t-overlay .t-wi-selector,
+#t-overlay .t-wi-header,
+#t-overlay .t-wi-action-bar,
+#t-overlay .t-wi-body,
+#t-overlay .t-wi-footer,
+#t-overlay .t-wi-book,
+#t-overlay .t-wi-book-header,
+#t-overlay .t-wi-entries,
+#t-overlay .t-wi-entry,
+#t-overlay .t-wi-entry-content,
+#t-overlay .t-wi-entry-actions,
+#t-overlay .t-wi-preview-modal,
+#t-overlay .t-wi-preview-box,
+#t-overlay .t-wi-preview-header,
+#t-overlay .t-wi-preview-content {
+  background-color: var(--t-bg-panel) !important;
+  border-color: var(--t-border) !important;
+}
+
+/* 条目层次 */
+#t-overlay .t-wi-entry {
+  background-color: var(--t-bg-card) !important;
+}
+#t-overlay .t-wi-entry:hover,
+#t-overlay .t-wi-book-header:hover {
+  background-color: var(--t-bg-hover) !important;
+}
+
+/* ===== 工具面板（不透明） ===== */
+#t-overlay #t-tools-panel,
+#t-overlay #t-tools-panel .t-tools-item {
+  background-color: var(--t-bg-panel-2) !important;
+  border-color: var(--t-border) !important;
+}
+#t-overlay #t-tools-panel .t-tools-item:hover {
+  background-color: var(--t-bg-hover) !important;
+}
+
+/* ===== 例外：允许透明 ===== */
+#t-overlay .t-tools-btn,
+#t-overlay .t-page-nav.t-page-prev {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ===== 输入与按钮 ===== */
+#t-overlay input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+#t-overlay textarea,
+#t-overlay select {
+  background-color: var(--t-bg-input) !important;
+  color: var(--t-text-main) !important;
+  border: 1px solid var(--t-border) !important;
+}
+#t-overlay input:focus,
+#t-overlay textarea:focus,
+#t-overlay select:focus {
+  border-color: var(--t-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-accent) 35%, transparent) !important;
+  outline: none !important;
+}
+
+#t-overlay .t-btn,
+#t-overlay button,
+#t-overlay .t-btn-grid,
+#t-overlay .t-btn-aux,
+#t-overlay .t-run-btn,
+#t-overlay .t-filter-btn,
+#t-overlay .t-dice-btn {
+  background: linear-gradient(135deg, var(--t-chat-tint), var(--t-bot-tint)) !important;
+  color: var(--t-text-main) !important;
+  border: 1px solid var(--t-border) !important;
+}
+#t-overlay .t-btn:hover,
+#t-overlay button:hover,
+#t-overlay .t-btn-grid:hover,
+#t-overlay .t-btn-aux:hover,
+#t-overlay .t-run-btn:hover,
+#t-overlay .t-filter-btn:hover,
+#t-overlay .t-dice-btn:hover {
+  background: linear-gradient(135deg, var(--t-user-tint), var(--t-chat-tint)) !important;
+  border-color: var(--t-accent) !important;
+}
+
+/* ===== 文本颜色映射 ===== */
+#t-overlay,
+#t-overlay .t-box,
+#t-overlay .t-box * {
+  color: var(--t-text-main) !important;
+}
+#t-overlay .t-title-main,
+#t-overlay .t-title-sub,
+#t-overlay .t-mode-btn.active,
+#t-overlay .t-wi-entry.selected .t-wi-entry-title {
+  color: var(--t-text-em) !important;
+}
+#t-overlay .t-wi-entry-preview,
+#t-overlay .t-stats-label,
+#t-overlay .t-page-indicator {
+  color: var(--t-text-sub) !important;
+}
+#t-overlay a,
+#t-overlay .t-link {
+  color: var(--t-accent) !important;
+}
+
+/* =================================================================
+   10. 主题变量最终覆盖层（清理历史硬编码）
+   - 这一层放在最后，优先级最高
+   - 统一把旧的 #xxxx / rgba(...) 结果覆盖为主题变量
+   ================================================================= */
+
+/* 语义色：全部来源于 SmartTheme 变量 */
+:root {
+  --t-role-bg-1: var(--SmartThemeBlurTintColor, var(--t-bg-panel));
+  --t-role-bg-2: var(--SmartThemeChatTintColor, var(--t-bg-panel-2));
+  --t-role-bg-3: var(--SmartThemeBotMesBlurTintColor, var(--t-bg-card));
+  --t-role-bg-hover: var(--SmartThemeUserMesBlurTintColor, var(--t-bg-hover));
+  --t-role-text: var(--SmartThemeBodyColor, var(--t-text-main));
+  --t-role-text-strong: var(--SmartThemeEmColor, var(--t-text-em));
+  --t-role-text-sub: var(--SmartThemeQuoteColor, var(--t-text-sub));
+  --t-role-accent: var(--SmartThemeUnderlineColor, var(--t-accent));
+  --t-role-border: var(--SmartThemeBorderColor, var(--t-border));
+  --t-role-shadow: var(--SmartThemeShadowColor, var(--t-shadow));
+}
+
+/* 旧规则里“透明背景穿透”的总开关：强制回填不透明背景 */
+#t-overlay .t-box div:not(.t-tools-btn):not(.t-page-nav.t-page-prev),
+#t-overlay .t-box aside,
+#t-overlay .t-box main,
+#t-overlay .t-box section,
+#t-overlay .t-box header,
+#t-overlay .t-box footer {
+  background-image: none !important;
+}
+
+/* 标题/标签/文字硬编码覆盖 */
+#t-overlay .t-header .t-title-main,
+#t-overlay .t-header .t-title-sub,
+#t-overlay .t-header #t-char-name,
+#t-overlay .t-mgr-tag,
+#t-overlay .t-cat-tag,
+#t-overlay .t-header .tag,
+#t-overlay .t-header .badge,
+#t-overlay .t-box .el-tag,
+#t-overlay .t-box .badge,
+#t-overlay .t-box span[class*='tag'] {
+  color: var(--t-role-text-strong) !important;
+  border-color: var(--t-role-border) !important;
+  background-color: var(--t-role-bg-2) !important;
+  -webkit-text-fill-color: initial !important;
+  text-shadow: none !important;
+}
+#t-overlay .t-mgr-tag *,
+#t-overlay .t-cat-tag *,
+#t-overlay .t-header .tag *,
+#t-overlay .t-box span[class*='tag'] *,
+#t-overlay .t-header .t-btn,
+#t-overlay .t-header button,
+#t-overlay .t-header .t-btn *,
+#t-overlay .t-header button * {
+  color: var(--t-role-text) !important;
+}
+
+/* 输入控件/占位符/复选框硬编码覆盖 */
+#t-overlay .t-box input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+#t-overlay .t-box textarea,
+#t-overlay .t-box select,
+#t-overlay .t-box .t-input,
+#t-overlay .t-box textarea.t-input,
+#t-overlay .t-box input.t-input,
+#t-overlay .t-box .t-code-editor,
+#t-overlay .t-box .t-simple-editor,
+#t-overlay .t-box .el-input__inner,
+#t-overlay .t-box .el-textarea__inner {
+  background-color: var(--t-role-bg-1) !important;
+  color: var(--t-role-text) !important;
+  border-color: var(--t-role-border) !important;
+}
+#t-overlay .t-box input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+#t-overlay .t-box textarea:focus,
+#t-overlay .t-box select:focus,
+#t-overlay .t-box .t-input:focus,
+#t-overlay .t-box textarea.t-input:focus,
+#t-overlay .t-box input.t-input:focus,
+#t-overlay .t-box .t-code-editor:focus,
+#t-overlay .t-box .t-simple-editor:focus {
+  background-color: var(--t-role-bg-2) !important;
+  color: var(--t-role-text) !important;
+  border-color: var(--t-role-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-role-accent) 35%, transparent) !important;
+}
+#t-overlay .t-box ::placeholder {
+  color: var(--t-role-text-sub) !important;
+  opacity: 0.8 !important;
+}
+#t-overlay .t-box input[type='checkbox'],
+#t-overlay .t-box input[type='radio'] {
+  background-color: var(--t-role-bg-1) !important;
+  border-color: var(--t-role-accent) !important;
+}
+
+/* 按钮硬编码渐变/白字覆盖 */
+#t-overlay .t-bottom-bar .t-btn-grid,
+#t-overlay .t-bottom-bar #t-btn-run,
+#t-overlay .t-bottom-bar #t-btn-edit,
+#t-overlay .t-box .t-btn,
+#t-overlay .t-box button,
+#t-overlay .t-box .t-btn.primary,
+#t-overlay .titania-update-overlay button,
+#t-overlay .t-box button[style*='color:#ff6b6b'],
+#t-overlay .t-box button[style*='color: #ff6b6b'],
+#t-overlay .t-box .t-btn[style*='color:#ff6b6b'] {
+  background-image: linear-gradient(135deg, var(--t-role-bg-2) 0%, var(--t-role-bg-3) 100%) !important;
+  background-color: var(--t-role-bg-2) !important;
+  color: var(--t-role-text) !important;
+  border-color: var(--t-role-border) !important;
+  box-shadow: 0 6px 18px var(--t-role-shadow) !important;
+}
+#t-overlay .t-bottom-bar .t-btn-grid *,
+#t-overlay .t-bottom-bar #t-btn-run *,
+#t-overlay .t-bottom-bar #t-btn-edit *,
+#t-overlay .t-box .t-btn *,
+#t-overlay .t-box button *,
+#t-overlay .t-box .t-btn i,
+#t-overlay .t-box .t-btn span,
+#t-overlay .t-box .t-btn svg {
+  color: var(--t-role-text) !important;
+  fill: var(--t-role-text) !important;
+  text-shadow: none !important;
+}
+#t-overlay .t-box .t-btn:hover,
+#t-overlay .t-box button:hover,
+#t-overlay .t-bottom-bar .t-btn-grid:hover {
+  background-image: linear-gradient(135deg, var(--t-role-bg-hover) 0%, var(--t-role-bg-2) 100%) !important;
+  border-color: var(--t-role-accent) !important;
+  box-shadow: 0 8px 20px var(--t-role-shadow) !important;
+}
+
+/* 弹窗/列表项/激活态硬编码覆盖 */
+#t-overlay .t-wi-header,
+#t-overlay .t-wi-footer,
+#t-overlay .t-wi-action-bar,
+#t-overlay .t-ce-header,
+#t-overlay .t-ce-footer,
+#t-overlay .t-sel-header,
+#t-overlay .t-wi-entry,
+#t-overlay .t-wi-book-header,
+#t-overlay .t-img-item,
+#t-overlay label[data-font-source],
+#t-overlay .t-anim-option,
+#t-overlay .t-css-hints,
+#t-overlay .t-css-hints .t-css-hint-item,
+#t-overlay .t-css-hint-item code,
+#t-overlay #t-output-content,
+#t-overlay .t-filter-popover,
+#t-overlay .t-dropdown-item,
+#t-overlay .t-filter-popover .t-filter-item,
+#t-overlay .t-box div[role='option'],
+#t-overlay .t-filter-popover div[role='option'] {
+  border-color: var(--t-role-border) !important;
+  color: var(--t-role-text) !important;
+}
+#t-overlay .t-wi-header,
+#t-overlay .t-wi-footer,
+#t-overlay .t-wi-action-bar,
+#t-overlay .t-ce-header,
+#t-overlay .t-ce-footer,
+#t-overlay .t-sel-header,
+#t-overlay .t-css-hint-item code,
+#t-overlay #t-output-content {
+  background-color: var(--t-role-bg-2) !important;
+}
+#t-overlay .t-wi-entry,
+#t-overlay .t-wi-book-header,
+#t-overlay .t-img-item,
+#t-overlay label[data-font-source],
+#t-overlay .t-anim-option,
+#t-overlay .t-filter-popover .t-filter-item,
+#t-overlay .t-dropdown-item,
+#t-overlay .t-box div[role='option'],
+#t-overlay .t-filter-popover div[role='option'] {
+  background-color: var(--t-role-bg-3) !important;
+}
+#t-overlay .t-wi-entry:hover,
+#t-overlay .t-img-item:hover,
+#t-overlay label[data-font-source] input:checked + div,
+#t-overlay .t-anim-option:hover,
+#t-overlay .t-anim-option.active,
+#t-overlay .t-filter-popover .t-filter-item:hover,
+#t-overlay .t-dropdown-item:hover,
+#t-overlay .t-box li:hover,
+#t-overlay .t-filter-popover li:hover,
+#t-overlay .t-box div[role='option']:hover,
+#t-overlay .t-filter-popover div[role='option']:hover {
+  background-color: var(--t-role-bg-hover) !important;
+  color: var(--t-role-text) !important;
+}
+#t-overlay .t-filter-popover .t-filter-item.active,
+#t-overlay .t-filter-popover .t-filter-item.active i {
+  background-color: var(--t-role-accent) !important;
+  color: var(--t-role-text) !important;
+}
+
+/* 滚动条与滑块硬编码覆盖 */
+#t-overlay .t-box ::-webkit-scrollbar-track,
+#t-overlay .t-filter-popover ::-webkit-scrollbar-track {
+  background: var(--t-role-bg-1) !important;
+}
+#t-overlay .t-box ::-webkit-scrollbar-thumb,
+#t-overlay .t-filter-popover ::-webkit-scrollbar-thumb {
+  background-color: var(--t-role-bg-2) !important;
+}
+#t-overlay .t-box ::-webkit-scrollbar-thumb:hover,
+#t-overlay .t-filter-popover ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--t-role-accent) !important;
+}
+#t-overlay .t-box input[type='range']::-webkit-slider-runnable-track {
+  background: var(--t-role-bg-2) !important;
+}
+#t-overlay .t-box input[type='range']::-webkit-slider-thumb {
+  background: var(--t-role-accent) !important;
+  box-shadow: 0 2px 5px var(--t-role-shadow) !important;
+}
+
+/* =================================================================
+   11. 背景色终极兜底（彻底压制硬编码）
+   - 只保留 .t-tools-btn 与 .t-page-nav.t-page-prev 透明
+   - 其余容器统一走主题变量，不再吃旧 #hex / rgba
+   ================================================================= */
+
+/* 主容器背景保留（允许背景图 + 实色底） */
+#t-overlay #t-main-view,
+#t-overlay .t-box {
+  background: var(--t-bg-img) center / cover no-repeat, var(--t-role-bg-1) !important;
+}
+
+/* 所有“容器类元素”统一不透明背景 */
+#t-overlay :is(
+  .t-header, .t-top-bar, .t-content-wrapper, .t-content-area, .t-bottom-bar, .t-stats-hud,
+  .t-mode-toggle, .t-mobile-row, .t-trigger-card, .t-action-group, .t-history-toggle, .t-run-group,
+  .t-bot-left, .t-bot-center, .t-bot-right, .t-wi-selector, .t-wi-header, .t-wi-action-bar, .t-wi-body,
+  .t-wi-footer, .t-wi-book, .t-wi-book-header, .t-wi-entries, .t-wi-entry, .t-wi-entry-content,
+  .t-wi-entry-actions, .t-wi-preview-modal, .t-wi-preview-box, .t-wi-preview-header, .t-wi-preview-content,
+  .t-selector-panel, .t-content-editor, .t-imp-box, .t-img-mgr-box, .t-filter-popover, .t-dropdown,
+  .t-popper, .t-log-box, .t-preview-container, .t-anim-option, .t-css-hints, .t-css-hint-item,
+  .t-ce-header, .t-ce-footer, .t-sel-header, .t-page-indicator, .t-page-nav, .t-btn, .t-btn-grid,
+  .t-btn-aux, .t-run-btn, .t-filter-btn, .t-dice-btn
+):not(.t-tools-btn):not(.t-page-nav.t-page-prev) {
+  background-image: none !important;
+  background-color: var(--t-role-bg-2) !important;
+}
+
+/* 条目/卡片层次 */
+#t-overlay :is(.t-wi-entry, .t-img-item, .t-wi-book-header, .t-css-hint-item code, label[data-font-source]) {
+  background-color: var(--t-role-bg-3) !important;
+}
+#t-overlay :is(.t-wi-entry:hover, .t-img-item:hover, .t-wi-book-header:hover, .t-anim-option:hover, .t-anim-option.active) {
+  background-color: var(--t-role-bg-hover) !important;
+}
+
+/* 按钮统一主题背景（覆盖旧渐变硬编码） */
+#t-overlay :is(.t-btn, button, .t-btn-grid, .t-btn-aux, .t-run-btn, .t-filter-btn, .t-dice-btn):not(.t-tools-btn):not(.t-page-nav.t-page-prev) {
+  background-image: linear-gradient(135deg, var(--t-role-bg-2) 0%, var(--t-role-bg-3) 100%) !important;
+  background-color: var(--t-role-bg-2) !important;
+  border-color: var(--t-role-border) !important;
+}
+
+/* 输入控件背景统一 */
+#t-overlay :is(input, textarea, select, .t-input, .el-input__inner, .el-textarea__inner):not([type='color']):not([type='range']) {
+  background-image: none !important;
+  background-color: var(--t-role-bg-1) !important;
+}
+#t-overlay :is(input, textarea, select, .t-input, .el-input__inner, .el-textarea__inner):focus {
+  background-color: var(--t-role-bg-2) !important;
+}
+
+/* 仅保留这两个透明 */
+#t-overlay .t-tools-btn,
+#t-overlay .t-page-nav.t-page-prev {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* =================================================================
+   12. 补丁：勾选色 / 黑线 / t-profile-popover 主题化
+   ================================================================= */
+
+/* 勾选“打勾”颜色使用 SmartThemeBodyColor */
+#t-overlay .t-box input[type='checkbox']:checked,
+#t-overlay .t-box input[type='radio']:checked {
+  background-color: var(--t-role-bg-2) !important;
+  border-color: var(--t-role-accent) !important;
+  background-image: none !important;
+  position: relative !important;
+}
+
+#t-overlay .t-box input[type='checkbox']:checked::after,
+#t-overlay .t-box input[type='radio']:checked::after {
+  content: '✓';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -56%);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--SmartThemeBodyColor) !important;
+}
+
+/* 去掉你指出的右边黑线（来自早期全局 div 边框） */
+#t-overlay .t-bot-left,
+#t-overlay .t-title-container,
+#t-overlay .t-title-main,
+#t-overlay .t-title-sub,
+#t-overlay #t-char-name {
+  border-right: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* t-profile-popover 全量主题变量覆盖 */
+#t-overlay .t-profile-popover,
+#t-overlay .t-profile-popover *,
+#t-overlay .t-profile-popover .t-profile-item,
+#t-overlay .t-profile-popover .t-profile-item:hover,
+#t-overlay .t-profile-popover .t-profile-item.active,
+#t-overlay .t-profile-popover .t-profile-header,
+#t-overlay .t-profile-popover .t-profile-footer {
+  color: var(--t-role-text) !important;
+  border-color: var(--t-role-border) !important;
+}
+
+#t-overlay .t-profile-popover,
+#t-overlay .t-profile-popover .t-profile-header,
+#t-overlay .t-profile-popover .t-profile-footer {
+  background-color: var(--t-role-bg-2) !important;
+  background-image: none !important;
+}
+
+#t-overlay .t-profile-popover .t-profile-item {
+  background-color: var(--t-role-bg-3) !important;
+  background-image: none !important;
+}
+
+#t-overlay .t-profile-popover .t-profile-item:hover {
+  background-color: var(--t-role-bg-hover) !important;
+}
+
+#t-overlay .t-profile-popover .t-profile-item.active {
+  background-color: var(--t-role-accent) !important;
+  color: var(--t-role-text) !important;
+}
