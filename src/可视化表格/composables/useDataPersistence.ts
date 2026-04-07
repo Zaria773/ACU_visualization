@@ -177,7 +177,9 @@ function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affected
     if (syncBridge?.triggerSummaryWorldbookResyncLikeUiButton) {
       window.setTimeout(() => {
         try {
-          console.info(`[ACU-Bridge][诊断][${traceId}] 准备调用 triggerSummaryWorldbookResyncLikeUiButton（延迟380ms）`);
+          console.info(
+            `[ACU-Bridge][诊断][${traceId}] 准备调用 triggerSummaryWorldbookResyncLikeUiButton（延迟380ms）`,
+          );
           syncBridge.triggerSummaryWorldbookResyncLikeUiButton?.();
           console.info(`[ACU-Bridge][诊断][${traceId}] triggerSummaryWorldbookResyncLikeUiButton 调用已发出（延迟）`);
         } catch (error) {
