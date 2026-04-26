@@ -110,6 +110,7 @@ export const DEFAULT_CONFIG: ACUConfig = {
   autoImportInteractions: false,
   enableIOSInputFix: false,
   mobileMenuMode: false,
+  dbThemeSync: true,
 };
 
 /** 主题配置列表 */

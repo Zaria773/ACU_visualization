@@ -24,6 +24,128 @@ const DYNAMIC_FONT_ID = 'acu-dynamic-font';
 // 主题自定义 CSS ID
 const THEME_CUSTOM_ID = 'acu-theme-custom';
 
+// 数据库 UI 主题同步样式 ID
+const DB_BEAUTIFY_ID = 'acu-db-beautify';
+
+/**
+ * 数据库主题基础变量 (镜像 variables.scss 中的定义)
+ * 用于在不依赖 getComputedStyle 的情况下获取当前主题色值
+ */
+const THEME_BASE_VARS: Record<string, Record<string, string>> = {
+  retro: {
+    bgNav: '#e6e2d3',
+    bgPanel: '#e6e2d3',
+    cardBg: '#fffef9',
+    tableHead: '#efebe4',
+    border: '#dcd0c0',
+    textMain: '#5e4b35',
+    textSub: '#999',
+    btnBg: '#dcd0c0',
+    btnHover: '#cbbba8',
+    btnActiveBg: '#8d7b6f',
+    btnActiveText: '#fdfaf5',
+    inputBg: 'rgba(255, 255, 255, 0.5)',
+    shadow: 'rgba(0, 0, 0, 0.1)',
+    overlayBg: 'rgba(94, 75, 53, 0.4)',
+  },
+  dark: {
+    bgNav: 'rgba(43, 43, 43, 0.95)',
+    bgPanel: 'rgba(37, 37, 37, 0.95)',
+    cardBg: 'rgba(45, 48, 53, 0.8)',
+    tableHead: 'rgba(51, 51, 51, 0.8)',
+    border: '#444',
+    textMain: '#eee',
+    textSub: '#aaa',
+    btnBg: 'rgba(58, 58, 58, 0.5)',
+    btnHover: '#4a4a4a',
+    btnActiveBg: '#6a5acd',
+    btnActiveText: '#fff',
+    inputBg: 'rgba(0, 0, 0, 0.3)',
+    shadow: 'rgba(0, 0, 0, 0.6)',
+    overlayBg: 'rgba(0, 0, 0, 0.75)',
+  },
+  modern: {
+    bgNav: '#ffffff',
+    bgPanel: '#f8f9fa',
+    cardBg: '#ffffff',
+    tableHead: '#f8f9fa',
+    border: '#e0e0e0',
+    textMain: '#333',
+    textSub: '#888',
+    btnBg: '#f1f3f5',
+    btnHover: '#e9ecef',
+    btnActiveBg: '#007bff',
+    btnActiveText: '#fff',
+    inputBg: '#ffffff',
+    shadow: 'rgba(0, 0, 0, 0.08)',
+    overlayBg: 'rgba(0, 0, 0, 0.3)',
+  },
+  forest: {
+    bgNav: '#e8f5e9',
+    bgPanel: '#e8f5e9',
+    cardBg: '#ffffff',
+    tableHead: '#dcedc8',
+    border: '#c8e6c9',
+    textMain: '#2e7d32',
+    textSub: '#81c784',
+    btnBg: '#c8e6c9',
+    btnHover: '#a5d6a7',
+    btnActiveBg: '#43a047',
+    btnActiveText: '#fff',
+    inputBg: 'rgba(255, 255, 255, 0.7)',
+    shadow: 'rgba(0, 0, 0, 0.1)',
+    overlayBg: 'rgba(46, 125, 50, 0.2)',
+  },
+  ocean: {
+    bgNav: '#e3f2fd',
+    bgPanel: '#e3f2fd',
+    cardBg: '#ffffff',
+    tableHead: '#bbdefb',
+    border: '#bbdefb',
+    textMain: '#1565c0',
+    textSub: '#64b5f6',
+    btnBg: '#bbdefb',
+    btnHover: '#90caf9',
+    btnActiveBg: '#1976d2',
+    btnActiveText: '#fff',
+    inputBg: 'rgba(255, 255, 255, 0.7)',
+    shadow: 'rgba(0, 0, 0, 0.15)',
+    overlayBg: 'rgba(21, 101, 192, 0.2)',
+  },
+  cyber: {
+    bgNav: '#000000',
+    bgPanel: '#0a0a0a',
+    cardBg: '#050505',
+    tableHead: '#111',
+    border: '#333',
+    textMain: '#00ffcc',
+    textSub: '#ff00ff',
+    btnBg: '#1a1a1a',
+    btnHover: '#333',
+    btnActiveBg: '#ff00ff',
+    btnActiveText: '#fff',
+    inputBg: '#111',
+    shadow: '0 0 10px rgba(0, 255, 204, 0.3)',
+    overlayBg: 'rgba(0, 0, 0, 0.85)',
+  },
+  purple: {
+    bgNav: '#ede7f6',
+    bgPanel: '#ede7f6',
+    cardBg: '#faf8fc',
+    tableHead: '#f5f0fa',
+    border: '#d1c4e9',
+    textMain: '#4a148c',
+    textSub: '#7b1fa2',
+    btnBg: '#d1c4e9',
+    btnHover: '#b39ddb',
+    btnActiveBg: '#7b1fa2',
+    btnActiveText: '#fff',
+    inputBg: 'rgba(255, 255, 255, 0.8)',
+    shadow: 'rgba(74, 20, 140, 0.1)',
+    overlayBg: 'rgba(74, 20, 140, 0.3)',
+  },
+};
+
 declare function getScriptId(): string;
 
 /**
@@ -78,6 +200,7 @@ export function useParentStyleInjection() {
   const dynamicStyleEl = ref<HTMLStyleElement | null>(null);
   const fontStyleEl = ref<HTMLStyleElement | null>(null);
   const themeCustomStyleEl = ref<HTMLStyleElement | null>(null);
+  const dbBeautifyStyleEl = ref<HTMLStyleElement | null>(null);
 
   // 是否已初始化
   const isInitialized = ref(false);
@@ -968,6 +1091,652 @@ export function useParentStyleInjection() {
     console.info('[ACU Styles] Theme custom styles updated');
   };
 
+  // ============================================================
+  // 数据库 UI 主题同步
+  // ============================================================
+
+  /**
+   * 将 hex 颜色转换为 rgba（用于透明度覆盖）
+   */
+  function _hexToRgba(hex: string, alpha: number): string {
+    const rgb = hexToRgb(hex);
+    return `rgba(${rgb}, ${alpha})`;
+  }
+
+  /**
+   * 获取当前主题的完整变量值（基础主题 + 用户覆盖）
+   */
+  const resolveCurrentThemeVars = (): Record<string, string> | null => {
+    const themeId = configStore.config.theme || 'retro';
+    const base = THEME_BASE_VARS[themeId] || THEME_BASE_VARS.retro;
+    if (!base) return null;
+
+    const result: Record<string, string> = { ...base };
+
+    // 合并用户覆盖（来自主题自定义面板）
+    const overrides = themeStore.currentThemeVars;
+    const opacities = themeStore.currentThemeVarOpacities;
+
+    for (const [key, value] of Object.entries(overrides)) {
+      if (value && key in result) {
+        const opacity = (opacities as Record<string, number | undefined>)[key] ?? 100;
+        if (opacity < 100 && value.startsWith('#')) {
+          result[key] = _hexToRgba(value, opacity / 100);
+        } else {
+          result[key] = value;
+        }
+      }
+    }
+
+    // 添加标题色/强调色
+    result.accent = themeStore.titleColor || result.textMain;
+
+    return result;
+  };
+
+  /**
+   * 生成数据库 UI 覆盖 CSS
+   * 精确匹配数据库插件的 DOM 类名，用 !important 覆盖其原生样式
+   */
+  const generateDatabaseCSS = (vars: Record<string, string>, fontFamily: string): string => {
+    const t = vars;
+    return `
+/* ========================================
+ * ACU 可视化表格 → 数据库 UI 主题同步
+ * 自动生成，请勿手动编辑
+ * ======================================== */
+
+/* 1. 根容器 CSS 变量覆盖（覆盖设置面板 + 可视化编辑器弹窗 + 所有数据库弹窗） */
+.auto-card-updater-popup,
+.acu-window,
+.acu-window-body,
+#acu-visualizer-content {
+  --acu-bg-0: ${t.bgPanel} !important;
+  --acu-bg-1: ${t.bgNav} !important;
+  --acu-bg-2: ${t.btnBg} !important;
+  --acu-border: ${t.border} !important;
+  --acu-border-2: ${t.border} !important;
+  --acu-text-1: ${t.textMain} !important;
+  --acu-text-2: ${t.textSub} !important;
+  --acu-text-3: ${t.textSub} !important;
+  --acu-accent: ${t.accent} !important;
+  --acu-accent-2: ${t.textSub} !important;
+  --acu-accent-glow: transparent !important;
+  font-family: ${fontFamily} !important;
+}
+
+/* 2. 按钮 */
+.auto-card-updater-popup button,
+.auto-card-updater-popup .button {
+  border-radius: 8px !important;
+  background: ${t.btnBg} !important;
+  color: ${t.textMain} !important;
+  border: 1px solid ${t.border} !important;
+}
+.auto-card-updater-popup button:hover,
+.auto-card-updater-popup .button:hover {
+  background: ${t.btnHover} !important;
+}
+.auto-card-updater-popup button.primary,
+.auto-card-updater-popup .button.primary {
+  background: ${t.btnActiveBg} !important;
+  color: ${t.btnActiveText} !important;
+}
+
+/* 3. 输入框/文本域 */
+:not(#z):not(#z) .auto-card-updater-popup input:not([type="checkbox"]):not([type="radio"]),
+:not(#z):not(#z) .auto-card-updater-popup textarea {
+  background-color: ${t.inputBg} !important;
+  color: ${t.textMain} !important;
+  border-color: ${t.border} !important;
+}
+
+/* 4. 下拉框 */
+:not(#z):not(#z) .auto-card-updater-popup select {
+  background-color: ${t.inputBg} !important;
+  color: ${t.textMain} !important;
+  border: 1px solid ${t.border} !important;
+}
+:not(#z):not(#z) .auto-card-updater-popup select option {
+  background-color: ${t.cardBg} !important;
+  color: ${t.textMain} !important;
+}
+
+/* 5. 占位符 */
+:not(#z):not(#z) .auto-card-updater-popup input::placeholder,
+:not(#z):not(#z) .auto-card-updater-popup textarea::placeholder {
+  color: ${t.textSub} !important;
+  opacity: 0.7 !important;
+}
+
+/* 6. Tab 导航 */
+html body .auto-card-updater-popup .acu-tabs-nav,
+.auto-card-updater-popup .acu-tabs-nav {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+  opacity: 1 !important;
+}
+.auto-card-updater-popup .acu-tab-button {
+  color: ${t.textSub} !important;
+  border-radius: 8px !important;
+}
+.auto-card-updater-popup .acu-tab-button:hover {
+  background: ${t.btnHover} !important;
+  color: ${t.textMain} !important;
+}
+.auto-card-updater-popup .acu-tab-button.active {
+  background: ${t.btnActiveBg} !important;
+  color: ${t.btnActiveText} !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+  border-color: transparent !important;
+}
+
+/* 7. 头部栏 */
+.auto-card-updater-popup .acu-header {
+  box-shadow: none !important;
+  background: ${t.bgNav} !important;
+  border-bottom: 1px solid ${t.border} !important;
+}
+
+/* 8. 卡片/分区 */
+.auto-card-updater-popup .acu-card,
+.auto-card-updater-popup .settings-section {
+  background: ${t.cardBg} !important;
+  border-color: ${t.border} !important;
+  color: ${t.textMain} !important;
+  box-shadow: ${t.shadow} !important;
+}
+
+/* 9. 列表容器 */
+.auto-card-updater-popup .prompt-segment,
+.auto-card-updater-popup .plot-prompt-segment,
+.auto-card-updater-popup .qrf_worldbook_list,
+.auto-card-updater-popup .qrf_worldbook_entry_list,
+.auto-card-updater-popup .checkbox-group,
+.auto-card-updater-popup .qrf_radio_group {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+  color: ${t.textMain} !important;
+}
+
+/* 10. 状态显示框 */
+.auto-card-updater-popup [id$="-card-update-status-display"],
+.auto-card-updater-popup [id$="-status-message"],
+.auto-card-updater-popup [id$="-loop-status-indicator"] {
+  background: ${t.bgNav} !important;
+  border: 1px solid ${t.border} !important;
+  color: ${t.textMain} !important;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.05) !important;
+}
+
+/* 11. 文本颜色 */
+.auto-card-updater-popup .acu-header-sub,
+.auto-card-updater-popup .notes,
+.auto-card-updater-popup small.notes,
+.auto-card-updater-popup label {
+  color: ${t.textSub} !important;
+}
+.auto-card-updater-popup h3,
+.auto-card-updater-popup h4 {
+  color: ${t.textMain} !important;
+  border-bottom-color: ${t.border} !important;
+}
+.auto-card-updater-popup [id$="-granular-status-table-body"] td {
+  color: ${t.textMain} !important;
+}
+
+/* 12. 复选框 */
+:not(#z) .auto-card-updater-popup input[type="checkbox"] {
+  background-color: ${t.inputBg} !important;
+  border: 1px solid ${t.border} !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  cursor: pointer !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+:not(#z) .auto-card-updater-popup input[type="checkbox"]:checked {
+  background: ${t.btnActiveBg} !important;
+  border-color: transparent !important;
+}
+:not(#z) .auto-card-updater-popup input[type="checkbox"]:hover {
+  border-color: ${t.textMain} !important;
+}
+
+/* 13. Toggle 开关 */
+.auto-card-updater-popup .toggle-switch .slider {
+  background-color: ${t.border} !important;
+  border: 1px solid ${t.border} !important;
+  opacity: 0.6 !important;
+}
+.auto-card-updater-popup .toggle-switch input:checked + .slider {
+  background: ${t.btnActiveBg} !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+}
+.auto-card-updater-popup .toggle-switch .slider:before {
+  background-color: #fff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+
+/* 14. 弹窗遮罩 */
+.acu-window-overlay {
+  background-color: ${t.overlayBg} !important;
+  backdrop-filter: blur(5px) !important;
+}
+
+/* 15. 弹窗窗体 */
+.acu-window {
+  background: ${t.bgPanel} !important;
+  box-shadow: ${t.shadow} !important;
+  border: 1px solid ${t.border} !important;
+}
+.acu-window .acu-window-header {
+  background: ${t.bgNav} !important;
+  border-bottom: 1px solid ${t.border} !important;
+}
+.acu-window .acu-window-title {
+  color: ${t.textMain} !important;
+}
+.acu-window .acu-window-title i {
+  color: ${t.accent} !important;
+}
+.acu-window .acu-window-btn {
+  background: ${t.btnBg} !important;
+  color: ${t.textSub} !important;
+  border: 1px solid ${t.border} !important;
+}
+.acu-window .acu-window-btn:hover {
+  background: ${t.btnHover} !important;
+  color: ${t.textMain} !important;
+}
+
+/* 15b. 可视化编辑器 (数据库原生编辑器弹窗) */
+#acu-visualizer-content {
+  /* 覆盖 vis 专用变量（可视化编辑器内部使用的二级变量） */
+  --vis-bg-color: ${t.bgPanel} !important;
+  --vis-bg-stats: ${t.bgNav} !important;
+  --vis-bg-light: ${t.bgNav} !important;
+  --vis-bg-hover: ${t.btnHover} !important;
+  --vis-border-color: ${t.border} !important;
+  --vis-text-main: ${t.textMain} !important;
+  --vis-text-dim: ${t.textSub} !important;
+  --vis-text-mute: ${t.textSub} !important;
+  --vis-accent: ${t.accent} !important;
+  --vis-accent-dim: ${t.textSub} !important;
+  --vis-accent-glow: transparent !important;
+  /* AI 助手面板专用变量 */
+  --vis-assistant-window-bg: ${t.bgPanel} !important;
+  --vis-assistant-surface-bg: ${t.bgNav} !important;
+  background-color: ${t.bgPanel} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-vis-header,
+#acu-visualizer-content .acu-vis-toolbar {
+  border-bottom-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-vis-sidebar {
+  background: ${t.bgNav} !important;
+  border-right-color: ${t.border} !important;
+  border-bottom-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-vis-sidebar::before {
+  color: ${t.textSub} !important;
+  border-bottom-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-vis-main {
+  background-color: ${t.bgPanel} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-table-nav-item {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-table-nav-item::before {
+  background-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-table-nav-item:hover {
+  background: ${t.btnHover} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-table-nav-item:hover::before {
+  background-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-table-nav-item.active {
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-table-nav-item.active::before {
+  background-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-table-nav-item i {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-table-nav-item.active i {
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-data-card {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-data-card:hover {
+  border-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-card-header {
+  background: ${t.tableHead} !important;
+  border-bottom-color: ${t.border} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-card-body {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-field-label {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-field-value {
+  background: ${t.bgPanel} !important;
+  border-color: transparent !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-field-value:hover {
+  background: ${t.btnHover} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-field-value:focus {
+  background: ${t.bgPanel} !important;
+  border-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-btn-primary {
+  color: ${t.accent} !important;
+  border-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-btn-secondary {
+  color: ${t.textSub} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-btn-secondary:hover {
+  color: ${t.textMain} !important;
+  border-color: ${t.textSub} !important;
+  background: ${t.btnHover} !important;
+}
+#acu-visualizer-content .acu-mode-switch {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-mode-btn {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-mode-btn:hover {
+  color: ${t.textMain} !important;
+  background: ${t.btnHover} !important;
+}
+#acu-visualizer-content .acu-mode-btn.active {
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-config-panel {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-config-section {
+  border-bottom-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-config-section h4 {
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-form-group label {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-form-input,
+#acu-visualizer-content .acu-form-textarea,
+#acu-visualizer-content .acu-col-input {
+  background: ${t.bgPanel} !important;
+  border-color: ${t.border} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-form-input:focus,
+#acu-visualizer-content .acu-form-textarea:focus,
+#acu-visualizer-content .acu-col-input:focus {
+  border-color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-hint {
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-add-table-btn {
+  color: ${t.textSub} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-add-table-btn:hover {
+  border-color: ${t.accent} !important;
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-table-order-btn {
+  color: ${t.textSub} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-table-order-btn:hover {
+  border-color: ${t.accent} !important;
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-lock-btn {
+  border-color: ${t.border} !important;
+  color: ${t.textSub} !important;
+}
+#acu-visualizer-content .acu-lock-btn:hover {
+  border-color: ${t.accent} !important;
+  color: ${t.accent} !important;
+}
+#acu-visualizer-content .acu-lock-btn.active {
+  border-color: ${t.accent} !important;
+  color: ${t.accent} !important;
+}
+/* 可视化编辑器内的 AI 助手面板 */
+#acu-visualizer-content .acu-vis-assistant-panel {
+  background: ${t.bgPanel} !important;
+  color: ${t.textMain} !important;
+}
+#acu-visualizer-content .acu-vis-assistant-header {
+  border-bottom-color: ${t.border} !important;
+  background: ${t.bgPanel} !important;
+}
+#acu-visualizer-content .acu-vis-assistant-footer {
+  border-top-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-chat-scroll-frame {
+  border-color: ${t.border} !important;
+  background: ${t.bgNav} !important;
+}
+#acu-visualizer-content .acu-assistant-section {
+  background: ${t.bgNav} !important;
+  border-color: ${t.border} !important;
+}
+#acu-visualizer-content .acu-vis-assistant-dock {
+  background: ${t.bgPanel} !important;
+  border-left-color: ${t.border} !important;
+}
+
+/* 16. 数据管理按钮 */
+html body .auto-card-updater-popup .button-group.acu-data-mgmt-buttons button,
+html body .auto-card-updater-popup .button-group.acu-data-mgmt-buttons .button,
+:not(#z):not(#z) .auto-card-updater-popup .acu-data-mgmt-buttons button,
+:not(#z):not(#z) .auto-card-updater-popup .acu-data-mgmt-buttons .button {
+  background: ${t.btnBg} !important;
+  color: ${t.textMain} !important;
+  border: 1px solid ${t.border} !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+:not(#z):not(#z) .auto-card-updater-popup .acu-data-mgmt-buttons button:hover,
+:not(#z):not(#z) .auto-card-updater-popup .acu-data-mgmt-buttons .button:hover {
+  background: ${t.btnHover} !important;
+}
+
+/* 17. 高亮文本 */
+.auto-card-updater-popup [style*="lightgreen"] {
+  color: ${t.accent} !important;
+}
+
+/* ========================================
+ * 18. 数据库 Chrome 主题面板 CSS 变量
+ * 数据库新版 UI 使用 --acu-panel-* 系列变量
+ * 选择器不硬编码版本号，用 [id^="shujuku_v"][id*="-chrome"] 通配
+ * ======================================== */
+.auto-card-updater-popup,
+[id^="shujuku_v"][id*="-chrome"] {
+  --acu-panel-bg: ${t.bgPanel} !important;
+  --acu-panel-bg-alt: ${t.bgNav} !important;
+  --acu-panel-border: ${t.border} !important;
+  --acu-panel-text: ${t.textMain} !important;
+  --acu-panel-text-mute: ${t.textSub} !important;
+  --acu-panel-accent: ${t.accent} !important;
+}
+
+/* Chrome 主题面板内联样式覆盖 */
+[id^="shujuku_v"][id*="-chrome-theme"] {
+  background: ${t.btnBg} !important;
+  color: ${t.textMain} !important;
+  border-color: ${t.border} !important;
+}
+[id^="shujuku_v"][id*="-chrome-theme"]:hover {
+  background: ${t.btnHover} !important;
+}
+[id^="shujuku_v"][id*="-chrome"] select {
+  background: ${t.btnBg} !important;
+  color: ${t.textMain} !important;
+  border-color: ${t.border} !important;
+}
+[id^="shujuku_v"][id*="-chrome"] select option {
+  background: ${t.cardBg} !important;
+  color: ${t.textMain} !important;
+}
+[id^="shujuku_v"][id*="-chrome"] button {
+  color: ${t.textSub} !important;
+}
+[id^="shujuku_v"][id*="-chrome"] button:hover {
+  color: ${t.textMain} !important;
+}
+
+/* ========================================
+ * 19. Toast 主题覆盖（数据库 Toast 劫持脚本 + 原生 toastr）
+ * ======================================== */
+
+/* 数据库 Toast 劫持脚本 (zmer-shujuku-toast-theme) */
+.zmer-shujuku-toast-theme-chip {
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.12), transparent 38%),
+    ${t.cardBg} !important;
+  color: ${t.textMain} !important;
+  border-color: ${t.border} !important;
+  box-shadow: 0 8px 18px ${t.shadow}, 0 0 15px transparent !important;
+  font-family: ${fontFamily} !important;
+}
+.zmer-shujuku-toast-theme-title {
+  color: ${t.accent} !important;
+}
+.zmer-shujuku-toast-theme-dot {
+  background: ${t.accent} !important;
+  box-shadow: 0 0 10px ${t.accent} !important;
+}
+.zmer-shujuku-toast-theme-text {
+  color: ${t.textMain} !important;
+}
+.zmer-shujuku-toast-theme-action {
+  border-color: ${t.border} !important;
+  background: ${t.btnBg} !important;
+  color: ${t.textMain} !important;
+}
+.zmer-shujuku-toast-theme-action:hover {
+  background: ${t.btnHover} !important;
+}
+.zmer-shujuku-toast-theme-success { --zst-accent: ${t.accent} !important; }
+.zmer-shujuku-toast-theme-info { --zst-accent: ${t.accent} !important; }
+
+/* 原生 toastr 覆盖 */
+#toast-container > .toast {
+  background-color: ${t.cardBg} !important;
+  color: ${t.textMain} !important;
+  border: 1px solid ${t.border} !important;
+  box-shadow: 0 4px 16px ${t.shadow} !important;
+  font-family: ${fontFamily} !important;
+  opacity: 1 !important;
+}
+#toast-container > .toast-success {
+  background-color: ${t.cardBg} !important;
+}
+#toast-container > .toast-info {
+  background-color: ${t.cardBg} !important;
+}
+#toast-container > .toast-warning {
+  background-color: ${t.cardBg} !important;
+}
+#toast-container > .toast-error {
+  background-color: ${t.cardBg} !important;
+}
+#toast-container > .toast .toast-title {
+  color: ${t.accent} !important;
+  font-weight: 700 !important;
+}
+#toast-container > .toast .toast-message {
+  color: ${t.textMain} !important;
+}
+#toast-container > .toast .toast-close-button {
+  color: ${t.textSub} !important;
+}
+#toast-container > .toast .toast-close-button:hover {
+  color: ${t.textMain} !important;
+}
+
+/* 数据库自定义 toast (.acu-toast) */
+.acu-toast:not(.acu-app .acu-toast) {
+  background-color: ${t.cardBg} !important;
+  color: ${t.textMain} !important;
+  border: 1px solid ${t.border} !important;
+  font-family: ${fontFamily} !important;
+}
+.acu-toast:not(.acu-app .acu-toast) .toast-title {
+  color: ${t.accent} !important;
+}
+.acu-toast:not(.acu-app .acu-toast) .toast-message {
+  color: ${t.textMain} !important;
+}
+`;
+  };
+
+  /**
+   * 更新数据库 UI 主题同步样式
+   * 当启用 dbThemeSync 时，将当前主题色注入到数据库原生 UI
+   */
+  const updateDatabaseStyles = (): void => {
+    const parentDoc = getParentDoc();
+    const styleId = `${DB_BEAUTIFY_ID}-${scriptId.value}`;
+
+    // 未启用同步时，移除已注入的样式
+    if (!configStore.config.dbThemeSync) {
+      parentDoc.getElementById(styleId)?.remove();
+      dbBeautifyStyleEl.value = null;
+      console.info('[ACU Styles] 数据库主题同步已关闭');
+      return;
+    }
+
+    // 获取当前主题色值
+    const vars = resolveCurrentThemeVars();
+    if (!vars) return;
+
+    const fontFamily = getFontFamilyValue();
+    const css = generateDatabaseCSS(vars, fontFamily);
+
+    // 创建或更新样式元素
+    if (!dbBeautifyStyleEl.value) {
+      const el = parentDoc.createElement('style');
+      el.id = styleId;
+      el.setAttribute('data-source', 'acu-visualizer-db-sync');
+      parentDoc.head.appendChild(el);
+      dbBeautifyStyleEl.value = el;
+    }
+
+    dbBeautifyStyleEl.value.textContent = css;
+    console.info('[ACU Styles] 数据库主题同步已更新');
+  };
+
   /**
    * 应用主题类
    * 通过切换 .acu-theme-* 类来切换主题
@@ -1031,6 +1800,7 @@ export function useParentStyleInjection() {
     applyTheme();
     applyLayout();
     applyFont();
+    updateDatabaseStyles();
   };
 
   /**
@@ -1058,10 +1828,14 @@ export function useParentStyleInjection() {
     // 移除主题自定义样式
     parentDoc.getElementById(`${THEME_CUSTOM_ID}-${id}`)?.remove();
 
+    // 移除数据库主题同步样式
+    parentDoc.getElementById(`${DB_BEAUTIFY_ID}-${id}`)?.remove();
+
     baseStyleEl.value = null;
     dynamicStyleEl.value = null;
     fontStyleEl.value = null;
     themeCustomStyleEl.value = null;
+    dbBeautifyStyleEl.value = null;
     isInitialized.value = false;
 
     console.info('[ACU Styles] Styles cleaned up');
@@ -1097,6 +1871,9 @@ export function useParentStyleInjection() {
     // 初始更新主题自定义样式
     updateThemeCustomStyles();
 
+    // 初始更新数据库主题同步样式
+    updateDatabaseStyles();
+
     isInitialized.value = true;
     console.info('[ACU Styles] Style system initialized');
   };
@@ -1115,6 +1892,9 @@ export function useParentStyleInjection() {
 
       // 检测布局变化
       applyLayout(newConfig.layout);
+
+      // 更新数据库主题同步
+      updateDatabaseStyles();
     },
     { deep: true },
   );
@@ -1139,6 +1919,7 @@ export function useParentStyleInjection() {
     () => {
       if (!isInitialized.value) return;
       updateThemeCustomStyles();
+      updateDatabaseStyles();
     },
     { deep: true },
   );
@@ -1161,6 +1942,7 @@ export function useParentStyleInjection() {
     cleanup,
     updateDynamicVariables,
     updateThemeCustomStyles,
+    updateDatabaseStyles,
     applyTheme,
     applyLayout,
     applyFont,
@@ -1171,6 +1953,7 @@ export function useParentStyleInjection() {
     dynamicStyleEl,
     fontStyleEl,
     themeCustomStyleEl,
+    dbBeautifyStyleEl,
   };
 }
 

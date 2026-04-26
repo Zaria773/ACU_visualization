@@ -55,6 +55,7 @@ function initSettings(): RuntimeContext {
     current_target_worldbook_name: '尚未定位',
     sync_in_progress: false,
     last_reason: '尚无',
+    current_raw_headers: [],
   };
   const ctx: RuntimeContext = {
     settings,
@@ -95,7 +96,7 @@ function logRowPreview(ctx: RuntimeContext, rows: UnifiedEventRow[]): void {
  */
 function logBuiltEntriesPreview(ctx: RuntimeContext, built: BuildEntriesResult): void {
   logInfo(
-    `条目构建完成：共 ${built.summary.counts.total_entries} 条（概览 ${built.summary.counts.summary} / 纪要 ${built.summary.counts.detail} / 包裹上 ${built.summary.counts.wrapper_top} / 包裹下 ${built.summary.counts.wrapper_bottom}）。`,
+    `条目构建完成：共 ${built.summary.counts.total_entries} 条（表头 ${built.summary.counts.header} / 概览 ${built.summary.counts.summary} / 纪要 ${built.summary.counts.detail} / 包裹上 ${built.summary.counts.wrapper_top} / 包裹下 ${built.summary.counts.wrapper_bottom}）。`,
   );
   logDebug(ctx, '条目构建摘要：', built.summary);
   logDebug(ctx, '条目 order 映射预览（最多 10 行）：', built.order_map.slice(0, 10));
@@ -193,7 +194,12 @@ async function performSync(ctx: RuntimeContext, reason: string): Promise<void> {
       return;
     }
 
-    updateRuntimeStatus(ctx, { current_summary_sheet_name: identifyResult.selected.table_name });
+    // 提取有效列名（跳过第一列、跳过空列名），供列显示设置弹窗使用
+    const relevantHeaders = identifyResult.selected.header_map.raw_headers.filter((h, i) => i >= 1 && h !== '');
+    updateRuntimeStatus(ctx, {
+      current_summary_sheet_name: identifyResult.selected.table_name,
+      current_raw_headers: relevantHeaders,
+    });
     logInfo(`命中纪要表：${identifyResult.selected.table_name}（${identifyResult.selected.table_id}）。`);
 
     const parsed = parseUnifiedRowsFromSummarySheet(tableRead.data, identifyResult.selected);
@@ -205,16 +211,18 @@ async function performSync(ctx: RuntimeContext, reason: string): Promise<void> {
     logDebug(ctx, '统一行解析摘要：', parsed.summary);
     logRowPreview(ctx, parsed.rows);
 
-    const entryPlacement = identifyResult.selected.entry_placement;
+    const depth = ctx.settings.depth_override ?? 9997;
     const built = buildWorldbookEntries({
       rows: parsed.rows,
-      entry_placement: {
-        ...entryPlacement,
-        depth: ctx.settings.depth_override ?? entryPlacement.depth,
-      },
+      depth,
+      position: ctx.settings.injection_position,
       wrapper_text_top: ctx.settings.wrapper_text_top,
       wrapper_text_bottom: ctx.settings.wrapper_text_bottom,
       zero_tk_mode_enabled: ctx.settings.zero_tk_mode_enabled,
+      zero_tk_inject_no_trigger: ctx.settings.zero_tk_inject_no_trigger,
+      column_visibility: ctx.settings.column_visibility,
+      table_name: identifyResult.selected.table_name,
+      relevant_headers: relevantHeaders,
     });
 
     logBuiltEntriesPreview(ctx, built);
@@ -231,6 +239,17 @@ async function performSync(ctx: RuntimeContext, reason: string): Promise<void> {
     updateRuntimeStatus(ctx, { current_target_worldbook_name: targetWorldbookName });
     logInfo(
       `本轮目标世界书：${targetWorldbookName}（target=${ctx.settings.injection_target === 'chat_bound' ? '当前聊天绑定世界书' : '角色主世界书'}）`,
+    );
+
+    logDebug(
+      ctx,
+      '构建的条目详情（前3条）：',
+      built.entries.slice(0, 3).map(e => ({
+        kind: e.kind,
+        name: e.name,
+        position: e.position,
+        content: e.content.slice(0, 80),
+      })),
     );
 
     const writableEntries = buildWritableWorldbookEntries(built);

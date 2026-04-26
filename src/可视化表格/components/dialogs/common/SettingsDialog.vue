@@ -103,6 +103,21 @@
                     <input v-model.number="localConfig.itemsPerPage" type="range" min="10" max="100" step="10" />
                   </div>
                 </div>
+
+                <!-- 数据库主题同步 -->
+                <div class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    数据库主题同步
+                    <span class="hint">将当前主题应用到数据库原生 UI</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <button
+                      class="acu-switch"
+                      :class="{ active: localConfig.dbThemeSync !== false }"
+                      @click="localConfig.dbThemeSync = !(localConfig.dbThemeSync !== false)"
+                    ></button>
+                  </div>
+                </div>
               </div>
             </div>
 

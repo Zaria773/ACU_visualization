@@ -14,6 +14,7 @@ import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import type { RawDatabaseData } from '../types';
 import { getCore, getTableData } from '../utils/index';
+import { checkSqliteApiAvailable, detectStorageMode } from '../utils/storageMode';
 import { toast } from './useToast';
 
 /**
@@ -93,6 +94,63 @@ function collectTableNamesFromPendingDeletes(pendingDeletes: Set<string>): strin
   });
 
   return Array.from(names);
+}
+
+/**
+ * 在 RawDatabaseData 中按 sheet.name 反查 sheetId 与 sheet 引用
+ *
+ * 用于 SQLite 模式下从 tableName 解析回 sheetId / headers 等信息。
+ *
+ * @param data 原始数据库数据
+ * @param name 表的中文显示名（即 `sheet.name`）
+ * @returns 找到则返回 `{ sheet, tableId }`,否则 `null`
+ */
+function findSheetByName(data: RawDatabaseData, name: string): { sheet: any; tableId: string } | null {
+  for (const id in data) {
+    if (data[id]?.name === name) {
+      return { sheet: data[id], tableId: id };
+    }
+  }
+  return null;
+}
+
+/**
+ * 检测“中间插入”是否被 getDetailedChanges 漏检
+ *
+ * `getDetailedChanges` 用“位置索引比对”判断 insert,如果用户在中间插入新行,
+ * snapshot 中同一索引位置仍有内容（原行被挤后),会被识别为“修改”而非“新增”。
+ *
+ * 此函数对比 current 与 snap 的每张表行数,如果 current 行数 > snap 行数
+ * 但 inserts 列表中该表对应的 insert 数量不足以覆盖差额,即认为漏检。
+ *
+ * @param current 当前完整的表格数据
+ * @param snap 上次保存后的快照
+ * @param inserts `getDetailedChanges` 返回的 inserts 列表（仅使用 tableName)
+ * @returns `true` 表示需要 fallback 到全量导入
+ */
+function checkInsertMismatch(
+  current: RawDatabaseData,
+  snap: RawDatabaseData | null,
+  inserts: Array<{ tableName: string }>,
+): boolean {
+  if (!snap) return false;
+
+  const insertCountByTable = new Map<string, number>();
+  inserts.forEach(i => {
+    insertCountByTable.set(i.tableName, (insertCountByTable.get(i.tableName) || 0) + 1);
+  });
+
+  for (const sheetId in current) {
+    if (!sheetId.startsWith('sheet_')) continue;
+    const cur = current[sheetId];
+    const sn = snap[sheetId];
+    if (!cur?.content || !sn?.content) continue;
+    const tableName = String(cur.name || sheetId);
+    const expected = cur.content.length - 1 - (sn.content.length - 1); // 行数差(数据行)
+    const detected = insertCountByTable.get(tableName) || 0;
+    if (expected > detected) return true;
+  }
+  return false;
 }
 
 /**
@@ -177,7 +235,9 @@ function notifySummaryWorldbookBridgeOnSave(savedData: RawDatabaseData, affected
     if (syncBridge?.triggerSummaryWorldbookResyncLikeUiButton) {
       window.setTimeout(() => {
         try {
-          console.info(`[ACU-Bridge][诊断][${traceId}] 准备调用 triggerSummaryWorldbookResyncLikeUiButton（延迟380ms）`);
+          console.info(
+            `[ACU-Bridge][诊断][${traceId}] 准备调用 triggerSummaryWorldbookResyncLikeUiButton（延迟380ms）`,
+          );
           syncBridge.triggerSummaryWorldbookResyncLikeUiButton?.();
           console.info(`[ACU-Bridge][诊断][${traceId}] triggerSummaryWorldbookResyncLikeUiButton 调用已发出（延迟）`);
         } catch (error) {
@@ -734,6 +794,25 @@ export function useDataPersistence() {
           if (ST.saveChat) {
             await ST.saveChat();
 
+            // [双路保存] SQLite 模式下,直接写 chat 字段会绕过 SQLite 内存数据库,
+            // 必须额外调用 refreshDataAndWorldbook() 让数据库插件重建 SQLite,
+            // 否则下次 AI 自动填表会基于旧 SQLite 数据覆盖用户的修改
+            try {
+              if (detectStorageMode(finalData) === 'sqlite') {
+                const api = getCore().getDB();
+                if (api && typeof api.refreshDataAndWorldbook === 'function') {
+                  await api.refreshDataAndWorldbook();
+                  console.info('[ACU][SQLite] executeFullSave 后 refreshDataAndWorldbook 已调用');
+                } else {
+                  console.warn(
+                    '[ACU][SQLite] executeFullSave 后,API 缺少 refreshDataAndWorldbook,SQLite 可能未同步',
+                  );
+                }
+              }
+            } catch (e) {
+              console.warn('[ACU][SQLite] executeFullSave 后 refreshDataAndWorldbook 失败:', e);
+            }
+
             // E. 调用 API 同步世界书 (在 saveChat 成功后立即执行)
             await syncWorldbook();
 
@@ -994,6 +1073,196 @@ export function useDataPersistence() {
   }
 
   /**
+   * 执行 SQLite 模式的精细保存（双路保存方案 — SQLite 路径）
+   *
+   * 通过 AutoCardUpdaterAPI 的 updateRow / insertRow / deleteRow 逐个提交变更,
+   * 最后调用 refreshDataAndWorldbook 强制 SQLite 内存数据库重建,确保前端修改不被
+   * AI 自动填表覆盖。
+   *
+   * 调用前置条件:
+   * - 已通过 detectStorageMode() 确认是 sqlite 模式
+   * - 已通过 checkSqliteApiAvailable() 确认 API 可用
+   * - 调用方负责 isSaving 锁、UI 切换、快照更新等流程,本函数只做"调用 API + 兜底"
+   *
+   * @param dataToUse 当前完整的表格数据(不会被本函数修改,但会用来兜底拉取列名/sheet 信息)
+   * @param commitDeletes 是否提交 pendingDeletes 的删除操作
+   * @returns 保存后的最新表格数据(从 getTableData() 拉取);失败时抛出异常,由调用方决定是否回退
+   */
+  async function executeSqliteSave(
+    dataToUse: RawDatabaseData,
+    commitDeletes: boolean,
+  ): Promise<RawDatabaseData | null> {
+    const api = getCore().getDB();
+    if (!api) {
+      throw new Error('[ACU][SQLite] AutoCardUpdaterAPI 不可用');
+    }
+
+    const changes = dataStore.getDetailedChanges();
+    const errors: string[] = [];
+
+    console.info('[ACU][SQLite] 开始执行精细保存', {
+      deletes: changes.deletes.length,
+      updates: changes.updates.length,
+      inserts: changes.inserts.length,
+      commitDeletes,
+    });
+
+    // ============================================================
+    // 1. 删除（按 rowIdx 倒序,按表分组,避免索引前移影响后续删除）
+    // ============================================================
+    if (commitDeletes && changes.deletes.length > 0) {
+      const deletesByTable = new Map<string, typeof changes.deletes>();
+      for (const del of changes.deletes) {
+        if (!deletesByTable.has(del.tableName)) {
+          deletesByTable.set(del.tableName, []);
+        }
+        deletesByTable.get(del.tableName)!.push(del);
+      }
+
+      for (const [, dels] of deletesByTable) {
+        // 同一表内按 rowIdx 倒序删除
+        const sorted = [...dels].sort((a, b) => b.rowIdx - a.rowIdx);
+        for (const del of sorted) {
+          try {
+            // API 是 1-based: 表头是 row 0,数据从 row 1 开始;rowIdx 是 0-based 数据索引
+            const ok = await api.deleteRow(del.tableName, del.rowIdx + 1);
+            if (!ok) {
+              const msg = `deleteRow [${del.tableName}] row=${del.rowIdx} returned false`;
+              console.warn('[ACU][SQLite]', msg);
+              errors.push(msg);
+            }
+          } catch (e: any) {
+            const msg = `deleteRow [${del.tableName}] row=${del.rowIdx} threw: ${e?.message ?? e}`;
+            console.warn('[ACU][SQLite]', msg);
+            errors.push(msg);
+          }
+        }
+      }
+    }
+
+    // ============================================================
+    // 2. 更新（按 (tableName, rowIdx) 聚合成 updateRow,以中文列名为 key）
+    // ============================================================
+    const updateGroups = new Map<string, { tableName: string; rowIdx: number; data: Record<string, string> }>();
+    for (const upd of changes.updates) {
+      const key = `${upd.tableName}@${upd.rowIdx}`;
+      if (!updateGroups.has(key)) {
+        updateGroups.set(key, { tableName: upd.tableName, rowIdx: upd.rowIdx, data: {} });
+      }
+
+      // 列名翻译:从 dataToUse 中按 tableName 找到对应 sheet,取 content[0] 中的中文列名
+      const target = findSheetByName(dataToUse, upd.tableName);
+      if (!target) {
+        const msg = `update: 找不到表 ${upd.tableName}`;
+        console.warn('[ACU][SQLite]', msg);
+        errors.push(msg);
+        continue;
+      }
+      const headers: any[] = target.sheet?.content?.[0] || [];
+      const colName = String(headers[upd.colIdx] ?? '');
+      if (!colName) {
+        const msg = `update [${upd.tableName}] colIdx=${upd.colIdx} 无中文列名`;
+        console.warn('[ACU][SQLite]', msg);
+        errors.push(msg);
+        continue;
+      }
+      updateGroups.get(key)!.data[colName] = upd.value;
+    }
+
+    for (const grp of updateGroups.values()) {
+      try {
+        // API 是 1-based: 表头是 row 0,数据从 row 1 开始;rowIdx 是 0-based 数据索引
+        const ok = await api.updateRow(grp.tableName, grp.rowIdx + 1, grp.data);
+        if (!ok) {
+          const msg = `updateRow [${grp.tableName}] row=${grp.rowIdx} returned false`;
+          console.warn('[ACU][SQLite]', msg);
+          errors.push(msg);
+        }
+      } catch (e: any) {
+        const msg = `updateRow [${grp.tableName}] row=${grp.rowIdx} threw: ${e?.message ?? e}`;
+        console.warn('[ACU][SQLite]', msg);
+        errors.push(msg);
+      }
+    }
+
+    // ============================================================
+    // 3. 新增（getDetailedChanges 已用中文列名整理好 data)
+    // ============================================================
+    for (const ins of changes.inserts) {
+      try {
+        const idx = await api.insertRow(ins.tableName, ins.data);
+        if (idx === -1) {
+          const msg = `insertRow [${ins.tableName}] returned -1`;
+          console.warn('[ACU][SQLite]', msg);
+          errors.push(msg);
+        } else {
+          console.info(`[ACU][SQLite] insertRow [${ins.tableName}] -> 新行索引 ${idx}`);
+        }
+      } catch (e: any) {
+        const msg = `insertRow [${ins.tableName}] threw: ${e?.message ?? e}`;
+        console.warn('[ACU][SQLite]', msg);
+        errors.push(msg);
+      }
+    }
+
+    // ============================================================
+    // 4. 强制刷新 SQLite + 世界书（关键!避免 AI 填表用旧 SQL 覆盖前端修改）
+    // ============================================================
+    if (typeof api.refreshDataAndWorldbook === 'function') {
+      try {
+        await api.refreshDataAndWorldbook();
+        console.info('[ACU][SQLite] refreshDataAndWorldbook 完成');
+      } catch (e) {
+        console.warn('[ACU][SQLite] refreshDataAndWorldbook 失败:', e);
+      }
+    } else {
+      console.warn('[ACU][SQLite] API 缺少 refreshDataAndWorldbook 方法,SQLite 内存数据库可能未同步');
+    }
+
+    // ============================================================
+    // 5. 中间插入兜底检测
+    //    getDetailedChanges 用"位置索引比对"识别 insert,
+    //    如果用户在中间插入新行(insertRow(tableId, afterIndex)),
+    //    snapshot 在同一位置仍有内容(原行被挤后),会被识别为"修改"而非"新增"。
+    //    这种情况下,updates 已经把新数据写到错误的索引上,无法用 insertRow 修复,
+    //    必须 fallback 到 importTableAsJson 全量覆盖。
+    // ============================================================
+    const fallbackNeeded = checkInsertMismatch(dataToUse, dataStore.snapshot, changes.inserts);
+    if (fallbackNeeded) {
+      console.warn('[ACU][SQLite] 检测到中间插入未覆盖,fallback 到 importTableAsJson');
+      if (typeof api.importTableAsJson === 'function') {
+        try {
+          await api.importTableAsJson(JSON.stringify(dataToUse));
+          if (typeof api.refreshDataAndWorldbook === 'function') {
+            await api.refreshDataAndWorldbook();
+          }
+          console.info('[ACU][SQLite] importTableAsJson fallback 完成');
+        } catch (e: any) {
+          const msg = `importTableAsJson fallback failed: ${e?.message ?? e}`;
+          console.warn('[ACU][SQLite]', msg);
+          errors.push(msg);
+        }
+      } else {
+        console.warn('[ACU][SQLite] API 缺少 importTableAsJson 方法,无法 fallback');
+      }
+    }
+
+    // ============================================================
+    // 6. 错误汇总(不抛异常,让上层根据 errors 决定提示)
+    // ============================================================
+    if (errors.length > 0) {
+      console.warn('[ACU][SQLite] 保存过程中发生错误:', errors);
+    } else {
+      console.info('[ACU][SQLite] 精细保存完成,无错误');
+    }
+
+    // ============================================================
+    // 7. 拉取最新数据(API 已触发刷新,getTableData 拿到合并结果)
+    // ============================================================
+    return getTableData();
+  }
+
+  /**
    * 同步世界书条目
    */
   async function syncWorldbook(): Promise<void> {
@@ -1057,9 +1326,15 @@ export function useDataPersistence() {
         $saveBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
       }
 
+      // ★ 检测存储模式（双路保存方案，子任务 4）
+      const storageMode = detectStorageMode(dataToUse);
+      console.info(`[ACU] 检测到存储模式: ${storageMode}`);
+
       // 预计算 bridge 所需的受影响表名
       // - 全量保存(另存为)：按“所有表”处理
       // - 增量保存(默认)：按“实际变更表”处理
+      // 注：SQLite 路径不依赖 modifiedTableIds 做 API 调用（细粒度变更走 getDetailedChanges），
+      //    但 bridge 通知仍需要 affectedTableNamesForBridge，所以这里依旧计算。
       const modifiedTableIds = dataStore.getModifiedTableIds();
       const affectedTableNamesForBridge =
         targetIndex >= 0 ? collectAllTableNames(dataToUse) : resolveTableNamesByIds(dataToUse, modifiedTableIds);
@@ -1067,12 +1342,53 @@ export function useDataPersistence() {
       // 执行保存 (模式分发)
       let savedData: RawDatabaseData | null = null;
 
-      if (targetIndex >= 0) {
+      if (storageMode === 'sqlite' && checkSqliteApiAvailable() && targetIndex < 0) {
+        // ★ SQLite 模式 + 默认增量 → 走 executeSqliteSave (精细 API 调用)
+        //   这条路径绕开“前端直接改 chat 字段”的旧逻辑，改用 AutoCardUpdaterAPI
+        //   原子化提交单元格/行变更，避免 SQLite 内存数据库重建时把用户改动覆盖掉。
+        console.info('[ACU] 执行 SQLite 模式保存(精细 API 调用)...');
+        try {
+          // 优化：无变更时跳过 SQLite 路径，避免空触发 refreshDataAndWorldbook
+          //       (refreshDataAndWorldbook 会触发数据库插件重新合并并注入世界书，代价较高)
+          const detailedChanges = dataStore.getDetailedChanges();
+          const hasAnyChange =
+            detailedChanges.deletes.length > 0 ||
+            detailedChanges.updates.length > 0 ||
+            detailedChanges.inserts.length > 0;
+          if (!hasAnyChange) {
+            console.info('[ACU][SQLite] 无变更，跳过保存');
+            return true;
+          }
+          savedData = await executeSqliteSave(dataToUse, commitDeletes);
+        } catch (sqliteErr) {
+          console.warn('[ACU][SQLite] 路径执行失败，回退到 importTableAsJson:', sqliteErr);
+          // 回退路径：用 importTableAsJson 全量覆盖 + refreshDataAndWorldbook
+          //          这是 SQLite 模式下唯一能确保数据落库且 SQLite 内存库同步的兜底方案。
+          const api = getCore().getDB();
+          if (api?.importTableAsJson) {
+            try {
+              await api.importTableAsJson(JSON.stringify(dataToUse));
+              if (typeof api.refreshDataAndWorldbook === 'function') {
+                await api.refreshDataAndWorldbook();
+              }
+              savedData = getTableData();
+            } catch (fallbackErr) {
+              console.error('[ACU][SQLite] importTableAsJson 兜底也失败:', fallbackErr);
+              throw fallbackErr;
+            }
+          } else {
+            // API 不存在,直接把原始异常抛出去,让外层 catch 处理
+            throw sqliteErr;
+          }
+        }
+      } else if (targetIndex >= 0) {
         // [模式2] 全量覆盖模式 (另存为)
+        //         即使是 SQLite 模板，只要走“另存为”也保留原生路径，
+        //         因为另存为的语义是“指定楼层全量覆盖”，当前阶段不通过 SQLite API 实现。
         console.info('[ACU] 执行全量保存 (另存为模式)...');
         savedData = await executeFullSave(dataToUse, commitDeletes, targetIndex);
       } else {
-        // [模式1] 增量更新模式 (默认保存)
+        // [模式1] 增量更新模式 (默认保存) —— 原生模式 / 旧模板
         console.info('[ACU] 执行增量保存 (默认模式)...');
 
         if (modifiedTableIds.length === 0) {
@@ -1246,7 +1562,23 @@ export function useDataPersistence() {
 
         // 重新获取最新的 merge 数据作为新快照
         // 这样下次 diff 对比时基准是清除后的真实状态
+        // (同时复用此调用结果做 SQLite 模式检测,避免重复调用 getTableData)
         const latestData = getTableData();
+
+        // [双路保存] SQLite 模式下,直接 delete msg 字段会绕过 SQLite 内存数据库,
+        // 必须额外调用 refreshDataAndWorldbook() 强制 SQLite 重建
+        try {
+          if (latestData && detectStorageMode(latestData) === 'sqlite') {
+            const api = getCore().getDB();
+            if (api && typeof api.refreshDataAndWorldbook === 'function') {
+              await api.refreshDataAndWorldbook();
+              console.info('[ACU][SQLite] purgeFloorRange 后 refreshDataAndWorldbook 已调用');
+            }
+          }
+        } catch (e) {
+          console.warn('[ACU][SQLite] purgeFloorRange 后 refreshDataAndWorldbook 失败:', e);
+        }
+
         if (latestData) {
           dataStore.saveSnapshot(latestData);
         } else {
@@ -1463,7 +1795,23 @@ export function useDataPersistence() {
 
         // 重新获取最新的 merge 数据作为新快照
         // 这样下次 diff 对比时基准是清除后的真实状态
+        // (同时复用此调用结果做 SQLite 模式检测,避免重复调用 getTableData)
         const latestData = getTableData();
+
+        // [双路保存] SQLite 模式下,直接 delete msg 字段会绕过 SQLite 内存数据库,
+        // 必须额外调用 refreshDataAndWorldbook() 强制 SQLite 重建
+        try {
+          if (latestData && detectStorageMode(latestData) === 'sqlite') {
+            const api = getCore().getDB();
+            if (api && typeof api.refreshDataAndWorldbook === 'function') {
+              await api.refreshDataAndWorldbook();
+              console.info('[ACU][SQLite] purgeTableDataByRange 后 refreshDataAndWorldbook 已调用');
+            }
+          }
+        } catch (e) {
+          console.warn('[ACU][SQLite] purgeTableDataByRange 后 refreshDataAndWorldbook 失败:', e);
+        }
+
         if (latestData) {
           dataStore.saveSnapshot(latestData);
         } else {
@@ -1510,7 +1858,11 @@ export function useDataPersistence() {
         if (dataStore.hasChanges && configStore.config.autoSave) {
           try {
             console.info('[ACU] 自动保存触发...');
-            await dataStore.saveToDatabase();
+            // [双路保存] 改用本 composable 的 saveToDatabase,享受 SQLite 模式分流
+            // skipRender=true:自动保存不弹 toast、不改保存按钮 UI
+            // commitDeletes=false:自动保存不提交用户删除,等用户显式点保存才提交
+            // targetIndex=-1:默认增量保存模式
+            await saveToDatabase(null, true, false, -1);
             console.info('[ACU] 自动保存完成');
           } catch (error) {
             console.error('[ACU] 自动保存失败:', error);
@@ -1564,6 +1916,9 @@ export function useDataPersistence() {
     // 主保存功能
     saveToDatabase,
     syncWorldbook,
+
+    // SQLite 模式精细保存（双路保存方案,子任务 4 才会接入到 saveToDatabase）
+    executeSqliteSave,
 
     // 快照管理
     saveSnapshot,

@@ -53,7 +53,8 @@ function buildOrderedFields(
 ): Array<{ key: string; value: string; columnIndex: number }> {
   const fields: Array<{ key: string; value: string; columnIndex: number }> = [];
 
-  for (let columnIndex = 0; columnIndex < headerMap.raw_headers.length; columnIndex += 1) {
+  // 跳过第一列（通常为空列/序号列）
+  for (let columnIndex = 1; columnIndex < headerMap.raw_headers.length; columnIndex += 1) {
     const headerName = normalizeText(headerMap.raw_headers[columnIndex]);
     if (!headerName) continue;
     const value = getCellText(row, columnIndex);

@@ -82,6 +82,8 @@ export interface ACUConfig {
   enableIOSInputFix?: boolean;
   /** 移动端使用菜单按钮替代滑动手势增删行 (默认 false = 手势模式) */
   mobileMenuMode?: boolean;
+  /** 是否将可视化表格主题同步到数据库原生 UI（默认 true） */
+  dbThemeSync?: boolean;
 }
 
 /** 导航栏按钮配置 */

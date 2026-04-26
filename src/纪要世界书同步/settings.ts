@@ -17,10 +17,15 @@ const SyncScriptSettingsSchema = z
     injection_target: z.enum(['character_primary', 'chat_bound']).default('character_primary'),
     wrapper_text_top: z.string().default(''),
     wrapper_text_bottom: z.string().default(''),
-    depth_override: z.number().int().nullable().default(null),
+    depth_override: z.number().int().nullable().default(9997),
+    injection_position: z
+      .enum(['at_depth', 'before_character_definition', 'after_character_definition'])
+      .default('at_depth'),
     debug_log_enabled: z.boolean().default(false),
     allow_worldbook_write_enabled: z.boolean().default(true),
     zero_tk_mode_enabled: z.boolean().default(false),
+    zero_tk_inject_no_trigger: z.boolean().default(false),
+    column_visibility: z.record(z.string(), z.enum(['both', 'detail_only', 'summary_only', 'none'])).default({}),
   })
   .prefault({});
 

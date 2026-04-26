@@ -5,6 +5,16 @@
 export type InjectionTargetMode = 'character_primary' | 'chat_bound';
 
 /**
+ * 注入位置模式
+ */
+export type InjectionPositionMode = 'at_depth' | 'before_character_definition' | 'after_character_definition';
+
+/**
+ * 列可见性：控制某列在纪要条目和概览条目中的显示
+ */
+export type ColumnVisibility = 'both' | 'detail_only' | 'summary_only' | 'none';
+
+/**
  * 脚本设置
  */
 export interface SyncScriptSettings {
@@ -20,14 +30,20 @@ export interface SyncScriptSettings {
   wrapper_text_top: string;
   /** 包裹下文本（可空） */
   wrapper_text_bottom: string;
-  /** depth 覆盖值（可空） */
+  /** 注入深度 */
   depth_override: number | null;
+  /** 注入位置 */
+  injection_position: InjectionPositionMode;
   /** 是否输出调试日志 */
   debug_log_enabled: boolean;
   /** 兼容字段：真实写入已固定开启，不再作为门控 */
   allow_worldbook_write_enabled: boolean;
   /** 0tk 模式：启用后不生成概览条目 */
   zero_tk_mode_enabled: boolean;
+  /** 0tk 注入但不触发：概览条目仍注入，但关键词改为永远不会触发 */
+  zero_tk_inject_no_trigger: boolean;
+  /** 列可见性配置：key 为列名，value 为可见性 */
+  column_visibility: Record<string, ColumnVisibility>;
 }
 
 export type CleanupFn = () => void;
@@ -41,6 +57,8 @@ export interface RuntimeStatus {
   sync_in_progress: boolean;
   /** 最近一次同步请求原因 */
   last_reason: string;
+  /** 当前识别到的纪要表有效列名（供列显示设置弹窗使用） */
+  current_raw_headers: string[];
 }
 
 export interface RuntimeContext {
@@ -194,7 +212,7 @@ export interface UnifiedRowParseResult {
 /**
  * 世界书条目构建：条目类别
  */
-export type BuiltEntryKind = 'wrapper_top' | 'summary' | 'detail' | 'wrapper_bottom';
+export type BuiltEntryKind = 'wrapper_top' | 'header' | 'summary' | 'detail' | 'wrapper_bottom';
 
 /**
  * 世界书条目构建：目标插入位置（当前阶段仅支持 at_depth）
@@ -268,11 +286,22 @@ export interface RowOrderInfo {
  */
 export interface BuildEntriesInput {
   rows: UnifiedEventRow[];
-  entry_placement: EntryPlacementConfig;
+  /** 注入深度（用户设置，默认 9997） */
+  depth: number;
+  /** 注入位置 */
+  position: InjectionPositionMode;
   wrapper_text_top: string;
   wrapper_text_bottom: string;
   /** 启用后不生成概览条目 */
   zero_tk_mode_enabled: boolean;
+  /** 启用后概览条目仍注入，但关键词改为永远不会触发 */
+  zero_tk_inject_no_trigger: boolean;
+  /** 列可见性配置 */
+  column_visibility: Record<string, ColumnVisibility>;
+  /** 纪要表名称（用于生成表头） */
+  table_name: string;
+  /** 有效列名列表（用于生成表头，已跳过第一列和空列） */
+  relevant_headers: string[];
 }
 
 /**
@@ -284,6 +313,7 @@ export interface BuildEntriesSummary {
   used_fallback_by_row_order: boolean;
   counts: {
     wrapper_top: number;
+    header: number;
     summary: number;
     detail: number;
     wrapper_bottom: number;

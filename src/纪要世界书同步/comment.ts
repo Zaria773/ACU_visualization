@@ -136,6 +136,7 @@ function matchesManagedTagWithPrefix(comment: string, prefix: string): boolean {
   return (
     comment.startsWith(`${prefix}MemoryStart`) ||
     comment.startsWith(`${prefix}MemoryEnd`) ||
+    comment.startsWith(`${prefix}TableHeader`) ||
     comment.startsWith(`${prefix}概览-`) ||
     comment.startsWith(`${prefix}纪要-`)
   );
@@ -144,6 +145,7 @@ function matchesManagedTagWithPrefix(comment: string, prefix: string): boolean {
 function buildManagedTag(kind: ScriptCommentKindTag, serial: number | null): string {
   if (kind === 'wrapper_top') return 'MemoryStart';
   if (kind === 'wrapper_bottom') return 'MemoryEnd';
+  if (kind === 'header') return 'TableHeader';
   if (kind === 'summary') return `概览-${serial ?? 0}`;
   return `纪要-${serial ?? 0}`;
 }
@@ -207,7 +209,7 @@ export function getCommentRuleSummary(): string {
   return [
     `核心前缀=${getIsolationPrefix()}`,
     '识别主键=comment',
-    '条目类型=MemoryStart/MemoryEnd/概览-序数/纪要-序数',
+    '条目类型=MemoryStart/MemoryEnd/TableHeader/概览-序数/纪要-序数',
     '序数来源=数据行号(从1开始)',
   ].join('；');
 }

@@ -67,15 +67,20 @@ function collectUnmanagedSamples(entries: WorldbookEntry[], limit = 3): string[]
   return samples;
 }
 
+/** 托管条目 UID 起始值，避免与用户手动创建的条目冲突 */
+const MANAGED_UID_BASE = 6000;
+
 /**
  * 将内部条目结构转换为世界书可写结构。
  * - 保持字段最小稳定集
  * - 补全 probability / recursion / effect
+ * - 分配从 MANAGED_UID_BASE 开始的稳定 uid
  */
-function mapBuiltEntryToWritable(entry: BuiltWorldbookEntry): PartialDeep<WorldbookEntry> {
+function mapBuiltEntryToWritable(entry: BuiltWorldbookEntry, index: number): PartialDeep<WorldbookEntry> {
   const comment = buildManagedComment(entry.kind, entry.source.serial);
 
   const base: PartialDeep<WorldbookEntry> = {
+    uid: MANAGED_UID_BASE + index,
     name: buildManagedEntryName(entry.kind, entry.source.serial),
     enabled: entry.enabled,
     strategy: entry.strategy,
@@ -219,7 +224,7 @@ export async function purgeManagedEntriesFromNonTargetWorldbook(mode: InjectionT
  * 构建可写入世界书的最终条目列表（含 comment 规则）。
  */
 export function buildWritableWorldbookEntries(built: BuildEntriesResult): PartialDeep<WorldbookEntry>[] {
-  return built.entries.map(mapBuiltEntryToWritable);
+  return built.entries.map((entry, index) => mapBuiltEntryToWritable(entry, index));
 }
 
 /**

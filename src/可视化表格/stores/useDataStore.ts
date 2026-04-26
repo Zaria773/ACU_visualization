@@ -819,6 +819,28 @@ export const useDataStore = defineStore('acu-data', () => {
       await syncWorldbook();
       await saveChatDebounced();
 
+      // [双路保存] SQLite 模式下兜底刷新(本函数直接写 chat 字段,绕过了 SQLite 内存数据库)
+      // 不 import storageMode 工具(避免潜在循环依赖),用内联 ddl 检测
+      try {
+        const w = (window.parent || window) as any;
+        const api = w.AutoCardUpdaterAPI;
+        let isSqlite = false;
+        for (const sheetId in filteredData) {
+          if (!sheetId.startsWith('sheet_')) continue;
+          const sheet: any = filteredData[sheetId];
+          if (sheet?.sourceData?.ddl) {
+            isSqlite = true;
+            break;
+          }
+        }
+        if (isSqlite && api && typeof api.refreshDataAndWorldbook === 'function') {
+          await api.refreshDataAndWorldbook();
+          console.info('[ACU][SQLite] dataStore.saveToDatabase 后 refreshDataAndWorldbook 已调用');
+        }
+      } catch (e) {
+        console.warn('[ACU][SQLite] dataStore.saveToDatabase 后 refreshDataAndWorldbook 失败:', e);
+      }
+
       snapshot.value = klona(filteredData);
       stagedData.value = klona(filteredData);
       clearChanges(true);
@@ -861,6 +883,27 @@ export const useDataStore = defineStore('acu-data', () => {
       await writeToFloor(floorIndex, filteredData);
       await syncWorldbook();
       await saveChatDebounced();
+
+      // [双路保存] SQLite 模式下兜底刷新(本函数直接写 chat 字段,绕过了 SQLite 内存数据库)
+      try {
+        const w = (window.parent || window) as any;
+        const api = w.AutoCardUpdaterAPI;
+        let isSqlite = false;
+        for (const sheetId in filteredData) {
+          if (!sheetId.startsWith('sheet_')) continue;
+          const sheet: any = filteredData[sheetId];
+          if (sheet?.sourceData?.ddl) {
+            isSqlite = true;
+            break;
+          }
+        }
+        if (isSqlite && api && typeof api.refreshDataAndWorldbook === 'function') {
+          await api.refreshDataAndWorldbook();
+          console.info('[ACU][SQLite] dataStore.saveToFloor 后 refreshDataAndWorldbook 已调用');
+        }
+      } catch (e) {
+        console.warn('[ACU][SQLite] dataStore.saveToFloor 后 refreshDataAndWorldbook 失败:', e);
+      }
 
       snapshot.value = klona(filteredData);
       stagedData.value = klona(filteredData);
@@ -937,7 +980,34 @@ export const useDataStore = defineStore('acu-data', () => {
         await syncWorldbook();
 
         // 重新拉取清除后的最新合并数据，刷新界面和快照
+        // (同时复用此调用结果做 SQLite 模式检测)
         const latestData = getTableData();
+
+        // [双路保存] SQLite 模式下兜底刷新(直接 delete msg 字段会绕过 SQLite 内存数据库)
+        try {
+          if (latestData) {
+            let isSqlite = false;
+            for (const sheetId in latestData) {
+              if (!sheetId.startsWith('sheet_')) continue;
+              const sheet: any = (latestData as any)[sheetId];
+              if (sheet?.sourceData?.ddl) {
+                isSqlite = true;
+                break;
+              }
+            }
+            if (isSqlite) {
+              const w = (window.parent || window) as any;
+              const api = w.AutoCardUpdaterAPI;
+              if (api && typeof api.refreshDataAndWorldbook === 'function') {
+                await api.refreshDataAndWorldbook();
+                console.info('[ACU][SQLite] dataStore.purgeFloorRange 后 refreshDataAndWorldbook 已调用');
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[ACU][SQLite] dataStore.purgeFloorRange 后 refreshDataAndWorldbook 失败:', e);
+        }
+
         if (latestData) {
           const clonedData = klona(latestData);
           stagedData.value = clonedData;
@@ -1333,6 +1403,223 @@ export const useDataStore = defineStore('acu-data', () => {
     return getCellChangeType(cellId) !== null;
   }
 
+  /**
+   * 获取所有待提交的细粒度变更（按操作类型分组）
+   * 用于 SQLite 模式下逐个调用 AutoCardUpdaterAPI
+   *
+   * 返回三类操作：
+   * - updates: 单元格级别的更新（已存在的行的 cell 改动）
+   * - inserts: 新增行（snapshot 中不存在的行索引）
+   * - deletes: 待删除行（pendingDeletes 中标记的行）
+   *
+   * 注意：
+   * - rowIdx 是 0-based 数据行索引(即 content[rowIdx+1],因为 content[0] 是表头)
+   * - 同一行如果既被标记为整行变更(rowKey)又有单元格级标记(cellKey),
+   *   按"行不在 snapshot 中" → insert,"行在 snapshot 中" → updates 处理
+   * - inserts 的 data 用 **中文列名**(即 sheet.content[0] 中的字符串)作为 key
+   * - 自动跳过 row_id 列(SQLite 模式下 row_id 是自增主键,API 会自动生成)
+   * - aiDiffMap 不纳入 updates(AI 变更已经在数据库中,无须再次写入)
+   * - 跳过撤回标记 __undo_pending__
+   * - 不会执行任何 await 或 API 调用,纯计算
+   */
+  function getDetailedChanges(): {
+    updates: Array<{ tableName: string; tableId: string; rowIdx: number; colIdx: number; value: string }>;
+    inserts: Array<{ tableName: string; tableId: string; rowIdx: number; data: Record<string, string> }>;
+    deletes: Array<{ tableName: string; tableId: string; rowIdx: number }>;
+  } {
+    const updates: Array<{ tableName: string; tableId: string; rowIdx: number; colIdx: number; value: string }> = [];
+    const inserts: Array<{ tableName: string; tableId: string; rowIdx: number; data: Record<string, string> }> = [];
+    const deletes: Array<{ tableName: string; tableId: string; rowIdx: number }> = [];
+
+    if (!stagedData.value) {
+      return { updates, inserts, deletes };
+    }
+
+    // ========================================================
+    // 内部工具：解析 diff key,区分 cellKey 与 rowKey
+    //   cellKey: ${tableName}-${rowIdx}-${colIdx}
+    //   rowKey:  ${tableName}-row-${rowIdx}
+    // 复用 extractTableIdFromKey 处理 tableName 含连字符的情况。
+    // ========================================================
+    function parseDiffKey(
+      key: string,
+    ):
+      | { type: 'cell'; tableName: string; rowIdx: number; colIdx: number }
+      | { type: 'row'; tableName: string; rowIdx: number }
+      | null {
+      const tableName = extractTableIdFromKey(key);
+      if (!tableName) return null;
+      // 去掉 "tableName-" 前缀
+      const rest = key.substring(tableName.length + 1);
+      const restParts = rest.split('-');
+
+      // rowKey: tableName-row-rowIdx
+      if (restParts.length === 2 && restParts[0] === 'row') {
+        const rowIdx = parseInt(restParts[1], 10);
+        if (isNaN(rowIdx)) return null;
+        return { type: 'row', tableName, rowIdx };
+      }
+
+      // cellKey: tableName-rowIdx-colIdx
+      if (restParts.length === 2) {
+        const rowIdx = parseInt(restParts[0], 10);
+        const colIdx = parseInt(restParts[1], 10);
+        if (isNaN(rowIdx) || isNaN(colIdx)) return null;
+        return { type: 'cell', tableName, rowIdx, colIdx };
+      }
+
+      return null;
+    }
+
+    // 在 RawDatabaseData 中按 name 查找 sheet
+    function findSheetByName(data: RawDatabaseData | null, tableName: string): any | null {
+      if (!data) return null;
+      for (const sheetId in data) {
+        if (data[sheetId]?.name === tableName) {
+          return data[sheetId];
+        }
+      }
+      return null;
+    }
+
+    // ========================================================
+    // Step 1: 识别 inserts (新增行)
+    //   来源: manualDiffMap 中的 rowKey
+    //   条件: stagedData 中有该行 && snapshot 中没有该行
+    // ========================================================
+    const insertedRows = new Set<string>(); // 已识别为 insert 的 "tableName|rowIdx"
+
+    for (const key of manualDiffMap) {
+      if (key === '__undo_pending__') continue;
+
+      const parsed = parseDiffKey(key);
+      if (!parsed) {
+        console.warn(`[ACU] getDetailedChanges: 无法解析 manualDiffMap key: ${key}`);
+        continue;
+      }
+      if (parsed.type !== 'row') continue;
+
+      const { tableName, rowIdx } = parsed;
+
+      const tableId = getTableIdByName(tableName);
+      if (!tableId) {
+        console.warn(`[ACU] getDetailedChanges: 找不到表格 ID: ${tableName}`);
+        continue;
+      }
+
+      const stagedSheet = findSheetByName(stagedData.value, tableName);
+      const snapSheet = findSheetByName(snapshot.value, tableName);
+
+      const stagedRow = stagedSheet?.content?.[rowIdx + 1];
+      const snapRow = snapSheet?.content?.[rowIdx + 1];
+
+      // 仅在 stagedData 有但 snapshot 没有时,视为新增
+      if (stagedRow && !snapRow) {
+        const headers: any[] = stagedSheet?.content?.[0] ?? [];
+        const data: Record<string, string> = {};
+        for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+          const colName = String(headers[colIdx] ?? '');
+          // SQLite 模式下 row_id 是自增主键,跳过
+          if (colName === 'row_id') continue;
+          // 兼容空列名:跳过(避免 data 中出现 '' key)
+          if (!colName) continue;
+          data[colName] = String(stagedRow[colIdx] ?? '');
+        }
+        inserts.push({ tableName, tableId, rowIdx, data });
+        insertedRows.add(`${tableName}|${rowIdx}`);
+      }
+      // 其他情况(行已在 snapshot 中)的整行 rowKey:
+      // 通常对应"用户编辑了行内某些 cell" + 同步加了 rowKey 标记的场景,
+      // 让 cellKey 那边处理为 updates 即可,这里不重复发起。
+    }
+
+    // ========================================================
+    // Step 2: 识别 updates (单元格更新)
+    //   来源: manualDiffMap 中的 cellKey
+    //   排除: 已在 inserts 列表中的行
+    //   注:   aiDiffMap 不纳入(AI 变更已在数据库中,无须再写一次)
+    // ========================================================
+    for (const key of manualDiffMap) {
+      if (key === '__undo_pending__') continue;
+
+      const parsed = parseDiffKey(key);
+      if (!parsed) continue; // 已在 Step 1 警告过
+      if (parsed.type !== 'cell') continue;
+
+      const { tableName, rowIdx, colIdx } = parsed;
+
+      // 该行已识别为 insert,整行会被一并写入,无须额外 update
+      if (insertedRows.has(`${tableName}|${rowIdx}`)) continue;
+
+      const tableId = getTableIdByName(tableName);
+      if (!tableId) {
+        console.warn(`[ACU] getDetailedChanges: 找不到表格 ID: ${tableName}`);
+        continue;
+      }
+
+      const stagedSheet = findSheetByName(stagedData.value, tableName);
+      const stagedRow = stagedSheet?.content?.[rowIdx + 1];
+      if (!stagedRow) {
+        console.warn(`[ACU] getDetailedChanges: stagedData 中找不到行: ${tableName}[${rowIdx}]`);
+        continue;
+      }
+
+      const value = String(stagedRow[colIdx] ?? '');
+      updates.push({ tableName, tableId, rowIdx, colIdx, value });
+    }
+
+    // ========================================================
+    // Step 3: 识别 deletes (待删除行)
+    //   来源: pendingDeletes 中的 rowKey
+    //   条件: snapshot 中存在该行(避免删一个本就不存在的行)
+    // ========================================================
+    for (const key of pendingDeletes) {
+      if (key === '__undo_pending__') continue;
+
+      const parsed = parseDiffKey(key);
+      if (!parsed) {
+        console.warn(`[ACU] getDetailedChanges: 无法解析 pendingDeletes key: ${key}`);
+        continue;
+      }
+      if (parsed.type !== 'row') continue; // 只处理 rowKey
+
+      const { tableName, rowIdx } = parsed;
+
+      const tableId = getTableIdByName(tableName);
+      if (!tableId) {
+        console.warn(`[ACU] getDetailedChanges: 找不到表格 ID: ${tableName}`);
+        continue;
+      }
+
+      const snapSheet = findSheetByName(snapshot.value, tableName);
+      const snapRow = snapSheet?.content?.[rowIdx + 1];
+      if (!snapRow) {
+        // 该行原本就不在数据库中,无须删除
+        console.warn(`[ACU] getDetailedChanges: snapshot 中找不到要删除的行,跳过: ${tableName}[${rowIdx}]`);
+        continue;
+      }
+
+      deletes.push({ tableName, tableId, rowIdx });
+    }
+
+    // 同类操作内按 (tableName, rowIdx) 排序,便于日志和调试
+    updates.sort((a, b) => {
+      if (a.tableName !== b.tableName) return a.tableName < b.tableName ? -1 : 1;
+      if (a.rowIdx !== b.rowIdx) return a.rowIdx - b.rowIdx;
+      return a.colIdx - b.colIdx;
+    });
+    inserts.sort((a, b) => {
+      if (a.tableName !== b.tableName) return a.tableName < b.tableName ? -1 : 1;
+      return a.rowIdx - b.rowIdx;
+    });
+    deletes.sort((a, b) => {
+      if (a.tableName !== b.tableName) return a.tableName < b.tableName ? -1 : 1;
+      return a.rowIdx - b.rowIdx;
+    });
+
+    return { updates, inserts, deletes };
+  }
+
   // ============================================================
   // 返回 Store 接口
   // ============================================================
@@ -1388,6 +1675,9 @@ export const useDataStore = defineStore('acu-data', () => {
     isRowPendingDelete,
     isPendingDelete,
     isCellChanged,
+
+    // 详细变更(用于 SQLite 模式逐条提交)
+    getDetailedChanges,
 
     // 辅助函数
     getRowKey,
