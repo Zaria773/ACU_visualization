@@ -804,9 +804,7 @@ export function useDataPersistence() {
                   await api.refreshDataAndWorldbook();
                   console.info('[ACU][SQLite] executeFullSave 后 refreshDataAndWorldbook 已调用');
                 } else {
-                  console.warn(
-                    '[ACU][SQLite] executeFullSave 后,API 缺少 refreshDataAndWorldbook,SQLite 可能未同步',
-                  );
+                  console.warn('[ACU][SQLite] executeFullSave 后,API 缺少 refreshDataAndWorldbook,SQLite 可能未同步');
                 }
               }
             } catch (e) {
