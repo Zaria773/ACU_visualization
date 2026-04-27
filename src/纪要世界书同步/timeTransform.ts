@@ -265,6 +265,96 @@ function matchDigits(input: string, pos: number): { value: number; consumed: num
   return { value: parseInt(m[0], 10), consumed: m[0].length };
 }
 
+/**
+ * 解析中文数字字符串为阿拉伯数字。
+ * 支持范围：一(1) ~ 九百九十九(999)，覆盖古代年号常见年份。
+ *
+ * 支持的格式：
+ * - 个位：一~九
+ * - 十位：十、十一~十九、二十~九十九
+ * - 百位：一百~九百九十九（含"百零X"格式）
+ *
+ * @returns 解析出的数值，或 null（无法解析）
+ */
+function parseCnNumber(text: string): { value: number; consumed: number } | null {
+  if (!text) return null;
+
+  let pos = 0;
+  let result = 0;
+
+  // 尝试解析百位：X百
+  const baiChar = text[pos];
+  if (baiChar && CN_NUM_MAP[baiChar] !== undefined && text[pos + 1] === '百') {
+    result += CN_NUM_MAP[baiChar] * 100;
+    pos += 2;
+
+    // 百后面可能跟"零X"（如"三百零五"）
+    if (text[pos] === '零' && text[pos + 1] && CN_NUM_MAP[text[pos + 1]] !== undefined) {
+      result += CN_NUM_MAP[text[pos + 1]];
+      pos += 2;
+      return { value: result, consumed: pos };
+    }
+  }
+
+  // 尝试解析十位
+  const restAfterBai = text.slice(pos);
+
+  // "X十Y" 或 "X十" 或 "十Y" 或 "十"
+  if (restAfterBai[0] && CN_NUM_MAP[restAfterBai[0]] !== undefined && restAfterBai[1] === '十') {
+    // "X十..." 格式
+    result += CN_NUM_MAP[restAfterBai[0]] * 10;
+    pos += 2;
+    // 可选个位
+    if (text[pos] && CN_NUM_MAP[text[pos]] !== undefined) {
+      result += CN_NUM_MAP[text[pos]];
+      pos += 1;
+    }
+    return result > 0 ? { value: result, consumed: pos } : null;
+  }
+
+  if (restAfterBai[0] === '十') {
+    // "十..." 格式（省略十位前的"一"）
+    result += 10;
+    pos += 1;
+    // 可选个位
+    if (text[pos] && CN_NUM_MAP[text[pos]] !== undefined) {
+      result += CN_NUM_MAP[text[pos]];
+      pos += 1;
+    }
+    return { value: result, consumed: pos };
+  }
+
+  // 纯个位（或百位后无十位直接结束）
+  if (restAfterBai[0] && CN_NUM_MAP[restAfterBai[0]] !== undefined) {
+    // 只有在还没有百位的情况下才匹配纯个位
+    // 如果已有百位（如"三百"），则不再追加个位（"三百五"应该走十位逻辑）
+    if (result === 0) {
+      result += CN_NUM_MAP[restAfterBai[0]];
+      pos += 1;
+      return { value: result, consumed: pos };
+    }
+  }
+
+  // 如果只解析到了百位（如"三百"），也返回
+  return result > 0 ? { value: result, consumed: pos } : null;
+}
+
+/**
+ * 匹配中文数字年份。
+ * 先尝试匹配中文数字，如果成功则返回结果。
+ */
+function matchCnYear(input: string, pos: number): TokenMatchResult | null {
+  const rest = input.slice(pos);
+  const cnResult = parseCnNumber(rest);
+  if (!cnResult) return null;
+  return {
+    consumed: cnResult.consumed,
+    apply: p => {
+      p.year = cnResult.value;
+    },
+  };
+}
+
 /** 星期匹配 */
 function matchWeekday(input: string, pos: number): TokenMatchResult | null {
   const rest = input.slice(pos);
@@ -407,14 +497,18 @@ function matchKe(input: string, pos: number): TokenMatchResult | null {
 function matchToken(component: TimeComponent, input: string, pos: number): TokenMatchResult | null {
   switch (component) {
     case 'year': {
+      // 优先匹配阿拉伯数字（现代格式更常见）
       const r = matchDigits(input, pos);
-      if (!r) return null;
-      return {
-        consumed: r.consumed,
-        apply: p => {
-          p.year = r.value;
-        },
-      };
+      if (r) {
+        return {
+          consumed: r.consumed,
+          apply: p => {
+            p.year = r.value;
+          },
+        };
+      }
+      // 回退到中文数字（古代年号格式）
+      return matchCnYear(input, pos);
     }
     case 'month': {
       const r = matchDigits(input, pos);
@@ -842,12 +936,70 @@ function formatFallback(event: ParsedTime): string {
 }
 
 // ============================================================
+// 时间跨度分隔符检测
+// ============================================================
+
+/**
+ * 时间跨度分隔符模式：匹配 "->", "→", "~", "～", "—", "──" 等常见分隔符，
+ * 前后可有空格。
+ */
+const TIME_RANGE_SEPARATOR_PATTERN = /^(\s*(?:->|→|~|～|—|──|－)\s*)/;
+
+/**
+ * 尝试从 remainder 中检测时间跨度分隔符。
+ *
+ * 如果 remainder 以分隔符开头（或 remainder 中的非时间前缀 + 分隔符），
+ * 则返回分隔符信息；否则返回 null。
+ *
+ * @param remainder extractTime 返回的剩余文本（已 trim）
+ * @returns 分隔符匹配结果，或 null
+ */
+function detectTimeRangeSeparator(remainder: string): {
+  /** 分隔符前的文本（如 "傍晚"） */
+  prefix: string;
+  /** 分隔符本身（如 " -> "） */
+  separator: string;
+  /** 分隔符后的文本（如 "1988/07/17 凌晨"） */
+  afterSeparator: string;
+} | null {
+  // 直接以分隔符开头
+  const directMatch = remainder.match(TIME_RANGE_SEPARATOR_PATTERN);
+  if (directMatch) {
+    return {
+      prefix: '',
+      separator: directMatch[1],
+      afterSeparator: remainder.slice(directMatch[0].length),
+    };
+  }
+
+  // 分隔符可能在非时间前缀之后（如 "傍晚 -> 1988/07/17 凌晨"）
+  // 搜索 remainder 中第一个分隔符的位置
+  const searchPattern = /(\s*(?:->|→|~|～|—|──|－)\s*)/;
+  const searchMatch = remainder.match(searchPattern);
+  if (searchMatch && searchMatch.index !== undefined) {
+    const prefix = remainder.slice(0, searchMatch.index);
+    const separator = searchMatch[1];
+    const afterSeparator = remainder.slice(searchMatch.index + searchMatch[0].length);
+    // 只有当分隔符后面还有内容时才认为是时间跨度
+    if (afterSeparator.trim().length > 0) {
+      return { prefix, separator, afterSeparator };
+    }
+  }
+
+  return null;
+}
+
+// ============================================================
 // 批量行变换
 // ============================================================
 
 /**
  * 批量对纪要行执行时间变换。
  * 原地修改 orderedFields 中匹配 summaryTimeColumn 的列值。
+ *
+ * 支持时间跨度格式（如 "1988/07/16 傍晚 -> 1988/07/17 凌晨"）：
+ * 当检测到 remainder 中包含时间跨度分隔符时，会对分隔符后的部分
+ * 也进行时间提取和相对时间计算，最终拼接两段相对时间。
  */
 export function applyTimeTransformToRows(
   rows: UnifiedEventRow[],
@@ -869,14 +1021,54 @@ export function applyTimeTransformToRows(
       const extraction = extractTime(template, originalValue);
       if (!extraction.has_any) continue;
 
-      const relativeText = computeRelativeTimeText(
-        currentTime,
-        extraction.parsed,
-        extraction.remainder,
-        extraction.trailing_literal,
-      );
+      // 合并 remainder：将 trailing_literal（如果有意义）还原到 remainder 前面
+      // 这里先拿到完整的 remainder 用于分隔符检测
+      const fullRemainder = extraction.remainder;
 
-      field.value = relativeText;
+      // 检测时间跨度分隔符
+      const rangeInfo = detectTimeRangeSeparator(fullRemainder);
+
+      if (rangeInfo) {
+        // ── 时间跨度模式 ──
+        // 第一段时间的 remainder 是分隔符前的文本（如 "傍晚"）
+        const firstRemainder = rangeInfo.prefix.trim();
+        const firstRelative = computeRelativeTimeText(
+          currentTime,
+          extraction.parsed,
+          firstRemainder,
+          extraction.trailing_literal,
+        );
+
+        // 对分隔符后的文本进行第二次时间提取
+        const secondInput = rangeInfo.afterSeparator.trim();
+        const secondExtraction = extractTime(template, secondInput);
+
+        if (secondExtraction.has_any) {
+          const secondRelative = computeRelativeTimeText(
+            currentTime,
+            secondExtraction.parsed,
+            secondExtraction.remainder,
+            secondExtraction.trailing_literal,
+          );
+
+          // 使用原始分隔符拼接两段相对时间
+          const separator = rangeInfo.separator.trim();
+          field.value = `${firstRelative} ${separator} ${secondRelative}`;
+        } else {
+          // 第二段无法解析为时间，保留原始分隔符后文本
+          const separator = rangeInfo.separator.trim();
+          field.value = `${firstRelative} ${separator} ${secondInput}`;
+        }
+      } else {
+        // ── 单一时间模式（原有逻辑） ──
+        const relativeText = computeRelativeTimeText(
+          currentTime,
+          extraction.parsed,
+          extraction.remainder,
+          extraction.trailing_literal,
+        );
+        field.value = relativeText;
+      }
     }
   }
 }
