@@ -8,7 +8,12 @@ import { clearManagedIsolationCodeContext, setManagedIsolationCodeContext } from
 import { SCRIPT_LOG_PREFIX, SETTINGS_BUTTON_NAME } from './constants';
 import { parseUnifiedRowsFromSummarySheet } from './parser';
 import { loadSettings, saveSettings } from './settings';
-import { findGlobalSheet, identifySummarySheet, readAcuTableJsonBridgeFirst, readCurrentTimeFromGlobalSheet } from './source';
+import {
+  findGlobalSheet,
+  identifySummarySheet,
+  readAcuTableJsonBridgeFirst,
+  readCurrentTimeFromGlobalSheet,
+} from './source';
 import { applyTimeTransformToRows, parseTimeTemplate } from './timeTransform';
 import type {
   BuildEntriesResult,

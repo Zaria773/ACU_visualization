@@ -174,9 +174,7 @@ export function useChatEmbedContent(
    */
   const embedInteractionTable = computed<ProcessedTable | null>(() => {
     // 1. 优先:仪表盘里已配置为 interaction 风格的 widget 对应的表
-    const interactionWidget = dashboardStore.config.widgets.find(
-      w => w.displayStyle === 'interaction' && w.tableId,
-    );
+    const interactionWidget = dashboardStore.config.widgets.find(w => w.displayStyle === 'interaction' && w.tableId);
     if (interactionWidget?.tableId) {
       const t = processedTables.value.find(p => p.id === interactionWidget.tableId);
       if (t) return t;

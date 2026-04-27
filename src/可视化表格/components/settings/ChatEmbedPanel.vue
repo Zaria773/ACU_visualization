@@ -232,9 +232,7 @@ function ensureComponentConfig(id: 'global' | 'options'): ChatEmbedComponentConf
 // 全局数据看板配置
 // ============================================================
 
-const globalPosition = computed<
-  'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector'
->({
+const globalPosition = computed<'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector'>({
   get: () => ensureComponentConfig('global').position,
   set: v => {
     ensureComponentConfig('global').position = v;
@@ -252,9 +250,7 @@ const globalSelector = computed<string>({
 // 行动选项配置
 // ============================================================
 
-const optionsPosition = computed<
-  'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector'
->({
+const optionsPosition = computed<'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector'>({
   get: () => ensureComponentConfig('options').position,
   set: v => {
     ensureComponentConfig('options').position = v;
