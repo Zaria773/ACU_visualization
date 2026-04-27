@@ -44,6 +44,17 @@ export interface SyncScriptSettings {
   zero_tk_inject_no_trigger: boolean;
   /** 列可见性配置：key 为列名，value 为可见性 */
   column_visibility: Record<string, ColumnVisibility>;
+
+  /** 是否启用时间变换 */
+  time_transform_enabled: boolean;
+  /** 时间格式模板，如 "{Y}/{M}/{D} {H}:{m}" */
+  time_format_template: string;
+  /** 当前时间所在表名（默认 "全局数据表"） */
+  global_sheet_name: string;
+  /** 全局数据表中的时间列名 */
+  global_time_column: string;
+  /** 纪要表中的时间列名 */
+  summary_time_column: string;
 }
 
 export type CleanupFn = () => void;
@@ -59,6 +70,8 @@ export interface RuntimeStatus {
   last_reason: string;
   /** 当前识别到的纪要表有效列名（供列显示设置弹窗使用） */
   current_raw_headers: string[];
+  /** 当前识别到的全局数据表列名（供时间设置弹窗使用） */
+  current_global_sheet_headers: string[];
 }
 
 export interface RuntimeContext {

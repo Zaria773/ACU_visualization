@@ -111,6 +111,16 @@ export const DEFAULT_CONFIG: ACUConfig = {
   enableIOSInputFix: false,
   mobileMenuMode: false,
   dbThemeSync: true,
+  enableChatEmbed: false,
+  embedGlobalStatus: true,
+  embedOptions: true,
+  embedDefaultCollapsed: false,
+  embedPosition: 'mes_block_end',
+  embedSelector: '',
+  embedComponents: {
+    global: { position: 'mes_block_end', selector: '' },
+    options: { position: 'mes_block_end', selector: '' },
+  },
 };
 
 /** 主题配置列表 */

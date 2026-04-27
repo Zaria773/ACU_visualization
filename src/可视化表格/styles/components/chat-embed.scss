@@ -1,0 +1,74 @@
+// 聊天区域嵌入组件样式
+.acu-chat-embed-root {
+  width: 100%;
+  clear: both;
+  margin-top: 8px;
+}
+
+.acu-chat-embed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acu-embed-section {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--acu-border);
+  backdrop-filter: blur(5px);
+}
+
+.acu-embed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--acu-bg-nav);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+.acu-embed-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--acu-title-color);
+  }
+
+  i {
+    color: var(--acu-title-color);
+  }
+}
+
+.acu-embed-body {
+  background: var(--acu-bg-nav);
+  border-top: 1px solid var(--acu-border);
+}
+
+// 嵌入到聊天区域时，组件内部的可滚动列表需要一个具体的高度限制,
+// 否则在没有外层固定高度的情况下，flex:1 + max-height:100% 会失效，
+// 内容会无限撑开导致整体不能滚动。
+//
+// 这里给 InteractionTableWidget 等内部 scrollable body 设一个移动端友好的高度。
+.acu-chat-embed .acu-dash-body-scrollable {
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain; // 防止滚动穿透到聊天区
+  -webkit-overflow-scrolling: touch; // iOS 流畅滚动
+}
+
+// 嵌入态下，外层 widget 容器不需要固定高度，避免影响内部 flex 布局
+.acu-chat-embed .acu-dash-widget {
+  height: auto;
+  max-height: none;
+}

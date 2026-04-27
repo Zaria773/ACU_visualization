@@ -84,6 +84,49 @@ export interface ACUConfig {
   mobileMenuMode?: boolean;
   /** 是否将可视化表格主题同步到数据库原生 UI（默认 true） */
   dbThemeSync?: boolean;
+
+  // 聊天区域嵌入配置
+  /** 是否启用聊天区域嵌入 */
+  enableChatEmbed?: boolean;
+  /** 是否嵌入全局状态组件 */
+  embedGlobalStatus?: boolean;
+  /** 是否嵌入选项面板组件 */
+  embedOptions?: boolean;
+  /** 嵌入组件默认是否折叠 */
+  embedDefaultCollapsed?: boolean;
+  /**
+   * @deprecated 已迁移到 embedComponents.global.position / embedComponents.options.position
+   * 全局插入位置（旧版兼容字段）
+   */
+  embedPosition?: 'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector';
+  /**
+   * @deprecated 已迁移到 embedComponents.global.selector / embedComponents.options.selector
+   * 全局自定义选择器（旧版兼容字段）
+   */
+  embedSelector?: string;
+  /**
+   * 每个嵌入组件的独立位置配置
+   * - global: 全局数据看板
+   * - options: 行动选项（交互表）
+   */
+  embedComponents?: {
+    global?: ChatEmbedComponentConfig;
+    options?: ChatEmbedComponentConfig;
+  };
+}
+
+/** 单个嵌入组件的位置配置 */
+export interface ChatEmbedComponentConfig {
+  /**
+   * 插入位置
+   * - mes_block_start:    在消息卡片(.mes_block)最前面（思维链前)
+   * - mes_block_end:      在消息卡片(.mes_block)最末尾（默认,稳妥）
+   * - mes_text_end:       在消息文字(.mes_text)末尾
+   * - mes_text_after_selector: 在 .mes_text 内某选择器匹配元素的之前/之后
+   */
+  position: 'mes_block_start' | 'mes_block_end' | 'mes_text_end' | 'mes_text_after_selector';
+  /** 自定义 CSS 选择器（仅 position='mes_text_after_selector' 时生效） */
+  selector?: string;
 }
 
 /** 导航栏按钮配置 */

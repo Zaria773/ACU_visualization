@@ -38,6 +38,7 @@
 @use 'components/preset-header'; // 预设管理头部
 @use 'components/global-status'; // 全局状态组件
 @use 'components/random-word-pool'; // 随机词表组件
+@use 'components/chat-embed'; // 聊天区域嵌入组件
 
 // 4. 覆盖层样式 - 弹窗模块
 @use 'overlays/dialogs'; // 通用弹窗基础

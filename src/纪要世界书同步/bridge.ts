@@ -12,10 +12,12 @@ export interface SummaryWorldbookSyncBridge {
   requestSummaryWorldbookRefresh: (reason: string) => void;
   refreshSummaryWorldbookNow: (reason: string) => Promise<void>;
   /**
-   * 与设置弹窗“立即重新注入”按钮共用同一个函数入口（不接收参数，避免路径偏差）
+   * 与设置弹窗"立即重新注入世界书"按钮共用同一个函数入口（不接收参数，避免路径偏差）
    */
   triggerSummaryWorldbookResyncLikeUiButton: () => void;
   getSummaryWorldbookSyncStatus: () => SummaryWorldbookSyncStatus;
+  /** 获取当前注入的目标世界书名称，未定位时返回 null */
+  getTargetWorldbookName: () => string | null;
 }
 
 interface SummaryWorldbookSyncBridgeDeps {
@@ -66,6 +68,16 @@ export function createSummaryWorldbookSyncBridge(deps: SummaryWorldbookSyncBridg
       };
       console.info('[纪要同步桥接][诊断] getSummaryWorldbookSyncStatus：', payload);
       return payload;
+    },
+
+    getTargetWorldbookName: (): string | null => {
+      const status = deps.getRuntimeStatus();
+      const name = status.current_target_worldbook_name;
+      // 过滤掉运行时默认的占位文本
+      if (!name || name === '尚未定位' || name === '未定位目标世界书' || name.includes('等待同步刷新')) {
+        return null;
+      }
+      return name;
     },
   };
 }

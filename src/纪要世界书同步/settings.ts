@@ -26,6 +26,11 @@ const SyncScriptSettingsSchema = z
     zero_tk_mode_enabled: z.boolean().default(false),
     zero_tk_inject_no_trigger: z.boolean().default(false),
     column_visibility: z.record(z.string(), z.enum(['both', 'detail_only', 'summary_only', 'none'])).default({}),
+    time_transform_enabled: z.boolean().default(false),
+    time_format_template: z.string().default('{Y}/{M}/{D} {H}:{m}'),
+    global_sheet_name: z.string().default('全局数据表'),
+    global_time_column: z.string().default(''),
+    summary_time_column: z.string().default(''),
   })
   .prefault({});
 

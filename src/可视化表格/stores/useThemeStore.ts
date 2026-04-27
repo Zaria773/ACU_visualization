@@ -722,8 +722,9 @@ export const useThemeStore = defineStore('acu-theme', () => {
     const styleBlock = styles.join(' ');
 
     // 生成背景样式规则
-    // 同时注入到 .acu-app (全局继承) 和 .acu-wrapper/.acu-modal-container (覆盖主题类)
-    let css = `.acu-app, .acu-wrapper, .acu-modal-container { ${styleBlock} }`;
+    // 同时注入到 .acu-app (全局继承)、.acu-wrapper/.acu-modal-container (覆盖主题类)、
+    // 以及 .acu-chat-embed (聊天区域嵌入容器，位于 .acu-wrapper 之外，需要单独注入)
+    let css = `.acu-app, .acu-wrapper, .acu-modal-container, .acu-chat-embed { ${styleBlock} }`;
 
     // 如果启用了背景，添加背景层样式
     if (backgroundConfig.value.enabled && backgroundConfig.value.imageUrl) {

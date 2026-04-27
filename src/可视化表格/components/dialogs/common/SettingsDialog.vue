@@ -205,6 +205,17 @@
                     <i class="fas fa-chevron-right"></i>
                   </div>
                 </div>
+
+                <!-- 聊天区域嵌入入口 -->
+                <div class="acu-settings-row acu-nav-row" @click="goToPanel('chatEmbed')">
+                  <div class="acu-settings-label">
+                    聊天区域嵌入
+                    <span class="hint">把组件嵌到 AI 消息中,支持每个组件独立位置</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <i class="fas fa-chevron-right"></i>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -384,6 +395,9 @@
 
           <!-- ============ 词库管理面板 ============ -->
           <WordPoolPanel v-else-if="currentPanel === 'divinationWordPool'" />
+
+          <!-- ============ 聊天区域嵌入子面板 ============ -->
+          <ChatEmbedPanel v-else-if="currentPanel === 'chatEmbed'" />
         </div>
 
         <!-- ============ 添加自定义字体弹窗（直接渲染，不使用 Teleport） ============ -->
@@ -435,6 +449,7 @@ import { useUIStore } from '../../../stores/useUIStore';
 import type { ACUConfig } from '../../../types';
 import { VERSION } from '../../../version';
 import BallAppearancePanel from '../../settings/BallAppearancePanel.vue';
+import ChatEmbedPanel from '../../settings/ChatEmbedPanel.vue';
 import NavButtonConfigPanel from '../../settings/NavButtonConfigPanel.vue';
 import TabConfigPanel from '../../settings/TabConfigPanel.vue';
 import ThemePanel from '../../settings/ThemePanel.vue';
@@ -525,6 +540,8 @@ const panelTitle = computed(() => {
       return '维度管理';
     case 'divinationWordPool':
       return '随机词库管理';
+    case 'chatEmbed':
+      return '聊天区域嵌入';
     default:
       return '设置';
   }

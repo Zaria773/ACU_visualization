@@ -144,8 +144,10 @@ const parsedData = computed(() => {
     footer: null as TableCell | null,
   };
 
-  // 1. 遍历所有单元格进行归类
-  row.cells.forEach(cell => {
+  // 1. 遍历所有单元格进行归类（跳过第一列 row_id）
+  row.cells.forEach((cell, idx) => {
+    if (idx === 0) return; // 跳过第一列（通常是 row_id）
+
     const key = cell.key.toLowerCase();
     const valueStr = String(cell.value || '');
     if (!valueStr) return; // 跳过空值

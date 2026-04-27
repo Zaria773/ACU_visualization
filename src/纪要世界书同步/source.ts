@@ -1,4 +1,6 @@
 import { SCRIPT_LOG_PREFIX } from './constants';
+import type { TemplateSegment, TimeExtractionResult } from './timeTransform';
+import { extractTime } from './timeTransform';
 import type {
   AcuApiLike,
   AcuCellValue,
@@ -656,4 +658,107 @@ export function identifySummarySheet(data: AcuTableJson, settings: SyncScriptSet
     candidates: sorted,
     warnings,
   };
+}
+
+// ============================================================
+// 全局数据表查找与时间列读取
+// ============================================================
+
+/**
+ * 全局数据表查找结果
+ */
+export interface GlobalSheetFindResult {
+  /** 是否找到 */
+  found: boolean;
+  /** sheet 数据 */
+  sheet: AcuSheetData | null;
+  /** 表头列名列表 */
+  headers: string[];
+  /** sheet ID */
+  sheetId: string | null;
+}
+
+/**
+ * 在 ACU JSON 中查找全局数据表。
+ * 按 sheet.name 匹配用户设置的 globalSheetName。
+ */
+export function findGlobalSheet(data: AcuTableJson, globalSheetName: string): GlobalSheetFindResult {
+  const normalizedTarget = normalizeText(globalSheetName);
+
+  for (const [tableId, rawSheet] of Object.entries(data)) {
+    if (!tableId.startsWith('sheet_')) continue;
+    if (!isSheetData(rawSheet)) continue;
+
+    const sheetName = normalizeText(rawSheet.name);
+    if (sheetName !== normalizedTarget) continue;
+
+    const content = rawSheet.content ?? [];
+    if (!Array.isArray(content) || content.length === 0) {
+      return { found: true, sheet: rawSheet, headers: [], sheetId: tableId };
+    }
+
+    const headers = Array.isArray(content[0]) ? content[0].map((cell: AcuCellValue) => normalizeText(cell)) : [];
+
+    return { found: true, sheet: rawSheet, headers, sheetId: tableId };
+  }
+
+  return { found: false, sheet: null, headers: [], sheetId: null };
+}
+
+/**
+ * 从全局数据表中读取当前时间。
+ *
+ * @param data ACU 导出的完整 JSON
+ * @param globalSheetName 全局数据表名称
+ * @param globalTimeColumn 时间列名
+ * @param template 已解析的格式模板
+ * @returns 提取结果，或 null（找不到表/列/数据）
+ */
+export function readCurrentTimeFromGlobalSheet(
+  data: AcuTableJson,
+  globalSheetName: string,
+  globalTimeColumn: string,
+  template: TemplateSegment[],
+): TimeExtractionResult | null {
+  if (!globalSheetName || !globalTimeColumn) return null;
+
+  const found = findGlobalSheet(data, globalSheetName);
+  if (!found.found || !found.sheet) {
+    console.warn(SCRIPT_LOG_PREFIX, `全局数据表未找到：${globalSheetName}`);
+    return null;
+  }
+
+  const content = found.sheet.content ?? [];
+  if (content.length < 2) {
+    console.warn(SCRIPT_LOG_PREFIX, `全局数据表无数据行：${globalSheetName}`);
+    return null;
+  }
+
+  // 查找时间列索引
+  const columnIndex = found.headers.findIndex(h => h === normalizeText(globalTimeColumn));
+  if (columnIndex < 0) {
+    console.warn(SCRIPT_LOG_PREFIX, `全局数据表未找到时间列"${globalTimeColumn}"：${globalSheetName}`);
+    return null;
+  }
+
+  // 读取第一行数据（content[1]）
+  const dataRow = Array.isArray(content[1]) ? content[1] : [];
+  const cellValue = normalizeText(dataRow[columnIndex]);
+
+  if (!cellValue) {
+    console.warn(SCRIPT_LOG_PREFIX, `全局数据表时间列值为空：${globalSheetName}.${globalTimeColumn}`);
+    return null;
+  }
+
+  const result = extractTime(template, cellValue);
+  if (!result.has_any) {
+    console.warn(
+      SCRIPT_LOG_PREFIX,
+      `全局数据表时间列值无法用模板解析：值="${cellValue}"，表=${globalSheetName}，列=${globalTimeColumn}`,
+    );
+    return null;
+  }
+
+  console.info(SCRIPT_LOG_PREFIX, `全局数据表当前时间已读取：${cellValue}（${globalSheetName}.${globalTimeColumn}）`);
+  return result;
 }

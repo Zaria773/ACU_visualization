@@ -1150,7 +1150,9 @@ export function useParentStyleInjection() {
 .auto-card-updater-popup,
 .acu-window,
 .acu-window-body,
-#acu-visualizer-content {
+#acu-visualizer-content,
+#acu-vis-assistant-host,
+.acu-vis-assistant-panel {
   --acu-bg-0: ${t.bgPanel} !important;
   --acu-bg-1: ${t.bgNav} !important;
   --acu-bg-2: ${t.btnBg} !important;
@@ -1353,8 +1355,15 @@ html body .auto-card-updater-popup .acu-tabs-nav,
   color: ${t.textMain} !important;
 }
 
-/* 15b. 可视化编辑器 (数据库原生编辑器弹窗) */
-#acu-visualizer-content {
+/* 15b. 可视化编辑器 (数据库原生编辑器弹窗)
+ * 外层结构: .acu-window > .acu-window-body > #acu-visualizer-content
+ *          #acu-vis-assistant-host > .acu-vis-assistant-panel (可能是 fixed 定位的全屏覆盖)
+ * 必须在所有层级都设置 vis 变量，因为 CSS 变量只向下继承 */
+.acu-window,
+.acu-window-body,
+#acu-visualizer-content,
+#acu-vis-assistant-host,
+.acu-vis-assistant-panel {
   /* 覆盖 vis 专用变量（可视化编辑器内部使用的二级变量） */
   --vis-bg-color: ${t.bgPanel} !important;
   --vis-bg-stats: ${t.bgNav} !important;
@@ -1370,8 +1379,51 @@ html body .auto-card-updater-popup .acu-tabs-nav,
   /* AI 助手面板专用变量 */
   --vis-assistant-window-bg: ${t.bgPanel} !important;
   --vis-assistant-surface-bg: ${t.bgNav} !important;
+}
+#acu-visualizer-content {
   background-color: ${t.bgPanel} !important;
   color: ${t.textMain} !important;
+}
+/* AI 助手面板（可能脱离 #acu-visualizer-content 的 DOM 树，fixed 定位到 body 上） */
+.acu-vis-assistant-panel {
+  background: ${t.bgPanel} !important;
+  color: ${t.textMain} !important;
+}
+.acu-vis-assistant-panel .acu-vis-assistant-header {
+  background: ${t.bgPanel} !important;
+  border-bottom-color: ${t.border} !important;
+}
+.acu-vis-assistant-panel .acu-chat-scroll-frame {
+  border-color: ${t.border} !important;
+  background: ${t.bgNav} !important;
+}
+.acu-vis-assistant-panel .acu-vis-assistant-footer {
+  border-top-color: ${t.border} !important;
+}
+.acu-vis-assistant-panel .acu-btn-primary {
+  color: ${t.accent} !important;
+  border-color: ${t.accent} !important;
+}
+.acu-vis-assistant-panel .acu-btn-secondary {
+  color: ${t.textSub} !important;
+  border-color: ${t.border} !important;
+}
+.acu-vis-assistant-panel .acu-btn-secondary:hover {
+  color: ${t.textMain} !important;
+  background: ${t.btnHover} !important;
+}
+.acu-vis-assistant-panel .acu-form-input,
+.acu-vis-assistant-panel .acu-form-textarea {
+  background: ${t.bgPanel} !important;
+  border-color: ${t.border} !important;
+  color: ${t.textMain} !important;
+}
+.acu-vis-assistant-panel .acu-form-input:focus,
+.acu-vis-assistant-panel .acu-form-textarea:focus {
+  border-color: ${t.accent} !important;
+}
+.acu-vis-assistant-panel .acu-hint {
+  color: ${t.textSub} !important;
 }
 #acu-visualizer-content .acu-vis-header,
 #acu-visualizer-content .acu-vis-toolbar {

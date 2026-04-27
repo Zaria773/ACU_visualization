@@ -168,10 +168,10 @@ function buildHeaderEntry(
   relevantHeaders: string[],
   columnVisibility: Record<string, ColumnVisibility>,
 ): BuiltWorldbookEntry {
-  // 表头只保留"都注入"或至少在一种条目中可见的列
+  // 表头完全按纪要条目的列来：只保留对纪要条目可见的列（both / detail_only）
   const visibleHeaders = relevantHeaders.filter(h => {
     const vis = columnVisibility[h] ?? getDefaultColumnVisibility(h);
-    return vis !== 'none';
+    return isColumnVisibleForKind(vis, 'detail');
   });
 
   const headerLine = `| ${visibleHeaders.join(' | ')} |`;

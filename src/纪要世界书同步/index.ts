@@ -8,7 +8,8 @@ import { clearManagedIsolationCodeContext, setManagedIsolationCodeContext } from
 import { SCRIPT_LOG_PREFIX, SETTINGS_BUTTON_NAME } from './constants';
 import { parseUnifiedRowsFromSummarySheet } from './parser';
 import { loadSettings, saveSettings } from './settings';
-import { identifySummarySheet, readAcuTableJsonBridgeFirst } from './source';
+import { findGlobalSheet, identifySummarySheet, readAcuTableJsonBridgeFirst, readCurrentTimeFromGlobalSheet } from './source';
+import { applyTimeTransformToRows, parseTimeTemplate } from './timeTransform';
 import type {
   BuildEntriesResult,
   CleanupFn,
@@ -56,6 +57,7 @@ function initSettings(): RuntimeContext {
     sync_in_progress: false,
     last_reason: '尚无',
     current_raw_headers: [],
+    current_global_sheet_headers: [],
   };
   const ctx: RuntimeContext = {
     settings,
@@ -210,6 +212,37 @@ async function performSync(ctx: RuntimeContext, reason: string): Promise<void> {
     logInfo(`统一行解析完成：共 ${parsed.summary.total_data_rows} 行，成功解析 ${parsed.summary.parsed_rows} 行。`);
     logDebug(ctx, '统一行解析摘要：', parsed.summary);
     logRowPreview(ctx, parsed.rows);
+
+    // ── 全局数据表列名读取（供时间设置 UI 下拉框使用） ──
+    if (ctx.settings.global_sheet_name) {
+      const globalSheetResult = findGlobalSheet(tableRead.data, ctx.settings.global_sheet_name);
+      if (globalSheetResult.found) {
+        updateRuntimeStatus(ctx, { current_global_sheet_headers: globalSheetResult.headers.filter(h => h !== '') });
+      }
+    }
+
+    // ── 时间变换 ──
+    if (ctx.settings.time_transform_enabled) {
+      const templateSegments = parseTimeTemplate(ctx.settings.time_format_template);
+      const currentTimeResult = readCurrentTimeFromGlobalSheet(
+        tableRead.data,
+        ctx.settings.global_sheet_name,
+        ctx.settings.global_time_column,
+        templateSegments,
+      );
+      if (currentTimeResult?.has_any) {
+        applyTimeTransformToRows(parsed.rows, {
+          template: templateSegments,
+          currentTime: currentTimeResult.parsed,
+          summaryTimeColumn: ctx.settings.summary_time_column,
+        });
+        logInfo(`时间变换已应用：当前时间来源=${ctx.settings.global_sheet_name}.${ctx.settings.global_time_column}`);
+        logDebug(ctx, '当前时间解析结果：', currentTimeResult.parsed);
+      } else {
+        logInfo('时间变换跳过：无法从全局数据表读取当前时间。');
+      }
+    }
+    // ── 时间变换结束 ──
 
     const depth = ctx.settings.depth_override ?? 9997;
     const built = buildWorldbookEntries({

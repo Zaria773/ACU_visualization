@@ -219,8 +219,11 @@
           </div>
           <div class="acu-css-hint">
             <p>常用选择器：</p>
-            <code>.acu-app, .acu-wrapper</code> <code>.acu-floating-ball</code>
+            <code>.acu-app, .acu-wrapper, .acu-chat-embed</code> <code>.acu-floating-ball</code>
             <code>.acu-data-card</code>
+            <p style="margin-top: 6px; font-size: 11px; opacity: 0.7">
+              注：聊天区嵌入的组件在 <code>.acu-chat-embed</code> 容器内，建议把它加到选择器列表里
+            </p>
           </div>
           <textarea
             v-model="customCSSText"

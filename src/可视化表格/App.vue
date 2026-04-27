@@ -360,6 +360,63 @@
 
     <!-- 全局 Toast 通知 -->
     <Toast :visible="toastState.visible" :message="toastState.message" :type="toastState.type" />
+
+    <!-- 聊天区域嵌入：每个组件独立 Teleport 到 #chat 内对应的容器（不修改消息文本） -->
+    <!-- 全局数据看板 -->
+    <Teleport
+      v-if="chatEmbedGlobalTarget && configStore.config.enableChatEmbed && globalStatusTable"
+      :to="chatEmbedGlobalTarget"
+    >
+      <!-- 嵌入到聊天区域时不带折叠头,直接渲染 GlobalStatusWidget。
+           外层 .acu-embed-section 保留主题"皮"(圆角边框 + 模糊背景),
+           主题 CSS 变量已通过 useThemeStore 注入到 .acu-chat-embed 上。 -->
+      <div :class="['acu-chat-embed', appClasses]" @click.stop>
+        <div class="acu-embed-section">
+          <GlobalStatusWidget
+            :table-data="globalStatusTable"
+            :is-editing="false"
+            @row-click="row => globalStatusTable && handleRowClick(globalStatusTable.id, row)"
+          />
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- 行动选项（交互表） -->
+    <Teleport
+      v-if="chatEmbedOptionsTarget && configStore.config.enableChatEmbed && hasEmbedOptionsContent"
+      :to="chatEmbedOptionsTarget"
+    >
+      <div :class="['acu-chat-embed', appClasses]" @click.stop>
+        <div class="acu-embed-section">
+          <div class="acu-embed-header" @click.stop="toggleEmbedOptionsCollapse">
+            <div class="acu-embed-title">
+              <i class="fas fa-hand-pointer"></i>
+              <span>行动选项</span>
+            </div>
+            <i
+              :class="['fas', embedOptionsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up']"
+              style="color: var(--acu-text-sub)"
+            ></i>
+          </div>
+          <div v-show="!embedOptionsCollapsed" class="acu-embed-body">
+            <!-- 优先：使用交互表（与仪表盘行动选项视觉一致） -->
+            <InteractionTableWidget
+              v-if="embedInteractionWidget && embedInteractionTable"
+              :config="embedInteractionWidget"
+              :table-data="embedInteractionTable"
+              :is-editing="false"
+              :diff-map="dataStore.diffMap"
+              :ai-diff-map="dataStore.aiDiffMap"
+              :search-term="''"
+              @row-edit="handleEmbedRowEdit"
+              @action="handleDashboardAction"
+            />
+            <!-- 兜底：旧版选项聚合（兼容旧表名带"选项" -->
+            <EmbeddedOptionsPanel v-else :tables="optionsTables" />
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -385,6 +442,9 @@ import {
   TabsPopup,
   Toast,
 } from './components';
+import EmbeddedOptionsPanel from './components/dashboard/EmbeddedOptionsPanel.vue';
+import GlobalStatusWidget from './components/dashboard/GlobalStatusWidget.vue';
+import InteractionTableWidget from './components/dashboard/InteractionTableWidget.vue';
 import {
   AddTableDialog,
   AdvancedPurgeDialog,
@@ -439,6 +499,8 @@ import { getSmartTabIcon, TAB_DASHBOARD, TAB_OPTIONS, TAB_RELATIONSHIP_GRAPH, us
 
 // Composables 导入
 import { useApiCallbacks } from './composables/useApiCallbacks';
+import { useChatAreaEmbed } from './composables/useChatAreaEmbed';
+import { useChatEmbedContent } from './composables/useChatEmbedContent';
 import { useCoreActions } from './composables/useCoreActions';
 import { useDataPersistence } from './composables/useDataPersistence';
 import { useDivinationAction } from './composables/useDivinationAction';
@@ -478,6 +540,10 @@ const { state: toastState } = useToast();
 const { setInput } = useCoreActions();
 const { setHiddenPrompt, setupSendIntercept, cleanupSendIntercept } = useHiddenPrompt();
 const { performDivination, confirmDivination, triggerQuickReroll } = useDivinationAction();
+const { embedTargets: _embedTargets } = useChatAreaEmbed();
+// 把每个组件的 embedTarget 解构为顶层 ref,模板里可自动 unwrap
+const chatEmbedGlobalTarget = _embedTargets.global;
+const chatEmbedOptionsTarget = _embedTargets.options;
 
 // 触摸滚动修复（横向布局卡片滑动）- 随组件生命周期自动管理
 useTouchScrollFix();
@@ -634,6 +700,31 @@ const isLeftTabRailEnabled = computed(() => {
 const optionsTables = computed(() => {
   return processedTables.value.filter(t => t.name.includes('选项') || t.name.toLowerCase().includes('option'));
 });
+
+// ============================================================
+// 聊天区域嵌入内容（逻辑剥离至 useChatEmbedContent）
+// ============================================================
+const {
+  embedGlobalCollapsed,
+  embedOptionsCollapsed,
+  toggleEmbedGlobalCollapse,
+  toggleEmbedOptionsCollapse,
+  globalStatusTable,
+  embedInteractionTable,
+  embedInteractionWidget,
+  hasEmbedOptionsContent,
+} = useChatEmbedContent(processedTables, optionsTables);
+
+/** 嵌入区交互表行编辑（打开行编辑弹窗） */
+function handleEmbedRowEdit(tableId: string, row: TableRow) {
+  const table = processedTables.value.find(t => t.id === tableId);
+  uiStore.openRowEditDialog({
+    tableId,
+    tableName: table?.name ?? tableId,
+    rowIndex: row.index,
+    currentRowData: row,
+  });
+}
 
 /** 是否有关系图相关数据（用于控制关系图 Tab 显示） */
 const hasRelationshipData = computed(() => {
