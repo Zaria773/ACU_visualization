@@ -19,7 +19,11 @@ importers:
         version: 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations':
         specifier: ^13.9.0
+<<<<<<< HEAD
         version: 13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+=======
+        version: 13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       '@vueuse/shared':
         specifier: ^13.9.0
         version: 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
@@ -68,9 +72,12 @@ importers:
       lodash:
         specifier: ^4.18.1
         version: 4.18.1
+<<<<<<< HEAD
       mobile-drag-drop:
         specifier: 3.0.0-rc.0
         version: 3.0.0-rc.0
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@6.0.0-dev.20250807)(vue@3.5.34(typescript@6.0.0-dev.20250807))
@@ -91,7 +98,11 @@ importers:
         version: 3.5.34(typescript@6.0.0-dev.20250807)
       vue-final-modal:
         specifier: ^4.5.5
+<<<<<<< HEAD
         version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+=======
+        version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       vue-router:
         specifier: ^4.6.4
         version: 4.6.4(vue@3.5.34(typescript@6.0.0-dev.20250807))
@@ -137,7 +148,11 @@ importers:
         version: 2.1.43
       '@types/webpack':
         specifier: ^5.28.5
+<<<<<<< HEAD
         version: 5.28.5(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+        version: 5.28.5(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       '@typescript-eslint/parser':
         specifier: ^8.59.2
         version: 8.59.2(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.0-dev.20250807)
@@ -245,7 +260,11 @@ importers:
         version: 4.3.0
       terser-webpack-plugin:
         specifier: ^5.6.0
+<<<<<<< HEAD
         version: 5.6.0(lightningcss@1.32.0)(postcss@8.5.14)(webpack@5.106.2)
+=======
+        version: 5.6.0(postcss@8.5.14)(webpack@5.106.2)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       ts-loader:
         specifier: ^9.5.7
         version: 9.5.7(typescript@6.0.0-dev.20250807)(webpack@5.106.2)
@@ -273,9 +292,12 @@ importers:
       unplugin-vue-components:
         specifier: ^29.2.0
         version: 29.2.0(@babel/parser@7.29.3)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+<<<<<<< HEAD
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.52.1)(@types/node@25.6.2)(@types/react@19.2.14)(axios@1.14.0)(lightningcss@1.32.0)(postcss@8.5.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.99.0)(search-insights@2.17.3)(terser@5.47.1)(typescript@6.0.0-dev.20250807)
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       vue-eslint-parser:
         specifier: ^10.4.0
         version: 10.4.0(eslint@9.39.4(jiti@2.7.0))
@@ -287,7 +309,11 @@ importers:
         version: 4.1.3
       webpack:
         specifier: ^5.106.2
+<<<<<<< HEAD
         version: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+        version: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       webpack-cli:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.106.2)
@@ -412,6 +438,7 @@ packages:
     resolution: {integrity: sha512-4B4OijXeVNOPZlYA2oEwWOTkzyltLao+xbotHQeqN++Rv27Y6s818+n2Qkp8q+Fxhn0t/5lA5X1Mxktud8eayQ==}
     engines: {node: '>=14.17.0'}
 
+<<<<<<< HEAD
   '@docsearch/css@3.8.2':
     resolution: {integrity: sha512-y05ayQFyUmCXze79+56v/4HpycYF3uFqB78pLPrSV5ZKAlDuIAAJNhaRi8tTdRNXh05yxX/TyNnzD6LwSM89vQ==}
 
@@ -581,6 +608,16 @@ packages:
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
+=======
+  '@emnapi/core@1.10.0':
+    resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
+
+  '@emnapi/runtime@1.10.0':
+    resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
+
+  '@emnapi/wasi-threads@1.2.1':
+    resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   '@eslint-community/eslint-utils@4.9.1':
     resolution: {integrity: sha512-phrYmNiYppR7znFEdqgfWHXR6NCkZEK7hwWDHZUjit/2/U0r6XvkDl0SYnoM51Hq7FhCGdLDT6zxCCOY1hexsQ==}
@@ -1102,8 +1139,8 @@ packages:
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
 
-  '@types/estree@1.0.8':
-    resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+  '@types/estree@1.0.9':
+    resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
@@ -1373,6 +1410,7 @@ packages:
     cpu: [x64]
     os: [win32]
 
+<<<<<<< HEAD
   '@vitejs/plugin-vue@5.2.4':
     resolution: {integrity: sha512-7Yx/SXSOcQq5HiiV3orevHUFn+pmMB4cgbEkDYgnkUWb0WfeQ/wa2yFv6D5ICiCQOVpjA7vYDXrC7AGO8yjDHA==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -1389,6 +1427,17 @@ packages:
   '@vue/compiler-sfc@3.5.34':
     resolution: {integrity: sha512-D/ihr6uZeIt6r+pVZf46RWT1fAsLFMbUP7k8G1VkiiWexriED9GrX3echHd4Abbt17zjlfiFJ8z7a3BxZOPNjg==}
 
+=======
+  '@vue/compiler-core@3.5.34':
+    resolution: {integrity: sha512-s9cLyK5mLcvZ4Agva5QgRsQyLKvts9WbU9DB6NqiZkkGEdwmcEiylj5Jbwkp680drF/NNCV8OlAJSe+yMLxaJw==}
+
+  '@vue/compiler-dom@3.5.34':
+    resolution: {integrity: sha512-EbF/T++k0e2MMZlJsBhzK8Sgwt0HcIPOhzn1CTB/lv6sQcyk+OWf8YeiLxZp3ro7MbbLcAfAJ6sEvjFWuNgUCw==}
+
+  '@vue/compiler-sfc@3.5.34':
+    resolution: {integrity: sha512-D/ihr6uZeIt6r+pVZf46RWT1fAsLFMbUP7k8G1VkiiWexriED9GrX3echHd4Abbt17zjlfiFJ8z7a3BxZOPNjg==}
+
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   '@vue/compiler-ssr@3.5.34':
     resolution: {integrity: sha512-cDtTHKibkThKGHH1SP+WdccquNRYQDFH6rRjQCqT9G2ltFAfoR5pUftpab/z+aM5mW9HLLVQW7hfKKQe/1GBeQ==}
 
@@ -1696,10 +1745,13 @@ packages:
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
+<<<<<<< HEAD
 
   algoliasearch@5.52.1:
     resolution: {integrity: sha512-fHA8+kXTbjagw3jkLiaS7KKrH8qe2DyOsiUhGlN4cdT77PEsfqXZl7ewDk1hsg+pJnPlnE50XtLxjR91iJOpmg==}
     engines: {node: '>= 14.0.0'}
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   amdefine@1.0.1:
     resolution: {integrity: sha512-S2Hw0TtNkMJhIabBwIojKL9YHO5T0n5eNqWJ7Lrlel/zDbftQpxpapi8tZs3X1HWa+u+QeydGmzzNU0m09+Rcg==}
@@ -2279,9 +2331,12 @@ packages:
 
   electron-to-chromium@1.5.353:
     resolution: {integrity: sha512-kOrWphBi8TOZyiJZqsgqIle0lw+tzmnQK83pV9dZUd01Nm2POECSyFQMAuarzZdYqQW7FH9RaYOuaRo3h+bQ3w==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -3954,11 +4009,14 @@ packages:
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
 
+<<<<<<< HEAD
   rollup@4.60.3:
     resolution: {integrity: sha512-pAQK9HalE84QSm4Po3EmWIZPd3FnjkShVkiMlz1iligWYkWQ7wHYd1PF/T7QZ5TVSD6uSTon5gBVMSM4JfBV+A==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   safe-array-concat@1.1.4:
     resolution: {integrity: sha512-wtZlHyOje6OZTGqAoaDKxFkgRtkF9CnHAVnCHKfuj200wAgL+bSJhdsCD2l0Qx/2ekEXjPWcyKkfGb5CPboslg==}
     engines: {node: '>=0.4'}
@@ -4023,9 +4081,12 @@ packages:
   scule@1.3.0:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
 
+<<<<<<< HEAD
   search-insights@2.17.3:
     resolution: {integrity: sha512-RQPdCYTa8A68uM2jwxoY842xDhvx3E5LFL1LxvxCNMev4o5mLuokczhzjAgGwUZBAmOKZknArSxLKmXtIi2AxQ==}
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   semver@7.8.0:
     resolution: {integrity: sha512-AcM7dV/5ul4EekoQ29Agm5vri8JNqRyj39o0qpX6vDF2GZrtutZl5RwgD1XnZjiTAfncsJhMI48QQH3sN87YNA==}
     engines: {node: '>=10'}
@@ -4055,9 +4116,12 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+<<<<<<< HEAD
   shiki@2.5.0:
     resolution: {integrity: sha512-mI//trrsaiCIPsja5CNfsyNOqgAZUb6VpJA+340toL42UpzQlXpwRV9nch69X6gaUxrr9kaOOa6e3y3uAkGFxQ==}
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   side-channel-list@1.0.1:
     resolution: {integrity: sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==}
     engines: {node: '>= 0.4'}
@@ -4917,6 +4981,7 @@ snapshots:
 
   '@discoveryjs/json-ext@0.6.3': {}
 
+<<<<<<< HEAD
   '@docsearch/css@3.8.2': {}
 
   '@docsearch/js@3.8.2(@algolia/client-search@5.52.1)(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(search-insights@2.17.3)':
@@ -4946,6 +5011,10 @@ snapshots:
 
   '@emnapi/core@1.10.0':
     dependencies:
+=======
+  '@emnapi/core@1.10.0':
+    dependencies:
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       '@emnapi/wasi-threads': 1.2.1
       tslib: 2.8.1
     optional: true
@@ -4960,6 +5029,7 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+<<<<<<< HEAD
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
 
@@ -5029,6 +5099,8 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   '@eslint-community/eslint-utils@4.9.1(eslint@9.39.4(jiti@2.7.0))':
     dependencies:
       eslint: 9.39.4(jiti@2.7.0)
@@ -5476,7 +5548,7 @@ snapshots:
 
   '@types/esrecurse@4.3.1': {}
 
-  '@types/estree@1.0.8': {}
+  '@types/estree@1.0.9': {}
 
   '@types/estree@1.0.9': {}
 
@@ -5561,11 +5633,19 @@ snapshots:
 
   '@types/web-bluetooth@0.0.21': {}
 
+<<<<<<< HEAD
   '@types/webpack@5.28.5(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)':
     dependencies:
       '@types/node': 25.6.2
       tapable: 2.3.3
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+  '@types/webpack@5.28.5(postcss@8.5.14)(webpack-cli@6.0.1)':
+    dependencies:
+      '@types/node': 25.6.2
+      tapable: 2.3.3
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -5743,6 +5823,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
+<<<<<<< HEAD
   '@vitejs/plugin-vue@5.2.4(vite@5.4.21(@types/node@25.6.2)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.47.1))(vue@3.5.34(typescript@6.0.0-dev.20250807))':
     dependencies:
       vite: 5.4.21(@types/node@25.6.2)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.47.1)
@@ -5750,6 +5831,10 @@ snapshots:
 
   '@vue/compiler-core@3.5.34':
     dependencies:
+=======
+  '@vue/compiler-core@3.5.34':
+    dependencies:
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       '@babel/parser': 7.29.3
       '@vue/shared': 3.5.34
       entities: 7.0.1
@@ -5838,6 +5923,7 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+<<<<<<< HEAD
   '@vueuse/core@12.8.2(typescript@6.0.0-dev.20250807)':
     dependencies:
       '@types/web-bluetooth': 0.0.21
@@ -5847,6 +5933,8 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   '@vueuse/core@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
@@ -5861,10 +5949,17 @@ snapshots:
       '@vueuse/shared': 14.3.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
 
+<<<<<<< HEAD
   '@vueuse/integrations@12.8.2(axios@1.14.0)(focus-trap@7.8.0)(typescript@6.0.0-dev.20250807)':
     dependencies:
       '@vueuse/core': 12.8.2(typescript@6.0.0-dev.20250807)
       '@vueuse/shared': 12.8.2(typescript@6.0.0-dev.20250807)
+=======
+  '@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      '@vueuse/core': 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
+      '@vueuse/shared': 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
     optionalDependencies:
       axios: 1.14.0
@@ -5896,6 +5991,7 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+<<<<<<< HEAD
   '@vueuse/shared@12.8.2(typescript@6.0.0-dev.20250807)':
     dependencies:
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
@@ -5909,6 +6005,15 @@ snapshots:
   '@vueuse/shared@14.3.0(vue@3.5.34(typescript@6.0.0-dev.20250807))':
     dependencies:
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
+=======
+  '@vueuse/shared@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      vue: 3.5.34(typescript@6.0.0-dev.20250807)
+
+  '@vueuse/shared@14.3.0(vue@3.5.34(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      vue: 3.5.34(typescript@6.0.0-dev.20250807)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -5990,17 +6095,29 @@ snapshots:
 
   '@webpack-cli/configtest@3.0.1(webpack-cli@6.0.1)(webpack@5.106.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       webpack-cli: 6.0.1(webpack@5.106.2)
 
   '@webpack-cli/info@3.0.1(webpack-cli@6.0.1)(webpack@5.106.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       webpack-cli: 6.0.1(webpack@5.106.2)
 
   '@webpack-cli/serve@3.0.1(webpack-cli@6.0.1)(webpack@5.106.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       webpack-cli: 6.0.1(webpack@5.106.2)
 
   '@xmldom/xmldom@0.8.13': {}
@@ -6460,7 +6577,11 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.8.0
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   css-rules@1.1.0:
     dependencies:
@@ -6705,8 +6826,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.353: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   emoji-regex@8.0.0: {}
 
@@ -6987,7 +7111,11 @@ snapshots:
       micromatch: 4.0.8
       normalize-path: 3.0.0
       schema-utils: 4.3.3
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   eslint@9.39.4(jiti@2.7.0):
     dependencies:
@@ -7316,13 +7444,21 @@ snapshots:
   html-inline-script-webpack-plugin@3.2.1(html-webpack-plugin@5.6.7(webpack@5.106.2))(webpack@5.106.2):
     dependencies:
       html-webpack-plugin: 5.6.7(webpack@5.106.2)
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   html-loader@5.1.0(webpack@5.106.2):
     dependencies:
       html-minifier-terser: 7.2.0
       parse5: 7.3.0
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   html-minifier-terser@6.1.0:
     dependencies:
@@ -7365,7 +7501,11 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.3.3
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   htmlparser2@10.1.0:
     dependencies:
@@ -8063,7 +8203,11 @@ snapshots:
     dependencies:
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   minimatch@10.2.5:
     dependencies:
@@ -8091,8 +8235,11 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.4
+<<<<<<< HEAD
 
   mobile-drag-drop@3.0.0-rc.0: {}
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   ms@2.0.0: {}
 
@@ -8378,7 +8525,11 @@ snapshots:
       postcss: 8.5.14
       semver: 7.8.0
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     transitivePeerDependencies:
       - typescript
 
@@ -8535,7 +8686,11 @@ snapshots:
     dependencies:
       front-matter: 4.0.2
       remark: 15.0.1
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   remark-parse@11.0.0:
     dependencies:
@@ -8599,6 +8754,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
+<<<<<<< HEAD
   rollup@4.60.3:
     dependencies:
       '@types/estree': 1.0.8
@@ -8632,6 +8788,10 @@ snapshots:
 
   safe-array-concat@1.1.4:
     dependencies:
+=======
+  safe-array-concat@1.1.4:
+    dependencies:
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       call-bind: 1.0.9
       call-bound: 1.0.4
       get-intrinsic: 1.3.0
@@ -8658,7 +8818,11 @@ snapshots:
       neo-async: 2.6.2
     optionalDependencies:
       sass: 1.99.0
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   sass@1.99.0:
     dependencies:
@@ -8689,8 +8853,11 @@ snapshots:
 
   scule@1.3.0: {}
 
+<<<<<<< HEAD
   search-insights@2.17.3: {}
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   semver@7.8.0: {}
 
   set-function-length@1.2.2:
@@ -8725,6 +8892,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
+<<<<<<< HEAD
   shiki@2.5.0:
     dependencies:
       '@shikijs/core': 2.5.0
@@ -8736,6 +8904,8 @@ snapshots:
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.4
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   side-channel-list@1.0.1:
     dependencies:
       es-errors: 1.3.0
@@ -8900,7 +9070,11 @@ snapshots:
 
   style-loader@4.0.0(webpack@5.106.2):
     dependencies:
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   superjson@2.2.6:
     dependencies:
@@ -8950,15 +9124,24 @@ snapshots:
 
   tapable@2.3.3: {}
 
+<<<<<<< HEAD
   terser-webpack-plugin@5.6.0(lightningcss@1.32.0)(postcss@8.5.14)(webpack@5.106.2):
+=======
+  terser-webpack-plugin@5.6.0(postcss@8.5.14)(webpack@5.106.2):
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.47.1
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
     optionalDependencies:
       lightningcss: 1.32.0
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+    optionalDependencies:
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       postcss: 8.5.14
 
   terser@5.47.1:
@@ -9001,7 +9184,11 @@ snapshots:
       semver: 7.8.0
       source-map: 0.7.6
       typescript: 6.0.0-dev.20250807
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   ts-node@10.9.2(@types/node@25.6.2)(typescript@6.0.0-dev.20250807):
     dependencies:
@@ -9273,6 +9460,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
+<<<<<<< HEAD
   vite@5.4.21(@types/node@25.6.2)(lightningcss@1.32.0)(sass@1.99.0)(terser@5.47.1):
     dependencies:
       esbuild: 0.21.5
@@ -9338,6 +9526,12 @@ snapshots:
     dependencies:
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
 
+=======
+  vue-demi@0.14.10(vue@3.5.34(typescript@6.0.0-dev.20250807)):
+    dependencies:
+      vue: 3.5.34(typescript@6.0.0-dev.20250807)
+
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   vue-eslint-parser@10.4.0(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       debug: 4.4.3
@@ -9350,11 +9544,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+<<<<<<< HEAD
   vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807)):
     dependencies:
       '@vueuse/core': 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations': 13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.34(typescript@6.0.0-dev.20250807))
       focus-trap: 7.8.0
+=======
+  vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807)):
+    dependencies:
+      '@vueuse/core': 13.9.0(vue@3.5.34(typescript@6.0.0-dev.20250807))
+      '@vueuse/integrations': 13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.34(typescript@6.0.0-dev.20250807))
+      focus-trap: 7.6.5
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
 
   vue-loader@17.4.2(vue@3.5.34(typescript@6.0.0-dev.20250807))(webpack@5.106.2):
@@ -9362,7 +9564,11 @@ snapshots:
       chalk: 4.1.2
       hash-sum: 2.0.0
       watchpack: 2.5.1
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     optionalDependencies:
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
 
@@ -9409,6 +9615,7 @@ snapshots:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
 
+<<<<<<< HEAD
   webcola@3.4.0:
     dependencies:
       d3-dispatch: 1.0.6
@@ -9416,6 +9623,8 @@ snapshots:
       d3-shape: 1.3.7
       d3-timer: 1.0.10
 
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
   webpack-cli@6.0.1(webpack@5.106.2):
     dependencies:
       '@discoveryjs/json-ext': 0.6.3
@@ -9430,7 +9639,11 @@ snapshots:
       import-local: 3.2.0
       interpret: 3.1.1
       rechoir: 0.8.0
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       webpack-merge: 6.0.1
 
   webpack-merge@6.0.1:
@@ -9444,13 +9657,21 @@ snapshots:
       javascript-obfuscator: 4.2.2
       multi-stage-sourcemap: 0.3.1
       multimatch: 5.0.0
+<<<<<<< HEAD
       webpack: 5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1)
+=======
+      webpack: 5.106.2(postcss@8.5.14)(webpack-cli@6.0.1)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
 
   webpack-sources@3.4.1: {}
 
   webpack-virtual-modules@0.6.2: {}
 
+<<<<<<< HEAD
   webpack@5.106.2(lightningcss@1.32.0)(postcss@8.5.14)(webpack-cli@6.0.1):
+=======
+  webpack@5.106.2(postcss@8.5.14)(webpack-cli@6.0.1):
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.9
@@ -9473,7 +9694,11 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       terser-webpack-plugin: 5.6.0(lightningcss@1.32.0)(postcss@8.5.14)(webpack@5.106.2)
+=======
+      terser-webpack-plugin: 5.6.0(postcss@8.5.14)(webpack@5.106.2)
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
       watchpack: 2.5.1
       webpack-sources: 3.4.1
     optionalDependencies:

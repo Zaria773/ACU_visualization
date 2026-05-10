@@ -101,7 +101,10 @@
     "jsonrepair": "^3.14.0",
     "klona": "^2.0.6",
     "lodash": "^4.18.1",
+<<<<<<< HEAD
     "mobile-drag-drop": "3.0.0-rc.0",
+=======
+>>>>>>> 97a7b3d33c9c4352561a5d0902fe896ec003d90a
     "pinia": "^3.0.4",
     "pixi.js": "^8.18.1",
     "react": "^19.2.6",
