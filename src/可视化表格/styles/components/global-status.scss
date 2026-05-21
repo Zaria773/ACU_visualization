@@ -72,6 +72,22 @@
   i {
     opacity: 0.8;
   }
+
+  // 星期小标签:小一号,弱化样式,作为时间附属信息
+  .acu-weekday-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    font-size: 0.7em !important;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--acu-title-color) !important;
+    background: var(--acu-title-color-bg);
+    border: 1px solid var(--acu-title-color);
+    border-radius: 10px;
+    white-space: nowrap;
+    opacity: 0.85;
+  }
 }
 
 .acu-global-time-secondary {

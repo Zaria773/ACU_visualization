@@ -316,6 +316,17 @@
                   </div>
                 </div>
 
+                <!-- 移动端顶部安全区（仅移动端显示，避让刘海屏/状态栏） -->
+                <div v-if="uiStore.isMobile" class="acu-settings-row">
+                  <div class="acu-settings-label">
+                    移动端顶部安全区
+                    <span class="hint">{{ localConfig.mobileSafeAreaTop ?? 0 }}px(避让刘海屏/状态栏)</span>
+                  </div>
+                  <div class="acu-settings-control">
+                    <input v-model.number="localConfig.mobileSafeAreaTop" type="range" min="0" max="150" step="10" />
+                  </div>
+                </div>
+
                 <!-- 移动端底部安全区（仅移动端显示） -->
                 <div v-if="uiStore.isMobile" class="acu-settings-row">
                   <div class="acu-settings-label">

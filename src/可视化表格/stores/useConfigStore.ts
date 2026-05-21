@@ -107,6 +107,7 @@ export const DEFAULT_CONFIG: ACUConfig = {
   showCollapseTabButton: true,
   leftTabRailMode: false,
   mobileSafeAreaBottom: 50,
+  mobileSafeAreaTop: 0,
   autoImportInteractions: false,
   enableIOSInputFix: false,
   mobileMenuMode: false,

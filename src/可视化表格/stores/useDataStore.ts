@@ -776,14 +776,24 @@ export const useDataStore = defineStore('acu-data', () => {
   }
 
   /**
-   * 保存聊天记录（防抖）
+   * 保存聊天记录到磁盘
+   *
+   * ⚠️ 注意: 历史上这里使用 ST.saveChatDebounced(), 但那是 lodash debounce 包装,
+   * 调用后立即返回 undefined, 不会等待真实写盘完成. 这会导致:
+   * 1. swipe 清除后, 磁盘 chat 仍是旧数据 → AI 重新生成时读到旧数据
+   * 2. SQLite 模式下, refreshDataAndWorldbook 内部从内存 chat 合并是 OK 的,
+   *    但若酒馆生成端依赖磁盘 chat 则会出错
+   *
+   * 现统一改为 ST.saveChat() 立即版, 真实等待写盘完成, 与 useDataPersistence
+   * 中的 purgeFloorRange 保持一致.
    */
   async function saveChatDebounced(): Promise<void> {
     const ST = getSillyTavern();
-    if (ST?.saveChatDebounced) {
-      await ST.saveChatDebounced();
-    } else if (ST?.saveChat) {
+    if (ST?.saveChat) {
       await ST.saveChat();
+    } else if (ST?.saveChatDebounced) {
+      // 兜底: 如果只有防抖版可用, 至少调一下(虽然不等写盘)
+      await ST.saveChatDebounced();
     }
   }
 

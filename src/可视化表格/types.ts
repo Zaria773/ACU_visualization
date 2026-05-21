@@ -76,6 +76,8 @@ export interface ACUConfig {
   leftTabRailMode?: boolean;
   /** 移动端底部安全区大小 (0-150px，0表示禁用) */
   mobileSafeAreaBottom?: number;
+  /** 移动端顶部安全区大小 (0-150px，0表示禁用，用于刘海屏/状态栏避让) */
+  mobileSafeAreaTop?: number;
   /** 是否自动存入交互标签 */
   autoImportInteractions?: boolean;
   /** iOS 输入防缩放模式（强制输入框使用 16px 字体） */

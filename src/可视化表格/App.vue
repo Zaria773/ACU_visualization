@@ -1972,9 +1972,11 @@ onMounted(() => {
 // 监听移动端安全区配置，将值注入到父窗口 CSS 变量
 watchEffect(() => {
   // 仅在移动模式下应用安全区，PC 端强制为 0
-  const safeArea = uiStore.isMobile ? (configStore.config.mobileSafeAreaBottom ?? 50) : 0;
+  const safeAreaBottom = uiStore.isMobile ? (configStore.config.mobileSafeAreaBottom ?? 50) : 0;
+  const safeAreaTop = uiStore.isMobile ? (configStore.config.mobileSafeAreaTop ?? 0) : 0;
   if (window.parent?.document?.documentElement) {
-    window.parent.document.documentElement.style.setProperty('--acu-safe-area-bottom', `${safeArea}px`);
+    window.parent.document.documentElement.style.setProperty('--acu-safe-area-bottom', `${safeAreaBottom}px`);
+    window.parent.document.documentElement.style.setProperty('--acu-safe-area-top', `${safeAreaTop}px`);
   }
 });
 

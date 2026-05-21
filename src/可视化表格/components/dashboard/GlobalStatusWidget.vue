@@ -23,6 +23,10 @@
         <div v-if="timeData.current" class="acu-global-time-primary">
           <i class="fas fa-clock"></i>
           <span>{{ timeData.current }}</span>
+          <!-- 星期小标签 -->
+          <span v-if="timeData.weekday" class="acu-weekday-tag">
+            {{ timeData.weekday }}
+          </span>
         </div>
 
         <!-- Secondary Times -->
@@ -137,6 +141,7 @@ const parsedData = computed(() => {
       current: null as TableCell | null,
       passed: null as TableCell | null,
       last: null as TableCell | null,
+      weekday: null as TableCell | null,
     },
     weatherCol: null as TableCell | null,
     peopleCol: null as TableCell | null,
@@ -151,6 +156,12 @@ const parsedData = computed(() => {
     const key = cell.key.toLowerCase();
     const valueStr = String(cell.value || '');
     if (!valueStr) return; // 跳过空值
+
+    // Weekday: 优先匹配星期 (放在 Time 之前,避免被"日期"误吞)
+    if (key.includes('星期') || key.includes('weekday')) {
+      result.timeCols.weekday = cell;
+      return;
+    }
 
     // Time: 优先匹配时间
     if (['时', 'time', 'date', 'clock'].some(k => key.includes(k))) {
@@ -243,6 +254,7 @@ const timeData = computed(() => ({
   current: parsedData.value?.timeCols.current?.value,
   passed: parsedData.value?.timeCols.passed?.value,
   last: parsedData.value?.timeCols.last?.value,
+  weekday: parsedData.value?.timeCols.weekday?.value,
 }));
 
 // Weather Display
