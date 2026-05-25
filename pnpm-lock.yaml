@@ -137,7 +137,11 @@ importers:
         version: 2.1.43
       '@types/webpack':
         specifier: ^5.28.5
+<<<<<<< HEAD
         version: 5.28.5(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+        version: 5.28.5(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       '@typescript-eslint/parser':
         specifier: ^8.59.4
         version: 8.59.4(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.0-dev.20250807)
@@ -245,7 +249,11 @@ importers:
         version: 4.3.0
       terser-webpack-plugin:
         specifier: ^5.6.0
+<<<<<<< HEAD
         version: 5.6.0(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.1)
+=======
+        version: 5.6.0(postcss@8.5.15)(webpack@5.107.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       ts-loader:
         specifier: ^9.5.7
         version: 9.5.7(typescript@6.0.0-dev.20250807)(webpack@5.107.1)
@@ -287,7 +295,11 @@ importers:
         version: 4.1.3
       webpack:
         specifier: ^5.107.1
+<<<<<<< HEAD
         version: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+        version: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       webpack-cli:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.107.1)
@@ -2300,9 +2312,12 @@ packages:
 
   electron-to-chromium@1.5.361:
     resolution: {integrity: sha512-Q6Hts7N9FnJc5LeGRINFvLhCI9xZmNtTDe5ZbcVezQz7cU4a8Aua3GH1b8J2XY8Al9PF+OCwYqhgsOOheMdvkA==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -4049,9 +4064,12 @@ packages:
   scule@1.3.0:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
 
+<<<<<<< HEAD
   search-insights@2.17.3:
     resolution: {integrity: sha512-RQPdCYTa8A68uM2jwxoY842xDhvx3E5LFL1LxvxCNMev4o5mLuokczhzjAgGwUZBAmOKZknArSxLKmXtIi2AxQ==}
 
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
   semver@7.8.1:
     resolution: {integrity: sha512-rkVq3IXh+4FDGch+KwzX3aV9W3kO54GyEgpvBzSyctDA6Xtd7RJQV1xmXbeQp5v7+VzLOfVqiutSE6GICgPFvg==}
     engines: {node: '>=10'}
@@ -5582,11 +5600,19 @@ snapshots:
 
   '@types/web-bluetooth@0.0.21': {}
 
+<<<<<<< HEAD
   '@types/webpack@5.28.5(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)':
     dependencies:
       '@types/node': 25.9.1
       tapable: 2.3.3
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+  '@types/webpack@5.28.5(postcss@8.5.15)(webpack-cli@6.0.1)':
+    dependencies:
+      '@types/node': 25.9.1
+      tapable: 2.3.3
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -6022,17 +6048,29 @@ snapshots:
 
   '@webpack-cli/configtest@3.0.1(webpack-cli@6.0.1)(webpack@5.107.1)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       webpack-cli: 6.0.1(webpack@5.107.1)
 
   '@webpack-cli/info@3.0.1(webpack-cli@6.0.1)(webpack@5.107.1)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       webpack-cli: 6.0.1(webpack@5.107.1)
 
   '@webpack-cli/serve@3.0.1(webpack-cli@6.0.1)(webpack@5.107.1)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       webpack-cli: 6.0.1(webpack@5.107.1)
 
   '@xmldom/xmldom@0.8.13': {}
@@ -6496,7 +6534,11 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.8.1
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   css-rules@1.1.0:
     dependencies:
@@ -6741,8 +6783,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.361: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   emoji-regex@8.0.0: {}
 
@@ -7023,7 +7068,11 @@ snapshots:
       micromatch: 4.0.8
       normalize-path: 3.0.0
       schema-utils: 4.3.3
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   eslint@9.39.4(jiti@2.7.0):
     dependencies:
@@ -7352,13 +7401,21 @@ snapshots:
   html-inline-script-webpack-plugin@3.2.1(html-webpack-plugin@5.6.7(webpack@5.107.1))(webpack@5.107.1):
     dependencies:
       html-webpack-plugin: 5.6.7(webpack@5.107.1)
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   html-loader@5.1.0(webpack@5.107.1):
     dependencies:
       html-minifier-terser: 7.2.0
       parse5: 7.3.0
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   html-minifier-terser@6.1.0:
     dependencies:
@@ -7401,7 +7458,11 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.3.3
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   htmlparser2@10.1.0:
     dependencies:
@@ -8099,7 +8160,11 @@ snapshots:
     dependencies:
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   minimatch@10.2.5:
     dependencies:
@@ -8214,12 +8279,15 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.2
+<<<<<<< HEAD
 
   oniguruma-to-es@3.1.1:
     dependencies:
       emoji-regex-xs: 1.0.0
       regex: 6.1.0
       regex-recursion: 6.0.2
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   optionator@0.8.3:
     dependencies:
@@ -8414,7 +8482,11 @@ snapshots:
       postcss: 8.5.15
       semver: 7.8.1
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
     transitivePeerDependencies:
       - typescript
 
@@ -8573,7 +8645,11 @@ snapshots:
     dependencies:
       front-matter: 4.0.2
       remark: 15.0.1
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   remark-parse@11.0.0:
     dependencies:
@@ -8696,7 +8772,11 @@ snapshots:
       neo-async: 2.6.2
     optionalDependencies:
       sass: 1.100.0
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   sass@1.100.0:
     dependencies:
@@ -8727,8 +8807,11 @@ snapshots:
 
   scule@1.3.0: {}
 
+<<<<<<< HEAD
   search-insights@2.17.3: {}
 
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
   semver@7.8.1: {}
 
   set-function-length@1.2.2:
@@ -8938,7 +9021,11 @@ snapshots:
 
   style-loader@4.0.0(webpack@5.107.1):
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   superjson@2.2.6:
     dependencies:
@@ -8988,15 +9075,24 @@ snapshots:
 
   tapable@2.3.3: {}
 
+<<<<<<< HEAD
   terser-webpack-plugin@5.6.0(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.1):
+=======
+  terser-webpack-plugin@5.6.0(postcss@8.5.15)(webpack@5.107.1):
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
     optionalDependencies:
       lightningcss: 1.32.0
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+    optionalDependencies:
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       postcss: 8.5.15
 
   terser@5.48.0:
@@ -9039,7 +9135,11 @@ snapshots:
       semver: 7.8.1
       source-map: 0.7.6
       typescript: 6.0.0-dev.20250807
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   ts-node@10.9.2(@types/node@25.9.1)(typescript@6.0.0-dev.20250807):
     dependencies:
@@ -9403,7 +9503,11 @@ snapshots:
       chalk: 4.1.2
       hash-sum: 2.0.0
       watchpack: 2.5.1
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
     optionalDependencies:
       vue: 3.5.34(typescript@6.0.0-dev.20250807)
 
@@ -9450,6 +9554,7 @@ snapshots:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
 
+<<<<<<< HEAD
   webcola@3.4.0:
     dependencies:
       d3-dispatch: 1.0.6
@@ -9457,6 +9562,8 @@ snapshots:
       d3-shape: 1.3.7
       d3-timer: 1.0.10
 
+=======
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
   webpack-cli@6.0.1(webpack@5.107.1):
     dependencies:
       '@discoveryjs/json-ext': 0.6.3
@@ -9471,7 +9578,11 @@ snapshots:
       import-local: 3.2.0
       interpret: 3.1.1
       rechoir: 0.8.0
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       webpack-merge: 6.0.1
 
   webpack-merge@6.0.1:
@@ -9485,13 +9596,21 @@ snapshots:
       javascript-obfuscator: 4.2.2
       multi-stage-sourcemap: 0.3.1
       multimatch: 5.0.0
+<<<<<<< HEAD
       webpack: 5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.1(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
 
   webpack-sources@3.5.0: {}
 
   webpack-virtual-modules@0.6.2: {}
 
+<<<<<<< HEAD
   webpack@5.107.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1):
+=======
+  webpack@5.107.1(postcss@8.5.15)(webpack-cli@6.0.1):
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
     dependencies:
       '@types/estree': 1.0.9
       '@types/json-schema': 7.0.15
@@ -9513,7 +9632,11 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       terser-webpack-plugin: 5.6.0(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.1)
+=======
+      terser-webpack-plugin: 5.6.0(postcss@8.5.15)(webpack@5.107.1)
+>>>>>>> 1edcc383164d8213f030dcdfabc0b6563966ae13
       watchpack: 2.5.1
       webpack-sources: 3.5.0
     optionalDependencies:
