@@ -19,7 +19,11 @@ importers:
         version: 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations':
         specifier: ^13.9.0
+<<<<<<< HEAD
         version: 13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+=======
+        version: 13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       '@vueuse/shared':
         specifier: ^13.9.0
         version: 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
@@ -91,7 +95,11 @@ importers:
         version: 3.5.35(typescript@6.0.0-dev.20250807)
       vue-final-modal:
         specifier: ^4.5.5
+<<<<<<< HEAD
         version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+=======
+        version: 4.5.5(@vueuse/core@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       vue-router:
         specifier: ^4.6.4
         version: 4.6.4(vue@3.5.35(typescript@6.0.0-dev.20250807))
@@ -137,7 +145,11 @@ importers:
         version: 2.1.43
       '@types/webpack':
         specifier: ^5.28.5
+<<<<<<< HEAD
         version: 5.28.5(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+        version: 5.28.5(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       '@typescript-eslint/parser':
         specifier: ^8.60.0
         version: 8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.0-dev.20250807)
@@ -245,7 +257,11 @@ importers:
         version: 4.3.0
       terser-webpack-plugin:
         specifier: ^5.6.1
+<<<<<<< HEAD
         version: 5.6.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.2)
+=======
+        version: 5.6.1(postcss@8.5.15)(webpack@5.107.2)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       ts-loader:
         specifier: ^9.5.7
         version: 9.5.7(typescript@6.0.0-dev.20250807)(webpack@5.107.2)
@@ -273,9 +289,12 @@ importers:
       unplugin-vue-components:
         specifier: ^29.2.0
         version: 29.2.0(@babel/parser@7.29.7)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+<<<<<<< HEAD
       vitepress:
         specifier: ^1.6.4
         version: 1.6.4(@algolia/client-search@5.52.1)(@types/node@25.9.1)(@types/react@19.2.15)(axios@1.14.0)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.100.0)(search-insights@2.17.3)(terser@5.48.0)(typescript@6.0.0-dev.20250807)
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       vue-eslint-parser:
         specifier: ^10.4.0
         version: 10.4.0(eslint@9.39.4(jiti@2.7.0))
@@ -287,7 +306,11 @@ importers:
         version: 4.1.3
       webpack:
         specifier: ^5.107.2
+<<<<<<< HEAD
         version: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+        version: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       webpack-cli:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.107.2)
@@ -1390,6 +1413,7 @@ packages:
     cpu: [x64]
     os: [win32]
 
+<<<<<<< HEAD
   '@vitejs/plugin-vue@5.2.4':
     resolution: {integrity: sha512-7Yx/SXSOcQq5HiiV3orevHUFn+pmMB4cgbEkDYgnkUWb0WfeQ/wa2yFv6D5ICiCQOVpjA7vYDXrC7AGO8yjDHA==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -1406,6 +1430,17 @@ packages:
   '@vue/compiler-sfc@3.5.35':
     resolution: {integrity: sha512-G5VPMcXTSywXBgtFOZOnHKBxKSrwXUcvY1iaF5/hRcy7t0J6CH/d8ha9F4nzi00Fax1eLV0QHM7v4mQu68jydw==}
 
+=======
+  '@vue/compiler-core@3.5.35':
+    resolution: {integrity: sha512-BUmHaR1J+O+CKZ9uJucdVTEr1LHsdyvv7vG3eNRhK3CczEHeMd/LtsHAuD7PbrxvI2envCY2v7HI1vC1aBRzKw==}
+
+  '@vue/compiler-dom@3.5.35':
+    resolution: {integrity: sha512-k+bprkXxuqhVajgTx5mUHuir7TwQzUKOWR40ng1ncAqQRPnrLngGGgqVEEhOnTMlc8btHYVKmrP8s5Qyg0hvYA==}
+
+  '@vue/compiler-sfc@3.5.35':
+    resolution: {integrity: sha512-G5VPMcXTSywXBgtFOZOnHKBxKSrwXUcvY1iaF5/hRcy7t0J6CH/d8ha9F4nzi00Fax1eLV0QHM7v4mQu68jydw==}
+
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
   '@vue/compiler-ssr@3.5.35':
     resolution: {integrity: sha512-rGhAeXgdM7/ffTJGXT69rCCdTmjDewnFuUZfBQQHTdcEBeWdT5HCGY60y2ytLJr9/Dsu7IntUi5z/w0h6Rjnzw==}
 
@@ -2300,9 +2335,12 @@ packages:
 
   electron-to-chromium@1.5.363:
     resolution: {integrity: sha512-VjUKPyWzGnT1fujlkEGC/BvN70Hh70KXtAqcmniXviYlJC/ivcT+BWGPyxWVbJZLfvtKR6dqg1L7T7pgAMBtWA==}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -4049,9 +4087,12 @@ packages:
   scule@1.3.0:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
 
+<<<<<<< HEAD
   search-insights@2.17.3:
     resolution: {integrity: sha512-RQPdCYTa8A68uM2jwxoY842xDhvx3E5LFL1LxvxCNMev4o5mLuokczhzjAgGwUZBAmOKZknArSxLKmXtIi2AxQ==}
 
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
   semver@7.8.1:
     resolution: {integrity: sha512-rkVq3IXh+4FDGch+KwzX3aV9W3kO54GyEgpvBzSyctDA6Xtd7RJQV1xmXbeQp5v7+VzLOfVqiutSE6GICgPFvg==}
     engines: {node: '>=10'}
@@ -5582,11 +5623,19 @@ snapshots:
 
   '@types/web-bluetooth@0.0.21': {}
 
+<<<<<<< HEAD
   '@types/webpack@5.28.5(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)':
     dependencies:
       '@types/node': 25.9.1
       tapable: 2.3.3
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+  '@types/webpack@5.28.5(postcss@8.5.15)(webpack-cli@6.0.1)':
+    dependencies:
+      '@types/node': 25.9.1
+      tapable: 2.3.3
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
     transitivePeerDependencies:
       - '@minify-html/node'
       - '@swc/core'
@@ -5775,6 +5824,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
+<<<<<<< HEAD
   '@vitejs/plugin-vue@5.2.4(vite@5.4.21(@types/node@25.9.1)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0))(vue@3.5.35(typescript@6.0.0-dev.20250807))':
     dependencies:
       vite: 5.4.21(@types/node@25.9.1)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0)
@@ -5782,6 +5832,10 @@ snapshots:
 
   '@vue/compiler-core@3.5.35':
     dependencies:
+=======
+  '@vue/compiler-core@3.5.35':
+    dependencies:
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       '@babel/parser': 7.29.7
       '@vue/shared': 3.5.35
       entities: 7.0.1
@@ -5870,6 +5924,7 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+<<<<<<< HEAD
   '@vueuse/core@12.8.2(typescript@6.0.0-dev.20250807)':
     dependencies:
       '@types/web-bluetooth': 0.0.21
@@ -5879,6 +5934,8 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
   '@vueuse/core@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
@@ -5893,10 +5950,17 @@ snapshots:
       '@vueuse/shared': 14.3.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
 
+<<<<<<< HEAD
   '@vueuse/integrations@12.8.2(axios@1.14.0)(focus-trap@7.8.0)(typescript@6.0.0-dev.20250807)':
     dependencies:
       '@vueuse/core': 12.8.2(typescript@6.0.0-dev.20250807)
       '@vueuse/shared': 12.8.2(typescript@6.0.0-dev.20250807)
+=======
+  '@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      '@vueuse/core': 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
+      '@vueuse/shared': 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
     optionalDependencies:
       axios: 1.14.0
@@ -5928,6 +5992,7 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+<<<<<<< HEAD
   '@vueuse/shared@12.8.2(typescript@6.0.0-dev.20250807)':
     dependencies:
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
@@ -5941,6 +6006,15 @@ snapshots:
   '@vueuse/shared@14.3.0(vue@3.5.35(typescript@6.0.0-dev.20250807))':
     dependencies:
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
+=======
+  '@vueuse/shared@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      vue: 3.5.35(typescript@6.0.0-dev.20250807)
+
+  '@vueuse/shared@14.3.0(vue@3.5.35(typescript@6.0.0-dev.20250807))':
+    dependencies:
+      vue: 3.5.35(typescript@6.0.0-dev.20250807)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -6022,17 +6096,29 @@ snapshots:
 
   '@webpack-cli/configtest@3.0.1(webpack-cli@6.0.1)(webpack@5.107.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       webpack-cli: 6.0.1(webpack@5.107.2)
 
   '@webpack-cli/info@3.0.1(webpack-cli@6.0.1)(webpack@5.107.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       webpack-cli: 6.0.1(webpack@5.107.2)
 
   '@webpack-cli/serve@3.0.1(webpack-cli@6.0.1)(webpack@5.107.2)':
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       webpack-cli: 6.0.1(webpack@5.107.2)
 
   '@xmldom/xmldom@0.8.13': {}
@@ -6496,7 +6582,11 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.8.1
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   css-rules@1.1.0:
     dependencies:
@@ -6741,8 +6831,11 @@ snapshots:
   earcut@3.0.2: {}
 
   electron-to-chromium@1.5.363: {}
+<<<<<<< HEAD
 
   emoji-regex-xs@1.0.0: {}
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   emoji-regex@8.0.0: {}
 
@@ -7023,7 +7116,11 @@ snapshots:
       micromatch: 4.0.8
       normalize-path: 3.0.0
       schema-utils: 4.3.3
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   eslint@9.39.4(jiti@2.7.0):
     dependencies:
@@ -7352,13 +7449,21 @@ snapshots:
   html-inline-script-webpack-plugin@3.2.1(html-webpack-plugin@5.6.7(webpack@5.107.2))(webpack@5.107.2):
     dependencies:
       html-webpack-plugin: 5.6.7(webpack@5.107.2)
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   html-loader@5.1.0(webpack@5.107.2):
     dependencies:
       html-minifier-terser: 7.2.0
       parse5: 7.3.0
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   html-minifier-terser@6.1.0:
     dependencies:
@@ -7401,7 +7506,11 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.3.3
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   htmlparser2@10.1.0:
     dependencies:
@@ -8099,7 +8208,11 @@ snapshots:
     dependencies:
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   minimatch@10.2.5:
     dependencies:
@@ -8214,12 +8327,15 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.2
+<<<<<<< HEAD
 
   oniguruma-to-es@3.1.1:
     dependencies:
       emoji-regex-xs: 1.0.0
       regex: 6.1.0
       regex-recursion: 6.0.2
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   optionator@0.8.3:
     dependencies:
@@ -8414,7 +8530,11 @@ snapshots:
       postcss: 8.5.15
       semver: 7.8.1
     optionalDependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
     transitivePeerDependencies:
       - typescript
 
@@ -8573,7 +8693,11 @@ snapshots:
     dependencies:
       front-matter: 4.0.2
       remark: 15.0.1
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   remark-parse@11.0.0:
     dependencies:
@@ -8696,7 +8820,11 @@ snapshots:
       neo-async: 2.6.2
     optionalDependencies:
       sass: 1.100.0
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   sass@1.100.0:
     dependencies:
@@ -8727,8 +8855,11 @@ snapshots:
 
   scule@1.3.0: {}
 
+<<<<<<< HEAD
   search-insights@2.17.3: {}
 
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
   semver@7.8.1: {}
 
   set-function-length@1.2.2:
@@ -8938,7 +9069,11 @@ snapshots:
 
   style-loader@4.0.0(webpack@5.107.2):
     dependencies:
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   superjson@2.2.6:
     dependencies:
@@ -8988,15 +9123,24 @@ snapshots:
 
   tapable@2.3.3: {}
 
+<<<<<<< HEAD
   terser-webpack-plugin@5.6.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.2):
+=======
+  terser-webpack-plugin@5.6.1(postcss@8.5.15)(webpack@5.107.2):
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
     optionalDependencies:
       lightningcss: 1.32.0
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+    optionalDependencies:
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       postcss: 8.5.15
 
   terser@5.48.0:
@@ -9039,7 +9183,11 @@ snapshots:
       semver: 7.8.1
       source-map: 0.7.6
       typescript: 6.0.0-dev.20250807
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   ts-node@10.9.2(@types/node@25.9.1)(typescript@6.0.0-dev.20250807):
     dependencies:
@@ -9314,6 +9462,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
+<<<<<<< HEAD
   vite@5.4.21(@types/node@25.9.1)(lightningcss@1.32.0)(sass@1.100.0)(terser@5.48.0):
     dependencies:
       esbuild: 0.21.5
@@ -9377,6 +9526,10 @@ snapshots:
 
   vue-demi@0.14.10(vue@3.5.35(typescript@6.0.0-dev.20250807)):
     dependencies:
+=======
+  vue-demi@0.14.10(vue@3.5.35(typescript@6.0.0-dev.20250807)):
+    dependencies:
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
 
   vue-eslint-parser@10.4.0(eslint@9.39.4(jiti@2.7.0)):
@@ -9391,11 +9544,19 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+<<<<<<< HEAD
   vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807)))(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807)):
     dependencies:
       '@vueuse/core': 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
       '@vueuse/integrations': 13.9.0(axios@1.14.0)(focus-trap@7.8.0)(vue@3.5.35(typescript@6.0.0-dev.20250807))
       focus-trap: 7.8.0
+=======
+  vue-final-modal@4.5.5(@vueuse/core@13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807)))(@vueuse/integrations@13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807)))(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807)):
+    dependencies:
+      '@vueuse/core': 13.9.0(vue@3.5.35(typescript@6.0.0-dev.20250807))
+      '@vueuse/integrations': 13.9.0(axios@1.14.0)(focus-trap@7.6.5)(vue@3.5.35(typescript@6.0.0-dev.20250807))
+      focus-trap: 7.6.5
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
 
   vue-loader@17.4.2(vue@3.5.35(typescript@6.0.0-dev.20250807))(webpack@5.107.2):
@@ -9403,7 +9564,11 @@ snapshots:
       chalk: 4.1.2
       hash-sum: 2.0.0
       watchpack: 2.5.1
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
     optionalDependencies:
       vue: 3.5.35(typescript@6.0.0-dev.20250807)
 
@@ -9450,6 +9615,7 @@ snapshots:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
 
+<<<<<<< HEAD
   webcola@3.4.0:
     dependencies:
       d3-dispatch: 1.0.6
@@ -9457,6 +9623,8 @@ snapshots:
       d3-shape: 1.3.7
       d3-timer: 1.0.10
 
+=======
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
   webpack-cli@6.0.1(webpack@5.107.2):
     dependencies:
       '@discoveryjs/json-ext': 0.6.3
@@ -9471,7 +9639,11 @@ snapshots:
       import-local: 3.2.0
       interpret: 3.1.1
       rechoir: 0.8.0
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       webpack-merge: 6.0.1
 
   webpack-merge@6.0.1:
@@ -9485,13 +9657,21 @@ snapshots:
       javascript-obfuscator: 4.2.2
       multi-stage-sourcemap: 0.3.1
       multimatch: 5.0.0
+<<<<<<< HEAD
       webpack: 5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1)
+=======
+      webpack: 5.107.2(postcss@8.5.15)(webpack-cli@6.0.1)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
 
   webpack-sources@3.5.0: {}
 
   webpack-virtual-modules@0.6.2: {}
 
+<<<<<<< HEAD
   webpack@5.107.2(lightningcss@1.32.0)(postcss@8.5.15)(webpack-cli@6.0.1):
+=======
+  webpack@5.107.2(postcss@8.5.15)(webpack-cli@6.0.1):
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
     dependencies:
       '@types/estree': 1.0.9
       '@types/json-schema': 7.0.15
@@ -9513,7 +9693,11 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
+<<<<<<< HEAD
       terser-webpack-plugin: 5.6.1(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.107.2)
+=======
+      terser-webpack-plugin: 5.6.1(postcss@8.5.15)(webpack@5.107.2)
+>>>>>>> 6dc4e35995d4d180a1cd4ff223ac9d21f083e2f5
       watchpack: 2.5.1
       webpack-sources: 3.5.0
     optionalDependencies:
