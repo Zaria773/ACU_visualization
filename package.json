@@ -71,7 +71,10 @@
     "typescript-eslint": "^8.60.1",
     "unplugin-auto-import": "^20.3.0",
     "unplugin-vue-components": "^29.2.0",
+<<<<<<< HEAD
     "vitepress": "^1.6.4",
+=======
+>>>>>>> 821d0f7fc2e1ba1b9ee76aa4a9f6fc81238c4bfb
     "vue-eslint-parser": "^10.4.1",
     "vue-loader": "^17.4.2",
     "vue-style-loader": "^4.1.3",
