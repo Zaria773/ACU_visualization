@@ -40,12 +40,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { PromptEditorDialog } from './divination';
-import {
-  CategorySelectPopup,
-  TagManagerDialog,
-  TagPreEditDialog,
-  TagPreviewTooltip,
-} from './tag-manager';
+import { CategorySelectPopup, TagManagerDialog, TagPreEditDialog, TagPreviewTooltip } from './tag-manager';
 import { useUIStore } from '../../stores/useUIStore';
 
 const uiStore = useUIStore();

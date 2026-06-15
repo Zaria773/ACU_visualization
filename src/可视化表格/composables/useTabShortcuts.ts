@@ -104,7 +104,12 @@ export function useTabShortcuts(options: UseTabShortcutsOptions) {
 
     const tabHeld = pressedKeys.value.has('Tab');
     if (!tabHeld && !isArmed.value) {
-      console.info('[ACU Shortcut][digit-ignored-not-armed]', { debugId, seq: eventSeq, key: event.key, code: event.code });
+      console.info('[ACU Shortcut][digit-ignored-not-armed]', {
+        debugId,
+        seq: eventSeq,
+        key: event.key,
+        code: event.code,
+      });
       return;
     }
 

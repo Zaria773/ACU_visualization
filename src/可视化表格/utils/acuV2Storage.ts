@@ -167,7 +167,8 @@ function entryOperations(entry: V2LogEntry): Array<Record<string, any>> {
   const out: Array<Record<string, any>> = [];
   if (entry.operation && typeof entry.operation === 'object') out.push(entry.operation as Record<string, any>);
   if (Array.isArray(entry.operations)) out.push(...(entry.operations as Array<Record<string, any>>));
-  if (entry.patch && typeof entry.patch === 'object' && !Array.isArray(entry.patch)) out.push(entry.patch as Record<string, any>);
+  if (entry.patch && typeof entry.patch === 'object' && !Array.isArray(entry.patch))
+    out.push(entry.patch as Record<string, any>);
   if (Array.isArray(entry.patch)) out.push(...(entry.patch as Array<Record<string, any>>));
   if (Array.isArray(entry.patches)) out.push(...(entry.patches as Array<Record<string, any>>));
   return out;
@@ -283,7 +284,10 @@ export function getV2FilledSheetKeysFromMessage(message: any): string[] {
   return Array.from(set);
 }
 
-export function buildScheduleSummaryForFloor(snapshot: Record<string, any>, aiFloor: number): Record<string, V2ScheduleState> {
+export function buildScheduleSummaryForFloor(
+  snapshot: Record<string, any>,
+  aiFloor: number,
+): Record<string, V2ScheduleState> {
   const floor = Math.max(1, Math.trunc(Number(aiFloor) || 1));
   const summary: Record<string, V2ScheduleState> = {};
   Object.keys(snapshot || {})

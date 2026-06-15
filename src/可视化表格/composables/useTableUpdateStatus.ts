@@ -400,13 +400,7 @@ function getLastUpdatedPosition(
   const currentIsolationCode = settings.dataIsolationEnabled ? settings.dataIsolationCode : '';
   const currentIsolationSlotKey = toIsolationSlotKey(currentIsolationCode);
   const candidateKeys = Array.from(
-    new Set([
-      ...preferredSlotKeys,
-      currentIsolationSlotKey,
-      currentIsolationCode,
-      '',
-      '__default__',
-    ]),
+    new Set([...preferredSlotKeys, currentIsolationSlotKey, currentIsolationCode, '', '__default__']),
   );
 
   // 从后向前扫描聊天记录。V2 下“上次更新”以 filledSheetKeys/groupKeys 与
@@ -469,9 +463,16 @@ function getLastUpdatedPosition(
       wasUpdated = updateGroupKeys.includes(sheetKey);
     } else if (modifiedKeys.includes(sheetKey)) {
       wasUpdated = true;
-    } else if (msg.TavernDB_ACU_IndependentData && (msg.TavernDB_ACU_IndependentData as Record<string, unknown>)[sheetKey]) {
+    } else if (
+      msg.TavernDB_ACU_IndependentData &&
+      (msg.TavernDB_ACU_IndependentData as Record<string, unknown>)[sheetKey]
+    ) {
       wasUpdated = true;
-    } else if (isSummary && msg.TavernDB_ACU_SummaryData && (msg.TavernDB_ACU_SummaryData as Record<string, unknown>)[sheetKey]) {
+    } else if (
+      isSummary &&
+      msg.TavernDB_ACU_SummaryData &&
+      (msg.TavernDB_ACU_SummaryData as Record<string, unknown>)[sheetKey]
+    ) {
       wasUpdated = true;
     } else if (!isSummary && msg.TavernDB_ACU_Data && (msg.TavernDB_ACU_Data as Record<string, unknown>)[sheetKey]) {
       wasUpdated = true;

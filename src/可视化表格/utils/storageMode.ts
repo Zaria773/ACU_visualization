@@ -187,7 +187,13 @@ export function checkSqliteApiAvailable(): boolean {
       return false;
     }
 
-    const requiredMethods = ['updateRow', 'insertRow', 'deleteRow', 'importTableAsJson', 'refreshDataAndWorldbook'] as const;
+    const requiredMethods = [
+      'updateRow',
+      'insertRow',
+      'deleteRow',
+      'importTableAsJson',
+      'refreshDataAndWorldbook',
+    ] as const;
 
     for (const method of requiredMethods) {
       if (typeof (api as Record<string, unknown>)[method] !== 'function') {

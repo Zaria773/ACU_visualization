@@ -21,7 +21,9 @@ export function useHistoryApply(options: UseHistoryApplyOptions) {
     const table = options.getProcessedTables().find(t => t.id === tableId);
     let titleColIndex = 1;
     if (table && (tableName.includes('总结') || tableName.includes('大纲'))) {
-      const idx = (table.headers || []).findIndex(h => h && (h.includes('索引') || h.includes('编号') || h.includes('代码')));
+      const idx = (table.headers || []).findIndex(
+        h => h && (h.includes('索引') || h.includes('编号') || h.includes('代码')),
+      );
       titleColIndex = idx > 0 ? idx : 1;
     }
 
