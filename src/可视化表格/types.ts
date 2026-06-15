@@ -346,14 +346,58 @@ export interface FloorInfo {
   reason: string;
 }
 
-/** 隔离数据结构 (保持与原代码兼容) */
+/** 隔离数据结构 (保持与 legacy 兼容，兼容 shujuku V2) */
 export interface IsolatedDataEntry {
-  /** 独立数据 */
-  independentData: Record<string, RawDatabaseData[string]>;
-  /** 修改过的键列表 */
-  modifiedKeys: string[];
-  /** 更新组键列表 */
-  updateGroupKeys: string[];
+  /** V2 标记 */
+  _acu_storage_version?: number;
+  /** V2 checkpoint + operation log */
+  storageFrame?: V2StorageFrame;
+  /** legacy 独立数据 */
+  independentData?: Record<string, RawDatabaseData[string]>;
+  /** legacy 增量数据 */
+  incrementalData?: Record<string, unknown>;
+  /** legacy 修改过的键列表 */
+  modifiedKeys?: string[];
+  /** legacy 更新组键列表 */
+  updateGroupKeys?: string[];
+  /** V2 总结向量索引状态 */
+  summaryVectorIndexState?: unknown;
+  /** V2 总结向量索引清单 */
+  summaryVectorIndexManifest?: unknown;
+}
+
+export interface V2ScheduleState {
+  /** 上次成功填表 AI 楼层 */
+  lastFilledAiFloor?: number;
+  /** 上次数据变化 AI 楼层 */
+  lastChangedAiFloor?: number;
+}
+
+export interface V2StorageFrame {
+  version: 2;
+  headRevision?: string | null;
+  checkpoint?: {
+    kind: 'full';
+    createdAt?: number;
+    reason?: string;
+    data?: Record<string, unknown>;
+    scheduleSummary?: Record<string, V2ScheduleState>;
+    event?: {
+      aiFloor?: number;
+      filledSheetKeys?: string[];
+      changedSheetKeys?: string[];
+      groupKeys?: string[];
+    };
+  };
+  logEntries?: Array<{
+    aiFloor?: number;
+    filledSheetKeys?: string[];
+    changedSheetKeys?: string[];
+    groupKeys?: string[];
+    operations?: Array<Record<string, unknown>>;
+    patches?: Array<Record<string, unknown>>;
+    [key: string]: unknown;
+  }>;
 }
 
 /** 消息楼层的 ACU 数据结构 */

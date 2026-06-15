@@ -18,6 +18,7 @@ import { computed, ref, type Ref } from 'vue';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDashboardStore } from '../stores/useDashboardStore';
 import type { ProcessedTable } from '../types';
+import { getV2FilledSheetKeysAtFloor, parseIsolatedDataFromMessage } from '../utils/acuV2Storage';
 
 // ============================================================
 // 内部工具函数
@@ -67,22 +68,14 @@ function getUpdateGroupKeysAtFloor(msg: any): string[] {
     });
   };
 
-  // 1) 根级旧字段
   collect(msg.TavernDB_ACU_UpdateGroupKeys);
 
-  // 2) IsolatedData 槽位新字段
-  let isolated = msg.TavernDB_ACU_IsolatedData;
-  if (typeof isolated === 'string') {
-    try {
-      isolated = JSON.parse(isolated);
-    } catch {
-      isolated = null;
-    }
-  }
-  if (isolated && typeof isolated === 'object') {
+  const isolated = parseIsolatedDataFromMessage(msg);
+  if (isolated) {
     Object.values(isolated).forEach((slot: any) => {
       if (!slot || typeof slot !== 'object') return;
       collect(slot.updateGroupKeys);
+      collect(getV2FilledSheetKeysAtFloor(slot));
     });
   }
 

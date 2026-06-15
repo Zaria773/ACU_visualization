@@ -74,8 +74,8 @@ export function useRelationshipData(processedTables: Ref<ProcessedTable[]>) {
       if (factionColIndex >= 0) {
         for (const row of table.rows) {
           const cell = row.cells.find(c => c.colIndex === factionColIndex);
-          if (cell && cell.value && cell.value.trim()) {
-            factions.add(cell.value.trim());
+          if (cell && cell.value && String(cell.value).trim()) {
+            factions.add(String(cell.value).trim());
           }
         }
       }

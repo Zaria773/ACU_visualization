@@ -204,6 +204,17 @@ export type { UseAppDataActionsOptions } from './useAppDataActions';
 export { useAppNavigation } from './useAppNavigation';
 export type { UseAppNavigationOptions } from './useAppNavigation';
 
+export { useTableHeightMemo } from './useTableHeightMemo';
+export type { UseTableHeightMemoOptions } from './useTableHeightMemo';
+
+export { useHistoryApply } from './useHistoryApply';
+export type { UseHistoryApplyOptions } from './useHistoryApply';
+
+export { useClickOutsidePanel } from './useClickOutsidePanel';
+
+export { useTabShortcuts } from './useTabShortcuts';
+export type { UseTabShortcutsOptions } from './useTabShortcuts';
+
 export { useAppContextMenu } from './useAppContextMenu';
 export type { ContextMenuState, UseAppContextMenuOptions } from './useAppContextMenu';
 

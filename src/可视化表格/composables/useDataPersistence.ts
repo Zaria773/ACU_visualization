@@ -14,7 +14,19 @@ import { useConfigStore } from '../stores/useConfigStore';
 import { useDataStore } from '../stores/useDataStore';
 import type { RawDatabaseData } from '../types';
 import { getCore, getTableData } from '../utils/index';
-import { checkSqliteApiAvailable, detectStorageMode } from '../utils/storageMode';
+import {
+  buildScheduleSummaryForFloor,
+  buildV2FullCheckpointSlot,
+  countAiFloorUpToIndex,
+  getTagDataFromMessage,
+  messageHasAnyTableData,
+  messageHasV2FullCheckpoint,
+  parseIsolatedDataFromMessage,
+  purgeSheetKeysFromTagData,
+  safeJsonClone,
+  tagDataHasAnyTableData,
+} from '../utils/acuV2Storage';
+import { checkImportApiAvailable, checkSqliteApiAvailable, detectStorageMode } from '../utils/storageMode';
 import { toast } from './useToast';
 
 /**
@@ -600,6 +612,78 @@ function updateSheetGuide(ST: any, configKey: string, guideData: Record<string, 
   }
 }
 
+function ensureIsolatedDataObject(message: any): Record<string, any> {
+  let isolatedData = message.TavernDB_ACU_IsolatedData;
+  if (typeof isolatedData === 'string') {
+    try {
+      isolatedData = JSON.parse(isolatedData);
+    } catch {
+      isolatedData = {};
+    }
+  }
+  if (!isolatedData || typeof isolatedData !== 'object' || Array.isArray(isolatedData)) isolatedData = {};
+  message.TavernDB_ACU_IsolatedData = isolatedData;
+  return isolatedData;
+}
+
+function countAiFloorForMessage(ST: any, targetIndex: number): number {
+  return countAiFloorUpToIndex(ST?.chat || [], targetIndex);
+}
+
+function findNearestAiFloorIndex(chat: any[], targetIndex: number): number {
+  if (!Array.isArray(chat) || chat.length === 0) return -1;
+  const bounded = Math.max(0, Math.min(chat.length - 1, Math.trunc(Number(targetIndex) || 0)));
+  if (chat[bounded] && !chat[bounded].is_user) return bounded;
+  for (let i = bounded; i >= 0; i--) {
+    if (chat[i] && !chat[i].is_user) return i;
+  }
+  for (let i = bounded + 1; i < chat.length; i++) {
+    if (chat[i] && !chat[i].is_user) return i;
+  }
+  return -1;
+}
+
+function findLatestAiFloorIndex(chat: any[]): number {
+  if (!Array.isArray(chat)) return -1;
+  for (let i = chat.length - 1; i >= 0; i--) {
+    if (chat[i] && !chat[i].is_user) return i;
+  }
+  return -1;
+}
+
+function writeV2FullCheckpointToMessage(
+  ST: any,
+  targetMsg: any,
+  targetMsgIndex: number,
+  slotKey: string,
+  data: RawDatabaseData,
+): string[] {
+  const snapshot = klona(data);
+  const sheetKeys = Object.keys(snapshot).filter(k => k.startsWith('sheet_'));
+  const aiFloor = countAiFloorForMessage(ST, targetMsgIndex);
+  const scheduleSummary = buildScheduleSummaryForFloor(snapshot, aiFloor);
+  const existingTagData = getTagDataFromMessage(targetMsg, slotKey) || {};
+  const isolatedData = ensureIsolatedDataObject(targetMsg);
+
+  isolatedData[slotKey] = {
+    ...(existingTagData.summaryVectorIndexState !== undefined
+      ? { summaryVectorIndexState: safeJsonClone(existingTagData.summaryVectorIndexState) }
+      : {}),
+    ...(existingTagData.summaryVectorIndexManifest !== undefined
+      ? { summaryVectorIndexManifest: safeJsonClone(existingTagData.summaryVectorIndexManifest) }
+      : {}),
+    ...buildV2FullCheckpointSlot(snapshot, scheduleSummary, 'manual'),
+  };
+
+  delete targetMsg.TavernDB_ACU_IndependentData;
+  delete targetMsg.TavernDB_ACU_Data;
+  delete targetMsg.TavernDB_ACU_SummaryData;
+  delete targetMsg.TavernDB_ACU_ModifiedKeys;
+  delete targetMsg.TavernDB_ACU_UpdateGroupKeys;
+
+  return sheetKeys;
+}
+
 /**
  * 获取当前指导表信息（用于调试和冲突检测）
  */
@@ -713,12 +797,20 @@ export function useDataPersistence() {
 
         // 策略：指定索引 > 最近的有数据 AI 楼层 > 最新的 AI 楼层
         if (targetIndex >= 0 && targetIndex < ST.chat.length) {
-          targetMsgIndex = targetIndex;
+          const aiTargetIndex = findNearestAiFloorIndex(ST.chat, targetIndex);
+          if (aiTargetIndex === -1) {
+            toast.warning('目标楼层不是 AI 楼层，且未找到可写入的 AI 楼层');
+            return finalData;
+          }
+          if (aiTargetIndex !== targetIndex) {
+            toast.warning(`目标楼层不是 AI 楼层，已改写入最近的 AI 楼层 ${aiTargetIndex}`);
+          }
+          targetMsgIndex = aiTargetIndex;
           targetMsg = ST.chat[targetMsgIndex];
         } else {
           // 1. 优先寻找已经存在 ACU 数据的 AI 消息 (倒序查找)
           for (let i = ST.chat.length - 1; i >= 0; i--) {
-            if (!ST.chat[i].is_user && ST.chat[i].TavernDB_ACU_IsolatedData) {
+            if (messageHasAnyTableData(ST.chat[i])) {
               targetMsgIndex = i;
               targetMsg = ST.chat[i];
               break;
@@ -758,27 +850,9 @@ export function useDataPersistence() {
             targetMsg.TavernDB_ACU_IsolatedData = {};
           }
 
-          // 初始化结构
-          if (!targetMsg.TavernDB_ACU_IsolatedData[finalKey]) {
-            targetMsg.TavernDB_ACU_IsolatedData[finalKey] = {
-              independentData: {},
-              modifiedKeys: [],
-              updateGroupKeys: [],
-            };
-          }
-
-          const tagData = targetMsg.TavernDB_ACU_IsolatedData[finalKey];
-          if (!tagData.independentData) tagData.independentData = {};
-
-          // 过滤并保存 sheet 数据
-          const sheetsToSave = Object.keys(finalData).filter(k => k.startsWith('sheet_'));
-          sheetsToSave.forEach(k => {
-            tagData.independentData[k] = klona(finalData[k]);
-          });
-
-          // 记录修改过的 Key
-          const existingKeys: string[] = tagData.modifiedKeys || [];
-          tagData.modifiedKeys = [...new Set([...existingKeys, ...sheetsToSave])];
+          // V2：另存为/全量覆盖写 full checkpoint，并把 scheduleSummary 设为目标 AI 楼层。
+          // 这样数据可被新版检测到，后续未更新楼层也不会被旧 modifiedKeys 语义带偏。
+          const sheetsToSave = writeV2FullCheckpointToMessage(ST, targetMsg, targetMsgIndex, finalKey, finalData);
 
           // F. 同步更新指导表（10.3+ 兼容）
           // 注意：这一步对于旧版本数据库（9.5及以下）会被静默忽略
@@ -834,57 +908,8 @@ export function useDataPersistence() {
   // ============================================================
 
   /**
-   * 查找表格最近一次出现的数据楼层
-   * 规则：优先按“当前聊天主槽位”匹配，其次才是兼容空标签 / __default__
-   * @param ST SillyTavern 核心对象
-   * @param tableId 表格 ID (sheet_xxx)
-   * @param primarySlotKey 当前聊天主槽位
-   * @returns 楼层索引，未找到返回 -1
-   */
-  function findFloorForTable(ST: any, tableId: string, primarySlotKey: string): number {
-    if (!ST || !ST.chat) return -1;
-
-    // 倒序查找
-    for (let i = ST.chat.length - 1; i >= 0; i--) {
-      const msg = ST.chat[i];
-      if (msg.is_user) continue;
-
-      // 检查 TavernDB_ACU_IsolatedData
-      // ★ 兼容：TavernDB_ACU_IsolatedData 可能被序列化成字符串（v2.5 数据库）
-      let isolatedData = msg.TavernDB_ACU_IsolatedData;
-      if (typeof isolatedData === 'string') {
-        try {
-          isolatedData = JSON.parse(isolatedData);
-        } catch {
-          isolatedData = null;
-        }
-      }
-      if (isolatedData && typeof isolatedData === 'object') {
-        const candidateKeys = Array.from(new Set([primarySlotKey, '', '__default__']));
-        for (const key of candidateKeys) {
-          const tagData = isolatedData[key];
-          if (tagData && tagData.independentData && tagData.independentData[tableId]) {
-            return i;
-          }
-        }
-      }
-
-      // 兼容性：检查旧数据结构
-      if (msg.TavernDB_ACU_IndependentData && msg.TavernDB_ACU_IndependentData[tableId]) {
-        // 旧字段兼容：此处不再用 slotKey 与 Identity 比较（两者语义不同）
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  /**
    * 执行增量保存操作 (分布式)
-   * 仅保存发生变更的表格到其对应的历史楼层
-   * @param dataToUse 完整的数据源
-   * @param commitDeletes 是否提交删除操作
-   * @param modifiedTableIds 发生变更的表格 ID 列表
+   * API 不可用时，写最新 AI 楼层 V2 full checkpoint 作为兜底。
    */
   async function executeIncrementalSave(
     dataToUse: RawDatabaseData,
@@ -893,12 +918,9 @@ export function useDataPersistence() {
   ): Promise<RawDatabaseData | null> {
     if (modifiedTableIds.length === 0) return null;
 
-    console.info('[ACU] 开始增量保存，涉及表格:', modifiedTableIds);
+    console.info('[ACU] API 不可用，使用 V2 full checkpoint 作为默认保存 fallback，涉及表格:', modifiedTableIds);
 
-    // 深拷贝一份数据，避免污染源
     const finalData = klona(dataToUse);
-
-    // A. 处理删除操作 (仅针对涉及的表)
     if (commitDeletes && dataStore.pendingDeletes.size > 0) {
       for (const sheetId of modifiedTableIds) {
         if (sheetId === 'mate') continue;
@@ -906,168 +928,29 @@ export function useDataPersistence() {
         const sheet = finalData[sheetId];
         if (!sheet || !sheet.name || !sheet.content) continue;
 
-        const newContent: (string | number)[][] = [sheet.content[0]]; // 保留表头
-        let hasDeletes = false;
+        const newContent: (string | number)[][] = [sheet.content[0]];
         for (let i = 1; i < sheet.content.length; i++) {
           const realIdx = i - 1;
           if (!dataStore.pendingDeletes.has(`${sheet.name}-row-${realIdx}`)) {
             newContent.push(sheet.content[i]);
-          } else {
-            hasDeletes = true;
           }
         }
-        if (hasDeletes) {
-          sheet.content = newContent;
-        }
+        sheet.content = newContent;
       }
     }
 
-    try {
-      // B. 获取 SillyTavern 核心对象
-      let ST = (window as any).SillyTavern || (window.parent ? (window.parent as any).SillyTavern : null);
-      if (!ST && (window as any).top && (window as any).top.SillyTavern) {
-        ST = (window as any).top.SillyTavern;
-      }
-
-      // C. 获取隔离配置 Key
-      // 新规则：增量保存不再“推断标签”，优先信当前聊天历史主槽位
-      const isolationCode = getActiveIsolationCode();
-      const fallbackSlotKey = toIsolationSlotKey(isolationCode);
-      const configKey = resolveWriteSlotKey(ST.chat || [], fallbackSlotKey);
-
-      if (configKey !== fallbackSlotKey) {
-        console.warn(
-          `[ACU] 增量保存槽位采用聊天历史主槽位: fallback=${fallbackSlotKey}, final=${configKey}, isolationCode="${isolationCode}"`,
-        );
-      }
-
-      // D. 分组：为每个表寻找目标楼层
-      const floorMap = new Map<number, Set<string>>(); // floorIndex -> Set<tableId>
-      const newTables = new Set<string>(); // 找不到历史楼层的新表
-
-      for (const tableId of modifiedTableIds) {
-        const floorIdx = findFloorForTable(ST, tableId, configKey);
-        if (floorIdx !== -1) {
-          if (!floorMap.has(floorIdx)) floorMap.set(floorIdx, new Set());
-          floorMap.get(floorIdx)!.add(tableId);
-        } else {
-          newTables.add(tableId);
-        }
-      }
-
-      // E. 处理新表：归入最近的有数据 AI 楼层 (兜底)
-      if (newTables.size > 0) {
-        let targetIndex = -1;
-        // 优先找最近的有数据 AI 楼层
-        for (let i = ST.chat.length - 1; i >= 0; i--) {
-          if (!ST.chat[i].is_user && ST.chat[i].TavernDB_ACU_IsolatedData) {
-            targetIndex = i;
-            break;
-          }
-        }
-        // 没找到则找最新的 AI 楼层
-        if (targetIndex === -1) {
-          for (let i = ST.chat.length - 1; i >= 0; i--) {
-            if (!ST.chat[i].is_user) {
-              targetIndex = i;
-              break;
-            }
-          }
-        }
-
-        if (targetIndex !== -1) {
-          if (!floorMap.has(targetIndex)) floorMap.set(targetIndex, new Set());
-          newTables.forEach(t => floorMap.get(targetIndex)!.add(t));
-          console.info(`[ACU] 新增表格 ${Array.from(newTables).join(', ')} 将存入楼层 ${targetIndex}`);
-        } else {
-          console.warn('[ACU] 无法找到任何 AI 楼层来存放新表格');
-        }
-      }
-
-      // F. 执行写入 (按楼层批量处理)
-      let savedAny = false;
-      for (const [floorIdx, tableIds] of floorMap.entries()) {
-        const targetMsg = ST.chat[floorIdx];
-        if (!targetMsg) continue;
-
-        // 1. 准备数据结构
-        let isolatedData = targetMsg.TavernDB_ACU_IsolatedData;
-        // 如果是纯字符串 (旧版兼容)，尝试解析或初始化
-        if (typeof isolatedData === 'string') {
-          try {
-            isolatedData = JSON.parse(isolatedData);
-          } catch {
-            isolatedData = {};
-          }
-        }
-        if (!isolatedData || typeof isolatedData !== 'object') {
-          isolatedData = {};
-        }
-
-        // 2. 获取当前标签的数据槽
-        // 保留空标签 '' 的语义，不要强制转 __default__
-        const slotKey = configKey;
-
-        if (!isolatedData[slotKey]) {
-          isolatedData[slotKey] = {
-            independentData: {},
-            modifiedKeys: [],
-            updateGroupKeys: [],
-          };
-        }
-
-        const currentTagData = isolatedData[slotKey];
-        if (!currentTagData.independentData) currentTagData.independentData = {};
-
-        // 3. 增量合并数据
-        const tablesToUpdate = Array.from(tableIds);
-        tablesToUpdate.forEach(tableId => {
-          // 从 finalData 中获取最新数据写入
-          if (finalData[tableId]) {
-            currentTagData.independentData[tableId] = klona(finalData[tableId]);
-          }
-        });
-
-        // 4. 更新 modifiedKeys
-        const existingKeys = currentTagData.modifiedKeys || [];
-        currentTagData.modifiedKeys = [...new Set([...existingKeys, ...tablesToUpdate])];
-
-        // 5. 回写到消息对象
-        targetMsg.TavernDB_ACU_IsolatedData = isolatedData;
-
-        // 6. 兼容性更新 (旧字段)
-        // 注意：Identity 存的是“原始隔离标签 code”，不是槽位 key
-        if (isolationCode) {
-          targetMsg.TavernDB_ACU_Identity = isolationCode;
-        }
-        // 仅当没有其他标签干扰时，才敢更新根级别的 IndependentData
-        // 简单起见，我们总是更新根级别字段以保持最大兼容性 (假设当前环境以此插件为主)
-        targetMsg.TavernDB_ACU_IndependentData = currentTagData.independentData;
-        targetMsg.TavernDB_ACU_ModifiedKeys = currentTagData.modifiedKeys;
-        targetMsg.TavernDB_ACU_UpdateGroupKeys = currentTagData.updateGroupKeys;
-
-        savedAny = true;
-        console.info(`[ACU] 已更新楼层 ${floorIdx}，涉及表格: ${tablesToUpdate.join(', ')}`);
-      }
-
-      // G. 提交保存
-      if (savedAny) {
-        // 同步更新指导表 (可选，暂略，因为是增量更新)
-
-        if (ST.saveChat) {
-          await ST.saveChat();
-          await syncWorldbook();
-          // 返回完整数据以便更新快照
-          return finalData;
-        }
-      }
-    } catch (e) {
-      console.error('[ACU] Incremental save error:', e);
-      throw e;
+    let ST = (window as any).SillyTavern || (window.parent ? (window.parent as any).SillyTavern : null);
+    if (!ST && (window as any).top && (window as any).top.SillyTavern) {
+      ST = (window as any).top.SillyTavern;
     }
 
-    await syncWorldbook();
-    return finalData;
+    const latestAiFloor = findLatestAiFloorIndex(ST?.chat || []);
+    if (latestAiFloor === -1) {
+      throw new Error('无法找到 AI 楼层来保存 V2 checkpoint');
+    }
+
+    const saved = await executeFullSave(finalData, false, latestAiFloor);
+    return saved || finalData;
   }
 
   /**
@@ -1093,6 +976,15 @@ export function useDataPersistence() {
     const api = getCore().getDB();
     if (!api) {
       throw new Error('[ACU][SQLite] AutoCardUpdaterAPI 不可用');
+    }
+
+    if (typeof api.loadFromChat === 'function') {
+      try {
+        await api.loadFromChat();
+        console.info('[ACU][SQLite] loadFromChat 预热完成');
+      } catch (e) {
+        console.warn('[ACU][SQLite] loadFromChat 预热失败，将继续尝试精细保存/兜底:', e);
+      }
     }
 
     const changes = dataStore.getDetailedChanges();
@@ -1189,8 +1081,8 @@ export function useDataPersistence() {
     for (const ins of changes.inserts) {
       try {
         const idx = await api.insertRow(ins.tableName, ins.data);
-        if (idx === -1) {
-          const msg = `insertRow [${ins.tableName}] returned -1`;
+        if (idx === -1 || idx === false || idx === null || idx === undefined) {
+          const msg = `insertRow [${ins.tableName}] returned ${String(idx)}`;
           console.warn('[ACU][SQLite]', msg);
           errors.push(msg);
         } else {
@@ -1219,30 +1111,14 @@ export function useDataPersistence() {
 
     // ============================================================
     // 5. 中间插入兜底检测
-    //    getDetailedChanges 用"位置索引比对"识别 insert,
-    //    如果用户在中间插入新行(insertRow(tableId, afterIndex)),
-    //    snapshot 在同一位置仍有内容(原行被挤后),会被识别为"修改"而非"新增"。
-    //    这种情况下,updates 已经把新数据写到错误的索引上,无法用 insertRow 修复,
-    //    必须 fallback 到 importTableAsJson 全量覆盖。
+    //    如果 getDetailedChanges 未能把行数增加识别为 insert，说明继续保存会产生歧义。
+    //    这里选择中止，而不是全量覆盖 V2 checkpoint/log。
     // ============================================================
     const fallbackNeeded = checkInsertMismatch(dataToUse, dataStore.snapshot, changes.inserts);
     if (fallbackNeeded) {
-      console.warn('[ACU][SQLite] 检测到中间插入未覆盖,fallback 到 importTableAsJson');
-      if (typeof api.importTableAsJson === 'function') {
-        try {
-          await api.importTableAsJson(JSON.stringify(dataToUse));
-          if (typeof api.refreshDataAndWorldbook === 'function') {
-            await api.refreshDataAndWorldbook();
-          }
-          console.info('[ACU][SQLite] importTableAsJson fallback 完成');
-        } catch (e: any) {
-          const msg = `importTableAsJson fallback failed: ${e?.message ?? e}`;
-          console.warn('[ACU][SQLite]', msg);
-          errors.push(msg);
-        }
-      } else {
-        console.warn('[ACU][SQLite] API 缺少 importTableAsJson 方法,无法 fallback');
-      }
+      const msg = '检测到行数增加但未能生成精细 insert 操作，已中止以避免全量覆盖 V2 checkpoint/log';
+      console.warn('[ACU][SQLite]', msg);
+      errors.push(msg);
     }
 
     // ============================================================
@@ -1250,6 +1126,7 @@ export function useDataPersistence() {
     // ============================================================
     if (errors.length > 0) {
       console.warn('[ACU][SQLite] 保存过程中发生错误:', errors);
+      throw new Error(`[ACU][SQLite] 精细保存失败: ${errors.join('; ')}`);
     } else {
       console.info('[ACU][SQLite] 精细保存完成,无错误');
     }
@@ -1340,44 +1217,33 @@ export function useDataPersistence() {
       // 执行保存 (模式分发)
       let savedData: RawDatabaseData | null = null;
 
-      if (storageMode === 'sqlite' && checkSqliteApiAvailable() && targetIndex < 0) {
-        // ★ SQLite 模式 + 默认增量 → 走 executeSqliteSave (精细 API 调用)
-        //   这条路径绕开“前端直接改 chat 字段”的旧逻辑，改用 AutoCardUpdaterAPI
-        //   原子化提交单元格/行变更，避免 SQLite 内存数据库重建时把用户改动覆盖掉。
-        console.info('[ACU] 执行 SQLite 模式保存(精细 API 调用)...');
+      if (checkSqliteApiAvailable() && targetIndex < 0) {
+        // ★ 新版默认保存 → 优先走 AutoCardUpdaterAPI 精细调用
+        //   API 层会按 shujuku 当前存储协议写入（V2 full checkpoint / operation log），
+        //   避免前端直接写 independentData 造成 mixed legacy/V2。
+        console.info(`[ACU] 执行 API 精细保存(存储模式: ${storageMode})...`);
         try {
           // 优化：无变更时跳过 SQLite 路径，避免空触发 refreshDataAndWorldbook
           //       (refreshDataAndWorldbook 会触发数据库插件重新合并并注入世界书，代价较高)
           const detailedChanges = dataStore.getDetailedChanges();
+          const hasInsertMismatch = checkInsertMismatch(dataToUse, dataStore.snapshot, detailedChanges.inserts);
           const hasAnyChange =
             detailedChanges.deletes.length > 0 ||
             detailedChanges.updates.length > 0 ||
-            detailedChanges.inserts.length > 0;
+            detailedChanges.inserts.length > 0 ||
+            hasInsertMismatch;
           if (!hasAnyChange) {
             console.info('[ACU][SQLite] 无变更，跳过保存');
-            return true;
-          }
-          savedData = await executeSqliteSave(dataToUse, commitDeletes);
-        } catch (sqliteErr) {
-          console.warn('[ACU][SQLite] 路径执行失败，回退到 importTableAsJson:', sqliteErr);
-          // 回退路径：用 importTableAsJson 全量覆盖 + refreshDataAndWorldbook
-          //          这是 SQLite 模式下唯一能确保数据落库且 SQLite 内存库同步的兜底方案。
-          const api = getCore().getDB();
-          if (api?.importTableAsJson) {
-            try {
-              await api.importTableAsJson(JSON.stringify(dataToUse));
-              if (typeof api.refreshDataAndWorldbook === 'function') {
-                await api.refreshDataAndWorldbook();
-              }
-              savedData = getTableData();
-            } catch (fallbackErr) {
-              console.error('[ACU][SQLite] importTableAsJson 兜底也失败:', fallbackErr);
-              throw fallbackErr;
-            }
+            savedData = dataToUse;
           } else {
-            // API 不存在,直接把原始异常抛出去,让外层 catch 处理
-            throw sqliteErr;
+            if (hasInsertMismatch) {
+              console.warn('[ACU][SQLite] 检测到行数增加但未生成精细 insert，将中止而不是全量覆盖');
+            }
+            savedData = await executeSqliteSave(dataToUse, commitDeletes);
           }
+        } catch (sqliteErr) {
+          console.warn('[ACU] API 精细保存失败，已中止以避免全量覆盖 V2 checkpoint/log:', sqliteErr);
+          throw sqliteErr;
         }
       } else if (targetIndex >= 0) {
         // [模式2] 全量覆盖模式 (另存为)
@@ -1385,18 +1251,24 @@ export function useDataPersistence() {
         //         因为另存为的语义是“指定楼层全量覆盖”，当前阶段不通过 SQLite API 实现。
         console.info('[ACU] 执行全量保存 (另存为模式)...');
         savedData = await executeFullSave(dataToUse, commitDeletes, targetIndex);
+      } else if (checkImportApiAvailable()) {
+        console.info(`[ACU] 执行 importTableAsJson 全量导入 fallback(存储模式: ${storageMode})...`);
+        const api = getCore().getDB();
+        await api.importTableAsJson(JSON.stringify(dataToUse));
+        if (typeof api.refreshDataAndWorldbook === 'function') {
+          await api.refreshDataAndWorldbook();
+        }
+        savedData = getTableData() || dataToUse;
       } else {
-        // [模式1] 增量更新模式 (默认保存) —— 原生模式 / 旧模板
-        console.info('[ACU] 执行增量保存 (默认模式)...');
+        // [模式1] 增量更新模式 (默认模式) —— API 完全不可用时写最新 AI 楼层 V2 full checkpoint
+        console.info('[ACU] API 不可用，执行 V2 checkpoint fallback 保存...');
 
         if (modifiedTableIds.length === 0) {
           console.info('[ACU] 无变更，跳过保存');
-          // 即使跳过保存，也返回 true (表示操作未失败)
-          // 但为了清理可能的临时状态，我们模拟一个“成功”
-          return true;
+          savedData = dataToUse;
+        } else {
+          savedData = await executeIncrementalSave(dataToUse, commitDeletes, modifiedTableIds);
         }
-
-        savedData = await executeIncrementalSave(dataToUse, commitDeletes, modifiedTableIds);
       }
 
       // 保存成功后，更新纪要世界书 Source Bridge（仅命中纪要表时）
@@ -1518,6 +1390,7 @@ export function useDataPersistence() {
       console.log(`[ACU-Purge] 开始强力清洗楼层范围: ${startIdx} - ${endIdx}`);
 
       let changesCount = 0;
+      let touchedV2Checkpoint = false;
 
       // 定义所有需要被清除的数据字段
       const keysToDelete = [
@@ -1535,6 +1408,8 @@ export function useDataPersistence() {
         const msg = ST.chat[i];
         if (!msg) continue;
 
+        if (messageHasV2FullCheckpoint(msg)) touchedV2Checkpoint = true;
+
         let messageModified = false;
         for (const key of keysToDelete) {
           if (Object.prototype.hasOwnProperty.call(msg, key)) {
@@ -1550,6 +1425,10 @@ export function useDataPersistence() {
 
       // 如果有变动，则保存并刷新
       if (changesCount > 0) {
+        if (touchedV2Checkpoint) {
+          toast.warning('清除范围包含 V2 checkpoint，可能影响数据库恢复链；已刷新数据库状态');
+        }
+
         // 持久化保存删除操作
         if (ST.saveChat) {
           await ST.saveChat();
@@ -1670,62 +1549,20 @@ export function useDataPersistence() {
 
         let msgChanged = false;
 
-        // 处理 TavernDB_ACU_IsolatedData (10.3+ 版本)
-        if (msg.TavernDB_ACU_IsolatedData && typeof msg.TavernDB_ACU_IsolatedData === 'object') {
-          // 对该消息内所有标签槽执行删除
-          Object.keys(msg.TavernDB_ACU_IsolatedData).forEach(tagKey => {
-            const tagData = msg.TavernDB_ACU_IsolatedData[tagKey];
+        // 处理 TavernDB_ACU_IsolatedData：兼容 V2 storageFrame + legacy-v1 字段
+        const isolatedData = parseIsolatedDataFromMessage(msg);
+        if (isolatedData) {
+          Object.keys(isolatedData).forEach(tagKey => {
+            const tagData = isolatedData[tagKey];
             if (!tagData || typeof tagData !== 'object') return;
-
-            // 删除 independentData 中的表格数据
-            if (tagData.independentData && typeof tagData.independentData === 'object') {
-              keys.forEach(k => {
-                if (tagData.independentData[k]) {
-                  delete tagData.independentData[k];
-                  msgChanged = true;
-                }
-              });
-            }
-
-            // 从 modifiedKeys 中移除
-            if (Array.isArray(tagData.modifiedKeys)) {
-              keys.forEach(k => {
-                const r = removeKeyFromArray(tagData.modifiedKeys, k);
-                if (r.changed) {
-                  tagData.modifiedKeys = r.arr;
-                  msgChanged = true;
-                }
-              });
-            }
-
-            // 从 updateGroupKeys 中移除
-            if (Array.isArray(tagData.updateGroupKeys)) {
-              keys.forEach(k => {
-                const r = removeKeyFromArray(tagData.updateGroupKeys, k);
-                if (r.changed) {
-                  tagData.updateGroupKeys = r.arr;
-                  msgChanged = true;
-                }
-              });
-            }
-
-            // 检查并清理空结构：如果 independentData 变空，删除整个标签槽
-            if (
-              tagData.independentData &&
-              Object.keys(tagData.independentData).length === 0 &&
-              (!tagData.modifiedKeys || tagData.modifiedKeys.length === 0) &&
-              (!tagData.updateGroupKeys || tagData.updateGroupKeys.length === 0)
-            ) {
-              delete msg.TavernDB_ACU_IsolatedData[tagKey];
+            if (purgeSheetKeysFromTagData(tagData, keys)) msgChanged = true;
+            if (!tagDataHasAnyTableData(tagData)) {
+              delete isolatedData[tagKey];
               msgChanged = true;
             }
           });
-
-          // 如果所有标签槽都被删除，删除整个 IsolatedData 字段
-          if (Object.keys(msg.TavernDB_ACU_IsolatedData).length === 0) {
-            delete msg.TavernDB_ACU_IsolatedData;
-            msgChanged = true;
-          }
+          if (Object.keys(isolatedData).length === 0) delete msg.TavernDB_ACU_IsolatedData;
+          else msg.TavernDB_ACU_IsolatedData = isolatedData;
         }
 
         // 处理旧版本数据结构
@@ -1915,7 +1752,7 @@ export function useDataPersistence() {
     saveToDatabase,
     syncWorldbook,
 
-    // SQLite 模式精细保存（双路保存方案,子任务 4 才会接入到 saveToDatabase）
+    // SQLite 模式精细保存
     executeSqliteSave,
 
     // 快照管理

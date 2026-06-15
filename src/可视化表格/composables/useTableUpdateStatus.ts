@@ -18,6 +18,13 @@
 
 import { computed, ref } from 'vue';
 import { getCore } from '../utils';
+import {
+  countAiFloorUpToIndex,
+  findChatIndexByAiFloor,
+  getTagDataFromMessage,
+  isV2TagData,
+  v2FrameTrackedUpdateFloor,
+} from '../utils/acuV2Storage';
 
 // ============================================================
 // 类型定义
@@ -92,8 +99,11 @@ interface ChatMessage {
  */
 interface IsolatedDataEntry {
   independentData?: Record<string, unknown>;
+  incrementalData?: Record<string, unknown>;
   modifiedKeys?: string[];
   updateGroupKeys?: string[];
+  storageFrame?: unknown;
+  _acu_storage_version?: number;
 }
 
 /**
@@ -389,114 +399,90 @@ function getLastUpdatedPosition(
 ): LastUpdateResult {
   const currentIsolationCode = settings.dataIsolationEnabled ? settings.dataIsolationCode : '';
   const currentIsolationSlotKey = toIsolationSlotKey(currentIsolationCode);
+  const candidateKeys = Array.from(
+    new Set([
+      ...preferredSlotKeys,
+      currentIsolationSlotKey,
+      currentIsolationCode,
+      '',
+      '__default__',
+    ]),
+  );
 
-  // 从后向前扫描聊天记录
+  // 从后向前扫描聊天记录。V2 下“上次更新”以 filledSheetKeys/groupKeys 与
+  // checkpoint.scheduleSummary.lastFilledAiFloor 为准，不再从 independentData 推断。
   for (let i = chat.length - 1; i >= 0; i--) {
     const msg = chat[i];
-    if (msg.is_user) continue;
+    if (!msg || msg.is_user) continue;
 
+    const messageAiFloor = countAiFloorUpToIndex(chat, i);
+
+    // [优先级1] V2 / isolated legacy 槽位
+    for (const key of candidateKeys) {
+      const tagData = getTagDataFromMessage(msg, key);
+      if (!tagData) continue;
+
+      if (isV2TagData(tagData)) {
+        const trackedAiFloor = v2FrameTrackedUpdateFloor(tagData, sheetKey, messageAiFloor);
+        if (trackedAiFloor > 0) {
+          const chatIndex = findChatIndexByAiFloor(chat, trackedAiFloor);
+          return {
+            aiFloor: trackedAiFloor,
+            chatIndex: chatIndex >= 0 ? chatIndex : i,
+            hasHistory: true,
+          };
+        }
+        continue;
+      }
+
+      const updateGroupKeys = tagData.updateGroupKeys || [];
+      const modifiedKeys = tagData.modifiedKeys || [];
+      const independentData = tagData.independentData || {};
+      const incrementalData = tagData.incrementalData || {};
+
+      let wasUpdated = false;
+      if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
+        wasUpdated = updateGroupKeys.includes(sheetKey);
+      } else if (modifiedKeys.includes(sheetKey)) {
+        wasUpdated = true;
+      } else if (independentData[sheetKey]) {
+        wasUpdated = true;
+      } else if (incrementalData[sheetKey]) {
+        wasUpdated = true;
+      }
+
+      if (wasUpdated) {
+        return { aiFloor: messageAiFloor, chatIndex: i, hasHistory: true };
+      }
+    }
+
+    // [优先级2] 旧版顶层格式
+    const msgIdentity = msg.TavernDB_ACU_Identity;
+    const isLegacyMatch = settings.dataIsolationEnabled ? msgIdentity === settings.dataIsolationCode : !msgIdentity;
+    if (!isLegacyMatch) continue;
+
+    const modifiedKeys = msg.TavernDB_ACU_ModifiedKeys || [];
+    const updateGroupKeys = msg.TavernDB_ACU_UpdateGroupKeys || [];
     let wasUpdated = false;
 
-    // [优先级1] 检查新版隔离数据 TavernDB_ACU_IsolatedData
-    // ★ 兼容：TavernDB_ACU_IsolatedData 可能被序列化成字符串（v2.5 数据库）
-    let isolatedData = msg.TavernDB_ACU_IsolatedData;
-    if (typeof isolatedData === 'string') {
-      try {
-        isolatedData = JSON.parse(isolatedData);
-      } catch {
-        isolatedData = null;
-      }
-    }
-    if (isolatedData && typeof isolatedData === 'object') {
-      // 新版优先：当前槽位 key + 推断出的活跃槽位
-      // 兼容旧数据：raw code / 空字符串 / __default__
-      const candidateKeys = Array.from(
-        new Set([
-          ...preferredSlotKeys, // 聊天历史主槽位优先
-          currentIsolationSlotKey, // 配置侧仅作兜底
-          currentIsolationCode, // 兼容极旧数据 raw code
-          '',
-          '__default__',
-        ]),
-      );
-      for (const key of candidateKeys) {
-        const tagData = isolatedData[key];
-        if (!tagData) continue;
-
-        const updateGroupKeys = tagData.updateGroupKeys || [];
-        const modifiedKeys = tagData.modifiedKeys || [];
-        const independentData = tagData.independentData || {};
-
-        if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
-          wasUpdated = updateGroupKeys.includes(sheetKey);
-        } else if (modifiedKeys.includes(sheetKey)) {
-          wasUpdated = true;
-        } else if (independentData[sheetKey]) {
-          wasUpdated = true;
-        }
-
-        if (wasUpdated) break;
-      }
-    }
-
-    // [优先级2] 兼容旧版存储格式
-    if (!wasUpdated) {
-      const msgIdentity = msg.TavernDB_ACU_Identity;
-      let isLegacyMatch = false;
-
-      if (settings.dataIsolationEnabled) {
-        isLegacyMatch = msgIdentity === settings.dataIsolationCode;
-      } else {
-        // 关闭隔离（无标签模式）：只匹配无标识数据
-        isLegacyMatch = !msgIdentity;
-      }
-
-      if (isLegacyMatch) {
-        const modifiedKeys = msg.TavernDB_ACU_ModifiedKeys || [];
-        const updateGroupKeys = msg.TavernDB_ACU_UpdateGroupKeys || [];
-
-        if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
-          wasUpdated = updateGroupKeys.includes(sheetKey);
-        } else if (modifiedKeys.includes(sheetKey)) {
-          wasUpdated = true;
-        } else if (
-          // 旧版兼容：没有 ModifiedKeys 字段时，回退到检查数据是否存在
-          msg.TavernDB_ACU_IndependentData &&
-          (msg.TavernDB_ACU_IndependentData as Record<string, unknown>)[sheetKey]
-        ) {
-          wasUpdated = true;
-        } else if (
-          isSummary &&
-          msg.TavernDB_ACU_SummaryData &&
-          (msg.TavernDB_ACU_SummaryData as Record<string, unknown>)[sheetKey]
-        ) {
-          wasUpdated = true;
-        } else if (
-          !isSummary &&
-          msg.TavernDB_ACU_Data &&
-          (msg.TavernDB_ACU_Data as Record<string, unknown>)[sheetKey]
-        ) {
-          wasUpdated = true;
-        }
-      }
+    if (updateGroupKeys.length > 0 && modifiedKeys.length > 0) {
+      wasUpdated = updateGroupKeys.includes(sheetKey);
+    } else if (modifiedKeys.includes(sheetKey)) {
+      wasUpdated = true;
+    } else if (msg.TavernDB_ACU_IndependentData && (msg.TavernDB_ACU_IndependentData as Record<string, unknown>)[sheetKey]) {
+      wasUpdated = true;
+    } else if (isSummary && msg.TavernDB_ACU_SummaryData && (msg.TavernDB_ACU_SummaryData as Record<string, unknown>)[sheetKey]) {
+      wasUpdated = true;
+    } else if (!isSummary && msg.TavernDB_ACU_Data && (msg.TavernDB_ACU_Data as Record<string, unknown>)[sheetKey]) {
+      wasUpdated = true;
     }
 
     if (wasUpdated) {
-      // 计算 AI 楼层号（从1开始）
-      const aiFloor = chat.slice(0, i + 1).filter(m => !m.is_user).length;
-      return {
-        aiFloor,
-        chatIndex: i,
-        hasHistory: true,
-      };
+      return { aiFloor: messageAiFloor, chatIndex: i, hasHistory: true };
     }
   }
 
-  return {
-    aiFloor: 0,
-    chatIndex: -1,
-    hasHistory: false,
-  };
+  return { aiFloor: 0, chatIndex: -1, hasHistory: false };
 }
 
 // ============================================================

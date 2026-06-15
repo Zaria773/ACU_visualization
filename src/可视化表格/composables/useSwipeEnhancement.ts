@@ -10,8 +10,9 @@
 
 import { onUnmounted, ref } from 'vue';
 import { useConfigStore } from '../stores/useConfigStore';
-import { useDataStore } from '../stores/useDataStore';
+import { useDataPersistence } from './useDataPersistence';
 import { getCore } from '../utils/index';
+import { messageHasAnyAcuTableData } from '../utils/acuV2Storage';
 import { toast } from './useToast';
 
 // ============================================================
@@ -61,7 +62,7 @@ function getSillyTavernContext(): any {
 // ============================================================
 
 export function useSwipeEnhancement() {
-  const dataStore = useDataStore();
+  const { purgeFloorRange } = useDataPersistence();
   const configStore = useConfigStore();
 
   // 状态
@@ -99,7 +100,7 @@ export function useSwipeEnhancement() {
    */
   async function clearFloorData(floorIndex: number): Promise<boolean> {
     try {
-      await dataStore.purgeFloorRange(floorIndex, floorIndex);
+      await purgeFloorRange(floorIndex, floorIndex);
       console.info(`[ACU Swipe] 已清除第 ${floorIndex} 楼的表格数据`);
       return true;
     } catch (e) {
@@ -124,13 +125,7 @@ export function useSwipeEnhancement() {
    * 检查指定楼层是否有 ACU 数据
    */
   function hasACUData(message: STChatMessage): boolean {
-    // 检查是否有 TavernDB_ACU_IsolatedData 字段
-    const isolatedData = (message as any).TavernDB_ACU_IsolatedData;
-    if (!isolatedData || typeof isolatedData !== 'object') {
-      return false;
-    }
-    // 检查是否有任何隔离标签的数据
-    return Object.keys(isolatedData).length > 0;
+    return messageHasAnyAcuTableData(message);
   }
 
   /**

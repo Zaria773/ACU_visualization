@@ -19,14 +19,6 @@ export interface UseAppNavigationOptions {
     | {
         exitCenteredMode: () => void;
         getDataAreaElement: () => HTMLElement | null;
-        resetHeight: () => void;
-      }
-    | undefined
-  >;
-  /** FloatingBall 组件 ref */
-  floatingBallRef: Ref<
-    | {
-        setDocked: (docked: boolean) => void;
       }
     | undefined
   >;
@@ -36,28 +28,13 @@ export interface UseAppNavigationOptions {
   isContentHidden: Ref<boolean>;
   /** 是否有关系图数据 */
   hasRelationshipData: Ref<boolean>;
+  /** 恢复当前 Tab 高度 */
+  restoreTableHeight: (tabId: string) => void;
 }
 
 export function useAppNavigation(options: UseAppNavigationOptions) {
-  const { mainPanelRef, floatingBallRef, searchTerm, isContentHidden, hasRelationshipData } = options;
+  const { mainPanelRef, searchTerm, isContentHidden, hasRelationshipData, restoreTableHeight } = options;
   const uiStore = useUIStore();
-
-  // ============================================================
-  // 悬浮球操作
-  // ============================================================
-
-  /** 悬浮球点击 - 显示面板 */
-  function handleBallClick(): void {
-    uiStore.openPanel();
-    isContentHidden.value = false;
-    console.info('[ACU] 面板已打开');
-  }
-
-  /** 悬浮球双击 - 切换停靠模式 */
-  function handleBallDoubleClick(): void {
-    floatingBallRef.value?.setDocked(true);
-    console.info('[ACU] 悬浮球已停靠');
-  }
 
   // ============================================================
   // 面板操作
@@ -83,26 +60,6 @@ export function useAppNavigation(options: UseAppNavigationOptions) {
   // ============================================================
   // Tab 切换
   // ============================================================
-
-  /**
-   * 恢复表格的记忆高度
-   * @param tabId Tab ID
-   */
-  function restoreTableHeight(tabId: string): void {
-    const dataAreaEl = mainPanelRef.value?.getDataAreaElement();
-    if (!dataAreaEl) return;
-
-    const savedHeight = uiStore.getTableHeight(tabId);
-
-    if (savedHeight) {
-      // 有记忆高度，直接应用
-      dataAreaEl.style.height = `${savedHeight}px`;
-      console.info(`[ACU] 恢复高度: ${tabId} = ${savedHeight}px`);
-    } else {
-      // 没有记忆高度，使用自适应计算
-      mainPanelRef.value?.resetHeight();
-    }
-  }
 
   /** Tab 切换 */
   function handleTabChange(tabId: string): void {
@@ -194,79 +151,12 @@ export function useAppNavigation(options: UseAppNavigationOptions) {
 
   /** 关闭当前表格，返回仪表盘 */
   function handleTableClose(): void {
-    uiStore.setActiveTab(TAB_DASHBOARD);
+    // 使用 handleTabChange 以确保高度被正确重置/恢复
+    handleTabChange(TAB_DASHBOARD);
     console.info('[ACU] 返回仪表盘');
   }
 
-  // ============================================================
-  // 高度拖拽
-  // ============================================================
-
-  /** 高度拖拽开始 - 调用 MainPanel 的高度拖拽逻辑 */
-  function handleHeightDragStart(event: PointerEvent, handleEl: HTMLElement): void {
-    // 获取 MainPanel 暴露的数据区元素
-    const dataAreaEl = mainPanelRef.value?.getDataAreaElement();
-    if (!dataAreaEl) return;
-
-    // 只响应左键
-    if (event.button !== 0) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    // 使用传入的 handleEl 捕获指针
-    handleEl.setPointerCapture(event.pointerId);
-
-    const startY = event.clientY;
-    const startHeight = dataAreaEl.offsetHeight;
-
-    const handlePointerMove = (moveE: PointerEvent) => {
-      const dy = startY - moveE.clientY;
-      let newHeight = startHeight + dy;
-
-      // 限制高度范围：最小 200px，最大由 CSS 的 max-height: calc(100vh - bottom) 控制
-      const minHeight = 200;
-      newHeight = Math.max(minHeight, newHeight);
-
-      dataAreaEl.style.height = `${newHeight}px`;
-    };
-
-    const handlePointerUp = (upE: PointerEvent) => {
-      handleEl.releasePointerCapture(upE.pointerId);
-      handleEl.removeEventListener('pointermove', handlePointerMove);
-      handleEl.removeEventListener('pointerup', handlePointerUp);
-
-      // 保存高度到对应表名（关键：每个表独立记忆）
-      const currentTabName = uiStore.activeTab;
-      if (currentTabName && dataAreaEl) {
-        const finalHeight = dataAreaEl.offsetHeight;
-        uiStore.setTableHeight(currentTabName, finalHeight);
-        console.info(`[ACU] 保存高度: ${currentTabName} = ${finalHeight}px`);
-      }
-    };
-
-    handleEl.addEventListener('pointermove', handlePointerMove);
-    handleEl.addEventListener('pointerup', handlePointerUp);
-  }
-
-  /** 高度重置 - 调用 MainPanel 的重置高度方法 */
-  function handleHeightReset(): void {
-    // 清除当前表的记忆高度
-    const currentTabName = uiStore.activeTab;
-    if (currentTabName) {
-      uiStore.resetTableHeight(currentTabName);
-      console.info(`[ACU] 清除高度记忆: ${currentTabName}`);
-    }
-
-    mainPanelRef.value?.resetHeight();
-    console.info('[ACU] 高度已重置为自适应');
-  }
-
   return {
-    // 悬浮球
-    handleBallClick,
-    handleBallDoubleClick,
-
     // 面板
     handlePanelClose,
     handleHideContent,
@@ -277,15 +167,10 @@ export function useAppNavigation(options: UseAppNavigationOptions) {
     handleTabsReorder,
     handleCollapseTabClick,
     handleTabsPopupClick,
-    restoreTableHeight,
 
     // 导航
     handleNavigateToTable,
     handleShowRelationshipGraph,
     handleTableClose,
-
-    // 高度
-    handleHeightDragStart,
-    handleHeightReset,
   };
 }

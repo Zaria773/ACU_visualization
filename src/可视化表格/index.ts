@@ -36,6 +36,16 @@ polyfill({
 // jQuery 兼容层 - 脚本项目中 jQuery 作用于父窗口
 (window as any).$ = (window.parent as any).$;
 
+function ensureParentDomConstructors(): void {
+  const parentWin = window.parent as any;
+  const currentWin = window as any;
+  for (const key of ['Element', 'HTMLElement', 'SVGElement', 'MathMLElement', 'Node']) {
+    if (typeof currentWin[key] !== 'function' && typeof parentWin[key] === 'function') {
+      currentWin[key] = parentWin[key];
+    }
+  }
+}
+
 const SCRIPT_ID = 'acu-parent-container';
 const MAX_DATA_RETRIES = 10;
 
@@ -151,6 +161,8 @@ let isDatabaseReady = false;
  * 初始化 Vue 应用
  */
 function initVueApp() {
+  ensureParentDomConstructors();
+
   const parentDoc = window.parent.document;
 
   // 防止重复挂载

@@ -151,6 +151,19 @@ export function detectStorageMode(rawData?: RawDatabaseData | null): StorageMode
   return 'native';
 }
 
+function getAutoCardUpdaterAPI(): Record<string, unknown> | null {
+  const w = (window.parent || window) as Window &
+    typeof globalThis & {
+      AutoCardUpdaterAPI?: Record<string, unknown>;
+    };
+
+  return (
+    w.AutoCardUpdaterAPI ||
+    (window as unknown as { AutoCardUpdaterAPI?: Record<string, unknown> }).AutoCardUpdaterAPI ||
+    null
+  );
+}
+
 /**
  * 检查 AutoCardUpdaterAPI 是否支持 SQLite 路径所需的全部方法
  *
@@ -168,20 +181,13 @@ export function detectStorageMode(rawData?: RawDatabaseData | null): StorageMode
  */
 export function checkSqliteApiAvailable(): boolean {
   try {
-    const w = (window.parent || window) as Window &
-      typeof globalThis & {
-        AutoCardUpdaterAPI?: Record<string, unknown>;
-      };
-
-    const api =
-      w.AutoCardUpdaterAPI ||
-      (window as unknown as { AutoCardUpdaterAPI?: Record<string, unknown> }).AutoCardUpdaterAPI;
+    const api = getAutoCardUpdaterAPI();
 
     if (!api || typeof api !== 'object') {
       return false;
     }
 
-    const requiredMethods = ['updateCell', 'updateRow', 'insertRow', 'deleteRow', 'refreshDataAndWorldbook'] as const;
+    const requiredMethods = ['updateRow', 'insertRow', 'deleteRow', 'importTableAsJson', 'refreshDataAndWorldbook'] as const;
 
     for (const method of requiredMethods) {
       if (typeof (api as Record<string, unknown>)[method] !== 'function') {
@@ -192,6 +198,21 @@ export function checkSqliteApiAvailable(): boolean {
     return true;
   } catch (e) {
     console.warn('[ACU][storageMode] 检测 AutoCardUpdaterAPI 可用性失败:', e);
+    return false;
+  }
+}
+
+export function checkImportApiAvailable(): boolean {
+  try {
+    const api = getAutoCardUpdaterAPI();
+    return !!(
+      api &&
+      typeof api === 'object' &&
+      typeof api.importTableAsJson === 'function' &&
+      typeof api.refreshDataAndWorldbook === 'function'
+    );
+  } catch (e) {
+    console.warn('[ACU][storageMode] 检测 importTableAsJson 可用性失败:', e);
     return false;
   }
 }

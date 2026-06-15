@@ -387,9 +387,25 @@ const computedTitleColIndex = computed(() => {
   return 1;
 });
 
+/** 实时当前行数据：优先读取 dataStore 暂存表，避免历史弹窗内编辑后仍显示打开时的旧 props */
+const liveCurrentRowData = computed((): TableRow | null => {
+  const rows = dataStore.tables[props.tableName];
+  const row = rows?.[props.rowIndex];
+  if (!row) return props.currentRowData;
+  return {
+    index: row.index,
+    key: `${props.tableName}-row-${row.index}`,
+    cells: row.cells.map((cell, colIndex) => ({
+      colIndex,
+      key: cell.key,
+      value: cell.value,
+    })),
+  };
+});
+
 /** 显示标题（表名 + 行标题） */
 const displayTitle = computed(() => {
-  const titleValue = getTitleValue(props.currentRowData);
+  const titleValue = getTitleValue(liveCurrentRowData.value);
   if (titleValue) {
     return `${props.tableName} - ${titleValue}`;
   }
@@ -408,18 +424,19 @@ const changedColsKey = computed(() => {
 
 /** 应用临时修改后的当前行数据 */
 const currentRowDataWithChanges = computed((): TableRow => {
-  if (!props.currentRowData) {
+  const baseRow = liveCurrentRowData.value;
+  if (!baseRow) {
     return { index: 0, key: '', cells: [] };
   }
 
   if (tempChanges.value.size === 0) {
-    return props.currentRowData;
+    return baseRow;
   }
 
   return {
-    index: props.currentRowData.index,
-    key: props.currentRowData.key,
-    cells: props.currentRowData.cells.map((cell, colIndex) => {
+    index: baseRow.index,
+    key: baseRow.key,
+    cells: baseRow.cells.map((cell, colIndex) => {
       if (tempChanges.value.has(colIndex)) {
         return {
           ...cell,
@@ -463,10 +480,11 @@ function getSnapshotDisplayTitle(snapshot: RowSnapshot): string {
  * 将快照转换为 TableRow
  */
 function snapshotToTableRowLocal(snapshot: RowSnapshot): TableRow {
-  if (!props.currentRowData) {
+  const baseRow = liveCurrentRowData.value;
+  if (!baseRow) {
     return { index: 0, key: '', cells: [] };
   }
-  return snapshotToTableRow(snapshot, props.currentRowData);
+  return snapshotToTableRow(snapshot, baseRow);
 }
 
 /**

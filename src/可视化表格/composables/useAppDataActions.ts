@@ -9,23 +9,26 @@
  * - 撤销/历史记录
  */
 
+import { useDashboardStore } from '../stores/useDashboardStore';
 import { useDataStore } from '../stores/useDataStore';
-import { useUIStore } from '../stores/useUIStore';
 import type { TableRow } from '../types';
 import { useCoreActions } from './useCoreActions';
 import { useDataPersistence } from './useDataPersistence';
-import { useRowHistory } from './useRowHistory';
+import { useTableUpdateStatus } from './useTableUpdateStatus';
 import { toast } from './useToast';
 
 export interface UseAppDataActionsOptions {
   /** 处理后的表格数据（响应式） */
   getProcessedTables: () => { id: string; name: string; rows: TableRow[] }[];
+  /** 最大楼层索引 */
+  getMaxFloorIndex: () => number;
 }
 
 export function useAppDataActions(options: UseAppDataActionsOptions) {
   const dataStore = useDataStore();
-  const uiStore = useUIStore();
+  const dashboardStore = useDashboardStore();
   const { saveToDatabase, getTableData, purgeFloorRange: executePurgeFloorRange } = useDataPersistence();
+  const { refresh: refreshTableStatus } = useTableUpdateStatus();
 
   // ============================================================
   // 数据加载/刷新
@@ -38,12 +41,23 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
       const processedData = dataStore.setStagedData(data);
       dataStore.saveSnapshot(processedData);
 
-      // 【注意】这里不调用 syncNewTablesToVisibleTabs
-      // 初始化时不应该自动添加"隐藏的表格"，只有 AI 填表时才检测真正的新表格
-      // syncNewTablesToVisibleTabs 的调用保留在 useApiCallbacks.ts 中（AI 填表回调）
+      const allTableIds = Object.keys(data).filter(k => k.startsWith('sheet_'));
+
+      // 【已移除】syncNewTablesToVisibleTabs 会强制重置用户隐藏的表格
+      // 新表格的可见性现在由 ConfigManager 的默认策略处理
+
+      dashboardStore.cleanupInvalidWidgets(allTableIds);
 
       // 刷新后清除所有高亮标记（手动和AI）
       dataStore.clearChanges(true);
+
+      dashboardStore.ensureDefaultWidgets().catch(err => {
+        console.warn('[ACU] 补充默认组件失败（非阻塞）:', err);
+      });
+
+      refreshTableStatus().catch(err => {
+        console.warn('[ACU] 刷新表格更新状态失败（非阻塞）:', err);
+      });
     }
   }
 
@@ -82,9 +96,18 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
   /** 保存到指定楼层 */
   async function handleSaveToFloor(floorIndex: number): Promise<void> {
     try {
-      const success = await saveToDatabase(null, false, false, floorIndex);
+      let targetIndex = floorIndex;
+      if (floorIndex < 0) {
+        const maxFloor = options.getMaxFloorIndex();
+        targetIndex = maxFloor + 1 + floorIndex;
+        if (targetIndex < 0) targetIndex = 0;
+      }
+
+      if (targetIndex < 0) targetIndex = 0;
+
+      const success = await saveToDatabase(null, false, false, targetIndex);
       if (success) {
-        console.info(`[ACU] 数据已保存到第 ${floorIndex} 楼`);
+        console.info(`[ACU] 数据已保存到第 ${targetIndex} 楼`);
         // 另存为后刷新界面以显示最新数据
         await loadData();
       }
@@ -172,44 +195,6 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
     console.info(`[ACU] 切换删除状态: ${rowKey}`);
   }
 
-  // ============================================================
-  // 历史记录
-  // ============================================================
-
-  /** 应用历史记录更改 */
-  async function handleHistoryApply(changes: Map<number, string>): Promise<void> {
-    const { tableId, tableName, rowIndex, currentRowData } = uiStore.historyDialog.props;
-
-    if (!currentRowData || changes.size === 0) {
-      uiStore.closeHistoryDialog();
-      return;
-    }
-
-    // 先保存编辑前的行状态作为历史记录
-    const { saveSnapshot, getCurrentChatId } = useRowHistory();
-    const chatId = getCurrentChatId();
-    if (chatId) {
-      await saveSnapshot(tableName, rowIndex, tableRowToCells(currentRowData), 'manual');
-      console.info('[ACU] 已保存历史记录（批量操作前）');
-    }
-
-    // 批量应用每个单元格的更改，跳过单独的历史记录保存
-    for (const [colIndex, value] of changes) {
-      dataStore.updateCell(tableName, rowIndex, colIndex, value, { skipHistory: true });
-    }
-
-    console.info(`[ACU] 应用历史更改: ${changes.size} 个单元格`);
-    uiStore.closeHistoryDialog();
-  }
-
-  /** 将 TableRow 转换为 cells 格式 */
-  function tableRowToCells(row: TableRow): Record<number, string> {
-    const cells: Record<number, string> = {};
-    row.cells.forEach((cell, index) => {
-      cells[index] = String(cell.value);
-    });
-    return cells;
-  }
 
   return {
     // 数据加载
@@ -229,9 +214,5 @@ export function useAppDataActions(options: UseAppDataActionsOptions) {
     handleRowClick,
     handleInsertRow,
     handleToggleDelete,
-
-    // 历史记录
-    handleHistoryApply,
-    tableRowToCells,
   };
 }

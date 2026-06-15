@@ -69,6 +69,7 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
+import { messageHasAnyTableData } from '../../../utils/acuV2Storage';
 import { toast } from '../../../composables/useToast';
 import AdvancedPurgeDialog from './AdvancedPurgeDialog.vue';
 
@@ -113,21 +114,9 @@ function getDefaultFloorRange(): { start: number; end: number } {
     // 策略: 优先寻找最近的有真实数据的楼层（跳过空结构）
     for (let i = ST.chat.length - 1; i >= 0; i--) {
       const msg = ST.chat[i];
-      if (!msg.is_user && msg.TavernDB_ACU_IsolatedData) {
-        // 检查是否真的有数据（不是空结构）
-        const tags = Object.keys(msg.TavernDB_ACU_IsolatedData);
-        let hasRealData = false;
-        for (const tag of tags) {
-          const tagData = msg.TavernDB_ACU_IsolatedData[tag];
-          if (tagData && tagData.independentData && Object.keys(tagData.independentData).length > 0) {
-            hasRealData = true;
-            break;
-          }
-        }
-        if (hasRealData) {
-          targetIdx = i;
-          break;
-        }
+      if (messageHasAnyTableData(msg)) {
+        targetIdx = i;
+        break;
       }
     }
   }

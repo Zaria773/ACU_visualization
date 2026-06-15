@@ -12,7 +12,7 @@ import { appendToActiveInput } from './useHiddenPrompt';
 import { toast } from './useToast';
 
 export function useCoreActions() {
-  const { saveToDatabase, getTableData, saveSnapshot, loadSnapshot } = useDataPersistence();
+  const { saveToDatabase, getTableData } = useDataPersistence();
   const dataStore = useDataStore();
 
   // ============================================================
@@ -50,6 +50,12 @@ export function useCoreActions() {
     const newRow = new Array(colCount).fill('');
     // 如果有第一列且看起来像序号，尝试自动填充
     if (colCount > 0) newRow[0] = String(content.length);
+
+    const headers = Array.isArray(content[0]) ? content[0].map(h => String(h || '')) : [];
+    const firstEditableCol = headers.findIndex(h => h && h !== 'row_id');
+    if (firstEditableCol >= 0 && !String(newRow[firstEditableCol] ?? '').trim()) {
+      newRow[firstEditableCol] = '新建项';
+    }
 
     // 插入到当前行之后（rowIdx 是从 0 开始的数据行索引，content[0] 是表头，所以 +2）
     content.splice(rowIdx + 2, 0, newRow);
@@ -174,19 +180,6 @@ export function useCoreActions() {
     const { tableKey, rowIdx, colIdx, $cell } = cellData;
     const { $ } = getCore();
     const doc = context || document;
-
-    let freshData = dataStore.getStagedData();
-    if (!freshData) freshData = getTableData();
-    if (!freshData) freshData = loadSnapshot();
-
-    if (freshData) {
-      const sheet = freshData[tableKey];
-      if (sheet?.content && sheet.content[rowIdx + 1]) {
-        sheet.content[rowIdx + 1][colIdx] = newVal;
-        dataStore.setStagedData(freshData);
-        saveSnapshot(freshData);
-      }
-    }
 
     $cell.attr('data-val', encodeURIComponent(newVal));
     $cell.data('val', encodeURIComponent(newVal));

@@ -15,7 +15,7 @@ import { useCellLock } from '../composables/useCellLock';
 import { saveSnapshot as saveRowSnapshot } from '../composables/useRowHistory';
 import { isSummaryOrOutlineTable, useTableIntegrityCheck } from '../composables/useTableIntegrityCheck';
 import type { RawDatabaseData, TableCell, TableRow } from '../types';
-import { getCore, getTableData } from '../utils/index';
+import { getTableData } from '../utils/index';
 
 // ============================================================
 // 本地类型定义 (避免与 types/index.ts 冲突)
@@ -38,35 +38,6 @@ export interface RowData {
 
 /** 表格数据映射 (tableId -> 行数据列表) */
 export type VueTableData = Record<string, RowData[]>;
-
-/** 楼层信息 */
-export interface FloorInfo {
-  index: number;
-  isAuto: boolean;
-  reason: string;
-}
-
-/** 隔离数据结构 */
-export interface IsolatedDataEntry {
-  independentData: Record<string, RawDatabaseData[string]>;
-  modifiedKeys: string[];
-  updateGroupKeys: string[];
-}
-
-/** SillyTavern 聊天消息类型 */
-export interface STChatMessage {
-  is_user?: boolean;
-  mes?: string;
-  TavernDB_ACU_IsolatedData?: Record<string, IsolatedDataEntry>;
-  [key: string]: unknown;
-}
-
-/** 保存结果类型 */
-export interface SaveResult {
-  success: boolean;
-  savedToFloor: number;
-  error?: string;
-}
 
 // ============================================================
 // 工具函数
@@ -139,8 +110,6 @@ export const useDataStore = defineStore('acu-data', () => {
   /** 加载状态 */
   const isLoading = ref(false);
 
-  /** 目标楼层信息 */
-  const targetFloorInfo = ref<FloorInfo | null>(null);
 
   // ============================================================
   // 完整性检测
@@ -396,22 +365,87 @@ export const useDataStore = defineStore('acu-data', () => {
    * 获取快照中的单元格值
    */
   function getSnapshotCellValue(tableId: string, rowIndex: number, colIndex: number): string {
-    if (!snapshot.value) return '';
-
-    for (const sheetId in snapshot.value) {
-      const sheet = snapshot.value[sheetId];
-      if (sheet && sheet.name === tableId && sheet.content) {
-        const row = sheet.content[rowIndex + 1];
-        if (row && row[colIndex] !== undefined) {
-          return String(row[colIndex]);
-        }
+    const sheet = findSheetByNameOrId(snapshot.value, tableId);
+    if (sheet?.content) {
+      const row = sheet.content[rowIndex + 1];
+      if (row && row[colIndex] !== undefined) {
+        return String(row[colIndex]);
       }
     }
     return '';
   }
 
   /**
+   * 在原始数据库数据中按 sheetId 或 sheet.name 查找 sheet。
+   *
+   * 说明：组件层有些路径传入 sheetId，有些路径传入中文表名；
+   * 统一解析后，后续定点同步和差异 key 都能使用同一套逻辑。
+   */
+  function findSheetByNameOrId(data: RawDatabaseData | null, tableIdOrName: string): any | null {
+    if (!data) return null;
+
+    if (data[tableIdOrName]) {
+      return data[tableIdOrName];
+    }
+
+    for (const sheetId in data) {
+      const sheet = data[sheetId];
+      if (sheet?.name === tableIdOrName) {
+        return sheet;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 将 sheetId 或表名规范化为表名（差异 key 使用表名）。
+   */
+  function resolveTableName(tableIdOrName: string): string {
+    const stagedSheet = findSheetByNameOrId(stagedData.value, tableIdOrName);
+    if (stagedSheet?.name) return stagedSheet.name;
+
+    const snapshotSheet = findSheetByNameOrId(snapshot.value, tableIdOrName);
+    if (snapshotSheet?.name) return snapshotSheet.name;
+
+    return tableIdOrName;
+  }
+
+  /**
+   * 将单个单元格定点同步到 stagedData，避免每次编辑都 klona 全库并重建所有 sheet。
+   */
+  function syncCellToStagedData(tableIdOrName: string, rowIndex: number, colIndex: number, value: string): void {
+    const sheet = findSheetByNameOrId(stagedData.value, tableIdOrName);
+    if (!sheet?.content) return;
+
+    const contentRowIndex = rowIndex + 1; // content[0] 是表头
+    const row = sheet.content[contentRowIndex];
+    if (!row) return;
+
+    row[colIndex] = value;
+  }
+
+  /**
+   * 将新增行定点同步到 stagedData。
+   */
+  function syncInsertedRowToStagedData(tableIdOrName: string, afterIndex: number, row: RowData): void {
+    const sheet = findSheetByNameOrId(stagedData.value, tableIdOrName);
+    if (!sheet?.content) return;
+
+    const headers = sheet.content[0] || [];
+    const rowData: (string | number)[] = [];
+    for (let i = 0; i < headers.length; i++) {
+      rowData.push(row.cells[i]?.value ?? '');
+    }
+
+    // afterIndex 是 0-based 数据行索引；content[0] 是表头，所以插入位置为 afterIndex + 2。
+    sheet.content.splice(afterIndex + 2, 0, rowData);
+  }
+
+  /**
    * 同步 tables 到 stagedData
+   *
+   * 仅保留给批量重建/兼容旧调用使用；单元格编辑应优先使用 syncCellToStagedData，
+   * 避免在 iOS WebView 中因频繁全库 klona 和重建 content 造成内存峰值。
    */
   function syncToStagedData(): void {
     if (!stagedData.value) return;
@@ -652,395 +686,6 @@ export const useDataStore = defineStore('acu-data', () => {
   }
 
   // ============================================================
-  // 数据保存
-  // ============================================================
-
-  /**
-   * 查找目标楼层
-   */
-  function findTargetFloor(): number {
-    const ST = getSillyTavern();
-    if (!ST || !ST.chat || ST.chat.length === 0) return -1;
-
-    for (let i = ST.chat.length - 1; i >= 0; i--) {
-      const msg = ST.chat[i] as STChatMessage;
-      if (!msg.is_user && msg.TavernDB_ACU_IsolatedData) {
-        targetFloorInfo.value = {
-          index: i,
-          isAuto: true,
-          reason: '已存在数据',
-        };
-        return i;
-      }
-    }
-
-    for (let i = ST.chat.length - 1; i >= 0; i--) {
-      const msg = ST.chat[i] as STChatMessage;
-      if (!msg.is_user) {
-        targetFloorInfo.value = {
-          index: i,
-          isAuto: true,
-          reason: '新建数据位置',
-        };
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  /**
-   * 过滤已删除的行
-   */
-  function filterDeletedRows(data: RawDatabaseData): RawDatabaseData {
-    if (pendingDeletes.size === 0) return data;
-
-    const result = klona(data);
-
-    for (const sheetId in result) {
-      if (sheetId === 'mate') continue;
-
-      const sheet = result[sheetId];
-      if (!sheet || !sheet.name || !sheet.content) continue;
-
-      const newContent: (string | number)[][] = [sheet.content[0]];
-
-      for (let i = 1; i < sheet.content.length; i++) {
-        const realIdx = i - 1;
-        const rowKey = getRowKey(sheet.name, realIdx);
-        if (!pendingDeletes.has(rowKey)) {
-          newContent.push(sheet.content[i]);
-        }
-      }
-
-      sheet.content = newContent;
-    }
-
-    return result;
-  }
-
-  /**
-   * 写入到指定楼层
-   */
-  async function writeToFloor(floorIndex: number, data: RawDatabaseData): Promise<void> {
-    const ST = getSillyTavern();
-    if (!ST || !ST.chat || !ST.chat[floorIndex]) {
-      throw new Error(`楼层 ${floorIndex} 不存在`);
-    }
-
-    const targetMsg = ST.chat[floorIndex] as STChatMessage;
-
-    // 使用空字符串作为默认隔离键，优先沿用已存在的键
-    let finalKey = '';
-    if (targetMsg.TavernDB_ACU_IsolatedData) {
-      const existingKeys = Object.keys(targetMsg.TavernDB_ACU_IsolatedData);
-      if (existingKeys.length > 0) {
-        finalKey = existingKeys[0];
-      }
-    } else {
-      targetMsg.TavernDB_ACU_IsolatedData = {};
-    }
-
-    if (!targetMsg.TavernDB_ACU_IsolatedData[finalKey]) {
-      targetMsg.TavernDB_ACU_IsolatedData[finalKey] = {
-        independentData: {},
-        modifiedKeys: [],
-        updateGroupKeys: [],
-      };
-    }
-
-    const tagData = targetMsg.TavernDB_ACU_IsolatedData[finalKey] as IsolatedDataEntry;
-    if (!tagData.independentData) tagData.independentData = {};
-
-    const sheetsToSave = Object.keys(data).filter(k => k.startsWith('sheet_'));
-    sheetsToSave.forEach(k => {
-      tagData.independentData[k] = klona(data[k]);
-    });
-
-    const existingKeys: string[] = tagData.modifiedKeys || [];
-    tagData.modifiedKeys = [...new Set([...existingKeys, ...sheetsToSave])];
-  }
-
-  /**
-   * 同步世界书
-   */
-  async function syncWorldbook(): Promise<void> {
-    const api = getCore().getDB();
-    if (api && api.syncWorldbookEntries) {
-      try {
-        await api.syncWorldbookEntries({ createIfNeeded: true });
-      } catch (syncErr) {
-        console.warn('[ACU] Worldbook sync failed:', syncErr);
-      }
-    }
-  }
-
-  /**
-   * 保存聊天记录到磁盘
-   *
-   * ⚠️ 注意: 历史上这里使用 ST.saveChatDebounced(), 但那是 lodash debounce 包装,
-   * 调用后立即返回 undefined, 不会等待真实写盘完成. 这会导致:
-   * 1. swipe 清除后, 磁盘 chat 仍是旧数据 → AI 重新生成时读到旧数据
-   * 2. SQLite 模式下, refreshDataAndWorldbook 内部从内存 chat 合并是 OK 的,
-   *    但若酒馆生成端依赖磁盘 chat 则会出错
-   *
-   * 现统一改为 ST.saveChat() 立即版, 真实等待写盘完成, 与 useDataPersistence
-   * 中的 purgeFloorRange 保持一致.
-   */
-  async function saveChatDebounced(): Promise<void> {
-    const ST = getSillyTavern();
-    if (ST?.saveChat) {
-      await ST.saveChat();
-    } else if (ST?.saveChatDebounced) {
-      // 兜底: 如果只有防抖版可用, 至少调一下(虽然不等写盘)
-      await ST.saveChatDebounced();
-    }
-  }
-
-  /**
-   * 保存数据到数据库
-   */
-  async function saveToDatabase(): Promise<SaveResult> {
-    if (isSaving.value) {
-      console.warn('[ACU] 保存进行中，跳过重复请求');
-      return { success: false, savedToFloor: -1, error: '保存进行中' };
-    }
-
-    try {
-      isSaving.value = true;
-      console.info('[ACU] 开始保存数据...');
-
-      let dataToSave = stagedData.value;
-      if (!dataToSave) {
-        dataToSave = getTableData();
-      }
-
-      if (!dataToSave) {
-        throw new Error('无数据可保存');
-      }
-
-      const filteredData = filterDeletedRows(klona(dataToSave));
-      const targetFloor = findTargetFloor();
-      if (targetFloor === -1) {
-        throw new Error('未找到合适的目标楼层');
-      }
-
-      await writeToFloor(targetFloor, filteredData);
-      await syncWorldbook();
-      await saveChatDebounced();
-
-      // [双路保存] SQLite 模式下兜底刷新(本函数直接写 chat 字段,绕过了 SQLite 内存数据库)
-      // 不 import storageMode 工具(避免潜在循环依赖),用内联 ddl 检测
-      try {
-        const w = (window.parent || window) as any;
-        const api = w.AutoCardUpdaterAPI;
-        let isSqlite = false;
-        for (const sheetId in filteredData) {
-          if (!sheetId.startsWith('sheet_')) continue;
-          const sheet: any = filteredData[sheetId];
-          if (sheet?.sourceData?.ddl) {
-            isSqlite = true;
-            break;
-          }
-        }
-        if (isSqlite && api && typeof api.refreshDataAndWorldbook === 'function') {
-          await api.refreshDataAndWorldbook();
-          console.info('[ACU][SQLite] dataStore.saveToDatabase 后 refreshDataAndWorldbook 已调用');
-        }
-      } catch (e) {
-        console.warn('[ACU][SQLite] dataStore.saveToDatabase 后 refreshDataAndWorldbook 失败:', e);
-      }
-
-      snapshot.value = klona(filteredData);
-      stagedData.value = klona(filteredData);
-      clearChanges(true);
-      saveSnapshot(filteredData);
-
-      console.info(`[ACU] 数据保存完成，目标楼层: ${targetFloor}`);
-      return { success: true, savedToFloor: targetFloor };
-    } catch (error) {
-      const errMsg = (error as Error).message;
-      console.error('[ACU] 保存数据失败:', error);
-      return { success: false, savedToFloor: -1, error: errMsg };
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  /**
-   * 保存到指定楼层
-   */
-  async function saveToFloor(floorIndex: number): Promise<SaveResult> {
-    if (isSaving.value) {
-      console.warn('[ACU] 保存进行中，跳过重复请求');
-      return { success: false, savedToFloor: -1, error: '保存进行中' };
-    }
-
-    try {
-      isSaving.value = true;
-      console.info(`[ACU] 保存到第 ${floorIndex} 楼...`);
-
-      let dataToSave = stagedData.value;
-      if (!dataToSave) {
-        dataToSave = getTableData();
-      }
-
-      if (!dataToSave) {
-        throw new Error('无数据可保存');
-      }
-
-      const filteredData = filterDeletedRows(klona(dataToSave));
-      await writeToFloor(floorIndex, filteredData);
-      await syncWorldbook();
-      await saveChatDebounced();
-
-      // [双路保存] SQLite 模式下兜底刷新(本函数直接写 chat 字段,绕过了 SQLite 内存数据库)
-      try {
-        const w = (window.parent || window) as any;
-        const api = w.AutoCardUpdaterAPI;
-        let isSqlite = false;
-        for (const sheetId in filteredData) {
-          if (!sheetId.startsWith('sheet_')) continue;
-          const sheet: any = filteredData[sheetId];
-          if (sheet?.sourceData?.ddl) {
-            isSqlite = true;
-            break;
-          }
-        }
-        if (isSqlite && api && typeof api.refreshDataAndWorldbook === 'function') {
-          await api.refreshDataAndWorldbook();
-          console.info('[ACU][SQLite] dataStore.saveToFloor 后 refreshDataAndWorldbook 已调用');
-        }
-      } catch (e) {
-        console.warn('[ACU][SQLite] dataStore.saveToFloor 后 refreshDataAndWorldbook 失败:', e);
-      }
-
-      snapshot.value = klona(filteredData);
-      stagedData.value = klona(filteredData);
-      clearChanges(true);
-      saveSnapshot(filteredData);
-
-      console.info(`[ACU] 已保存到第 ${floorIndex} 楼`);
-      return { success: true, savedToFloor: floorIndex };
-    } catch (error) {
-      const errMsg = (error as Error).message;
-      console.error('[ACU] 保存到指定楼层失败:', error);
-      return { success: false, savedToFloor: -1, error: errMsg };
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  /**
-   * 清除指定楼层范围的数据
-   */
-  async function purgeFloorRange(startFloor: number, endFloor: number): Promise<void> {
-    if (isSaving.value) {
-      console.warn('[ACU] 操作进行中，跳过重复请求');
-      return;
-    }
-
-    try {
-      isSaving.value = true;
-      console.info(`[ACU] 清除第 ${startFloor} 到 ${endFloor} 楼的数据...`);
-
-      const ST = getSillyTavern();
-      if (!ST || !ST.chat) {
-        throw new Error('无法访问聊天记录');
-      }
-
-      const maxIdx = ST.chat.length - 1;
-      const safeStartFloor = Math.max(0, startFloor);
-      const safeEndFloor = Math.min(maxIdx, endFloor);
-
-      if (isNaN(safeStartFloor) || isNaN(safeEndFloor) || safeStartFloor > safeEndFloor) {
-        throw new Error('无效的楼层范围');
-      }
-
-      const keysToDelete = [
-        'TavernDB_ACU_Data',
-        'TavernDB_ACU_SummaryData',
-        'TavernDB_ACU_IndependentData',
-        'TavernDB_ACU_Identity',
-        'TavernDB_ACU_IsolatedData',
-        'TavernDB_ACU_ModifiedKeys',
-        'TavernDB_ACU_UpdateGroupKeys',
-      ];
-
-      let purgedCount = 0;
-      for (let i = safeStartFloor; i <= safeEndFloor; i++) {
-        const msg = ST.chat[i] as STChatMessage;
-        if (!msg) continue;
-
-        let messageModified = false;
-        for (const key of keysToDelete) {
-          if (Object.prototype.hasOwnProperty.call(msg, key)) {
-            delete (msg as any)[key];
-            messageModified = true;
-          }
-        }
-
-        if (messageModified) {
-          purgedCount++;
-        }
-      }
-
-      if (purgedCount > 0) {
-        await saveChatDebounced();
-        await syncWorldbook();
-
-        // 重新拉取清除后的最新合并数据，刷新界面和快照
-        // (同时复用此调用结果做 SQLite 模式检测)
-        const latestData = getTableData();
-
-        // [双路保存] SQLite 模式下兜底刷新(直接 delete msg 字段会绕过 SQLite 内存数据库)
-        try {
-          if (latestData) {
-            let isSqlite = false;
-            for (const sheetId in latestData) {
-              if (!sheetId.startsWith('sheet_')) continue;
-              const sheet: any = (latestData as any)[sheetId];
-              if (sheet?.sourceData?.ddl) {
-                isSqlite = true;
-                break;
-              }
-            }
-            if (isSqlite) {
-              const w = (window.parent || window) as any;
-              const api = w.AutoCardUpdaterAPI;
-              if (api && typeof api.refreshDataAndWorldbook === 'function') {
-                await api.refreshDataAndWorldbook();
-                console.info('[ACU][SQLite] dataStore.purgeFloorRange 后 refreshDataAndWorldbook 已调用');
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('[ACU][SQLite] dataStore.purgeFloorRange 后 refreshDataAndWorldbook 失败:', e);
-        }
-
-        if (latestData) {
-          const clonedData = klona(latestData);
-          stagedData.value = clonedData;
-          tables.value = processToTableData(clonedData);
-          saveSnapshot(clonedData);
-        } else {
-          stagedData.value = null;
-          tables.value = {};
-          clearSnapshot();
-        }
-        clearChanges(true);
-      }
-
-      console.info(`[ACU] 已清除 ${purgedCount} 个楼层的数据`);
-    } catch (error) {
-      console.error('[ACU] 清除楼层数据失败:', error);
-      throw error;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  // ============================================================
   // 行操作
   // ============================================================
 
@@ -1048,7 +693,8 @@ export const useDataStore = defineStore('acu-data', () => {
    * 插入新行
    */
   function insertRow(tableId: string, afterIndex: number): void {
-    const tableRows = tables.value[tableId];
+    const tableName = resolveTableName(tableId);
+    const tableRows = tables.value[tableName] || tables.value[tableId];
     if (!tableRows || tableRows.length === 0) {
       console.warn(`[ACU] 表格 ${tableId} 不存在或为空`);
       return;
@@ -1064,18 +710,17 @@ export const useDataStore = defineStore('acu-data', () => {
     };
 
     tableRows.splice(afterIndex + 1, 0, newRow);
+    syncInsertedRowToStagedData(tableName, afterIndex, newRow);
 
     tableRows.forEach((row: RowData, i: number) => {
       row.index = i;
     });
 
-    const rowKey = getRowKey(tableId, afterIndex + 1);
+    const rowKey = getRowKey(tableName, afterIndex + 1);
     // 插入行是手动操作
     manualDiffMap.add(rowKey);
 
-    syncToStagedData();
-
-    console.info(`[ACU] 在 ${tableId} 第 ${afterIndex} 行后插入新行`);
+    console.info(`[ACU] 在 ${tableName} 第 ${afterIndex} 行后插入新行`);
   }
 
   /**
@@ -1121,7 +766,8 @@ export const useDataStore = defineStore('acu-data', () => {
     value: string,
     options?: { skipHistory?: boolean },
   ): void {
-    const tableRows = tables.value[tableId];
+    const tableName = resolveTableName(tableId);
+    const tableRows = tables.value[tableName] || tables.value[tableId];
     if (!tableRows || !tableRows[rowIndex]) {
       console.warn(`[ACU] 无效的单元格位置: ${tableId}[${rowIndex}][${colIndex}]`);
       return;
@@ -1132,8 +778,10 @@ export const useDataStore = defineStore('acu-data', () => {
       const oldValue = row.cells[colIndex].value;
       row.cells[colIndex].value = value;
 
-      const cellKey = getCellKey(tableId, rowIndex, colIndex);
-      const snapshotValue = getSnapshotCellValue(tableId, rowIndex, colIndex);
+      syncCellToStagedData(tableName, rowIndex, colIndex, value);
+
+      const cellKey = getCellKey(tableName, rowIndex, colIndex);
+      const snapshotValue = getSnapshotCellValue(tableName, rowIndex, colIndex);
 
       if (value !== snapshotValue) {
         // 手动编辑产生的变更
@@ -1147,7 +795,7 @@ export const useDataStore = defineStore('acu-data', () => {
           const chatId = getCurrentChatId();
           console.info('[ACU] 保存历史记录, 参数:', {
             chatId,
-            tableId,
+            tableId: tableName,
             rowIndex,
             colIndex,
             oldValue: oldValue.substring(0, 50) + (oldValue.length > 50 ? '...' : ''),
@@ -1158,7 +806,7 @@ export const useDataStore = defineStore('acu-data', () => {
             // 构建编辑前的行数据（使用旧值）
             const rowBeforeEdit: TableRow = {
               index: rowIndex,
-              key: getRowKey(tableId, rowIndex),
+              key: getRowKey(tableName, rowIndex),
               cells: row.cells.map(
                 (cell: CellData, i: number): TableCell => ({
                   colIndex: i,
@@ -1168,7 +816,7 @@ export const useDataStore = defineStore('acu-data', () => {
               ),
             };
             // 异步保存，不阻塞主流程
-            saveRowSnapshot(chatId, tableId, rowBeforeEdit, 'manual')
+            saveRowSnapshot(chatId, tableName, rowBeforeEdit, 'manual')
               .then(() => {
                 console.info('[ACU] 历史记录保存成功');
               })
@@ -1186,20 +834,18 @@ export const useDataStore = defineStore('acu-data', () => {
         aiDiffMap.delete(cellKey);
 
         const isRowUnchanged = row.cells.every(
-          (cell: CellData, i: number) => cell.value === getSnapshotCellValue(tableId, rowIndex, i),
+          (cell: CellData, i: number) => cell.value === getSnapshotCellValue(tableName, rowIndex, i),
         );
         if (isRowUnchanged) {
           row.cells.forEach((_: CellData, i: number) => {
-            const key = getCellKey(tableId, rowIndex, i);
+            const key = getCellKey(tableName, rowIndex, i);
             manualDiffMap.delete(key);
             aiDiffMap.delete(key);
           });
         }
       }
 
-      syncToStagedData();
-
-      console.info(`[ACU] 更新 ${tableId}[${rowIndex}][${colIndex}]: "${oldValue}" -> "${value}"`);
+      console.info(`[ACU] 更新 ${tableName}[${rowIndex}][${colIndex}]: "${oldValue}" -> "${value}"`);
     }
   }
 
@@ -1645,7 +1291,6 @@ export const useDataStore = defineStore('acu-data', () => {
     pendingDeletes,
     isSaving,
     isLoading,
-    targetFloorInfo,
     lastSavedData,
 
     // Getters
@@ -1661,11 +1306,6 @@ export const useDataStore = defineStore('acu-data', () => {
     processToTableData,
     setStagedData,
     generateDiffMap,
-
-    // 数据保存
-    saveToDatabase,
-    saveToFloor,
-    purgeFloorRange,
 
     // 行操作
     insertRow,
