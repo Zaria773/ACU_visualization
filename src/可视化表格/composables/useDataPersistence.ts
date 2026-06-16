@@ -127,45 +127,6 @@ function findSheetByName(data: RawDatabaseData, name: string): { sheet: any; tab
 }
 
 /**
- * 检测“中间插入”是否被 getDetailedChanges 漏检
- *
- * `getDetailedChanges` 用“位置索引比对”判断 insert,如果用户在中间插入新行,
- * snapshot 中同一索引位置仍有内容（原行被挤后),会被识别为“修改”而非“新增”。
- *
- * 此函数对比 current 与 snap 的每张表行数,如果 current 行数 > snap 行数
- * 但 inserts 列表中该表对应的 insert 数量不足以覆盖差额,即认为漏检。
- *
- * @param current 当前完整的表格数据
- * @param snap 上次保存后的快照
- * @param inserts `getDetailedChanges` 返回的 inserts 列表（仅使用 tableName)
- * @returns `true` 表示需要 fallback 到全量导入
- */
-function checkInsertMismatch(
-  current: RawDatabaseData,
-  snap: RawDatabaseData | null,
-  inserts: Array<{ tableName: string }>,
-): boolean {
-  if (!snap) return false;
-
-  const insertCountByTable = new Map<string, number>();
-  inserts.forEach(i => {
-    insertCountByTable.set(i.tableName, (insertCountByTable.get(i.tableName) || 0) + 1);
-  });
-
-  for (const sheetId in current) {
-    if (!sheetId.startsWith('sheet_')) continue;
-    const cur = current[sheetId];
-    const sn = snap[sheetId];
-    if (!cur?.content || !sn?.content) continue;
-    const tableName = String(cur.name || sheetId);
-    const expected = cur.content.length - 1 - (sn.content.length - 1); // 行数差(数据行)
-    const detected = insertCountByTable.get(tableName) || 0;
-    if (expected > detected) return true;
-  }
-  return false;
-}
-
-/**
  * 保存完成后，向纪要世界书 Source Bridge 记录一次“命中纪要表”的变更
  * 注意：这里只更新前端 bridge 状态，不触发同步侧消费逻辑
  */
@@ -1110,19 +1071,7 @@ export function useDataPersistence() {
     }
 
     // ============================================================
-    // 5. 中间插入兜底检测
-    //    如果 getDetailedChanges 未能把行数增加识别为 insert，说明继续保存会产生歧义。
-    //    这里选择中止，而不是全量覆盖 V2 checkpoint/log。
-    // ============================================================
-    const fallbackNeeded = checkInsertMismatch(dataToUse, dataStore.snapshot, changes.inserts);
-    if (fallbackNeeded) {
-      const msg = '检测到行数增加但未能生成精细 insert 操作，已中止以避免全量覆盖 V2 checkpoint/log';
-      console.warn('[ACU][SQLite]', msg);
-      errors.push(msg);
-    }
-
-    // ============================================================
-    // 6. 错误汇总(不抛异常,让上层根据 errors 决定提示)
+    // 5. 错误汇总
     // ============================================================
     if (errors.length > 0) {
       console.warn('[ACU][SQLite] 保存过程中发生错误:', errors);
@@ -1132,7 +1081,7 @@ export function useDataPersistence() {
     }
 
     // ============================================================
-    // 7. 拉取最新数据(API 已触发刷新,getTableData 拿到合并结果)
+    // 6. 拉取最新数据(API 已触发刷新,getTableData 拿到合并结果)
     // ============================================================
     return getTableData();
   }
@@ -1226,19 +1175,14 @@ export function useDataPersistence() {
           // 优化：无变更时跳过 SQLite 路径，避免空触发 refreshDataAndWorldbook
           //       (refreshDataAndWorldbook 会触发数据库插件重新合并并注入世界书，代价较高)
           const detailedChanges = dataStore.getDetailedChanges();
-          const hasInsertMismatch = checkInsertMismatch(dataToUse, dataStore.snapshot, detailedChanges.inserts);
           const hasAnyChange =
             detailedChanges.deletes.length > 0 ||
             detailedChanges.updates.length > 0 ||
-            detailedChanges.inserts.length > 0 ||
-            hasInsertMismatch;
+            detailedChanges.inserts.length > 0;
           if (!hasAnyChange) {
             console.info('[ACU][SQLite] 无变更，跳过保存');
             savedData = dataToUse;
           } else {
-            if (hasInsertMismatch) {
-              console.warn('[ACU][SQLite] 检测到行数增加但未生成精细 insert，将中止而不是全量覆盖');
-            }
             savedData = await executeSqliteSave(dataToUse, commitDeletes);
           }
         } catch (sqliteErr) {
