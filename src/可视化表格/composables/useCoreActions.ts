@@ -52,10 +52,13 @@ export function useCoreActions() {
     if (colCount > 0) newRow[0] = String(content.length);
 
     const headers = Array.isArray(content[0]) ? content[0].map(h => String(h || '')) : [];
-    const firstEditableCol = headers.findIndex(h => h && h !== 'row_id');
-    if (firstEditableCol >= 0 && !String(newRow[firstEditableCol] ?? '').trim()) {
-      newRow[firstEditableCol] = '新建项';
-    }
+    let hasFilledPrimaryText = false;
+    headers.forEach((header, colIndex) => {
+      if (!header || header === 'row_id') return;
+      if (String(newRow[colIndex] ?? '').trim()) return;
+      newRow[colIndex] = hasFilledPrimaryText ? '待填写' : '新建项';
+      hasFilledPrimaryText = true;
+    });
 
     // 插入到当前行之后（rowIdx 是从 0 开始的数据行索引，content[0] 是表头，所以 +2）
     content.splice(rowIdx + 2, 0, newRow);

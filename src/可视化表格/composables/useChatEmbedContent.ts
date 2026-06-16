@@ -7,9 +7,9 @@
  * - 全局数据看板表(globalStatusTable)
  * - 行动选项交互表 + widget config(embedInteractionTable / embedInteractionWidget)
  * - 嵌入区域是否有可显示内容(hasEmbedOptionsContent)
- *   * 仪表盘里的行动选项是用户主动点开才看得到,即使展示上一楼也无伤大雅;
- *     但聊天区域嵌入是常驻显示,不能在本楼层显示上一楼的旧选项。
- *   * 因此按"本楼层(最新非隐藏 AI 楼层)的 updateGroupKeys 是否包含选项类表"来判断。
+ *   * 不再要求最新 AI 楼层的 updateGroupKeys 命中选项表;
+ *   * 只要当前交互表有行，或选项聚合面板能解析出实际选项内容，就允许显示;
+ *   * 具体挂载楼层由 useChatAreaEmbed 统一定位到最新非隐藏 AI 楼层。
  * - 嵌入区域两个 section 的折叠状态(embedGlobalCollapsed / embedOptionsCollapsed)
  *   及其切换函数
  */
@@ -18,79 +18,20 @@ import { computed, ref, type Ref } from 'vue';
 import { useConfigStore } from '../stores/useConfigStore';
 import { useDashboardStore } from '../stores/useDashboardStore';
 import type { ProcessedTable } from '../types';
-import { getV2FilledSheetKeysAtFloor, parseIsolatedDataFromMessage } from '../utils/acuV2Storage';
+import { isOptionTable, parseOptionItems } from '../utils/optionParser';
 
 // ============================================================
 // 内部工具函数
 // ============================================================
 
-/**
- * 倒序遍历 SillyTavern.chat,返回最新一条「非隐藏 AI 楼层」的消息对象 + index。
- * 跳过用户消息 / 系统消息 / 被隐藏(hidden)的消息。
- *
- * @returns 楼层信息 { msg, index };没有找到则返回 null
- */
-function findLatestNonHiddenAiFloor(): { msg: any; index: number } | null {
-  try {
-    const chat = (window.parent as any)?.SillyTavern?.chat || (window as any)?.SillyTavern?.chat || [];
-    if (!Array.isArray(chat) || chat.length === 0) return null;
-    for (let i = chat.length - 1; i >= 0; i--) {
-      const msg = chat[i];
-      if (!msg) continue;
-      if (msg.is_user) continue;
-      if (msg.is_system) continue;
-      if (msg.hidden) continue;
-      return { msg, index: i };
-    }
-  } catch (e) {
-    console.warn('[ACU][embed] findLatestNonHiddenAiFloor 失败:', e);
-  }
-  return null;
+/** 判断表格是否有实际可展示的行内容 */
+function hasTableRows(table: ProcessedTable | null): boolean {
+  return Array.isArray(table?.rows) && table.rows.length > 0;
 }
 
-/**
- * 取得某楼层 msg 上记录的 updateGroupKeys 列表(本楼层"动过"的表的 sheetKey)
- *
- * 数据来源(只读 updateGroupKeys,不读 modifiedKeys):
- * - 旧字段(根级):`msg.TavernDB_ACU_UpdateGroupKeys`
- * - 新字段(10.3+,IsolatedData 槽位):`msg.TavernDB_ACU_IsolatedData[槽位].updateGroupKeys`
- *
- * 返回字符串数组(如 `sheet_Interaction_CN`),后续按 sheetKey → name 反查。
- */
-function getUpdateGroupKeysAtFloor(msg: any): string[] {
-  if (!msg) return [];
-  const set = new Set<string>();
-
-  const collect = (arr: any) => {
-    if (!Array.isArray(arr)) return;
-    arr.forEach((k: any) => {
-      if (typeof k === 'string' && k) set.add(k);
-    });
-  };
-
-  collect(msg.TavernDB_ACU_UpdateGroupKeys);
-
-  const isolated = parseIsolatedDataFromMessage(msg);
-  if (isolated) {
-    Object.values(isolated).forEach((slot: any) => {
-      if (!slot || typeof slot !== 'object') return;
-      collect(slot.updateGroupKeys);
-      collect(getV2FilledSheetKeysAtFloor(slot));
-    });
-  }
-
-  return Array.from(set);
-}
-
-/**
- * 判断一个表名(中文 name)是否含「选项 / options」
- *
- * 用户的选项表名各种各样(如「交互选项」、「行动选项」、「options」 等),
- * 只要含"选项"或"options"二字就算选项类表,这与项目其他位置(如
- * useDataPersistence、App.vue 的 hasOptionsTabs)的识别规则一致。
- */
-function isOptionsLikeName(name: string): boolean {
-  return /选项|options/i.test(String(name || ''));
+/** 判断选项聚合面板是否能解析出实际选项内容 */
+function hasParsedOptionItems(tables: ProcessedTable[]): boolean {
+  return (tables || []).some(table => isOptionTable(table.name || '') && parseOptionItems(table).length > 0);
 }
 
 // ============================================================
@@ -102,13 +43,10 @@ function isOptionsLikeName(name: string): boolean {
  *
  * @param processedTables 处理后的表格数据(响应式)
  * @param optionsTables 已经识别为「选项类」的表(由 App.vue 计算并传入,
- *                      与 MainPanel 内 OptionsAggregatePanel 共享同一份 computed;
- *                      此 composable 内目前主要用 processedTables 做反查,
- *                      optionsTables 留作未来扩展用)
+ *                      用于判断选项聚合面板是否存在实际可展示内容)
  */
 export function useChatEmbedContent(
   processedTables: Ref<ProcessedTable[]>,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   optionsTables: Ref<ProcessedTable[]>,
 ) {
   const configStore = useConfigStore();
@@ -214,40 +152,18 @@ export function useChatEmbedContent(
   });
 
   // ============================================================
-  // 嵌入区是否显示(关键:按本楼层 updateGroupKeys 判断)
+  // 嵌入区是否显示(只按实际内容判断)
   // ============================================================
 
   /**
    * 嵌入区"行动选项"是否有可显示内容
    *
-   * 判断规则:
-   * 1. 找到最新非隐藏 AI 楼层(找不到 → 不显示)
-   * 2. 读取该楼层 msg 上保存的 updateGroupKeys(本次更新影响的表 sheetKey 列表)
-   * 3. **按表名判断**(而不是按 sheetKey):把每个 sheetKey 反查为 name,
-   *    看名字是否含「选项 / options」
-   *    - 优先以 key 作为 sheetId 反查 processedTables 找 name
-   *    - 反查不到则把 key 本身当作表名使用(兼容 updateGroupKeys 直接存名字的情况)
-   * 4. 任意 key 转换后的名字含「选项」即视为有内容 → 显示嵌入
-   *
-   * 不依赖 modifiedKeys / __messageId,只看 updateGroupKeys。
+   * 不再要求最新 AI 楼层的 updateGroupKeys 命中选项表。
+   * 只要当前已加载数据里有交互表行，或选项聚合面板能解析出选项内容，
+   * ChatEmbedHost 就会把内容 Teleport 到 useChatAreaEmbed 定位的最新 AI 楼层。
    */
   const hasEmbedOptionsContent = computed<boolean>(() => {
-    const floor = findLatestNonHiddenAiFloor();
-    if (!floor) return false;
-
-    const sheetKeys = getUpdateGroupKeysAtFloor(floor.msg);
-    if (sheetKeys.length === 0) return false;
-
-    // 用 processedTables 建立 sheetId → name 的映射
-    const idToName = new Map<string, string>();
-    (processedTables.value || []).forEach(t => {
-      if (t && t.id) idToName.set(t.id, t.name || '');
-    });
-
-    return sheetKeys.some(key => {
-      const name = idToName.get(key) ?? key; // 反查不到就把 key 本身当 name
-      return isOptionsLikeName(name);
-    });
+    return hasTableRows(embedInteractionTable.value) || hasParsedOptionItems(optionsTables.value || []);
   });
 
   return {
@@ -262,7 +178,7 @@ export function useChatEmbedContent(
     embedInteractionTable,
     embedInteractionWidget,
 
-    // 是否显示嵌入(本楼层 updateGroupKeys 判断)
+    // 是否显示嵌入(只要有实际内容就显示)
     hasEmbedOptionsContent,
   };
 }

@@ -1167,16 +1167,16 @@ export const useDataStore = defineStore('acu-data', () => {
 
       const stagedRow = stagedSheet?.content?.[rowIdx + 1];
       const snapRow = snapSheet?.content?.[rowIdx + 1];
+      const stagedRowCount = Array.isArray(stagedSheet?.content) ? stagedSheet.content.length - 1 : 0;
+      const snapRowCount = Array.isArray(snapSheet?.content) ? snapSheet.content.length - 1 : 0;
+      const hasRowCountIncrease = stagedRowCount > snapRowCount;
 
-      // 仅在 stagedData 有但 snapshot 没有时,视为新增
-      if (stagedRow && !snapRow) {
+      if (stagedRow && (!snapRow || hasRowCountIncrease)) {
         const headers: any[] = stagedSheet?.content?.[0] ?? [];
         const data: Record<string, string> = {};
         for (let colIdx = 0; colIdx < headers.length; colIdx++) {
           const colName = String(headers[colIdx] ?? '');
-          // SQLite 模式下 row_id 是自增主键,跳过
           if (colName === 'row_id') continue;
-          // 兼容空列名:跳过(避免 data 中出现 '' key)
           if (!colName) continue;
           data[colName] = String(stagedRow[colIdx] ?? '');
         }
