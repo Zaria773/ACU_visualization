@@ -45,10 +45,7 @@ function hasParsedOptionItems(tables: ProcessedTable[]): boolean {
  * @param optionsTables 已经识别为「选项类」的表(由 App.vue 计算并传入,
  *                      用于判断选项聚合面板是否存在实际可展示内容)
  */
-export function useChatEmbedContent(
-  processedTables: Ref<ProcessedTable[]>,
-  optionsTables: Ref<ProcessedTable[]>,
-) {
+export function useChatEmbedContent(processedTables: Ref<ProcessedTable[]>, optionsTables: Ref<ProcessedTable[]>) {
   const configStore = useConfigStore();
   const dashboardStore = useDashboardStore();
 

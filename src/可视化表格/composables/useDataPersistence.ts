@@ -612,7 +612,6 @@ function updateSheetGuide(ST: any, configKey: string, guideData: Record<string, 
   }
 }
 
-
 function ensureIsolatedDataObject(message: any): Record<string, any> {
   let isolatedData = message.TavernDB_ACU_IsolatedData;
   if (typeof isolatedData === 'string') {
@@ -939,7 +938,6 @@ export function useDataPersistence() {
         sheet.content = newContent;
       }
     }
-
 
     let ST = (window as any).SillyTavern || (window.parent ? (window.parent as any).SillyTavern : null);
     if (!ST && (window as any).top && (window as any).top.SillyTavern) {
