@@ -154,8 +154,7 @@ export function useTabShortcuts(options: UseTabShortcutsOptions) {
     try {
       const host = (window.parent || window) as any;
       const registry = host[REGISTRY_KEY] as
-        | { docs: Document[]; keydown: (e: KeyboardEvent) => void; keyup: (e: KeyboardEvent) => void }
-        | undefined;
+        { docs: Document[]; keydown: (e: KeyboardEvent) => void; keyup: (e: KeyboardEvent) => void } | undefined;
       if (registry) {
         for (const doc of registry.docs) {
           doc.removeEventListener('keydown', registry.keydown, true);

@@ -806,13 +806,11 @@ export const useDataStore = defineStore('acu-data', () => {
             const rowBeforeEdit: TableRow = {
               index: rowIndex,
               key: getRowKey(tableName, rowIndex),
-              cells: row.cells.map(
-                (cell: CellData, i: number): TableCell => ({
-                  colIndex: i,
-                  key: cell.key,
-                  value: i === colIndex ? oldValue : cell.value,
-                }),
-              ),
+              cells: row.cells.map((cell: CellData, i: number): TableCell => ({
+                colIndex: i,
+                key: cell.key,
+                value: i === colIndex ? oldValue : cell.value,
+              })),
             };
             // 异步保存，不阻塞主流程
             saveRowSnapshot(chatId, tableName, rowBeforeEdit, 'manual')

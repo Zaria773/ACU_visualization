@@ -16,17 +16,7 @@ import type { UnifiedEventRow } from './types';
 
 /** 时间组件枚举 */
 export type TimeComponent =
-  | 'year'
-  | 'month'
-  | 'weekday'
-  | 'day'
-  | 'hour'
-  | 'minute'
-  | 'second'
-  | 'cn_month'
-  | 'cn_day'
-  | 'shichen'
-  | 'ke';
+  'year' | 'month' | 'weekday' | 'day' | 'hour' | 'minute' | 'second' | 'cn_month' | 'cn_day' | 'shichen' | 'ke';
 
 /** 模板分段 */
 export type TemplateSegment = { type: 'token'; component: TimeComponent } | { type: 'literal'; text: string };

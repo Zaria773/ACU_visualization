@@ -4,11 +4,7 @@
 import type { RawDatabaseData } from '../types';
 
 export type SummaryWorldbookChangeReason =
-  | 'ai_fill_completed'
-  | 'frontend_json_saved'
-  | 'manual_edit_saved'
-  | 'chat_changed'
-  | 'character_changed';
+  'ai_fill_completed' | 'frontend_json_saved' | 'manual_edit_saved' | 'chat_changed' | 'character_changed';
 
 export interface SummaryWorldbookChangeMeta {
   reason: SummaryWorldbookChangeReason;
