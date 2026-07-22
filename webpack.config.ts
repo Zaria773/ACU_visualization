@@ -559,6 +559,7 @@ function parse_configuration(entry: Entry): (_env: any, argv: any) => webpack.Co
         return callback(null, 'var ' + global[request as keyof typeof global]);
       }
       const cdn = {
+        pinia: 'https://testingcf.jsdelivr.net/npm/pinia@3.0.4/+esm',
         sass: 'https://jspm.dev/sass',
       };
       return callback(
