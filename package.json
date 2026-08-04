@@ -26,13 +26,13 @@
     "@types/jquery": "^4.0.1",
 >>>>>>> ff2bba6705f6e8d4882c9919916e7111f4f71dea
     "@types/jqueryui": "^1.12.24",
-    "@types/lodash": "^4.17.24",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/lodash": "^4.17.25",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@types/showdown": "^2.0.6",
     "@types/toastr": "^2.1.43",
     "@types/webpack": "^5.28.5",
-    "@typescript-eslint/parser": "^8.65.0",
+    "@typescript-eslint/parser": "^8.66.0",
     "autoprefixer": "^10.5.4",
 <<<<<<< HEAD
     "chokidar": "^4.0.3",
@@ -57,17 +57,21 @@
     "eslint-plugin-pinia": "^0.4.2",
     "eslint-plugin-vue": "^10.10.0",
     "eslint-webpack-plugin": "^6.0.0",
+<<<<<<< HEAD
     "globals": "^17.7.0",
 >>>>>>> ff2bba6705f6e8d4882c9919916e7111f4f71dea
+=======
+    "globals": "^17.9.0",
+>>>>>>> ffcef6e22b372e2f3dcc1048bf50073234505d74
     "html-inline-css-loader": "^0.2.1",
     "html-inline-css-webpack-plugin": "^1.11.2",
     "html-inline-script-webpack-plugin": "^3.2.1",
     "html-loader": "^5.1.0",
     "html-webpack-inline-svg-plugin": "^2.3.0",
-    "html-webpack-plugin": "^5.6.7",
+    "html-webpack-plugin": "^5.6.8",
     "javascript-obfuscator": "^5.5.0",
     "mini-css-extract-plugin": "^2.10.2",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.25",
     "postcss-cli": "^11.0.1",
     "postcss-load-config": "^6.0.1",
     "postcss-loader": "^8.2.1",
@@ -100,28 +104,33 @@
 =======
     "type-fest": "^5.8.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.65.0",
-    "unplugin-auto-import": "^21.0.0",
+    "typescript-eslint": "^8.66.0",
+    "unplugin-auto-import": "^21.1.0",
     "unplugin-vue-components": "^32.1.0",
 >>>>>>> ff2bba6705f6e8d4882c9919916e7111f4f71dea
     "vue-eslint-parser": "^10.4.1",
     "vue-loader": "^17.4.2",
     "vue-style-loader": "^4.1.3",
+<<<<<<< HEAD
     "webpack": "^5.109.0",
 <<<<<<< HEAD
     "webpack-cli": "^6.0.1",
 =======
     "webpack-cli": "^7.2.1",
 >>>>>>> ff2bba6705f6e8d4882c9919916e7111f4f71dea
+=======
+    "webpack": "^5.109.2",
+    "webpack-cli": "^7.2.2",
+>>>>>>> ffcef6e22b372e2f3dcc1048bf50073234505d74
     "webpack-obfuscator": "^3.6.1",
     "yaml-loader": "^0.9.0"
   },
   "dependencies": {
     "@pixi/react": "8.0.5",
-    "@vueuse/components": "^14.3.0",
-    "@vueuse/core": "^14.3.0",
-    "@vueuse/integrations": "^14.3.0",
-    "@vueuse/shared": "^14.3.0",
+    "@vueuse/components": "^14.4.0",
+    "@vueuse/core": "^14.4.0",
+    "@vueuse/integrations": "^14.4.0",
+    "@vueuse/shared": "^14.4.0",
     "async-wait-until": "^2.0.31",
     "axios": "1.18.1",
     "compare-versions": "^6.1.1",
